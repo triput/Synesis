@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ByteMail — Visual Direction Mockups</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,650&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@450&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="mockups.css" />
+</head>
+<body>
+  <header class="studio-bar">
+    <div class="brand-block">
+      <span class="logo-mark" aria-hidden="true"></span>
+      <div>
+        <p class="eyebrow">ByteMail mockups</p>
+        <h1>Dark jewel-tone direction</h1>
+      </div>
+    </div>
+    <div class="studio-controls" role="group" aria-label="Mockup controls">
+      <label class="seg">
+        <span class="seg-label">Density</span>
+        <div class="seg-group">
+          <button type="button" class="seg-btn is-active" data-density="calm" aria-pressed="true">Calm (default)</button>
+          <button type="button" class="seg-btn" data-density="outlook" aria-pressed="false">Compact</button>
+        </div>
+      </label>
+      <label class="seg">
+        <span class="seg-label">Frame</span>
+        <div class="seg-group">
+          <button type="button" class="seg-btn is-active" data-frame="desktop" aria-pressed="true">Desktop</button>
+          <button type="button" class="seg-btn" data-frame="mobile" aria-pressed="false">Mobile</button>
+        </div>
+      </label>
+      <label class="seg">
+        <span class="seg-label">Focus</span>
+        <div class="seg-group">
+          <button type="button" class="seg-btn is-active" data-focus="focused" aria-pressed="true">Focused</button>
+          <button type="button" class="seg-btn" data-focus="other" aria-pressed="false">Other</button>
+        </div>
+      </label>
+    </div>
+  </header>
+
+  <p class="studio-note">
+    Default product direction: <strong>Dark</strong> jewel-tone theme + <strong>Calm</strong> density.
+    Compact density remains available in View settings for smaller devices (e.g. travel phones).
+    Themes planned in settings: Light, Solarized Light, Dark (this mock), Black, Solarized Dark — plus per-account color controls.
+  </p>
+
+  <main class="stage" data-density="calm" data-frame="desktop" data-focus="focused">
+    <!-- DESKTOP SHELL -->
+    <section class="device device-desktop" aria-label="Desktop mockup">
+      <div class="titlebar">
+        <div class="traffic">
+          <span></span><span></span><span></span>
+        </div>
+        <div class="titlebar-center">
+          <span class="app-name">ByteMail</span>
+          <span class="title-sep">/</span>
+          <span class="context-label">Unified Inbox</span>
+        </div>
+        <div class="titlebar-actions">
+          <span class="pill soft">Synced · 2m</span>
+          <span class="pill accent-amber">3 queued</span>
+        </div>
+      </div>
+
+      <div class="app-shell">
+        <aside class="rail" aria-label="Accounts">
+          <button class="rail-item is-active" title="Unified">
+            <span class="rail-glyph multi"></span>
+          </button>
+          <button class="rail-item" title="Work" style="--acc:#2dd4bf">
+            <span class="rail-glyph">W</span>
+          </button>
+          <button class="rail-item" title="Personal" style="--acc:#a78bfa">
+            <span class="rail-glyph">P</span>
+          </button>
+          <button class="rail-item" title="Side" style="--acc:#60a5fa">
+            <span class="rail-glyph">S</span>
+          </button>
+          <div class="rail-spacer"></div>
+          <button class="rail-item compose" title="Compose">+</button>
+        </aside>
+
+        <aside class="sidebar">
+          <div class="sidebar-head">
+            <h2>Mailbox</h2>
+            <button class="ghost-btn" type="button">Visual focus</button>
+          </div>
+          <nav class="folder-nav">
+            <a class="folder is-active" href="#"><span>Unified Inbox</span><em>24</em></a>
+            <a class="folder" href="#"><span>Focused</span><em>11</em></a>
+            <a class="folder" href="#"><span>Other</span><em>13</em></a>
+            <div class="folder-group">Accounts</div>
+            <a class="folder" href="#"><i class="dot" style="--acc:#2dd4bf"></i><span>work@byte.io</span><em>8</em></a>
+            <a class="folder" href="#"><i class="dot" style="--acc:#a78bfa"></i><span>me@home.dev</span><em>9</em></a>
+            <a class="folder" href="#"><i class="dot" style="--acc:#60a5fa"></i><span>side@lab</span><em>7</em></a>
+            <div class="folder-group">Folders</div>
+            <a class="folder" href="#"><span>Sent</span></a>
+            <a class="folder" href="#"><span>Drafts</span><em>2</em></a>
+            <a class="folder" href="#"><span>Archive</span></a>
+          </nav>
+          <div class="retention-card">
+            <p class="ret-label">Retention dial</p>
+            <p class="ret-value">180 days · this device</p>
+            <div class="ret-bar"><span style="width:62%"></span></div>
+          </div>
+        </aside>
+
+        <section class="list-pane">
+          <div class="list-toolbar">
+            <div class="search">
+              <span class="search-icon" aria-hidden="true">⌕</span>
+              <input type="search" placeholder="Search local mail (FTS5)…" value="" />
+            </div>
+            <div class="focus-toggle" role="group" aria-label="Focus filter">
+              <button type="button" class="focus-btn is-on" data-set-focus="focused">Focused</button>
+              <button type="button" class="focus-btn" data-set-focus="other">Other</button>
+            </div>
+          </div>
+          <div class="remote-bridge">
+            <button type="button">Search older emails on the server</button>
+          </div>
+          <ul class="message-list focused-list">
+            <li class="msg is-selected" style="--acc:#2dd4bf" data-bucket="focused">
+              <span class="acc-stripe"></span>
+              <div class="msg-main">
+                <div class="msg-top">
+                  <strong>Maya Chen</strong>
+                  <time>10:14</time>
+                </div>
+                <p class="subject">Q3 architecture review — Graph sync notes</p>
+                <p class="snippet">Can we keep the outbox durable across process kills? Also want the travel profile…</p>
+              </div>
+            </li>
+            <li class="msg" style="--acc:#a78bfa" data-bucket="focused">
+              <span class="acc-stripe"></span>
+              <div class="msg-main">
+                <div class="msg-top">
+                  <strong>Jon Park</strong>
+                  <time>Yesterday</time>
+                </div>
+                <p class="subject">Weekend plans + keys</p>
+                <p class="snippet">Leaving the spare with Jordan. Text when you land.</p>
+              </div>
+            </li>
+            <li class="msg" style="--acc:#60a5fa" data-bucket="focused">
+              <span class="acc-stripe"></span>
+              <div class="msg-main">
+                <div class="msg-top">
+                  <strong>Priya Nair</strong>
+                  <time>Sun</time>
+                </div>
+                <p class="subject">Design partners for jewel-tone shell</p>
+                <p class="snippet">Teal anchors read clearly on indigo. Let’s avoid neon.</p>
+              </div>
+            </li>
+            <li class="msg unread" style="--acc:#2dd4bf" data-bucket="focused">
+              <span class="acc-stripe"></span>
+              <div class="msg-main">
+                <div class="msg-top">
+                  <strong>Alex Rivera</strong>
+                  <time>Sun</time>
+                </div>
+                <p class="subject">Re: isolate bus sketch</p>
+                <p class="snippet">Typed commands feel right. UI should never see raw ports.</p>
+              </div>
+            </li>
+          </ul>
+          <ul class="message-list other-list" hidden>
+            <li class="msg" style="--acc:#2dd4bf" data-bucket="other">
+              <span class="acc-stripe"></span>
+              <div class="msg-main">
+                <div class="msg-top">
+                  <strong>GitHub</strong>
+                  <time>09:02</time>
+                </div>
+                <p class="subject">[bytemail] CI passed on main</p>
+                <p class="snippet">All checks were successful for commit 8f3a…</p>
+              </div>
+            </li>
+            <li class="msg unread" style="--acc:#a78bfa" data-bucket="other">
+              <span class="acc-stripe"></span>
+              <div class="msg-main">
+                <div class="msg-top">
+                  <strong>Stripe</strong>
+                  <time>Sat</time>
+                </div>
+                <p class="subject">Your receipt from Byte Labs</p>
+                <p class="snippet">Invoice #2048 · $24.00</p>
+              </div>
+            </li>
+            <li class="msg" style="--acc:#60a5fa" data-bucket="other">
+              <span class="acc-stripe"></span>
+              <div class="msg-main">
+                <div class="msg-top">
+                  <strong>Notion Team</strong>
+                  <time>Fri</time>
+                </div>
+                <p class="subject">Weekly digest for Engineering</p>
+                <p class="snippet">12 updates across 4 pages you follow.</p>
+              </div>
+            </li>
+          </ul>
+        </section>
+
+        <section class="reading-pane">
+          <header class="read-head">
+            <div class="read-meta">
+              <span class="acc-chip" style="--acc:#2dd4bf">work@byte.io</span>
+              <h3>Q3 architecture review — Graph sync notes</h3>
+              <p class="from-line"><strong>Maya Chen</strong> &lt;maya@byte.io&gt; · to me</p>
+            </div>
+            <div class="read-actions">
+              <button type="button">Reply</button>
+              <button type="button">Archive</button>
+              <button type="button" class="danger">Delete</button>
+            </div>
+          </header>
+          <article class="read-body">
+            <p>Hey — for the mock, imagine this pane as the calm anchor even when the list is dense.</p>
+            <p>I’d keep account color as a thin stripe in the list and a soft chip here, not a loud badge on the hero.</p>
+            <blockquote>
+              Can we keep the outbox durable across process kills? Also want the travel profile capped at 30 days with Inbox+Sent only.
+            </blockquote>
+            <p>Jewel tones on a deep indigo ground should feel nocturnal studio, not neon dashboard.</p>
+            <p class="sig">— Maya</p>
+          </article>
+          <footer class="quick-reply">
+            <input type="text" placeholder="Quick reply…" />
+            <button type="button" class="send">Send</button>
+          </footer>
+        </section>
+      </div>
+    </section>
+
+    <!-- MOBILE SHELL -->
+    <section class="device device-mobile" aria-label="Mobile mockup">
+      <div class="phone">
+        <div class="phone-notch"></div>
+        <div class="phone-app">
+          <header class="m-top">
+            <button type="button" class="m-icon">☰</button>
+            <div>
+              <p class="eyebrow">Unified</p>
+              <h2>Inbox</h2>
+            </div>
+            <button type="button" class="m-compose">+</button>
+          </header>
+          <div class="m-focus">
+            <button type="button" class="focus-btn is-on" data-set-focus="focused">Focused</button>
+            <button type="button" class="focus-btn" data-set-focus="other">Other</button>
+          </div>
+          <ul class="m-list focused-list">
+            <li style="--acc:#2dd4bf">
+              <span class="acc-stripe"></span>
+              <div>
+                <div class="msg-top"><strong>Maya Chen</strong><time>10:14</time></div>
+                <p class="subject">Q3 architecture review</p>
+                <p class="snippet">Durable outbox + travel profile…</p>
+              </div>
+            </li>
+            <li style="--acc:#a78bfa">
+              <span class="acc-stripe"></span>
+              <div>
+                <div class="msg-top"><strong>Jon Park</strong><time>Yest</time></div>
+                <p class="subject">Weekend plans + keys</p>
+                <p class="snippet">Leaving the spare with Jordan…</p>
+              </div>
+            </li>
+            <li class="unread" style="--acc:#60a5fa">
+              <span class="acc-stripe"></span>
+              <div>
+                <div class="msg-top"><strong>Priya Nair</strong><time>Sun</time></div>
+                <p class="subject">Jewel-tone shell</p>
+                <p class="snippet">Teal anchors on indigo…</p>
+              </div>
+            </li>
+          </ul>
+          <ul class="m-list other-list" hidden>
+            <li style="--acc:#2dd4bf">
+              <span class="acc-stripe"></span>
+              <div>
+                <div class="msg-top"><strong>GitHub</strong><time>09:02</time></div>
+                <p class="subject">CI passed on main</p>
+                <p class="snippet">All checks successful…</p>
+              </div>
+            </li>
+            <li class="unread" style="--acc:#a78bfa">
+              <span class="acc-stripe"></span>
+              <div>
+                <div class="msg-top"><strong>Stripe</strong><time>Sat</time></div>
+                <p class="subject">Your receipt</p>
+                <p class="snippet">Invoice #2048…</p>
+              </div>
+            </li>
+          </ul>
+          <div class="m-widgets-hint">
+            <p>Android widgets (separate): list · unread counters · action matrix</p>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <section class="compare-panel">
+    <h2>Defaults &amp; settings (product)</h2>
+    <div class="compare-grid">
+      <article>
+        <h3>Calm (default)</h3>
+        <ul>
+          <li>Approved for large primary screens</li>
+          <li>More whitespace, softer radii, larger type</li>
+          <li>Reading pane emphasized; list quieter</li>
+        </ul>
+      </article>
+      <article>
+        <h3>Compact (View setting)</h3>
+        <ul>
+          <li>Tighter row height for smaller phones / travel</li>
+          <li>Denser chrome without changing theme</li>
+          <li>Per-device preference independent of theme</li>
+        </ul>
+      </article>
+    </div>
+    <p class="theme-note">Themes in Settings: Light · Solarized Light · <strong>Dark</strong> (default) · Black · Solarized Dark — plus account accent color controls.</p>
+    <div class="swatches" aria-label="Palette">
+      <span style="--c:#0b1020"><i></i>Ink</span>
+      <span style="--c:#141b33"><i></i>Panel</span>
+      <span style="--c:#2dd4bf"><i></i>Teal</span>
+      <span style="--c:#a78bfa"><i></i>Amethyst</span>
+      <span style="--c:#6366f1"><i></i>Indigo</span>
+      <span style="--c:#34d399"><i></i>Emerald</span>
+      <span style="--c:#60a5fa"><i></i>Azure</span>
+      <span style="--c:#fbbf24"><i></i>Amber</span>
+      <span style="--c:#fb7185"><i></i>Coral</span>
+    </div>
+  </section>
+
+  <script src="mockups.js"></script>
+</body>
+</html>

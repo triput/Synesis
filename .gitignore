@@ -1,0 +1,77 @@
+# Flutter/Dart/Pub related
+.dart_tool/
+.packages
+build/
+.pub-cache/
+.pub/
+.flutter-plugins
+.flutter-plugins-dependencies
+
+# Android related
+**/android/**/gradle-wrapper.jar
+**/android/.gradle
+**/android/captures/
+**/android/gradlew
+**/android/gradlew.bat
+**/android/local.properties
+**/android/**/GeneratedPluginRegistrant.java
+
+# iOS/XCode related
+**/ios/**/*.mode1v3
+**/ios/**/*.mode2v3
+**/ios/**/*.pbxuser
+**/ios/**/*.perspectivev3
+**/ios/Flutter/.last_build_id
+**/ios/Flutter/App.framework
+**/ios/Flutter/Flutter.framework
+**/ios/Flutter/Flutter.podspec
+**/ios/Flutter/Generated.xcconfig
+**/ios/Flutter/app.flx
+**/ios/Flutter/app.zip
+**/ios/Flutter/flutter_assets/
+**/ios/Flutter/flutter_export_environment.sh
+**/ios/ServiceDefinitions.json
+**/ios/Runner/GeneratedPluginRegistrant.*
+
+# Windows related
+**/windows/**/Debug/
+**/windows/**/Release/
+**/windows/**/x64/
+**/windows/**/x86/
+
+# macOS related
+**/macos/Flutter/GeneratedPluginRegistrant.swift
+**/macos/Flutter/ephemeral/
+
+# Web related
+**/web/build/
+
+# Linux related
+**/linux/flutter/ephemeral/
+
+# Coverage
+coverage/
+
+# Symbols and Obfuscation
+app.*.symbols
+app.*.map.json
+
+# IDEs and OS specific
+.idea/
+*.iml
+*.ipr
+*.iws
+.DS_Store
+.project
+ByteMail.code-workspace
+.settings/
+.github/
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+# Custom Ignore Rules
+# Ignore the docs directory (contains detailed specifications and non-public info)
+docs/
