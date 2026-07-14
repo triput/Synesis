@@ -63,9 +63,7 @@ app.*.map.json
 *.iws
 .DS_Store
 .project
-ByteMail.code-workspace
 .settings/
-.github/
 .vscode/*
 !.vscode/settings.json
 !.vscode/tasks.json
@@ -74,4 +72,4 @@ ByteMail.code-workspace
 
 # Custom Ignore Rules
 # Ignore the docs directory (contains detailed specifications and non-public info)
-docs/
+internal.docs/
