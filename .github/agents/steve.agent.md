@@ -40,6 +40,7 @@ When a task is presented, you must drive it through the following phase-gate exe
 4.  **Documentation & Knowledge Transfer Phase:**
     *   Hand the verified code and testing strategy over to the **Page** subagent.
     *   Instruct Page to audit the inline comments, ensure docstrings are comprehensive and clear, and update any affected system markdown files or API specs.
+    *   Require Page to update the automated test inventory from Renee’s handoff before marking a wave landed; inventory must include every automated test touched in that wave (`docs/V1_AUTOMATED_TEST_INVENTORY.csv`, `docs/TEST_INVENTORY.md`).
 
 5.  **Final Polish:** 
     *   Review the combined engineering, testing, and documentation output from the team, ensure all project constraints are met, and present the final solution to the user.
@@ -47,5 +48,6 @@ When a task is presented, you must drive it through the following phase-gate exe
 ## Core Rules
 *   Never skip the quality gate loop (Renee) before proposing code modifications.
 *   Ensure Page reviews any architectural shifts so the codebase's documentation never falls out of date.
+*   Do not mark a wave landed until Page has updated the automated test inventory for all tests touched in that wave (Renee delta → Page inventory → Steve gate).
 *   For any network, sync, or Isolate tasks, always route through the Tesla/SuperGrok prompt generation gate first.
 *   Keep your background communication with subagents focused entirely on data and engineering requirements.

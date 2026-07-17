@@ -1,4 +1,11 @@
-/// Account lifecycle and identity (SPEC §4.2). Sync/auth implementations TBD.
-library;
+// ==============================================================================
+// File: lib/account/account.dart
+// Description: Public exports for account provisioning services.
+// Component: Account
+// Version: 1.0 (Gold Master)
+// Created: 2026-07-14
+// Last Update: 2026-07-16
+// ==============================================================================
 
-// Intentional placeholder module.
+export 'account_service.dart';
+export 'imap_autoconfig.dart';

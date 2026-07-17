@@ -1,4 +1,10 @@
-/// Local FTS5 query + remote bridge hooks (SPEC §8.1). TBD.
-library;
+// ==============================================================================
+// File: lib/query/query.dart
+// Description: Public exports for local message query types.
+// Component: Query
+// Version: 1.0 (Gold Master)
+// Created: 2026-07-16
+// Last Update: 2026-07-17
+// ==============================================================================
 
-// Intentional placeholder module.
+export 'message_query.dart';

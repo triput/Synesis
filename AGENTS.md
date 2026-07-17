@@ -88,7 +88,7 @@ When a request is submitted to **Steve**, the workflow advances through five seq
 1.  **Discovery Phase:** Steve maps the blast radius of the change. Page is utilized if complex legacy module summarization or context mapping is required.
 2.  **Implementation Phase:** Steve passes the scope to Jules, who executes the code modifications or asset generation according to the architectural core stack guidelines.
 3.  **Quality Phase:** Jules' output is passed to Renee for vulnerability auditing, edge-case discovery, and test suite design.
-4.  **Documentation Phase:** The verified code and test plans are routed to Page to audit inline business logic clarity, apply comprehensive docstrings, verify the Gold Master headers, and update markdown/spec document logs.
+4.  **Documentation Phase:** The verified code and test plans are routed to Page to audit inline business logic clarity, apply comprehensive docstrings, verify the Gold Master headers, update markdown/spec document logs, and refresh the automated test inventory from Renee’s wave-close handoff (`docs/V1_AUTOMATED_TEST_INVENTORY.csv` via `tool/generate_test_inventory.py`).
 5.  **Delivery Phase:** Steve reviews the unified artifacts against initial criteria and returns the fully engineered solution.
 
 ### Strict Execution Constraints
@@ -101,3 +101,5 @@ When a request is submitted to **Steve**, the workflow advances through five seq
 
 *   **Defect Tracking:** Always document defects discovered in the codebase inside the `DEFECTS.md` log.
 *   **System Updates:** Always update the workspace `README.md`, internal architecture documentation, or roadmap logs when implementing major foundational features to ensure Page's records match reality.
+*   **Automated test inventory:** `docs/V1_AUTOMATED_TEST_INVENTORY.csv` is the canonical catalog of automated coverage (~306 cases / 46 files). Wave checklists and tier docs link by `test_id` / `wave` filter — see [TEST_INVENTORY.md](docs/TEST_INVENTORY.md). Manual E2E (`docs/V1_MANUAL_E2E_MATRIX.csv`, FW-5) stays separate.
+*   **Final wave system prompt (FW-6):** At V1 Final wave close, capture the team workflow into `docs/MULTI_AGENT_SYSTEM_PROMPT.md` — a portable multi-agent playbook for future projects.

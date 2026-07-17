@@ -1,12 +1,20 @@
+// ==============================================================================
+// File: lib/theme/app_theme.dart
+// Description: Material theme factory from ThemeTokens packs
+// Component: UI
+// Version: 1.0 (Gold Master)
+// Created: 2026-07-14
+// Last Update: 2026-07-14
+// ==============================================================================
+
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:bytemail/settings/app_settings.dart';
 import 'package:bytemail/theme/theme_id.dart';
 import 'package:bytemail/theme/theme_tokens.dart';
 
 abstract final class AppTheme {
-  static ThemeData materialTheme(AppSettings settings) {
-    final tokens = ThemeTokens.forId(settings.themeId);
+  static ThemeData materialThemeFor(ThemeId themeId) {
+    final tokens = ThemeTokens.forId(themeId);
     final baseText = GoogleFonts.ibmPlexSansTextTheme();
     final display = GoogleFonts.fraunces();
 
@@ -27,22 +35,24 @@ abstract final class AppTheme {
       brightness: tokens.brightness,
       colorScheme: scheme,
       scaffoldBackgroundColor: tokens.ink,
-      textTheme: baseText.apply(
-        bodyColor: tokens.text,
-        displayColor: tokens.text,
-      ).copyWith(
-        headlineMedium: display.copyWith(
-          color: tokens.text,
-          fontWeight: FontWeight.w600,
-          fontSize: 22,
-          letterSpacing: -0.4,
-        ),
-        titleLarge: display.copyWith(
-          color: tokens.text,
-          fontWeight: FontWeight.w600,
-          fontSize: 20,
-        ),
-      ),
+      textTheme: baseText
+          .apply(
+            bodyColor: tokens.text,
+            displayColor: tokens.text,
+          )
+          .copyWith(
+            headlineMedium: display.copyWith(
+              color: tokens.text,
+              fontWeight: FontWeight.w600,
+              fontSize: 22,
+              letterSpacing: -0.4,
+            ),
+            titleLarge: display.copyWith(
+              color: tokens.text,
+              fontWeight: FontWeight.w600,
+              fontSize: 20,
+            ),
+          ),
       extensions: <ThemeExtension<dynamic>>[tokens],
       dividerColor: tokens.line,
       cardColor: tokens.panel,
@@ -54,7 +64,6 @@ abstract final class AppTheme {
   }
 }
 
-/// Convenience lookup when [Theme.of] already has [ThemeTokens] attached.
 ThemeTokens tokensOf(BuildContext context) =>
     Theme.of(context).extension<ThemeTokens>() ??
     ThemeTokens.forId(ThemeId.dark);

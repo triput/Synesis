@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ByteMail — Built-in Theme Proposals</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+      background: #1a1a1e;
+      color: #e8e8ec;
+      padding: 24px;
+      line-height: 1.4;
+    }
+    h1 { font-size: 1.5rem; font-weight: 600; margin-bottom: 6px; }
+    .subtitle { color: #9a9aa4; font-size: 0.9rem; margin-bottom: 28px; max-width: 72ch; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 24px; }
+    .theme-card { border-radius: 10px; overflow: hidden; border: 1px solid #333; }
+    .theme-label {
+      padding: 12px 14px;
+      font-weight: 600;
+      font-size: 0.85rem;
+      letter-spacing: 0.02em;
+      border-bottom: 1px solid rgba(0,0,0,0.12);
+    }
+    .mockup {
+      display: grid;
+      grid-template-columns: 72px 140px 1fr;
+      height: 200px;
+      font-size: 10px;
+    }
+    .sidebar { padding: 8px 6px; display: flex; flex-direction: column; gap: 4px; }
+    .sidebar .item { padding: 4px 6px; border-radius: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .sidebar .item.active { font-weight: 600; }
+    .list { border-left: 1px solid; padding: 6px; display: flex; flex-direction: column; gap: 3px; }
+    .row { padding: 5px 6px; border-radius: 4px; display: flex; flex-direction: column; gap: 2px; }
+    .row .subj { font-weight: 600; font-size: 10px; }
+    .row .meta { font-size: 9px; opacity: 0.75; }
+    .row.unread .subj { font-weight: 700; }
+    .reading {
+      border-left: 1px solid;
+      padding: 10px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .reading .hdr { font-weight: 600; font-size: 11px; }
+    .reading .from { font-size: 9px; opacity: 0.8; }
+    .reading .body {
+      flex: 1;
+      border-radius: 4px;
+      padding: 8px;
+      font-size: 9px;
+      line-height: 1.5;
+      margin-top: 4px;
+    }
+    .reading .body em { font-style: normal; opacity: 0.7; }
+    .swatches {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      padding: 10px 14px 14px;
+      border-top: 1px solid rgba(128,128,128,0.2);
+    }
+    .swatch {
+      width: 28px; height: 28px; border-radius: 5px;
+      border: 1px solid rgba(0,0,0,0.15);
+      position: relative;
+    }
+    .swatch[title]:hover::after {
+      content: attr(title);
+      position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%);
+      background: #222; color: #fff; padding: 2px 6px; border-radius: 3px;
+      font-size: 9px; white-space: nowrap; z-index: 2; margin-bottom: 4px;
+    }
+    .note { font-size: 0.8rem; color: #9a9aa4; padding: 0 14px 12px; }
+    .accent-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; margin-right: 4px; vertical-align: middle; }
+  </style>
+</head>
+<body>
+  <h1>ByteMail — Built-in Theme Proposals</h1>
+  <p class="subtitle">
+  Proposed v2 palettes. Each mockup shows folder sidebar (panel), message list (ink), and reading pane (<strong>content</strong> — a new token so dark themes never flash white). Open this file in a browser to compare side-by-side.
+  </p>
+  <div class="grid" id="themes"></div>
+  <script>
+    const themes = [
+      {
+        name: "Light (refined default)",
+        note: "Subtle lavender neutrals — keeps current character, slightly warmer ink and deeper text.",
+        tokens: {
+          ink: "#F5F4FA", panel: "#FFFFFF", panel2: "#EDECF5", content: "#FFFFFF",
+          line: "rgba(36,34,54,0.14)", text: "#1C1A28", muted: "#635F75",
+          teal: "#0A7A6E", amethyst: "#6D3FC9", indigo: "#4556B8",
+          emerald: "#0A8558", azure: "#1668C4", amber: "#8F5500", coral: "#C23144"
+        }
+      },
+      {
+        name: "Solarized Light → Parchment",
+        note: "Rich cream & aged paper — warm browns for text, no cold blue-green body.",
+        tokens: {
+          ink: "#F0E6D2", panel: "#FAF3E4", panel2: "#E5D9C0", content: "#FFF9EE",
+          line: "rgba(59,50,38,0.18)", text: "#3B3226", muted: "#7A6E5C",
+          teal: "#1A6B62", amethyst: "#7B4FA8", indigo: "#3A5F9E",
+          emerald: "#2D7A55", azure: "#2A7FA8", amber: "#A87208", coral: "#B84A42"
+        }
+      },
+      {
+        name: "Dark (tinted content)",
+        note: "Navy chrome with reading & compose on deep slate-blue — never white.",
+        tokens: {
+          ink: "#0A0E1A", panel: "#111829", panel2: "#1A2238", content: "#0F1526",
+          line: "rgba(167,139,250,0.16)", text: "#E6EAF5", muted: "#8B94B5",
+          teal: "#3DD9C4", amethyst: "#B794F6", indigo: "#7C83F0",
+          emerald: "#4ADE98", azure: "#6CB4FA", amber: "#F5C842", coral: "#FA8294"
+        }
+      },
+      {
+        name: "Black → Obsidian (Cursor-like)",
+        note: "True charcoal base, bright jewel accents — cyan, violet, emerald, gold.",
+        tokens: {
+          ink: "#0A0A0C", panel: "#121214", panel2: "#1A1A1E", content: "#0E0E10",
+          line: "rgba(192,132,252,0.2)", text: "#E8E8EC", muted: "#888890",
+          teal: "#22D3EE", amethyst: "#C084FC", indigo: "#A78BFA",
+          emerald: "#4ADE80", azure: "#38BDF8", amber: "#FACC15", coral: "#FB7185"
+        }
+      },
+      {
+        name: "Solarized Dark → Deep Teal",
+        note: "Rich dark teal throughout — reading pane stays in the teal family.",
+        tokens: {
+          ink: "#001E26", panel: "#00303C", panel2: "#004452", content: "#002A34",
+          line: "rgba(107,144,152,0.35)", text: "#EDE4D4", muted: "#6B9098",
+          teal: "#2DD4BF", amethyst: "#BD93F9", indigo: "#6C9FD4",
+          emerald: "#5FD992", azure: "#54C8F0", amber: "#E9B949", coral: "#F07068"
+        }
+      }
+    ];
+
+    const sampleRows = [
+      { unread: true, subj: "Q3 roadmap review", meta: "Alex Chen · 10:42 AM", accent: "teal" },
+      { unread: false, subj: "Re: Invoice #4421", meta: "Billing · Yesterday", accent: "amber" },
+      { unread: false, subj: "Your flight confirmation", meta: "Travel · Mon", accent: "azure" },
+    ];
+
+    const el = document.getElementById("themes");
+    themes.forEach(t => {
+      const tok = t.tokens;
+      const card = document.createElement("div");
+      card.className = "theme-card";
+      card.innerHTML = `
+        <div class="theme-label" style="background:${tok.panel}; color:${tok.text}; border-color:${tok.line}">
+          ${t.name}
+        </div>
+        <div class="mockup" style="background:${tok.ink}">
+          <div class="sidebar" style="background:${tok.panel}; color:${tok.muted}; border-right:1px solid ${tok.line}">
+            <div class="item active" style="background:${tok.panel2}; color:${tok.text}">Inbox</div>
+            <div class="item">Sent</div>
+            <div class="item">Drafts</div>
+            <div class="item">Archive</div>
+          </div>
+          <div class="list" style="border-color:${tok.line}; color:${tok.text}">
+            ${sampleRows.map(r => `
+              <div class="row ${r.unread ? 'unread' : ''}" style="background:${tok.panel}88">
+                <span class="subj"><span class="accent-dot" style="background:${tok[r.accent]}"></span>${r.subj}</span>
+                <span class="meta" style="color:${tok.muted}">${r.meta}</span>
+              </div>`).join("")}
+          </div>
+          <div class="reading" style="background:${tok.content}; color:${tok.text}; border-color:${tok.line}">
+            <div class="hdr">Q3 roadmap review</div>
+            <div class="from" style="color:${tok.muted}">Alex Chen &lt;alex@example.com&gt;</div>
+            <div class="body" style="background:${tok.panel2}55; color:${tok.text}">
+              Hi team — attached is the draft for next quarter. <em>Reading pane uses the content surface, not white.</em>
+            </div>
+          </div>
+        </div>
+        <p class="note">${t.note}</p>
+        <div class="swatches" style="background:${tok.panel}">
+          ${["ink","panel","panel2","content","text","muted","teal","amethyst","indigo","emerald","azure","amber","coral"]
+            .map(k => `<div class="swatch" style="background:${tok[k]}" title="${k} ${tok[k]}"></div>`).join("")}
+        </div>
+      `;
+      el.appendChild(card);
+    });
+  </script>
+</body>
+</html>

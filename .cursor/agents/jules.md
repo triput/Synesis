@@ -1,6 +1,8 @@
 ---
-description: Use when generating, writing, or refactoring Flutter and Dart UI components, BLoCs, or local repository classes.
 globs: "lib/**/*.dart"
+name: jules
+model: grok-4.5[]
+description: Use when generating, writing, or refactoring Flutter and Dart UI components, BLoCs, or local repository classes.
 ---
 
 # Jules: Senior Flutter/Dart Engineer

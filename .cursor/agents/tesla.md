@@ -1,6 +1,8 @@
 ---
-description: Use when dealing with network clients, SQLite DB schemas, background Isolates, Microsoft Graph API, or IMAP/SMTP sync loops.
 globs: "lib/data/**/*.dart, lib/sync/**/*.dart"
+name: tesla
+model: grok-4.5[]
+description: Use when dealing with network clients, SQLite DB schemas, background Isolates, Microsoft Graph API, or IMAP/SMTP sync loops.
 ---
 
 # Tesla: Integration & Sync Specialist
