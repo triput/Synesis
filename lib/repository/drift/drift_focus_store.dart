@@ -2,9 +2,9 @@
 // File: lib/repository/drift/drift_focus_store.dart
 // Description: Drift persistence for focus rules and bucket reclassification.
 // Component: Repository / Data
-// Version: 1.0 (Gold Master)
+// Version: 1.1 (Gold Master)
 // Created: 2026-07-17
-// Last Update: 2026-07-17
+// Last Update: 2026-07-18
 // ==============================================================================
 
 import 'package:bytemail/domain/models.dart';
@@ -55,6 +55,13 @@ class DriftFocusStore {
             bucket: rule.bucket.name,
           ),
         );
+    _notify();
+  }
+
+  Future<void> deleteFocusRule(String id) async {
+    await (_database.delete(
+      _database.focusRules,
+    )..where((FocusRules table) => table.id.equals(id))).go();
     _notify();
   }
 

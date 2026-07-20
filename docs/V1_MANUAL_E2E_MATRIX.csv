@@ -1,0 +1,31 @@
+e2e_id,area,precondition,steps,expected_result,account_type,platform,status,pass_fail,notes
+ME-BRAND-001,Branding,Cold install or clean build,Launch app on Windows,Taskbar/window icon is Data Envelope v2 (not Flutter default); title bar shows gradient bytemail wordmark,Both,Windows,pending,,
+ME-BRAND-002,Branding,Cold install on Android device/AVD,Kill app; cold start,Adaptive launcher icon is Data Envelope v2; splash is obsidian + centered icon; dismisses on first frame (no artificial delay),Both,Android,pending,,
+ME-BRAND-003,Branding,Account with unread mail on Android,Receive new-mail notification while app backgrounded,Notification uses monochrome ic_stat_bytemail icon,Both,Android,pending,,
+ME-FILT-001,Filters,Inbox with mixed read/unread,Tap Unread chip in filter bar,List shows unread only; Clear removes filter; saved presets unchanged,Both,Both,pending,,Ephemeral filter
+ME-FILT-002,Filters,Messages with varied senders,More → enter sender substring → Apply,List narrows to matching From; chip bar shows active state,Both,Both,pending,,
+ME-FILT-003,Filters,Messages with To/Cc visible,More → Recipient field → Apply,List narrows to matching To/Cc addresses/names,Both,Both,pending,,Phase B recipient predicate
+ME-FILT-004,Filters,Active ephemeral filter (e.g. Unread + sender),Saved → Save current → name Work unread,Saved preset appears in list; re-open applies same predicates,Both,Both,pending,,
+ME-FILT-005,Filters,Saved preset exists,Saved → tap preset name,Active filter replaces with saved snapshot (not merge),Both,Both,pending,,
+ME-FILT-006,Filters,Saved preset exists,Saved → rename preset,New name persists after sheet close and app restart,Both,Both,pending,,
+ME-FILT-007,Filters,Saved preset exists,Saved → delete preset,Preset removed from list; Clear still only clears ephemeral filter,Both,Both,pending,,Clear ≠ delete saved
+ME-FILT-008,Filters,Focus enabled + user filter active,Set Focused chip + Unread filter,Both apply (Focus before user filter); Other mail hidden by Focus then unread narrows,Both,Both,pending,,
+ME-FILT-009,Filters,Date-grouped inbox,Apply date range in More sheet,Messages outside range hidden; Today/Yesterday headers still group remaining rows,Both,Both,pending,,Date buckets = headers not filter mode
+ME-ACCT-001,Accounts,BYTEMAIL_GRAPH_CLIENT_ID configured,Add Microsoft account via browser OAuth,Account appears; folders sync to local DB,Graph,Both,pending operator mail restore,,
+ME-ACCT-002,Accounts,BYTEMAIL_GOOGLE_CLIENT_ID configured,Add Google account via OAuth,Account appears; IMAP/SMTP sync via XOAUTH2,Google,Both,pending operator mail restore,,
+ME-ACCT-003,Accounts,Test IMAP credentials,Add IMAP/Other with autoconfig or manual hosts,Account syncs inbox; credentials in secure storage,IMAP,Both,pending operator mail restore,,
+ME-ACCT-004,Accounts,Account with local cache,Manage accounts → Remove with WIPE gate,Local cache + tokens cleared; provider mailbox unchanged,Both,Both,pending operator mail restore,,
+ME-SYNC-001,Sync,Synced account,Airplane mode → open inbox,Previously synced mail readable offline,Both,Both,pending operator mail restore,,
+ME-SYNC-002,Sync,Failed job in queue,Open sync status sheet → Retry,Job re-queues; error clears or surfaces actionable message,Both,Both,pending operator mail restore,,
+ME-MAIL-001,Mailbox,Inbox with test messages,Mark read/unread; star; archive; delete to trash,Local list updates; provider reflects after sync,Both,Both,pending operator mail restore,,
+ME-MAIL-002,Mailbox,Message in trash,Recover to inbox,Message leaves trash view; appears in inbox,Both,Both,pending operator mail restore,,
+ME-COMP-001,Compose,Synced send-capable account,Compose → attach file → send,Outbox queues if offline; sends when online; appears in Sent,Both,Both,pending operator mail restore,W4 checklist deferred
+ME-COMP-002,Compose,Message selected,Reply with signature picker,Compose opens with quote + chosen signature HTML,Both,Both,pending operator mail restore,W4 checklist deferred
+ME-SEARCH-001,Search,Local FTS indexed mail,Open search → type distinctive token,Matches from SQLite without network,Both,Both,pending,,
+ME-SEARCH-002,Search,Provider supports server search,Search → Search older on server,Remote hits merge into list when job completes,Both,Both,pending operator mail restore,,
+ME-FOCUS-001,Focus,Focus enabled for account,Toggle Focused vs Other,Visible set changes; overrides respected,Both,Both,pending,,
+ME-SET-001,Settings,Any,Appearance → change theme + density,UI restyles; persists after restart,Both,Both,pending,,
+ME-SET-002,Settings,Opt-in encryption off,Enable DB encryption → restart,DB opens encrypted; warning shown before enable,Both,Windows,pending,,W7
+ME-WIN-001,Desktop,Windows build,Press ? for shortcut help; Ctrl+F in reading pane,Help sheet opens; find bar navigates matches,N/A,Windows,pending,,
+ME-AND-001,Android,AVD or device,Swipe right archive / left delete on list item,Configured action runs; trash swipe disabled in trash folder,N/A,Android,pending,,
+ME-AND-002,Android,Widget configured,Sync new mail → check home widget,Widget snapshot updates without foregrounding Flutter,N/A,Android,pending operator mail restore,,

@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="branding/branding_logo_lockup_google.png" alt="bytemail" width="360" />
+</p>
+
 # ByteMail V1 Roadmap
 
 | Field | Value |
@@ -7,7 +11,7 @@
 | Exit checklist | [V1_EXIT_CHECKLIST.md](V1_EXIT_CHECKLIST.md) |
 | Product | ByteMail |
 | Platforms (v1) | Windows, Android |
-| Last updated | 2026-07-17 (W5 landed; W6 unlocked; `.eml` ProgId deferred packaging) |
+| Last updated | 2026-07-18 (W4/W7 operator validation complete; Final wave Phase F landed) |
 
 This roadmap tracks implementation milestones. Requirements live in the SPEC; this file tracks status and exit criteria.
 
@@ -109,7 +113,7 @@ Full item catalog: [TIER_D_PLAN.md](TIER_D_PLAN.md).
 
 ## V1 integration — single delivery ([review](V1_TIER_INTEGRATION.md))
 
-**Locked wave order (2026-07-16):** ~~W0~~ **W0 landed** → ~~W1~~ **W1 landed** → ~~W2~~ **W2 landed** → ~~W3~~ **W3 landed** → ~~W5~~ **W5 landed** → W6 → **W4 (last)** → W7
+**Locked wave order (2026-07-16):** ~~W0~~ **W0 landed** → ~~W1~~ **W1 landed** → ~~W2~~ **W2 landed** → ~~W3~~ **W3 landed** → ~~W5~~ **W5 landed** → ~~W6~~ **W6 landed** → ~~W4~~ **W4 landed** → ~~W7~~ **W7 landed**
 
 | Wave | Name | Status | Absorbs |
 | --- | --- | --- | --- |
@@ -118,9 +122,9 @@ Full item catalog: [TIER_D_PLAN.md](TIER_D_PLAN.md).
 | **W2** | List & navigation UX | **Landed** (2026-07-17) | TB-1, TB-2, TB-4, TB-5, TB-7, TB-11, TB-14, **[UI sweep W2](UI_ENHANCEMENT_SWEEP.md)** |
 | **W3** | Sync, storage & privacy | **Landed** (2026-07-17) | TC-1, TC-2, TB-10, TC-5/12, TC-6 phase 1 |
 | **W5** | Desktop shell | **Landed** (2026-07-17) | TB-9, TC-9 (detached window), **[UI sweep W5](UI_ENHANCEMENT_SWEEP.md)**, [W5_WINDOWS_CHECKLIST.md](W5_WINDOWS_CHECKLIST.md) |
-| **W6** | Notifications | **Planned** (unlocked) | TA-6, TC-7 |
-| **W4** | Compose system (**last feature wave**) | Planned | TA-2, TA-3, TB-6, TB-12, TB-13, TC-10, **UI-P19/P20** (outbound font, sig images) |
-| **W7** | Hardening & optional | Planned | TC-3, TC-4, TC-11, QA matrix, **[UI sweep W7](UI_ENHANCEMENT_SWEEP.md)** |
+| **W6** | Notifications | **Landed** (2026-07-17) | TA-6, TC-7, [W6_NOTIFICATIONS_CHECKLIST.md](W6_NOTIFICATIONS_CHECKLIST.md) passed (operator) |
+| **W4** | Compose system (**last feature wave**) | **Landed** (2026-07-18) | TA-2, TA-3, TB-6, TB-12, TB-13, TC-10, **UI-P19/P20** (outbound font, sig images) |
+| **W7** | Hardening & optional | **Landed** (2026-07-18) | TC-3, TC-4, TC-11, QA matrix, **[UI sweep W7](UI_ENHANCEMENT_SWEEP.md)** |
 
 **W0 landed (2026-07-16):**
 
@@ -175,7 +179,21 @@ Full item catalog: [TIER_D_PLAN.md](TIER_D_PLAN.md).
 - **Detached message window** — `WindowsDetachedMessageWindowController` + overflow **Open in new window** (V1 single-window retarget)
 - **Manual checklist** — [W5_WINDOWS_CHECKLIST.md](W5_WINDOWS_CHECKLIST.md) passed (operator); Windows `.eml` Explorer ProgId **deferred** (packaging follow-up)
 
-**Critical path:** **W0 landed** → **W1 landed** → **W2 landed** → **W3 landed** → **W5 landed** → **W6** → **W4** → W7. Live Graph OAuth dogfood is an operator checkpoint (Entra registration), not a W6 code blocker.  
+**W6 landed (2026-07-17):**
+
+- **`NotificationService`** — global off, per-account mute, quiet hours, starred-only, dedupe, aggregate toast; foreground suppress
+- **Settings** — `AppSettingsCubit` notification prefs + title-bar **Notifications** sheet (`notifications_sheet.dart`)
+- **Platform adapters** — `AndroidNotificationAdapter` (channel + permission); `WindowsNotificationAdapter` (native toast)
+- **Foreground tracking** — `AppForegroundTracker` (Android); `DesktopController.isWindowFocused` (Windows)
+- **`SyncEngine.onNewUnread`** — incremental inbox only; bootstrap and remote search do not notify
+- **Tests** — `test/notification_service_test.dart`; settings group in `app_settings_cubit_test.dart`
+- **Manual checklist** — [W6_NOTIFICATIONS_CHECKLIST.md](W6_NOTIFICATIONS_CHECKLIST.md) passed (operator)
+
+**W4 landed (2026-07-18):** Compose system — **code landed**; operator inspection/validation **complete**; [W4_COMPOSE_CHECKLIST.md](W4_COMPOSE_CHECKLIST.md) checkbox tick-off pending (operator-owned).
+
+**W7 landed (2026-07-18):** Hardening & optional — TC-4 Focus override UI, DEF-034/UI-P27 auto-mark, UI-P16/P17/P18 themes/export/fonts, density + empty states, TC-11 widget depth (timeboxed). **TC-3 encryption spike: shipped** (SQLite3MultipleCiphers via `sqlite3` hooks, opt-in, default unchanged) — see [W7_SQLCIPHER_SPIKE.md](W7_SQLCIPHER_SPIKE.md). Operator validation complete; [W7_HARDENING_CHECKLIST.md](W7_HARDENING_CHECKLIST.md) checkbox tick-off pending.
+
+**Critical path:** **W0 landed** → **W1 landed** → **W2 landed** → **W3 landed** → **W5 landed** → **W6 landed** → **W4 landed** → **W7 landed** → **Final wave** (Phase G + V1 exit open). Live Graph OAuth dogfood is an operator checkpoint (Entra registration), not a wave blocker.  
 **Locked decisions:** [V1_TIER_INTEGRATION.md §12](V1_TIER_INTEGRATION.md#12-locked-decisions-2026-07-16).
 
 ## UI enhancement sweep ([plan](UI_ENHANCEMENT_SWEEP.md))
@@ -190,14 +208,14 @@ Visual polish & mailbox interaction backlog — **active; add items in [§7 Back
 | **Pri-2** | Theme token polish (5 packs + `content`) | **Landed** (2026-07-16) | — | [UI-L8](UI_ENHANCEMENT_SWEEP.md), [DEF-019](DEFECTS.md) |
 | **Pri-2** | [DEF-001](DEFECTS.md) shortcuts | **Closed** (W5, 2026-07-17) | **W5** |
 | **Pri-2** | [DEF-007](DEFECTS.md) read-state sync flicker | Open | W2/W3 |
-| **Pri-3** | Density/spacing pass | Open | **W7** |
-| **Pri-3** | Empty states, loading skeletons, widget themes | Open | **W7** |
-| **Pri-2** | Custom themes (multiple, fork built-ins) | Planned | **W7** | [UI-P16](UI_ENHANCEMENT_SWEEP.md) |
-| **Pri-2** | Export / import settings (no secrets) | Planned | **W7** | [UI-P17](UI_ENHANCEMENT_SWEEP.md) |
-| **Pri-2** | App-wide UI font (family, size, color) | Planned | **W7** | [UI-P18](UI_ENHANCEMENT_SWEEP.md) |
-| **Pri-2** | Outbound message font | Planned | **W4** | [UI-P19](UI_ENHANCEMENT_SWEEP.md) |
-| **Pri-2** | Signature images (HTML) | Planned | **W4** | [UI-P20](UI_ENHANCEMENT_SWEEP.md) |
-| **Pri-2** | [DEF-034](DEFECTS.md) / UI-P27 auto-mark read (5s default ON) | Open | **W7** (V1 scope; **not W5 blocker**) |
+| **Pri-3** | Density/spacing pass | **Landed** (W7) | **W7** |
+| **Pri-3** | Empty states, loading skeletons, widget themes | **Partial** (W7) — empty states + widget theme tokens; skeletons deferred | **W7** |
+| **Pri-2** | Custom themes (multiple, fork built-ins) | **Landed** (W7) | **W7** | [UI-P16](UI_ENHANCEMENT_SWEEP.md) |
+| **Pri-2** | Export / import settings (no secrets) | **Landed** (W7) | **W7** | [UI-P17](UI_ENHANCEMENT_SWEEP.md) |
+| **Pri-2** | App-wide UI font (family, size, color) | **Landed** (W7) | **W7** | [UI-P18](UI_ENHANCEMENT_SWEEP.md) |
+| **Pri-2** | Outbound message font | **Partial** (W4) — default HTML font stack on send; user family/size/color prefs not shipped | **W4** | [UI-P19](UI_ENHANCEMENT_SWEEP.md) |
+| **Pri-2** | Signature images (HTML) | **Landed** (W4) | **W4** | [UI-P20](UI_ENHANCEMENT_SWEEP.md) |
+| **Pri-2** | [DEF-034](DEFECTS.md) / UI-P27 auto-mark read (5s default ON) | **Closed** (W7) | **W7** (V1 scope; **not W5 blocker**) |
 
 Full inventory + backlog template: **[UI_ENHANCEMENT_SWEEP.md](UI_ENHANCEMENT_SWEEP.md)**.
 
@@ -209,11 +227,11 @@ Competitive gap closure per [COMPETITIVE_ANALYSIS.md](COMPETITIVE_ANALYSIS.md). 
 | --- | --- | --- | --- | --- |
 | **TA-0** | Foundations | **Landed** (2026-07-16) | — | Schema v5, `MailProvider` mutations, MIME isolate bootstrap |
 | **TA-1** | Core message actions | **Landed** (2026-07-17, W1) | TA-0 | Reply, forward, delete, archive, move, star, trash recover + auto-purge wired |
-| **TA-2** | Compose envelope | Planned (W4) | TA-0, TA-1 | CC/BCC, quote, signatures, quick reply |
-| **TA-3** | Attachments | Planned (W4) | TA-0, TA-2 | View, download, compose attach, MIME send |
+| **TA-2** | Compose envelope | **Landed** (W4, 2026-07-18) | TA-0, TA-1 | CC/BCC, quote, signatures, quick reply |
+| **TA-3** | Attachments | **Landed** (W4, 2026-07-18) | TA-0, TA-2 | View, download, compose attach, MIME send |
 | **TA-4** | Junk mail | **Landed** (2026-07-17, W1) | TA-1 | Report junk / not junk via folder move |
 | **TA-5** | Browser OAuth | **Landed in code** (2026-07-16) | TA-0 | Entra + Google PKCE; live Graph E2E = operator Entra registration |
-| **TA-6** | Notifications | Planned (W6) | TA-0 | Android + Windows new-mail alerts |
+| **TA-6** | Notifications | **Landed** (W6, 2026-07-17) | TA-0 | Android + Windows new-mail alerts; [W6_NOTIFICATIONS_CHECKLIST.md](W6_NOTIFICATIONS_CHECKLIST.md) passed |
 
 **Implementation order:** [V1 waves W0–W7](V1_TIER_INTEGRATION.md) — not isolated tier phases.
 
@@ -221,7 +239,7 @@ Competitive gap closure per [COMPETITIVE_ANALYSIS.md](COMPETITIVE_ANALYSIS.md). 
 
 ## Tier B — competitive parity ([plan](TIER_B_PLAN.md))
 
-**Planning complete** — **TB-0 MessageQuery foundations landed in W0** (2026-07-16); **TB-1, TB-2, TB-4, TB-5, TB-7, TB-11, TB-14 landed in W2** (2026-07-17); **TB-10 push landed in W3** (2026-07-17); **TB-9 layout landed in W5** (2026-07-17). Remaining Tier B phases scheduled in W4.
+**Planning complete** — **TB-0 MessageQuery foundations landed in W0** (2026-07-16); **TB-1, TB-2, TB-4, TB-5, TB-7, TB-11, TB-14 landed in W2** (2026-07-17); **TB-10 push landed in W3** (2026-07-17); **TB-9 layout landed in W5** (2026-07-17); **TB-6, TB-12, TB-13 landed in W4** (2026-07-18).
 
 | Phase | Milestone | Status | Depends on | Exit highlight |
 | --- | --- | --- | --- | --- |
@@ -230,33 +248,33 @@ Competitive gap closure per [COMPETITIVE_ANALYSIS.md](COMPETITIVE_ANALYSIS.md). 
 | **TB-2** | Filters + date grouping | **Landed** (2026-07-17, W2) | TB-0 | `MessageViewFilter` + Today/Yesterday sections |
 | **TB-4** | Snooze | **Landed** (2026-07-17, W2) | TB-0 | Local-only `snoozed_until`; query exclusion |
 | **TB-5** | Pin UI | **Landed** (2026-07-17, W2) | TB-0 | Local pin; retention-exempt; virtual view |
-| **TB-6** | Drafts | Planned (W4) | TA-2 | Autosave + Drafts folder sync |
+| **TB-6** | Drafts | **Landed** (W4, 2026-07-18) | TA-2 | Local autosave (outbox `draft`); server Drafts sync stretch |
 | **TB-7** | Mobile gestures | **Landed** (2026-07-17, W2) | TA-1 | Swipe right=archive / left=delete; pull-to-refresh; AVD checklist |
 | **TB-9** | Layout + Visual Focus | **Landed** (2026-07-17, W5) | — | Right/top/bottom + Visual Focus; checklist passed; draggable split deferred; `.eml` ProgId deferred (packaging) |
 | **TB-10** | Push sync | **Landed** (2026-07-17, W3) | — | IMAP IDLE + Graph delta; network policy |
 | **TB-11** | Starred view | **Landed** (2026-07-17, W2) | TB-0, TA-1 | Virtual starred folder |
-| **TB-12** | Rich text compose | Planned (W4) | TA-2 | HTML compose + send |
-| **TB-13** | Templates | Planned (W4) | TA-2 | Canned responses |
+| **TB-12** | Rich text compose | **Landed** (W4, 2026-07-18) | TA-2 | HTML compose + send |
+| **TB-13** | Templates | **Landed** (W4, 2026-07-18) | TA-2 | Canned responses |
 | **TB-14** | List polish | **Landed** (2026-07-17, W2) | — | Read dimming, pull-to-refresh, selection highlight |
 
 ## Tier C — differentiation ([plan](TIER_C_PLAN.md))
 
-**Planning complete** — **TC-8 autoconfig landed in W0** (2026-07-16); **TC-1, TC-2, TC-5, TC-6 phase 1, TC-12 landed in W3** (2026-07-17); **TC-9 desktop power pack landed in W5** (2026-07-17). Remaining Tier C phases scheduled in W4, W6–W7.
+**Planning complete** — **TC-8 autoconfig landed in W0** (2026-07-16); **TC-1, TC-2, TC-5, TC-6 phase 1, TC-12 landed in W3** (2026-07-17); **TC-9 desktop power pack landed in W5** (2026-07-17); **TC-7 landed in W6** (2026-07-17); **TC-3, TC-4, TC-11 landed in W7** (2026-07-18); **TC-10 landed in W4** (2026-07-18).
 
 | Phase | Milestone | Status | Exit highlight |
 | --- | --- | --- | --- |
 | **TC-0** | Settings + profile schema | **Partial (W0)** | `sync_profiles`, account overrides — schema v5 tables |
 | **TC-1** | Sync profiles + per-account retention | **Landed** (2026-07-17, W3) | Full SPEC §8.2 — profiles, folder scope, body policy, attachment cap |
 | **TC-2** | Network-aware sync | **Landed** (2026-07-17, W3) | WiFi vs mobile poll/IDLE; `pushOnCellular` default off |
-| **TC-3** | DB encryption | Planned (W7) | SQLCipher opt-in |
-| **TC-4** | Focus override UI | Planned (W7) | Domain/sender rules editor |
+| **TC-3** | DB encryption | **Landed** (2026-07-18, W7 spike → ship) | SQLite3MultipleCiphers opt-in via `sqlite3` hooks (no `sqlcipher_flutter_libs` needed); passphrase in OS keystore, in-place migration. See [W7_SQLCIPHER_SPIKE.md](W7_SQLCIPHER_SPIKE.md) |
+| **TC-4** | Focus override UI | **Landed** (W7, 2026-07-18) | Domain/sender rules editor |
 | **TC-5** | Sync transparency | **Landed** (2026-07-17, W3) | Job queue viewer + account health (merged TC-12) |
 | **TC-6** | HTML privacy | **Phase 1 landed** (2026-07-17, W3) | Block remote images; per-message load; phase 2 post-v1 |
-| **TC-7** | Notification granularity | Planned (W6) | Per-account mute, quiet hours |
+| **TC-7** | Notification granularity | **Landed** (W6, 2026-07-17) | Per-account mute, quiet hours; checklist passed |
 | **TC-8** | IMAP autoconfig | **Landed (W0)** | ISPDB / domain well-known discovery |
 | **TC-9** | Desktop power pack | **Landed** (2026-07-17, W5) | Keymap/tray/find/print/EML/detach UI landed; checklist passed; `.eml` ProgId deferred (packaging) |
-| **TC-10** | Schedule send | Planned (W4) | Outbox `send_after` — column in schema v5; UI in W4 |
-| **TC-11** | Widget depth | Planned (W7) | Folder-scoped + theme variants |
+| **TC-10** | Schedule send | **Landed** (W4, 2026-07-18) | Outbox `send_after` gated in SyncEngine; schedule UI in compose |
+| **TC-11** | Widget depth | **Partial** (W7 timeboxed) | Theme tokens + Focused/Other unread split; folder-scoped config deferred |
 | **TC-12** | Account health panel | **Landed** (2026-07-17, W3) | Merged into sync status sheet |
 
 ## Tier D — horizon ([plan](TIER_D_PLAN.md))
@@ -274,59 +292,76 @@ Competitive gap closure per [COMPETITIVE_ANALYSIS.md](COMPETITIVE_ANALYSIS.md). 
 
 ## Planned backlog (post-foundation)
 
-Feature work captured for scheduling — **not implemented**. Requirements baseline in [SPEC.md](SPEC.md); this table tracks intent and likely scope only.
+Feature work captured for scheduling. Requirements baseline in [SPEC.md](SPEC.md); this table tracks intent and status (including items landed in later waves).
 
 | Pri | Item | Status / notes |
 | --- | --- | --- |
 | **Pri-1** | **Edit and remove accounts** | **Landed (2026-07-14).** `ManageAccountsSheet` in Appearance settings; `EditAccountSheet` (label/accent/re-auth); `RemoveAccountDialog` with typed `WIPE {accountId}` gate. `AccountService` orchestrates metadata updates, credential rotation, and secure wipe (`DriftMailRepository.wipeAccount` + `SecureCredentialStore.deleteCredentials`). Post-remove: `MailboxCubit.onAccountRemoved`, `AppSettingsCubit.removeAccountFocus`, `WidgetSnapshotService.refreshAll()`. |
-| **Pri-1** | **Cross-cutting message filter system** | **Not started.** User-defined view filters on the current folder/unified list — distinct from optional Focused/Other ([SPEC §8.3](SPEC.md#83-dual-layer-focus-mode-optional)) and from ephemeral FTS search ([SPEC §8.1](SPEC.md#81-tiered-search)). **Predicates:** read / unread; sender; recipient (to/cc); date range; keywords. **Nice-to-have / views:** Outlook-style date buckets as list groupings *or* view filters — Today, Yesterday, This week, Last week, This month, Last month, Older. **Likely architecture:** extend `MailboxState` + `MailboxCubit` with a composable `MessageFilter` (or equivalent) passed to `MailRepository.listMessages`; structured predicates (flags, addresses, `whenEpochMs` bounds) as Drift/SQL `WHERE` clauses; keyword leg may delegate to existing FTS5 path when free-text dominates, otherwise SQL `LIKE`/indexed columns for simple subject/from matches. Date buckets: implement as **UI section headers** over date-sorted rows (group-by in Cubit) *or* as **filter predicates** (mutually exclusive modes — product to pick default). Composes with existing `focusFilter` when Focus is enabled (both apply). Read/unread *filter* is separate from mark-read/unread actions (UI enhancement sweep). No SPEC section yet — add when scheduled. |
+| **Pri-1** | **Cross-cutting message filter system** | **Landed (code, Final wave Phase B, 2026-07-18).** Extends W2 `MessageViewFilter` / `MessageQuery` — `recipientContains`, named **saved filters** (device-local prefs, soft cap 20), Saved sheet (apply / save / rename / delete). Date buckets remain **UI section headers** only. Distinct from Focus ([SPEC §8.3](SPEC.md#83-dual-layer-focus-mode-optional)) and FTS search ([SPEC §8.1](SPEC.md#81-tiered-search)); see [SPEC §8.6](SPEC.md#86-message-list-filters-view-predicates). |
 | **Pri-3** | **Header details view** | **Landed.** Reading-pane **Headers** action opens a bottom sheet with parsed fields (From, To/Cc when present in raw block, Subject, Date, Message-ID, account/folder) plus a scrollable monospace raw header block. Local-first from `messages.raw_headers`; on-demand provider fetch via `MailProvider.fetchHeaders` (Graph `internetMessageHeaders`, IMAP `BODY.PEEK[HEADER]`) with optional SQLite cache (schema v4). |
 | **Pri-2** | **Per-account retention settings** | **Landed (2026-07-17, W3).** Per-account retention override + sync profile assignment in `EditAccountSheet`; device-wide retention dial updates default sync profile and enqueues cleanup. See [SPEC §8.2](SPEC.md#82-variable-retention-dials--sync-profiles). |
 | **Pri-2** | **Junk mail filter** | **Landed (2026-07-17, W1 / TA-4).** Report junk / not junk via role-folder move; context-aware reading-pane when viewing junk. Distinct from optional Focus heuristics and from the cross-cutting message filter system (junk is folder/provider semantics). Optional client rules layer still deferred. |
-| **Pri-1** | **Attachments (receive, view, compose)** | **Not started.** `hasAttachments` flag syncs today; no attachment metadata table, MIME fetch, storage, or UI. [SPEC §5.3](SPEC.md#53-body-and-attachment-strategy): fetch on demand; respect sync-profile max size; offline compose may queue local blobs. **Likely scope:** `attachments` table (messageId, partId, filename, mime, size, localPath, fetchedAt); `MailProvider.fetchAttachments` / `fetchAttachmentPart` (Graph `$value` / IMAP `BODY.PEEK[]`); isolate MIME parse/serialize; reading-pane attachment strip + preview/download; compose attach picker → outbox blob refs; retention prune with bodies. **Sequencing:** after stable body-on-open path (landed) and before heavy compose polish. |
-| **Pri-2** | **Per-account signatures** | **Not started.** Multiple named signatures per account; per-account default (or none). Apply on compose/reply/quick-reply; user can override per message. **Likely scope:** `account_signatures` table or JSON in account settings; rich-text or plain + optional inline images deferred; settings UI in account edit sheet; compose signature picker + “none” option. Distinct from [SPEC §7.6](SPEC.md#76-windows-desktop-power-features) “templates / canned responses” (full message bodies) — signatures are trailing blocks appended to outgoing mail. |
+| **Pri-1** | **Attachments (receive, view, compose)** | **Landed (W4, 2026-07-18).** `attachments` / `attachment_blobs` tables; provider list/fetch; reading-pane strip + download; compose paperclip → staged blobs → MIME send; sync-profile MB cap gate. [SPEC §5.3](SPEC.md#53-body-and-attachment-strategy). Operator validation complete; [W4_COMPOSE_CHECKLIST.md](W4_COMPOSE_CHECKLIST.md) checkbox tick-off pending. |
+| **Pri-2** | **Per-account signatures** | **Landed (W4, 2026-07-18).** Named HTML/plain signatures per account + default/none; compose picker; signature image assets (CID→data-URI on send, [UI-P20](UI_ENHANCEMENT_SWEEP.md)). Operator validation complete; checkbox tick-off pending. |
 | **Pri-2** | **Desktop reading-pane layout (Outlook-style)** | **Landed (2026-07-17, W5).** `MailSplitLayout` + persisted `readingPanePosition` (right/top/bottom). Visual Focus collapse landed. Ctrl+F find, print/save EML, detached window wired. [W5_WINDOWS_CHECKLIST.md](W5_WINDOWS_CHECKLIST.md) passed (operator). Draggable split divider deferred (TB-9.1). Windows `.eml` Explorer ProgId deferred (packaging). |
-| **Pri-3** | **Optional encryption at rest (desktop DB)** | **Not started / decision doc.** Locked: opt-in ([§11 open question #4](SPEC.md#111-assumptions-baked-into-this-draft)). **In scope for v1.x:** SQLCipher (or Drift + `sqlcipher_flutter_libs`) wrapping the mail SQLite file; passphrase or OS keychain-derived key (Windows DPAPI). **Explicitly post-v1:** PGP/S/MIME message encryption ([Post-v1](#post-v1-not-scheduled)). TLS for IMAP/SMTP/Graph is baseline, not this item. |
-| **Pri-3** | **Android emulator & device QA matrix** | **Not started.** Establish repeatable manual + CI smoke path on Android AVD alongside Windows. See [Android testing notes](#android-emulator-testing) below. |
+| **Pri-1** | **Optional encryption at rest (desktop DB)** | **Landed (2026-07-18, W7 spike → ship).** Locked: opt-in ([§11 open question #4](SPEC.md#111-assumptions-baked-into-this-draft)). Ships as **SQLite3MultipleCiphers** via `sqlite3` package hooks (`sqlcipher_flutter_libs` confirmed obsolete/no-op for our 3.x `sqlite3` — not needed); `DbEncryptionConfig` (prefs flag + `flutter_secure_storage` passphrase) + `DbEncryptionMigrator` (in-place `VACUUM INTO`/`rekey`, backup + integrity check + rollback) + "Encryption" settings sheet with irreversible-loss warning. Restart required to apply (no live DB hot-swap in V1 — documented boundary, not a gap). See [W7_SQLCIPHER_SPIKE.md](W7_SQLCIPHER_SPIKE.md). **Explicitly post-v1:** PGP/S/MIME message encryption ([Post-v1](#post-v1-not-scheduled)). TLS for IMAP/SMTP/Graph is baseline, not this item. |
+| **Pri-2** | **App icon & branding assets** | **Landed / wired (Final wave Phase A, 2026-07-18).** Locked: stealth lowercase `bytemail` wordmark (Option B) + **Data Envelope v2** icon + **minimal Android splash** (obsidian + centered v2; first-frame dismiss; **no Windows splash**). Windows `.ico`, Android adaptive + notification mono, in-app title-bar wordmark — see **[branding/README.md](branding/README.md)** + **[FINAL_WAVE_PLAN.md](FINAL_WAVE_PLAN.md)**. |
+| **Pri-3** | **Android emulator & device QA matrix** | **Not started.** Establish repeatable manual + CI smoke path on Android AVD alongside Windows. See [Android testing notes](#android-emulator-testing) below. V1 smoke only — deeper battery / UX track is **Post-V1** (below). |
+| **Pri-1** | **Hold / pause auto-mark for in-view message** (**Post-V1**) | **Not a V1 blocker** (marginally annoying dogfood). With Unread filter on, 5s auto-mark drops the open message from the list and closes the pane. Option to disable auto-mark for the current in-view email (and/or keep selection). **[UI-P30](UI_ENHANCEMENT_SWEEP.md)**; ties [UI-P28](UI_ENHANCEMENT_SWEEP.md). |
+| **Pri-2** | **One-click clear active filters** (**Post-V1**) | **Not a V1 blocker.** Dogfood gap after Final-wave Phase B — chip × / toolbar Clear that resets ephemeral `userFilter` in one click (does not delete saved presets). **[UI-P29](UI_ENHANCEMENT_SWEEP.md)**. |
+| **Pri-2** | **Performance test suite** (**Post-V1**) | **Not a V1 blocker.** Spreadsheet-cataloged like automated tests — columns: `perf_id`, area, platform, scenario, metric, budget, harness, status. Harness: microbench + timeline on fixture DBs first; friend-and-family traces later. Mirror [TEST_INVENTORY.md](TEST_INVENTORY.md) pattern; generate script later (same shape as `tool/generate_test_inventory.py`). |
+| **Pri-2** | **Android focus track** (**Post-V1**) | **Not a V1 blocker** (battery is the headline concern, still scheduled post-ship). Battery life (sync / IDLE / push / wakelocks / Doze), visual/UX density vs Windows, leftover widget / deep-link polish. Device + AVD matrix spreadsheet-backed (extends the Pri-3 smoke matrix above). Distinct from Final-wave branding wire-up and FW-5 E2E smoke. |
+| **Pri-3** | **Project health dashboard** (**Adjacent tooling** / Post-V1) | **Not a product feature — reusable meta tooling.** Docs-only idea for now; spin up after V1 while operator dogfoods. Surfaces wave/todo progress, test-inventory CSV signals, future perf-suite metrics, and related health. Reusable beyond ByteMail. Stub: **[POST_V1_HEALTH_DASHBOARD.md](POST_V1_HEALTH_DASHBOARD.md)**. Not a V1 or Final-wave deliverable. |
 
-**Suggested sequencing:** account edit/remove (Pri-1, landed) → header details (Pri-3, landed) → junk filter (Pri-2, landed W1) → per-account retention (Pri-2, landed W3) → **attachments (Pri-1)** → message filter system (Pri-1) → signatures (Pri-2) → desktop reading-pane layout (Pri-2). Encryption at rest is an architecture spike that can run in parallel once DB migration story is clear; Android emulator QA should start early for widget + secure-storage validation.
+**Suggested sequencing:** account edit/remove (Pri-1, landed) → header details (Pri-3, landed) → junk filter (Pri-2, landed W1) → per-account retention (Pri-2, landed W3) → desktop reading-pane layout (Pri-2, landed W5) → **attachments + signatures (Pri-1/Pri-2, landed W4)** → **W7 hardening (landed)** → **Final wave** (branding + filter system + FW-1…FW-6). Encryption at rest shipped in W7; Android emulator QA continues into Final-wave E2E. **Post-V1:** one-click filter clear ([UI-P29](UI_ENHANCEMENT_SWEEP.md)) + performance test suite + Android focus track (Pri-2). **Adjacent tooling (Pri-3):** project health dashboard — [POST_V1_HEALTH_DASHBOARD.md](POST_V1_HEALTH_DASHBOARD.md).
 
 ## Final wave (V1 exit / release readiness)
 
-**Status:** Planned — **not started.** No implementation in this wave until all feature waves (W2–W7) and remaining **Planned backlog** Pri items above are landed or explicitly deferred for v1.
+**Status:** **In progress** — Phases A–F **landed** (2026-07-18); Phase G FW-5 finalize + V1 exit **open**. Plan: **[FINAL_WAVE_PLAN.md](FINAL_WAVE_PLAN.md)**.
 
-This is the last gate before v1 ship. It contains **no new product features** except fixes for debt uncovered during the refactoring pass. Track exit criteria in **[V1_EXIT_CHECKLIST.md](V1_EXIT_CHECKLIST.md)**; this section defines the work order to get there.
+This is the last gate before v1 ship. Track exit criteria in **[V1_EXIT_CHECKLIST.md](V1_EXIT_CHECKLIST.md)**. Classic FW-1…FW-6 remain release-readiness work; the Final wave **also absorbs**:
+
+- **Pri-1 cross-cutting message filter system** (Phase B — extend `MessageViewFilter` / saved presets; see plan §4)
+- **Pri-2 branding wire-up** (Phase A — wordmark B, Data Envelope v2, minimal Android splash; skip Windows splash)
+
+FW-1 still forbids *ad-hoc* new features; filters and branding are **named Final-wave phases**, not sneaked into the refactor pass.
+
+**Operator status (2026-07-18):** W4 + W7 operator validation **complete** — Phase F **landed**. Checkbox tick-off in checklist files and FW-5 live-mail E2E rows remain operator-owned.
 
 ### Position relative to remaining backlog
 
 | Backlog item | Status | Final wave relationship |
 | --- | --- | --- |
-| **Cross-cutting message filter system** (Pri-1) | Not started | Must land (or be deferred with SPEC note) **before** Final wave — E2E matrix includes filter scenarios when shipped |
-| **Per-account retention** (Pri-2) | **Landed** (W3) | Already in product; E2E matrix includes retention when shipped |
-| **Junk mail filter** (Pri-2 / TA-4) | **Landed** (W1) | Already in product; E2E matrix covers report junk / not junk |
-| Attachments, signatures, layout, encryption | Mixed | Feature waves W2–W7 + backlog sequencing first; Final wave only polishes what shipped |
+| **Cross-cutting message filter system** (Pri-1) | **Landed** (Phase B, 2026-07-18) | E2E includes filter scenarios — [FW-5 living draft](V1_MANUAL_E2E_MATRIX.csv) |
+| **Per-account retention** (Pri-2) | **Landed** (W3) | Already in product; E2E matrix includes retention |
+| **Junk mail filter** (Pri-2 / TA-4) | **Landed** (W1) | Already in product; E2E covers report junk / not junk |
+| Attachments, signatures, layout, encryption | Attach/sig **landed W4**; layout **landed W5**; encryption **landed W7** | Operator validation complete; checkbox tick-off pending |
+| **App icon & branding** (Pri-2) | **Landed / wired** (Phase A, 2026-07-18) | [branding/README.md](branding/README.md) + E2E branding smoke rows |
 
-**Critical path to v1:** ~~W2~~ **W2 landed** → ~~W3~~ **W3 landed** → ~~W5~~ **W5 landed** → W6 → **W4** → W7 → remaining **Planned backlog** Pri items → **Final wave** → [V1 exit checklist](V1_EXIT_CHECKLIST.md) sign-off.
+**Critical path to v1:** ~~W2~~ **W2 landed** → ~~W3~~ **W3 landed** → ~~W5~~ **W5 landed** → ~~W6~~ **W6 landed** → ~~W4~~ **W4 landed** → ~~W7~~ **W7 landed** → **Final wave** ([FINAL_WAVE_PLAN.md](FINAL_WAVE_PLAN.md): Phase G FW-5 + V1 exit) → [V1 exit checklist](V1_EXIT_CHECKLIST.md) sign-off.
 
 ### Suggested order within the wave
 
+Full phased kickoff (branding → filters → FW-* → checklist payback): **[FINAL_WAVE_PLAN.md](FINAL_WAVE_PLAN.md)**. Classic FW steps below remain valid inside that plan (Phases C–G).
+
 | Step | Item | Scope | Notes |
 | --- | --- | --- | --- |
-| **FW-1** | Last refactoring pass | Polish and cleanup after feature landings; rename dead code, tighten APIs, align patterns with AGENTS.md; fix debt found in pass only — **no new product features** | Runs after W7 + backlog; unblocks stable coverage baselines |
-| **FW-2** | Verify test code coverage | Measure (`flutter test --coverage` → `lcov` / IDE report); map gaps; raise floor on **critical paths**: sync engine, accounts/onboarding, `MailboxCubit`, Graph + IMAP providers | Target thresholds TBD after first measurement; block release on critical-path regressions |
-| **FW-3a** | User documentation — comprehensive guide | End-user guide: accounts, folders, compose, search, Focus, settings, wipe, platform differences (Windows vs Android) | Can run **in parallel** with FW-3b and FW-4 |
+| **FW-1** | Last refactoring pass | Polish and cleanup after feature landings; rename dead code, tighten APIs, align patterns with AGENTS.md; fix debt found in pass only — **no new product features** (filters/branding are separate Final-wave phases) | After W7 code + branding/filter phases; unblocks stable coverage baselines |
+| **FW-2** | Verify test code coverage | Measure (`flutter test --coverage` → `lcov` / IDE report); map gaps; raise floor on **critical paths**: sync engine, accounts/onboarding, `MailboxCubit`, Graph + IMAP providers, `MessageQuery` / filters | Target thresholds TBD after first measurement; block release on critical-path regressions |
+| **FW-3a** | User documentation — comprehensive guide | End-user guide: accounts, folders, compose, search, Focus, **filters**, settings, wipe, platform differences (Windows vs Android) | Can run **in parallel** with FW-3b, FW-3c, and FW-4 |
 | **FW-3b** | User documentation — quick start | Short “experienced user” path: install → add account → read/send → one settings tip; anti-TL;DR for users who skip long docs | Separate doc from FW-3a; cross-link both ways |
+| **FW-3c** | **Dart-in-ByteMail beginner guide** | Engineer/onboarding tour: how this repo uses Dart/Flutter (Cubits, Drift, SyncEngine, providers) — artifact [`DART_IN_BYTEMAIL.md`](DART_IN_BYTEMAIL.md) | Can land **early** once feature waves stabilize; owners **Page** (+ Steve review); cross-link from [README](../README.md) and [ARCHITECTURE_OVERVIEW.md](ARCHITECTURE_OVERVIEW.md) |
 | **FW-4** | Final documentation update sweep | Align [SPEC.md](SPEC.md), this ROADMAP, [ARCHITECTURE_OVERVIEW.md](ARCHITECTURE_OVERVIEW.md), [README.md](../README.md), [DEFECTS.md](DEFECTS.md), and [V1_EXIT_CHECKLIST.md](V1_EXIT_CHECKLIST.md) with **shipped reality**; close or re-scope stale items | Parallel with FW-3a/3b; feeds checklist sign-off |
-| **FW-5** | Comprehensive manual E2E test matrix | Recommended manual tests in **versionable spreadsheet form** — e.g. `docs/V1_MANUAL_E2E_MATRIX.csv` (importable into Excel / Google Sheets). **Automated** coverage is already cataloged in [`V1_AUTOMATED_TEST_INVENTORY.csv`](V1_AUTOMATED_TEST_INVENTORY.csv) — see [TEST_INVENTORY.md](TEST_INVENTORY.md) | **Last** as formal gate, or start earlier as a **living checklist** during W7/backlog QA and finalize here |
+| **FW-5** | Comprehensive manual E2E test matrix | Recommended manual tests in **versionable spreadsheet form** — e.g. `docs/V1_MANUAL_E2E_MATRIX.csv` (importable into Excel / Google Sheets). **Automated** coverage is already cataloged in [`V1_AUTOMATED_TEST_INVENTORY.csv`](V1_AUTOMATED_TEST_INVENTORY.csv) — see [TEST_INVENTORY.md](TEST_INVENTORY.md) | **Last** as formal gate, or start earlier as a **living checklist** during W7/Final QA and finalize here |
 | **FW-6** | Reusable multi-agent system prompt / playbook | Distill Steve→Jules→Renee→Page→Tesla phase-gate workflow, wave-close rituals (test inventory handoff, DEFECTS, Gold Master headers, local-first/BLoC/Isolates stack rules), and Cursor agent roster into a **portable system prompt** suitable for seeding future projects (not ByteMail-specific product rules only — generalize rituals). Suggested artifact: `docs/MULTI_AGENT_SYSTEM_PROMPT.md` (and optionally a trimmed `.cursor`/Copilot agent starter). Owners: **Steve** (orchestrate) + **Page** (draft) with Renee contributing QA/inventory ritual language. | After FW-4 doc sweep (so rituals match shipped process); can run parallel with FW-5 finalize |
 
-**Default sequencing:** FW-1 → FW-2 → (FW-3a ∥ FW-3b ∥ FW-4) → (FW-5 ∥ FW-6). FW-6 should run after FW-4; parallel with FW-5 is OK.
+**Default sequencing:** **Phase A branding** → **Phase B filters** → FW-1 → FW-2 → (FW-3a ∥ FW-3b ∥ **FW-3c** ∥ FW-4) → (FW-5 ∥ FW-6); ~~Phase F checklist payback~~ **landed 2026-07-18**. Details: [FINAL_WAVE_PLAN.md](FINAL_WAVE_PLAN.md). **FW-3c** may land before FW-1 when waves are stable enough to avoid churn; FW-6 should run after FW-4; parallel with FW-5 is OK.
 
 ### FW-5 — Manual E2E matrix (planned artifact)
 
 **Automated inventory (landed):** [`V1_AUTOMATED_TEST_INVENTORY.csv`](V1_AUTOMATED_TEST_INVENTORY.csv) + [TEST_INVENTORY.md](TEST_INVENTORY.md) — unit/widget/bloc catalog; `evaluation_status=Cataloged` ≠ runtime Pass.
 
-**Manual E2E matrix (not created yet):** When scheduled, prefer `docs/V1_MANUAL_E2E_MATRIX.csv` under `docs/` so rows stay diffable in git. Import into Excel or Google Sheets for operator runs. Keep separate from the automated inventory.
+**Manual E2E matrix (living draft):** [`V1_MANUAL_E2E_MATRIX.csv`](V1_MANUAL_E2E_MATRIX.csv) — **not finalized**; includes filter + branding smoke rows; live-mail rows operator-owned (Phase G). Import into Excel or Google Sheets for operator runs. Keep separate from the automated inventory.
 
 **Coverage areas (as applicable to then-current product):**
 
@@ -336,16 +371,16 @@ This is the last gate before v1 ship. It contains **no new product features** ex
 - **Compose / send** — outbox queue, send failure surfaces, reply/forward prefill
 - **Headers** — reading-pane headers sheet, raw block, provider fetch
 - **Settings** — themes, density, retention (global + per-account if landed), tray/shortcuts (Windows)
-- **Filters** — cross-cutting message filter system (if landed by FW-5)
+- **Filters** — cross-cutting message filter system (Final wave Phase B — ephemeral + saved)
 - **Retention** — global dial + per-account overrides (if landed); pin exemption
 - **Junk** — report junk / not junk (landed W1)
 - **Platform** — Android widget snapshot, emulator smoke; Windows keyboard shortcuts
 
 Each row: ID, area, precondition, steps, expected result, Graph / IMAP / both, Windows / Android / both, pass/fail, notes.
 
-### FW-6 — Multi-agent system prompt (planned)
+### FW-6 — Multi-agent system prompt
 
-**Artifact (not created yet):** `docs/MULTI_AGENT_SYSTEM_PROMPT.md` — portable playbook for seeding future projects; optionally a trimmed `.cursor`/Copilot agent starter.
+**Artifact:** [`MULTI_AGENT_SYSTEM_PROMPT.md`](MULTI_AGENT_SYSTEM_PROMPT.md) — portable playbook (Phase E draft; review after FW-4 stabilizes).
 
 **Must capture:**
 
@@ -393,4 +428,4 @@ ByteMail layers encryption at different levels. Only **DB at-rest (opt-in)** is 
 - See [V1_TIER_INTEGRATION.md](V1_TIER_INTEGRATION.md) for cross-tier consolidation and W0–W7 waves
 - See **[UI_ENHANCEMENT_SWEEP.md](UI_ENHANCEMENT_SWEEP.md)** for polish backlog (add items in §6)
 - See **Planned backlog (post-foundation)** above for attachments, signatures, layout, encryption, filters, retention, headers, and junk-mail features
-- See **Final wave (V1 exit / release readiness)** above for pre-ship refactor, coverage, user docs, doc sweep, and manual E2E matrix
+- See **Final wave (V1 exit / release readiness)** above and **[FINAL_WAVE_PLAN.md](FINAL_WAVE_PLAN.md)** for branding, filter system, refactor, coverage, user docs, doc sweep, manual E2E matrix, and multi-agent playbook

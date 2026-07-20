@@ -2,9 +2,9 @@
 // File: lib/sync/provider_registry.dart
 // Description: Resolves persisted account credentials to concrete mail providers
 // Component: Sync / Integration
-// Version: 1.0 (Gold Master)
+// Version: 1.1 (Gold Master)
 // Created: 2026-07-14
-// Last Update: 2026-07-16
+// Last Update: 2026-07-18
 // ==============================================================================
 
 import 'package:bytemail/auth/oauth_identity_manager.dart';
@@ -34,20 +34,31 @@ class ProviderRegistry {
 
   Future<MailProvider?> resolve(String accountId) async {
     final MailAccount? account = await _accountFor(accountId);
-    final String? reference = account?.credentialsRef;
-    if (account == null || reference == null || reference.isEmpty) {
+    if (account == null) {
       return null;
     }
+    String? reference = account.credentialsRef?.trim();
+    // Recover Google OAuth refs if the account row lost credentials_ref but
+    // tokens were stored under the canonical google:$id key.
+    if ((reference == null || reference.isEmpty) &&
+        account.providerType == 'imap' &&
+        _looksLikeGmailAddress(account.address)) {
+      reference = 'google:${account.id}';
+    }
+    if (reference == null || reference.isEmpty) {
+      return null;
+    }
+    final String credentialsRef = reference;
 
     if (account.providerType == 'graph' ||
         account.providerType == 'microsoft') {
       // Do not snapshot the token string — refresh may rotate it later.
       return GraphMailProvider(
-        () => _identityManager.getValidAccessToken(reference),
+        () => _identityManager.getValidAccessToken(credentialsRef),
         client: _httpClient,
         onUnauthorized: () async {
           await _identityManager.getValidAccessToken(
-            reference,
+            credentialsRef,
             forceRefresh: true,
           );
         },
@@ -55,41 +66,54 @@ class ProviderRegistry {
     }
 
     if (account.providerType == 'imap') {
-      final String? host = await _credentialStore.readSecret(
-        credentialsRef: reference,
+      final bool isGoogleRef = credentialsRef.startsWith('google:');
+      String? host = await _credentialStore.readSecret(
+        credentialsRef: credentialsRef,
         name: 'imap.host',
       );
-      final String? portRaw = await _credentialStore.readSecret(
-        credentialsRef: reference,
+      String? portRaw = await _credentialStore.readSecret(
+        credentialsRef: credentialsRef,
         name: 'imap.port',
       );
-      final String? user = await _credentialStore.readSecret(
-        credentialsRef: reference,
+      String? user = await _credentialStore.readSecret(
+        credentialsRef: credentialsRef,
         name: 'imap.user',
       );
       final String? password = await _credentialStore.readSecret(
-        credentialsRef: reference,
+        credentialsRef: credentialsRef,
         name: 'imap.password',
       );
-      final String? smtpHost = await _credentialStore.readSecret(
-        credentialsRef: reference,
+      String? smtpHost = await _credentialStore.readSecret(
+        credentialsRef: credentialsRef,
         name: 'smtp.host',
       );
-      final String? smtpPortRaw = await _credentialStore.readSecret(
-        credentialsRef: reference,
+      String? smtpPortRaw = await _credentialStore.readSecret(
+        credentialsRef: credentialsRef,
         name: 'smtp.port',
       );
       final String? authModeRaw = await _credentialStore.readSecret(
-        credentialsRef: reference,
+        credentialsRef: credentialsRef,
         name: 'imap.auth',
       );
+
+      // Gmail OAuth accounts: connection endpoints are public. Prefer stored
+      // secrets, but fall back so a flaky secure-storage write cannot leave the
+      // account un-resolvable after a successful Sign in with Google.
+      if (isGoogleRef) {
+        host = _nonEmpty(host) ?? 'imap.gmail.com';
+        portRaw = _nonEmpty(portRaw) ?? '993';
+        user = _nonEmpty(user) ?? account.address.trim();
+        smtpHost = _nonEmpty(smtpHost) ?? 'smtp.gmail.com';
+        smtpPortRaw = _nonEmpty(smtpPortRaw) ?? '465';
+      }
+
       final bool useXoauth2 =
-          (authModeRaw ?? '').trim().toLowerCase() == 'xoauth2' ||
-          ((password == null || password.isEmpty) &&
-              reference.startsWith('google:'));
+          isGoogleRef ||
+          (authModeRaw ?? '').trim().toLowerCase() == 'xoauth2';
 
       if (host == null ||
           user == null ||
+          user.isEmpty ||
           portRaw == null ||
           smtpHost == null ||
           smtpPortRaw == null) {
@@ -98,7 +122,7 @@ class ProviderRegistry {
 
       if (useXoauth2) {
         final String accessToken = await _identityManager
-            .getValidGoogleAccessToken(reference);
+            .getValidGoogleAccessToken(credentialsRef);
         return ImapSmtpMailProvider(
           host: host,
           port: int.tryParse(portRaw) ?? 993,
@@ -133,5 +157,18 @@ class ProviderRegistry {
       }
     }
     return null;
+  }
+
+  static String? _nonEmpty(String? value) {
+    if (value == null) {
+      return null;
+    }
+    final String trimmed = value.trim();
+    return trimmed.isEmpty ? null : trimmed;
+  }
+
+  static bool _looksLikeGmailAddress(String address) {
+    final String lower = address.trim().toLowerCase();
+    return lower.endsWith('@gmail.com') || lower.endsWith('@googlemail.com');
   }
 }

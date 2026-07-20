@@ -1,8 +1,14 @@
+<p align="center">
+  <img src="branding/branding_logo_lockup_google.png" alt="bytemail" width="360" />
+</p>
+
 # ByteMail Architecture: Under the Hood
 
 Welcome to the ByteMail project! This document is designed for tech enthusiasts, product thinkers, and engineers who want to understand how ByteMail works under the hood without needing to read or write a single line of Dart code. 
 
 ByteMail is a modern, cross-platform email client built on Flutter. But beneath its UI lies a highly engineered system designed around **local-first** principles, zero-lag performance, and reliable background synchronization.
+
+> **Want the Dart tour?** If you're reading code (or curious how Cubits, Drift, and SyncEngine connect), see **[DART_IN_BYTEMAIL.md](DART_IN_BYTEMAIL.md)** — a beginner-friendly walkthrough of this repo, not a language textbook.
 
 ---
 

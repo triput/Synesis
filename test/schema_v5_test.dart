@@ -25,7 +25,7 @@ Future<ByteMailDatabase> _openMemoryDb() async {
 void main() {
   group('schema v5', () {
     test(
-      'fresh database is schema version 5 with new tables and columns',
+      'fresh database is schema version 6 with new tables and columns',
       () async {
         final ByteMailDatabase database = await _openMemoryDb();
         addTearDown(database.close);
@@ -33,7 +33,7 @@ void main() {
         final int userVersion =
             (await database.customSelect('PRAGMA user_version').getSingle())
                 .read<int>('user_version');
-        expect(userVersion, 5);
+        expect(userVersion, 6);
 
         final List<String> tableNames =
             (await database
@@ -71,6 +71,8 @@ void main() {
             'trashed_at',
             'is_draft',
             'draft_sync_provider_id',
+            'to_recipients',
+            'cc_recipients',
           ]),
         );
 

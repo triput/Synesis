@@ -1,0 +1,6 @@
+{
+  "BYTEMAIL_GRAPH_CLIENT_ID": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+  "BYTEMAIL_GRAPH_TENANT": "common",
+  "BYTEMAIL_GOOGLE_CLIENT_ID": "xxxxxxxx.apps.googleusercontent.com",
+  "BYTEMAIL_GOOGLE_CLIENT_SECRET": ""
+}

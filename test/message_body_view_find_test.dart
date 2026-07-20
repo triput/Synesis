@@ -120,7 +120,14 @@ void main() {
     await tester.pumpWidget(_harness(findRequested: true));
     await tester.pumpAndSettle();
 
-    await tester.enterText(find.byType(TextField), 'alpha');
+    // Prefer the find-bar field; QuickReplyBar also mounts a TextField.
+    await tester.enterText(
+      find.ancestor(
+        of: find.text('Find in message'),
+        matching: find.byType(TextField),
+      ),
+      'alpha',
+    );
     await tester.pumpAndSettle();
 
     expect(find.text('1 of 3'), findsOneWidget);

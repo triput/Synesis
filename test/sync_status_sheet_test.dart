@@ -9,10 +9,12 @@
 
 import 'dart:async';
 
+import 'package:bytemail/compose/account_signature.dart';
 import 'package:bytemail/domain/models.dart';
 import 'package:bytemail/domain/sync_profile.dart';
 import 'package:bytemail/query/message_query.dart';
 import 'package:bytemail/repository/mail_repository.dart';
+import 'package:bytemail/theme/custom_theme.dart';
 import 'package:bytemail/theme/theme_id.dart';
 import 'package:bytemail/theme/theme_tokens.dart';
 import 'package:bytemail/ui/sync/sync_status_sheet.dart';
@@ -108,6 +110,9 @@ class _SheetRepo implements MailRepository {
   Future<void> upsertFocusRule(FocusRule rule) async {}
 
   @override
+  Future<void> deleteFocusRule(String id) async {}
+
+  @override
   Future<void> recountUnreadCounts({String? accountId}) async {}
 
   @override
@@ -186,8 +191,91 @@ class _SheetRepo implements MailRepository {
     String? attachmentRefsJson,
     String? signatureId,
     int? sendAfter,
+    String state = 'queued',
   }) async =>
       'out-1';
+
+  @override
+  Future<void> updateOutboxContent(
+    String id, {
+    String? to,
+    String? subject,
+    String? body,
+    String? cc,
+    String? bcc,
+    String? composeMode,
+    String? inReplyTo,
+    String? referencesJson,
+    String? attachmentRefsJson,
+    String? signatureId,
+    int? sendAfter,
+    bool clearSendAfter = false,
+  }) async {}
+
+  @override
+  Future<List<MailSignature>> listSignatures(String accountId) async =>
+      const <MailSignature>[];
+
+  @override
+  Future<MailSignature?> getSignature(String id) async => null;
+
+  @override
+  Future<String> upsertSignature(MailSignature signature) async =>
+      signature.id;
+
+  @override
+  Future<void> deleteSignature(String id) async {}
+
+  @override
+  Future<List<MailSignatureAsset>> listSignatureAssets(
+    String signatureId,
+  ) async => const <MailSignatureAsset>[];
+
+  @override
+  Future<String> addSignatureAsset({
+    required String signatureId,
+    required String sourcePath,
+    required String mimeType,
+    String? contentId,
+  }) async => '';
+
+  @override
+  Future<List<MailTemplate>> listTemplates({String? accountId}) async =>
+      const <MailTemplate>[];
+
+  @override
+  Future<String> upsertTemplate(MailTemplate template) async => template.id;
+
+  @override
+  Future<void> deleteTemplate(String id) async {}
+
+  @override
+  Future<OutboundBlobRef> stageAttachmentBlob({
+    required String accountId,
+    required String sourcePath,
+    String? fileName,
+  }) {
+    throw UnsupportedError('Attachment staging is not implemented.');
+  }
+
+  @override
+  Future<OutboundBlobRef?> getAttachmentBlob(String id) async => null;
+
+  @override
+  Future<void> deleteAttachmentBlob(String id) async {}
+
+  @override
+  Future<List<CustomTheme>> listCustomThemes() async =>
+      const <CustomTheme>[];
+
+  @override
+  Future<CustomTheme?> getCustomTheme(String id) async => null;
+
+  @override
+  Future<String> upsertCustomTheme(CustomTheme theme) async => theme.id;
+
+  @override
+  Future<void> deleteCustomTheme(String id) async {}
 
   @override
   Future<bool> hasIncompleteJobOfType(String type) async => false;
@@ -303,10 +391,11 @@ class _SheetRepo implements MailRepository {
   }) async {}
 
   @override
-  Future<void> upsertMessages(
+  Future<List<MailMessage>> upsertMessages(
     List<MailMessage> messages, {
     required String folderId,
-  }) async {}
+  }) async =>
+      const <MailMessage>[];
 
   @override
   Future<void> upsertWidgetSnapshot(

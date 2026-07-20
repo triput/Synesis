@@ -120,10 +120,11 @@ class _ClaimOnceRepo implements MailRepository {
   Future<void> upsertFolders(List<MailFolder> folders) async {}
 
   @override
-  Future<void> upsertMessages(
+  Future<List<MailMessage>> upsertMessages(
     List<MailMessage> messages, {
     required String folderId,
-  }) async {}
+  }) async =>
+      const <MailMessage>[];
 
   @override
   Future<void> setCursor(

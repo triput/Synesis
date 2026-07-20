@@ -4,7 +4,7 @@
 // Component: UI
 // Version: 1.1 (Gold Master)
 // Created: 2026-07-14
-// Last Update: 2026-07-17
+// Last Update: 2026-07-18
 // ==============================================================================
 
 import 'dart:async';
@@ -21,9 +21,11 @@ import 'package:bytemail/settings/app_settings_state.dart';
 import 'package:bytemail/theme/app_theme.dart';
 import 'package:bytemail/theme/density.dart';
 import 'package:bytemail/query/message_query.dart';
+import 'package:bytemail/ui/branding/bytemail_wordmark.dart';
 import 'package:bytemail/ui/mailbox/mailbox_cubit.dart';
 import 'package:bytemail/ui/mailbox/mailbox_state.dart';
 import 'package:bytemail/ui/settings/appearance_sheet.dart';
+import 'package:bytemail/ui/settings/notifications_sheet.dart';
 import 'package:bytemail/ui/shell/eml_preview_sheet.dart';
 import 'package:bytemail/ui/shell/folder_sidebar.dart';
 import 'package:bytemail/ui/shell/mail_split_layout.dart';
@@ -302,6 +304,8 @@ class _MailWorkspaceState extends State<MailWorkspace> {
                 final t = tokensOf(context);
                 final density = settings.density;
                 final cubit = context.read<MailboxCubit>();
+                final AppSettingsCubit settingsCubit =
+                    context.read<AppSettingsCubit>();
                 final focusEnabled = settings.focusEnabledForContext(
                   isUnified: mailbox.unified,
                   accountId: mailbox.accountId,
@@ -341,6 +345,8 @@ class _MailWorkspaceState extends State<MailWorkspace> {
                           );
                         },
                         onOpenAppearance: () => showAppearanceSheet(context),
+                        onOpenNotifications: () =>
+                            showNotificationsSheet(context),
                         onOpenEml: () => unawaited(_openEmlFile()),
                         onCompose: () => showComposeSheet(context),
                         onSearch: () => showSearchSheet(context),
@@ -420,6 +426,22 @@ class _MailWorkspaceState extends State<MailWorkspace> {
                                   onClearUserFilter: () {
                                     unawaited(cubit.clearUserFilter());
                                   },
+                                  savedFilters: settings.savedFilters,
+                                  onApplySavedFilter:
+                                      (MessageViewFilter filter) {
+                                    unawaited(cubit.setUserFilter(filter));
+                                  },
+                                  onSaveCurrentFilter:
+                                      (String name, MessageViewFilter filter) {
+                                    return settingsCubit.saveSavedFilter(
+                                      name,
+                                      filter,
+                                    );
+                                  },
+                                  onRenameSavedFilter:
+                                      settingsCubit.renameSavedFilter,
+                                  onDeleteSavedFilter:
+                                      settingsCubit.deleteSavedFilter,
                                   onToggleThreadExpand:
                                       cubit.toggleThreadExpanded,
                                   onSelect: cubit.selectMessageWithModifiers,
@@ -660,6 +682,7 @@ class _TitleBar extends StatelessWidget {
     required this.visualFocusEnabled,
     required this.onToggleVisualFocus,
     required this.onOpenAppearance,
+    required this.onOpenNotifications,
     required this.onOpenEml,
     required this.onCompose,
     required this.onSearch,
@@ -677,6 +700,7 @@ class _TitleBar extends StatelessWidget {
   final bool visualFocusEnabled;
   final VoidCallback onToggleVisualFocus;
   final VoidCallback onOpenAppearance;
+  final VoidCallback onOpenNotifications;
   final VoidCallback onOpenEml;
   final VoidCallback onCompose;
   final VoidCallback onSearch;
@@ -710,12 +734,7 @@ class _TitleBar extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Text(
-            'ByteMail',
-            style: Theme.of(
-              context,
-            ).textTheme.titleLarge?.copyWith(fontSize: 16),
-          ),
+          const BytemailWordmark(fontSize: 16),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 8),
             child: Text('/', style: TextStyle(color: t.muted)),
@@ -800,6 +819,12 @@ class _TitleBar extends StatelessWidget {
             onPressed: onOpenEml,
             style: IconButton.styleFrom(foregroundColor: t.muted),
             icon: const Icon(Icons.attach_email_outlined, size: 20),
+          ),
+          IconButton(
+            tooltip: 'Notifications',
+            onPressed: onOpenNotifications,
+            style: IconButton.styleFrom(foregroundColor: t.muted),
+            icon: const Icon(Icons.notifications_outlined, size: 20),
           ),
           IconButton(
             onPressed: onOpenAppearance,

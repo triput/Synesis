@@ -2,10 +2,10 @@
 
 | Field | Value |
 | --- | --- |
-| Status | Active — **W0 landed** (2026-07-16); **W1 landed** (2026-07-17); **W2 landed** (2026-07-17); **W3 landed** (2026-07-17); **W5 landed** (2026-07-17); **W6 unlocked / planned** |
+| Status | Active — **W0–W7 landed** (W4/W7 operator validation complete 2026-07-18); **Final wave in progress** (Phases A–F landed; G + exit open) |
 | Purpose | Reduce redundant file touches; merge adjacent tier work |
 | Inputs | [TIER_A_PLAN.md](TIER_A_PLAN.md), [TIER_B_PLAN.md](TIER_B_PLAN.md), [TIER_C_PLAN.md](TIER_C_PLAN.md) |
-| Last updated | 2026-07-17 (W5 landed; W6 unlocked; `.eml` ProgId deferred packaging) |
+| Last updated | 2026-07-18 (W4/W7 operator validation complete; Final wave Phase F landed — [FINAL_WAVE_PLAN.md](FINAL_WAVE_PLAN.md)) |
 
 You are **not** shipping iterative Tier A → B → C releases. V1 should land as one client worth dogfooding for months. This document reorganizes the three tier plans into **integration waves** that touch each subsystem once.
 
@@ -126,17 +126,21 @@ W5  DESKTOP SHELL — **LANDED 2026-07-17** ────────────
     Ctrl+F find bar, print/save/open EML, detached window UI, title-bar Open EML — landed
     [W5_WINDOWS_CHECKLIST.md](W5_WINDOWS_CHECKLIST.md) passed (operator); `.eml` ProgId deferred (packaging)
 
-W6  NOTIFICATIONS — **UNLOCKED / PLANNED** ───────────────────────────
-    Android + Windows alerts; per-account mute; quiet hours
+W6  NOTIFICATIONS — **LANDED** (2026-07-17) ──────────────────────────
+    NotificationService + settings + Android/Windows adapters; SyncEngine onNewUnread
+    Manual exit: [W6_NOTIFICATIONS_CHECKLIST.md](W6_NOTIFICATIONS_CHECKLIST.md) passed (operator)
 
-W4  COMPOSE SYSTEM (last feature wave) ───────────────────────────────
+W4  COMPOSE SYSTEM — **LANDED** (2026-07-18) ───────────────────────────
     CC/BCC, quote, HTML signatures, rich text, templates
     Attachments view + compose + send (user-settable size cap)
     Drafts, schedule send, quick reply
+    Operator validation complete; checklist checkbox tick-off pending
 
-W7  HARDENING & OPTIONAL ─────────────────────────────────────────────
-    DB encryption opt-in (if ready), focus override UI, widgets, QA matrix
-    Graph large attachment upload session (if over inline cap)
+W7  HARDENING & OPTIONAL — **LANDED** (2026-07-18) ─────────────────────
+    Focus override UI, DEF-034 auto-mark, custom themes/fonts/export
+    Density + empty states; widget depth (timeboxed)
+    SQLCipher shipped (spike early); operator validation complete
+    Graph large attachment upload session (stretch only)
 ```
 
 ---
@@ -230,21 +234,25 @@ W7  HARDENING & OPTIONAL ──────────────────�
 | Sync panel | **Landed** | `SyncStatusSheet`: Jobs \| Accounts tabs; retry/cancel; title-bar sync chip opens sheet; sync-now icon in title bar |
 | **Remote images (phase 1)** | **Landed** | `blockRemoteImages` default **true**; per-message “Load images for this message”; Appearance toggle; per-account + domain whitelist → **post-v1** |
 
-**W5 landed / W6 unlock:** W5 desktop shell **landed** 2026-07-17 — [W5_WINDOWS_CHECKLIST.md](W5_WINDOWS_CHECKLIST.md) passed (operator); Windows `.eml` Explorer ProgId remains **deferred** (packaging follow-up, not a land blocker). **W6 Notifications unlocked.** W4 compose remains the last feature wave after W5 and W6.
+**W5 + W6 + W4 + W7 landed:** W5 desktop shell **landed** 2026-07-17 — [W5_WINDOWS_CHECKLIST.md](W5_WINDOWS_CHECKLIST.md) passed (operator); Windows `.eml` Explorer ProgId remains **deferred** (packaging follow-up, not a land blocker). **W6 Notifications landed** 2026-07-17 — [W6_NOTIFICATIONS_CHECKLIST.md](W6_NOTIFICATIONS_CHECKLIST.md) passed (operator). **W4 Compose landed** 2026-07-18 — operator validation complete; [W4_COMPOSE_CHECKLIST.md](W4_COMPOSE_CHECKLIST.md) checkbox tick-off pending. **W7 Hardening landed** 2026-07-18 — operator validation complete; [W7_HARDENING_CHECKLIST.md](W7_HARDENING_CHECKLIST.md) checkbox tick-off pending.
 
 ---
 
 ### W4 — Compose system (last feature wave)
 
+**Status:** **Landed** (2026-07-18) — **code landed**; operator inspection/validation **complete**; checkbox tick-off in [W4_COMPOSE_CHECKLIST.md](W4_COMPOSE_CHECKLIST.md) pending (operator-owned).  
 **Duration estimate:** 2–3 weeks  
-**Tier coverage:** TA-2, TA-3, TB-6, TB-12, TB-13, TC-10
+**Tier coverage:** TA-2, TA-3, TB-6, TB-12, TB-13, TC-10  
+**Manual exit:** [W4_COMPOSE_CHECKLIST.md](W4_COMPOSE_CHECKLIST.md)
 
-| Deliverable | Exit |
-| --- | --- |
-| One compose UI | All modes use `ComposeDraft` |
-| Attachments E2E | Send image/PDF; respects user attachment cap; progress UX for large files |
-| **HTML signatures** + rich text + templates | Formatting survives send; **signature images** (UI-P20) |
-| Drafts + schedule | Autosave + delayed outbox |
+| Deliverable | Status | Exit |
+| --- | --- | --- |
+| One compose UI (`ComposeDraft`) | **Landed** | BCC, quote, signature picker, schedule, drafts — `compose_sheet.dart` |
+| `sendEnvelope` + MIME wire-up | **Landed** | SyncEngine builds envelope; Graph + IMAP/SMTP implementations |
+| Attachments E2E | **Landed** | Stage blobs, cap gate, reading-pane download |
+| HTML signatures + templates + rich markers | **Landed** | Account sheets + compose toolbar/templates; CID→data-URI on send |
+| Drafts + schedule | **Landed** | Outbox `draft` autosave; `send_after` gate |
+| Manual Windows + AVD checklist | **Validation complete** (operator, 2026-07-18) | [W4_COMPOSE_CHECKLIST.md](W4_COMPOSE_CHECKLIST.md) — checkbox tick-off pending |
 
 **Placed last** so inbox/sync/desktop are dogfood-ready before the largest single subsystem touch.
 
@@ -276,30 +284,44 @@ W7  HARDENING & OPTIONAL ──────────────────�
 
 ### W6 — Notifications
 
-**Duration estimate:** 1 week  
+**Status:** **Landed** (2026-07-17) — [W6_NOTIFICATIONS_CHECKLIST.md](W6_NOTIFICATIONS_CHECKLIST.md) passed (operator)  
+**Duration estimate:** 1 week (actual: wave 6 complete)  
 **Tier coverage:** TA-6, TC-7
 
-| Deliverable | Exit |
-| --- | --- |
-| New mail alerts | Android + Windows |
-| Settings | Per-account + quiet hours |
+| Deliverable | Status | Exit |
+| --- | --- | --- |
+| `NotificationService` (filters, dedupe, aggregate) | **Landed** | Global off, account mute, quiet hours, starred-only, foreground suppress; `test/notification_service_test.dart` |
+| Settings persistence + sheet | **Landed** | `AppSettingsState` / `AppSettingsCubit`; title-bar **Notifications** sheet; `test/app_settings_cubit_test.dart` (notifications group) |
+| Android adapter | **Landed** | `AndroidNotificationAdapter` — channel + permission request |
+| Windows adapter | **Landed** | `WindowsNotificationAdapter` — native toast via desktop controller |
+| Foreground tracking | **Landed** | `AppForegroundTracker` (Android) + `DesktopController.isWindowFocused` (Windows) |
+| `SyncEngine.onNewUnread` | **Landed** | Incremental inbox only; bootstrap `notifyNewMail: false`; remote_search does not notify |
+| Manual Windows + AVD checklist | **Passed** (operator) | [W6_NOTIFICATIONS_CHECKLIST.md](W6_NOTIFICATIONS_CHECKLIST.md) |
+
+**W4 unlock:** W4 compose system **landed** (2026-07-18). W7 **landed** in parallel.
 
 ---
 
 ### W7 — Hardening & optional
 
+**Status:** **Landed** (2026-07-18) — operator inspection/validation **complete**; checkbox tick-off in [W7_HARDENING_CHECKLIST.md](W7_HARDENING_CHECKLIST.md) pending (operator-owned).  
 **Duration estimate:** 1–2 weeks  
 **Tier coverage:** TC-3, TC-11, TC-4, UI sweep (W7 items), QA matrix
 
 | Deliverable | Exit |
 | --- | --- |
-| SQLCipher opt-in | If spike successful |
-| Focus override UI | CRUD rules |
-| Widget polish | If time |
-| **UI sweep** | Theme tokens, **custom themes**, **settings export**, **UI fonts**, density, empty states — [UI_ENHANCEMENT_SWEEP.md §8](UI_ENHANCEMENT_SWEEP.md#8-acceptance--sweep-done-for-v1) |
-| **[DEF-034](DEFECTS.md) / UI-P27** auto-mark-as-read | **V1 scope, not a W5 blocker** — schedule with W7 polish (5s dwell, default ON; post-V1 configurability → UI-P28) |
-| V1 exit checklist | Full SPEC acceptance |
-| Multi-agent system prompt playbook | **Final wave FW-6** (after W7) — portable workflow prompt for future projects |
+| SQLCipher opt-in (**prefer-ship**) | **Landed** — SQLite3MultipleCiphers via hooks; see [W7_SQLCIPHER_SPIKE.md](W7_SQLCIPHER_SPIKE.md). No W7.1 deferral. |
+| Focus override UI (TC-4) | **Landed** — CRUD rules sheet |
+| Widget polish (TC-11) | **Partial** (timeboxed) — theme tokens + Focused/Other unread; folder-scoped config deferred |
+| **UI sweep** | **Landed** — custom themes, settings export, UI fonts, density, empty states |
+| **[DEF-034](DEFECTS.md) / UI-P27** auto-mark-as-read | **Landed / closed** — 5s dwell, default ON |
+| QA matrix | Android AVD + Windows smoke path; feed Final-wave E2E |
+| V1 exit checklist | Full SPEC acceptance — **after** W7 + Final wave, not inside W7 code |
+| Branding / splash (Final-wave packaging) | **Landed** (Phase A, 2026-07-18) — wordmark B + Data Envelope v2 + minimal Android splash; see [branding/README.md](branding/README.md) |
+| Pri-1 message filter system | **Landed** (Phase B, 2026-07-18) — recipient + saved presets on `MessageViewFilter`; see [FINAL_WAVE_PLAN.md](FINAL_WAVE_PLAN.md) §4 |
+| Multi-agent system prompt playbook | **Final wave FW-6** (Phase E) — portable workflow prompt; see [MULTI_AGENT_SYSTEM_PROMPT.md](MULTI_AGENT_SYSTEM_PROMPT.md) |
+
+**Final wave status (2026-07-18):** **In progress.** Phases A–F **landed** (branding, filters, FW-1 polish, FW-2 coverage measure, USER_GUIDE/QUICK_START/FW-4/FW-6, W4/W7 operator validation). Phase G (FW-5 finalize) and [V1_EXIT_CHECKLIST.md](V1_EXIT_CHECKLIST.md) sign-off remain **open**. W4/W7 checkbox tick-off in checklist files pending (operator-owned). Plan: **[FINAL_WAVE_PLAN.md](FINAL_WAVE_PLAN.md)**.
 
 ---
 
@@ -345,14 +367,14 @@ W0 (schema + OAuth — LANDED 2026-07-16)
   ├──► W1 message actions (LANDED 2026-07-17)
   ├──► W2 list UX (LANDED 2026-07-17)
   ├──► W3 sync & privacy (LANDED 2026-07-17)
-  │         └──► W6 notifications
+  │         └──► W6 notifications (LANDED)
   W2 ──► W5 desktop shell (LANDED 2026-07-17)
-  W1,W2,W3,W5,W6 ──► W4 compose (LAST feature wave)
-  All ──► W7 hardening
+  W1,W2,W3,W5,W6 ──► W4 compose (LANDED 2026-07-18)
+  W0–W6 ──► W7 hardening (LANDED 2026-07-18)
 ```
 
-**Critical path:** ~~W0~~ **W0 landed** → ~~W1~~ **W1 landed** → ~~W2~~ **W2 landed** → ~~W3~~ **W3 landed** → ~~W5~~ **W5 landed** → **W6** → **W4** → W7  
-**Parallel:** **W6 unlocked** (2026-07-17); operator Graph OAuth validation (Entra registration) remains a dogfood checkpoint, not a W6 code blocker.
+**Critical path:** ~~W0~~ **W0 landed** → ~~W1~~ **W1 landed** → ~~W2~~ **W2 landed** → ~~W3~~ **W3 landed** → ~~W5~~ **W5 landed** → ~~W6~~ **W6 landed** → ~~W4~~ **W4 landed** → ~~W7~~ **W7 landed** → **Final wave** (Phase G + V1 exit open)  
+**Parallel:** W4/W7 operator validation complete 2026-07-18; checkbox tick-off in checklist files remains operator-owned. Operator Graph OAuth validation (Entra registration) remains a dogfood checkpoint for FW-5 live-mail rows.
 
 **Rationale for W4 last:** Reading, organizing, and Microsoft sync must be solid before the unified compose system (largest touch surface).
 
@@ -493,7 +515,9 @@ Items explicitly deferred to [TIER_D_PLAN.md](TIER_D_PLAN.md): unlimited multi-w
 6. ~~Begin W2~~ — **W2 landed 2026-07-17** (threading, filters, date groups, snooze, pin, swipes, virtual views)  
 7. ~~Begin W3~~ — **W3 landed 2026-07-17** (sync profiles, retention, push, sync health, remote images phase 1)  
 8. ~~Begin W5~~ — **W5 landed 2026-07-17** (desktop shell; [W5_WINDOWS_CHECKLIST.md](W5_WINDOWS_CHECKLIST.md) passed — operator; `.eml` ProgId deferred packaging)  
-9. **Begin W6** — Notifications (unlocked 2026-07-17)  
+9. ~~**W6**~~ — **W6 landed 2026-07-17** ([W6_NOTIFICATIONS_CHECKLIST.md](W6_NOTIFICATIONS_CHECKLIST.md) passed — operator)  
+10. ~~**W4**~~ — **W4 landed 2026-07-18** (operator validation complete; [W4_COMPOSE_CHECKLIST.md](W4_COMPOSE_CHECKLIST.md) checkbox tick-off pending)
+11. ~~**W7**~~ — **W7 landed 2026-07-18** (operator validation complete; [W7_HARDENING_CHECKLIST.md](W7_HARDENING_CHECKLIST.md) checkbox tick-off pending)
 
 ---
 

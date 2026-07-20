@@ -519,6 +519,7 @@ class OAuthIdentityManager {
       code: code,
       codeVerifier: codeVerifier,
     );
+    _ensureGoogleMailScope(tokens.scope);
     final _UserProfile profile = await _fetchGoogleUserInfo(tokens.accessToken);
 
     return GoogleSignInResult(
@@ -527,6 +528,23 @@ class OAuthIdentityManager {
       expiresAt: tokens.expiresAt,
       email: profile.email,
       displayName: profile.displayName,
+    );
+  }
+
+  /// Gmail IMAP/SMTP XOAUTH2 requires the full-mail scope on the access token.
+  static void _ensureGoogleMailScope(String? scope) {
+    const String required = 'https://mail.google.com/';
+    final String normalized = (scope ?? '').toLowerCase();
+    if (normalized.contains(required)) {
+      return;
+    }
+    throw StateError(
+      'Google sign-in succeeded but the access token is missing '
+      '$required — Gmail IMAP will fail with AUTHENTICATIONFAILED.\n\n'
+      'In Google Cloud → OAuth consent screen, add the Gmail scope '
+      '"$required" (and enable the Gmail API), ensure your account is a '
+      'test user, then remove this account in ByteMail and Sign in with '
+      'Google again (consent must be re-granted).',
     );
   }
 
@@ -689,6 +707,7 @@ class OAuthIdentityManager {
       accessToken: accessToken,
       refreshToken: json['refresh_token'] as String?,
       expiresAt: _clock().toUtc().add(Duration(seconds: expiresInSeconds)),
+      scope: (json['scope'] as String?)?.trim(),
     );
   }
 
@@ -786,11 +805,13 @@ class _TokenResponse {
     required this.accessToken,
     required this.refreshToken,
     required this.expiresAt,
+    this.scope,
   });
 
   final String accessToken;
   final String? refreshToken;
   final DateTime expiresAt;
+  final String? scope;
 }
 
 class _UserProfile {

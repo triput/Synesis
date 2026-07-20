@@ -1,11 +1,15 @@
+<p align="center">
+  <img src="branding/branding_logo_lockup_google.png" alt="bytemail" width="360" />
+</p>
+
 # ByteMail Technical Specification
 
 | Field | Value |
 | --- | --- |
 | Document | Technical Specification & Architecture Blueprint |
-| Version | 1.4 |
+| Version | 1.5 |
 | Status | Draft |
-| Last updated | 2026-07-14 |
+| Last updated | 2026-07-18 |
 
 ---
 
@@ -521,6 +525,47 @@ Managed via Kotlin + `home_widget`, reading local snapshot/DB storage **without*
 - User can compose and queue a send in airplane mode; on reconnect the message sends or fails with an actionable error.
 - Kill/relaunch during queued send does not lose the outbox item.
 
+### 8.6 Message list filters (view predicates)
+
+User-defined **view filters** narrow the message list for the current folder or unified inbox. They are distinct from:
+
+| Mechanism | Purpose | v1 scope |
+| --- | --- | --- |
+| **Focus (§8.3)** | Focused vs Other triage via scorer + overrides | Composes **before** user filter in `MessageQuery` |
+| **List filter (this section)** | Predicate chips/sheet on sender, recipient, read state, dates, keyword, attachments | Ephemeral `MessageViewFilter` + optional **saved named presets** |
+| **Search (§8.1)** | FTS / remote archive lookup | Separate search UI — not the list chip bar |
+
+**Ephemeral filter**
+
+- Implemented as `MessageViewFilter` on `MailboxState.userFilter`.
+- Quick chips: unread, starred, has attachment; advanced sheet: sender substring, **recipient (to/cc) substring**, received date range, keyword (FTS-backed in Drift).
+- **Clear** removes the active ephemeral filter only.
+
+**Saved filters (named presets)**
+
+- Small domain type (`SavedMessageFilter`: id, name, serialized `MessageViewFilter`, timestamps).
+- **Device-local persistence** via app settings JSON — not SQLite mail tables, not provider sync in v1.
+- **Apply** replaces `userFilter` with the preset snapshot (no merge).
+- **Save current** snapshots the active ephemeral filter under a user-chosen name.
+- **Rename** and **delete** in a management sheet; soft cap ~20 presets.
+- **Delete saved** does not delete mail on the server; **Clear** does not delete saved definitions.
+
+**Date buckets**
+
+- Outlook-style section headers (Today, Yesterday, …) are **UI grouping** via `MessageListProjector` — not mutually exclusive filter chips.
+- Custom date range on `MessageViewFilter` is a **predicate**; headers continue to group whatever remains.
+
+**Out of v1**
+
+- Server-side rules, IMAP Sieve import, auto-actions on match, cross-device sync of filter definitions.
+
+**Acceptance criteria**
+
+- Applying unread + sender filters narrows the list without affecting Focus override rules or search results.
+- Saved preset survives app restart and applies identically when selected.
+- Recipient substring matches to/cc fields available on cached messages.
+- Clear resets ephemeral filter; saved library unchanged unless user deletes a preset.
+
 ---
 
 ## 9. Security & Privacy
@@ -619,3 +664,4 @@ Exact protocol mix (Graph vs CardDAV/CalDAV vs Google APIs) is deferred to that 
 | 1.2 | 2026-07-14 | Clarified full contacts & calendar as planned post-v1 milestones; remain out of scope for v1 with light forward-compat guidance |
 | 1.3 | 2026-07-14 | Appearance: Dark jewel-tone + Calm as defaults; themes (Light, Solarized Light/Dark, Black); account color controls; Compact density for smaller/travel devices |
 | 1.4 | 2026-07-14 | Focused/Other optional per account; Unified has independent Focus enablement (does not follow account-level settings) |
+| 1.5 | 2026-07-18 | §8.6 message list filters — ephemeral `MessageViewFilter`, saved local presets, recipient predicate; distinct from Focus and §8.1 search |

@@ -2,9 +2,9 @@
 // File: lib/desktop/detached_message_app.dart
 // Description: Minimal secondary-window reader for one local message.
 // Component: UI / Desktop
-// Version: 1.1 (Gold Master)
+// Version: 1.2 (Gold Master)
 // Created: 2026-07-17
-// Last Update: 2026-07-17
+// Last Update: 2026-07-18
 // ==============================================================================
 
 import 'dart:async';
@@ -88,6 +88,27 @@ class _DetachedMessageAppState extends State<DetachedMessageApp> {
     }
   }
 
+  /// Applies a read/unread change locally and to the shared repository so
+  /// DEF-034 / UI-P27 auto-mark-as-read behaves identically in the detached
+  /// reader window.
+  Future<void> _setUnread(String messageId, bool unread) async {
+    try {
+      await widget.repository.setUnread(messageId, unread);
+    } catch (_) {
+      // Best-effort: the detached window has no snackbar surface for this.
+    }
+    if (!mounted) {
+      return;
+    }
+    final MailMessage? current = _message;
+    if (current == null || current.id != messageId) {
+      return;
+    }
+    setState(() {
+      _message = current.copyWith(unread: unread);
+    });
+  }
+
   Future<void> _showMainWindow() async {
     final List<WindowController> windows = await WindowController.getAll();
     for (final WindowController controller in windows) {
@@ -140,6 +161,8 @@ class _DetachedMessageAppState extends State<DetachedMessageApp> {
                     accounts: _accounts,
                     density: ViewDensity.calm,
                     allowOpenInNewWindow: false,
+                    onMarkRead: () => unawaited(_setUnread(message.id, false)),
+                    onMarkUnread: () => unawaited(_setUnread(message.id, true)),
                   ),
                 ),
         ),

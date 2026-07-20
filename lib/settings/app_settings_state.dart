@@ -2,12 +2,13 @@
 // File: lib/settings/app_settings_state.dart
 // Description: Immutable appearance and Focus preference snapshot
 // Component: Bloc / Settings
-// Version: 1.0 (Gold Master)
+// Version: 1.1 (Gold Master)
 // Created: 2026-07-14
-// Last Update: 2026-07-17
+// Last Update: 2026-07-18
 // ==============================================================================
 
 import 'package:equatable/equatable.dart';
+import 'package:bytemail/domain/saved_message_filter.dart';
 import 'package:bytemail/theme/density.dart';
 import 'package:bytemail/theme/theme_id.dart';
 
@@ -31,6 +32,12 @@ enum ThreadDisplayMode {
   /// One row per message (classic flat inbox).
   flat,
 }
+
+/// Minimum allowed [AppSettingsState.uiFontSizeScale] (UI-P18).
+const double kUiFontSizeScaleMin = 0.85;
+
+/// Maximum allowed [AppSettingsState.uiFontSizeScale] (UI-P18).
+const double kUiFontSizeScaleMax = 1.3;
 
 /// Android message-list swipe action (left or right).
 enum SwipeListAction {
@@ -71,6 +78,17 @@ class AppSettingsState extends Equatable {
     this.pushOnCellular = false,
     this.readingPanePosition = ReadingPanePosition.right,
     this.visualFocusEnabled = false,
+    this.notificationsEnabled = true,
+    this.notifyStarredOnly = false,
+    this.notificationQuietHoursEnabled = false,
+    this.quietHoursStartMinutes = 22 * 60,
+    this.quietHoursEndMinutes = 7 * 60,
+    this.accountNotificationsEnabled = const <String, bool>{},
+    this.customThemeId,
+    this.uiFontFamily,
+    this.uiFontSizeScale = 1.0,
+    this.uiTextColorArgb,
+    this.savedFilters = const <SavedMessageFilter>[],
   });
 
   final ThemeId themeId;
@@ -105,8 +123,48 @@ class AppSettingsState extends Equatable {
   /// (while a message is selected). Distinct from Focused/Other mail filter.
   final bool visualFocusEnabled;
 
+  /// Global OS new-mail notifications master switch. Default on.
+  final bool notificationsEnabled;
+
+  /// When true, only starred unread messages trigger OS notifications.
+  final bool notifyStarredOnly;
+
+  /// When true, suppress notifications during [quietHoursStartMinutes, end).
+  final bool notificationQuietHoursEnabled;
+
+  /// Quiet-hours window start as minutes since midnight (default 22:00).
+  final int quietHoursStartMinutes;
+
+  /// Quiet-hours window end as minutes since midnight (default 07:00).
+  final int quietHoursEndMinutes;
+
+  /// Per-account notification mute map. Missing keys mean enabled (on).
+  final Map<String, bool> accountNotificationsEnabled;
+
+  /// Id of a user-defined `custom_themes` row to apply instead of [themeId]
+  /// (UI-P16). Null means use the built-in [themeId] pack unmodified.
+  final String? customThemeId;
+
+  /// Body/UI font family override (UI-P18). Null uses the default IBM Plex
+  /// Sans body / Fraunces display pairing.
+  final String? uiFontFamily;
+
+  /// UI text scale multiplier, clamped to
+  /// [kUiFontSizeScaleMin]–[kUiFontSizeScaleMax] (UI-P18).
+  final double uiFontSizeScale;
+
+  /// Optional ARGB override for body text color (UI-P18). Null uses the
+  /// active theme's default text color.
+  final int? uiTextColorArgb;
+
+  /// Device-local named message list filter presets.
+  final List<SavedMessageFilter> savedFilters;
+
   bool isAccountFocusEnabled(String accountId) =>
       accountFocusEnabled[accountId] ?? true;
+
+  bool isAccountNotificationsEnabled(String accountId) =>
+      accountNotificationsEnabled[accountId] ?? true;
 
   bool focusEnabledForContext({required bool isUnified, String? accountId}) {
     if (isUnified) return unifiedFocusEnabled;
@@ -130,6 +188,20 @@ class AppSettingsState extends Equatable {
     bool? pushOnCellular,
     ReadingPanePosition? readingPanePosition,
     bool? visualFocusEnabled,
+    bool? notificationsEnabled,
+    bool? notifyStarredOnly,
+    bool? notificationQuietHoursEnabled,
+    int? quietHoursStartMinutes,
+    int? quietHoursEndMinutes,
+    Map<String, bool>? accountNotificationsEnabled,
+    String? customThemeId,
+    bool clearCustomThemeId = false,
+    String? uiFontFamily,
+    bool clearUiFontFamily = false,
+    double? uiFontSizeScale,
+    int? uiTextColorArgb,
+    bool clearUiTextColorArgb = false,
+    List<SavedMessageFilter>? savedFilters,
   }) {
     return AppSettingsState(
       themeId: themeId ?? this.themeId,
@@ -148,6 +220,28 @@ class AppSettingsState extends Equatable {
       pushOnCellular: pushOnCellular ?? this.pushOnCellular,
       readingPanePosition: readingPanePosition ?? this.readingPanePosition,
       visualFocusEnabled: visualFocusEnabled ?? this.visualFocusEnabled,
+      notificationsEnabled: notificationsEnabled ?? this.notificationsEnabled,
+      notifyStarredOnly: notifyStarredOnly ?? this.notifyStarredOnly,
+      notificationQuietHoursEnabled: notificationQuietHoursEnabled ??
+          this.notificationQuietHoursEnabled,
+      quietHoursStartMinutes:
+          quietHoursStartMinutes ?? this.quietHoursStartMinutes,
+      quietHoursEndMinutes: quietHoursEndMinutes ?? this.quietHoursEndMinutes,
+      accountNotificationsEnabled:
+          accountNotificationsEnabled ?? this.accountNotificationsEnabled,
+      customThemeId: clearCustomThemeId
+          ? null
+          : (customThemeId ?? this.customThemeId),
+      uiFontFamily:
+          clearUiFontFamily ? null : (uiFontFamily ?? this.uiFontFamily),
+      uiFontSizeScale: (uiFontSizeScale ?? this.uiFontSizeScale).clamp(
+        kUiFontSizeScaleMin,
+        kUiFontSizeScaleMax,
+      ),
+      uiTextColorArgb: clearUiTextColorArgb
+          ? null
+          : (uiTextColorArgb ?? this.uiTextColorArgb),
+      savedFilters: savedFilters ?? this.savedFilters,
     );
   }
 
@@ -168,5 +262,16 @@ class AppSettingsState extends Equatable {
         pushOnCellular,
         readingPanePosition,
         visualFocusEnabled,
+        notificationsEnabled,
+        notifyStarredOnly,
+        notificationQuietHoursEnabled,
+        quietHoursStartMinutes,
+        quietHoursEndMinutes,
+        accountNotificationsEnabled,
+        customThemeId,
+        uiFontFamily,
+        uiFontSizeScale,
+        uiTextColorArgb,
+        savedFilters,
       ];
 }

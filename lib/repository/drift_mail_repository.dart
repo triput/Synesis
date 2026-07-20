@@ -2,18 +2,22 @@
 // File: lib/repository/drift_mail_repository.dart
 // Description: Thin Drift-backed MailRepository façade over store modules.
 // Component: Repository / Data
-// Version: 1.0 (Gold Master)
+// Version: 1.1 (Gold Master)
 // Created: 2026-07-14
-// Last Update: 2026-07-17
+// Last Update: 2026-07-18
 // ==============================================================================
 
 import 'dart:async';
 
+import 'package:bytemail/compose/account_signature.dart';
 import 'package:bytemail/domain/models.dart';
 import 'package:bytemail/domain/sync_profile.dart';
 import 'package:bytemail/query/message_query.dart';
-import 'package:bytemail/repository/database.dart' hide FocusRule, SyncProfile;
+import 'package:bytemail/repository/database.dart'
+    hide CustomTheme, FocusRule, SyncProfile;
 import 'package:bytemail/repository/drift/drift_account_folder_store.dart';
+import 'package:bytemail/repository/drift/drift_compose_store.dart';
+import 'package:bytemail/repository/drift/drift_custom_theme_store.dart';
 import 'package:bytemail/repository/drift/drift_focus_store.dart';
 import 'package:bytemail/repository/drift/drift_message_store.dart';
 import 'package:bytemail/repository/drift/drift_outbox_store.dart';
@@ -21,6 +25,7 @@ import 'package:bytemail/repository/drift/drift_sync_job_store.dart';
 import 'package:bytemail/repository/drift/drift_sync_profile_store.dart';
 import 'package:bytemail/repository/drift/drift_widget_diagnostics_store.dart';
 import 'package:bytemail/repository/mail_repository.dart';
+import 'package:bytemail/theme/custom_theme.dart';
 
 class DriftMailRepository implements MailRepository {
   DriftMailRepository(this._database)
@@ -33,6 +38,7 @@ class DriftMailRepository implements MailRepository {
       folders: _accounts,
     );
     _outbox = DriftOutboxStore(_database, notify: notify);
+    _compose = DriftComposeStore(_database, notify: notify);
     _jobs = DriftSyncJobStore(
       _database,
       notify: notify,
@@ -40,6 +46,7 @@ class DriftMailRepository implements MailRepository {
     );
     _focus = DriftFocusStore(_database, notify: notify);
     _syncProfiles = DriftSyncProfileStore(_database, notify: notify);
+    _customThemes = DriftCustomThemeStore(_database, notify: notify);
     _widgetDiagnostics = DriftWidgetDiagnosticsStore(
       _database,
       notify: notify,
@@ -54,9 +61,11 @@ class DriftMailRepository implements MailRepository {
   late final DriftAccountFolderStore _accounts;
   late final DriftMessageStore _messages;
   late final DriftOutboxStore _outbox;
+  late final DriftComposeStore _compose;
   late final DriftSyncJobStore _jobs;
   late final DriftFocusStore _focus;
   late final DriftSyncProfileStore _syncProfiles;
+  late final DriftCustomThemeStore _customThemes;
   late final DriftWidgetDiagnosticsStore _widgetDiagnostics;
 
   @override
@@ -96,6 +105,9 @@ class DriftMailRepository implements MailRepository {
   Future<void> upsertFocusRule(FocusRule rule) => _focus.upsertFocusRule(rule);
 
   @override
+  Future<void> deleteFocusRule(String id) => _focus.deleteFocusRule(id);
+
+  @override
   Future<int> countQueuedOutbox() => _outbox.countQueuedOutbox();
 
   @override
@@ -117,7 +129,7 @@ class DriftMailRepository implements MailRepository {
       );
 
   @override
-  Future<void> upsertMessages(
+  Future<List<MailMessage>> upsertMessages(
     List<MailMessage> messages, {
     required String folderId,
   }) =>
@@ -165,6 +177,7 @@ class DriftMailRepository implements MailRepository {
     String? attachmentRefsJson,
     String? signatureId,
     int? sendAfter,
+    String state = 'queued',
   }) =>
       _outbox.enqueueOutbox(
         accountId: accountId,
@@ -179,6 +192,7 @@ class DriftMailRepository implements MailRepository {
         attachmentRefsJson: attachmentRefsJson,
         signatureId: signatureId,
         sendAfter: sendAfter,
+        state: state,
       );
 
   @override
@@ -193,11 +207,122 @@ class DriftMailRepository implements MailRepository {
       _outbox.updateOutboxState(id, state, error: error);
 
   @override
+  Future<void> updateOutboxContent(
+    String id, {
+    String? to,
+    String? subject,
+    String? body,
+    String? cc,
+    String? bcc,
+    String? composeMode,
+    String? inReplyTo,
+    String? referencesJson,
+    String? attachmentRefsJson,
+    String? signatureId,
+    int? sendAfter,
+    bool clearSendAfter = false,
+  }) =>
+      _outbox.updateOutboxContent(
+        id,
+        to: to,
+        subject: subject,
+        body: body,
+        cc: cc,
+        bcc: bcc,
+        composeMode: composeMode,
+        inReplyTo: inReplyTo,
+        referencesJson: referencesJson,
+        attachmentRefsJson: attachmentRefsJson,
+        signatureId: signatureId,
+        sendAfter: sendAfter,
+        clearSendAfter: clearSendAfter,
+      );
+
+  @override
   Future<void> deleteOutbox(String id) => _outbox.deleteOutbox(id);
 
   @override
   Future<int> deleteOutboxInStates(Iterable<String> states) =>
       _outbox.deleteOutboxInStates(states);
+
+  @override
+  Future<List<MailSignature>> listSignatures(String accountId) =>
+      _compose.listSignatures(accountId);
+
+  @override
+  Future<MailSignature?> getSignature(String id) => _compose.getSignature(id);
+
+  @override
+  Future<String> upsertSignature(MailSignature signature) =>
+      _compose.upsertSignature(signature);
+
+  @override
+  Future<void> deleteSignature(String id) => _compose.deleteSignature(id);
+
+  @override
+  Future<List<MailSignatureAsset>> listSignatureAssets(String signatureId) =>
+      _compose.listSignatureAssets(signatureId);
+
+  @override
+  Future<String> addSignatureAsset({
+    required String signatureId,
+    required String sourcePath,
+    required String mimeType,
+    String? contentId,
+  }) =>
+      _compose.addSignatureAsset(
+        signatureId: signatureId,
+        sourcePath: sourcePath,
+        mimeType: mimeType,
+        contentId: contentId,
+      );
+
+  @override
+  Future<List<MailTemplate>> listTemplates({String? accountId}) =>
+      _compose.listTemplates(accountId: accountId);
+
+  @override
+  Future<String> upsertTemplate(MailTemplate template) =>
+      _compose.upsertTemplate(template);
+
+  @override
+  Future<void> deleteTemplate(String id) => _compose.deleteTemplate(id);
+
+  @override
+  Future<List<CustomTheme>> listCustomThemes() =>
+      _customThemes.listCustomThemes();
+
+  @override
+  Future<CustomTheme?> getCustomTheme(String id) =>
+      _customThemes.getCustomTheme(id);
+
+  @override
+  Future<String> upsertCustomTheme(CustomTheme theme) =>
+      _customThemes.upsertCustomTheme(theme);
+
+  @override
+  Future<void> deleteCustomTheme(String id) =>
+      _customThemes.deleteCustomTheme(id);
+
+  @override
+  Future<OutboundBlobRef> stageAttachmentBlob({
+    required String accountId,
+    required String sourcePath,
+    String? fileName,
+  }) =>
+      _compose.stageAttachmentBlob(
+        accountId: accountId,
+        sourcePath: sourcePath,
+        fileName: fileName,
+      );
+
+  @override
+  Future<OutboundBlobRef?> getAttachmentBlob(String id) =>
+      _compose.getAttachmentBlob(id);
+
+  @override
+  Future<void> deleteAttachmentBlob(String id) =>
+      _compose.deleteAttachmentBlob(id);
 
   @override
   Future<void> enqueueSyncJob({

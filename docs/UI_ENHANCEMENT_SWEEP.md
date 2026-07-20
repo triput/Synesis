@@ -6,7 +6,7 @@
 | Purpose | Visual polish & mailbox interaction pass after foundation (M0–M12) |
 | V1 delivery | **W2**, **W5**, **W7**, plus **W4** (outbound font, signature images) |
 | Related | [ROADMAP.md](ROADMAP.md), [DEFECTS.md](DEFECTS.md), [TIER_B_PLAN.md §16](TIER_B_PLAN.md#16-tb-14--list-visual-polish) (TB-14) |
-| Last updated | 2026-07-17 (W5 landed; UI-P3/DEF-001 closed with W5) |
+| Last updated | 2026-07-18 (UI-P21 notes: tabs / section nav vs endless scroll) |
 
 The UI enhancement sweep is the **catch-all for polish and look-and-feel settings** that makes ByteMail feel like a finished client. Theme packs landed in M8; **built-in palette refresh + `content` token landed 2026-07-16** ([UI-L8](#3-landed-reference--do-not-re-implement)). **W2 list polish landed 2026-07-17** (UI-P1/P2/P7/P12 → UI-L9–L12). **Custom themes**, fonts, and export remain **W7** ([§6](#6-look--feel-extensions-user-backlog)).
 
@@ -68,8 +68,8 @@ Sweep ───┼── W5: desktop focus & chrome
 | --- | --- | --- | --- | --- | --- | --- |
 | **Pri-2** | UI-P3 | **[DEF-001](DEFECTS.md)** — Ctrl shortcuts without Quick Reply focus | **Landed** (W5, 2026-07-17) | **W5** | `mail_workspace.dart`, `keyboard_intents.dart`, `mailbox_shortcuts.dart` | TC-9 keymap pass complete with W5 land |
 | **Pri-2** | UI-P5 | **[DEF-007](DEFECTS.md)** — sync overwrites local read state | Open | W2/W3 | `sync_engine.dart`, `drift_mail_repository.dart` | UI flicker on refresh; merge policy |
-| **Pri-3** | UI-P6 | **Density/spacing consistency** | Not started | **W7** | Shell panes, `density.dart` | Calm vs Compact pass after tokens |
-| **Pri-3** | UI-P8 | **Empty states** | Not started | **W7** | List, reading pane, search, no accounts | Illustrated copy + CTA (add account, sync) |
+| **Pri-3** | UI-P6 | **Density/spacing consistency** | **Landed** (W7) | **W7** | Shell panes, `density.dart` | Calm vs Compact metrics + empty-state sizes |
+| **Pri-3** | UI-P8 | **Empty states** | **Landed** (W7) | **W7** | List, reading pane, search, no accounts | Shared `EmptyState` + CTAs |
 | **Pri-3** | UI-P9 | **Loading / error skeletons** | Not started | W2/W7 | `reading_pane.dart`, list | Body fetch, sync-in-progress |
 | **Pri-3** | UI-P10 | **Android widget theme tokens** | Not started | **W7** | `widget_snapshot_service`, Kotlin | SPEC open Q9 — all five themes vs Dark+Black |
 | **Pri-3** | UI-P11 | **Sync status indicator polish** | Not started | W3/W7 | Title bar / sidebar | Clear syncing vs error vs idle |
@@ -100,11 +100,11 @@ Not strictly “polish” — **appearance & settings product surface**. Crosses
 
 | Pri | ID | Item | Status | V1 wave | Primary files | Notes |
 | --- | --- | --- | --- | --- | --- | --- |
-| **Pri-2** | UI-P16 | **Custom themes (multiple)** | Planned | **W7** (schema W0 optional) | `theme_tokens.dart`, `appearance_sheet.dart`, `custom_themes` table | Pick any **built-in theme as base** → adjust token colors → **Save as** named custom theme; **multiple** custom themes in picker alongside Light/Dark/… |
-| **Pri-2** | UI-P17 | **Export / import settings** | Planned | **W7** | `app_settings_cubit.dart`, new `settings_export_service.dart` | JSON export: themes, custom themes, density, fonts, focus prefs, layout prefs — **no credentials**; import merge or replace with validation |
-| **Pri-2** | UI-P18 | **App-wide UI font** (family, size, color) | Planned | **W7** | `app_settings_state.dart`, `app_theme.dart` | User-selectable font for **all in-app screens**; size scale or pt; optional default text color override via theme tokens |
-| **Pri-2** | UI-P19 | **Outbound message font** | Planned | **W4** | `compose_sheet` / `ComposeDraft`, MIME builder | Font family, size, color for **sent mail** — distinct from UI font; per-account override optional; flows through HTML/plain MIME |
-| **Pri-2** | UI-P20 | **Signature images** (logos, etc.) | Planned | **W4** | `account_signatures`, MIME send | **HTML signatures** (locked Tier A); embed images via CID/`multipart/related`; local asset per signature; ties UI-P19/HTML compose |
+| **Pri-2** | UI-P16 | **Custom themes (multiple)** | **Landed** (W7) | **W7** | `theme_tokens.dart`, `appearance_sheet.dart`, `custom_themes` table | Pick any **built-in theme as base** → adjust token colors → **Save as** named custom theme; **multiple** custom themes in picker alongside Light/Dark/… |
+| **Pri-2** | UI-P17 | **Export / import settings** | **Landed** (W7) | **W7** | `app_settings_cubit.dart`, `settings_export_service.dart` | JSON export: themes, custom themes, density, fonts, focus prefs, layout prefs — **no credentials**; import merge or replace with validation |
+| **Pri-2** | UI-P18 | **App-wide UI font** (family, size, color) | **Landed** (W7) | **W7** | `app_settings_state.dart`, `app_theme.dart` | User-selectable font for **all in-app screens**; size scale or pt; optional default text color override via theme tokens |
+| **Pri-2** | UI-P19 | **Outbound message font** | **Partial** (W4) — default `kOutboundFontFamily` wrap on send; user family/size/color prefs not shipped | **W4** | `compose_sheet` / `ComposeDraft`, MIME builder | Font family, size, color for **sent mail** — distinct from UI font; per-account override optional; flows through HTML/plain MIME |
+| **Pri-2** | UI-P20 | **Signature images** (logos, etc.) | **Landed (code)** with W4; checklist pending | **W4** | `account_signatures`, MIME send | **HTML signatures** (locked Tier A); embed images via CID→data-URI on send; local asset per signature; ties UI-P19/HTML compose |
 
 ### 6.2 Architecture notes
 
@@ -167,18 +167,20 @@ built_in_theme (Light | Dark | …)
 
 ## 7. Backlog — add here
 
-*Next ID: **UI-P29** …*
+*Next ID: **UI-P31** …*
 
 | Pri | ID | Item | Status | V1 wave | Primary files | Notes |
 | --- | --- | --- | --- | --- | --- | --- |
-| Pri-2 | UI-P21 | **Settings organized by functional area** | Backlog — post-V1 | V1.1+ | `lib/ui/settings/`, `lib/settings/` | Replace the growing single settings surface with searchable functional sections: Accounts, Appearance, Reading & message list, Compose, Sync & storage, Notifications, Privacy & security, Shortcuts & accessibility, and Advanced/About. Use an adaptive desktop navigation rail/list and mobile section pages; retain existing setting values and persistence. Acceptance: a user can identify the owning section from its name, search by setting label/keyword, and reach any setting without scanning unrelated controls. |
+| Pri-2 | UI-P21 | **Settings organized by functional area** | Backlog — **post-V1** | V1.1+ | `lib/ui/settings/`, `lib/settings/` | **Post-V1** — not a V1/Final-wave blocker. Replace the growing single long settings scroll with **tabs / section navigation** so functional vs visual settings are not one endless list. Sections: Accounts, Appearance (visual), Reading & message list, Compose, Sync & storage, Notifications, Privacy & security, Shortcuts & accessibility, and Advanced/About. **Navigation pattern:** desktop **tabs or adaptive navigation rail/list** (pick section → show that section’s controls only); mobile **section pages** (list of areas → drill-in). Searchable by setting label/keyword. Retain existing setting values and persistence. **W6 (2026-07-17):** dedicated **Notifications** sheet landed (`notifications_sheet.dart`); full functional-area reorg remains post-V1. **Operator (2026-07-18):** hate scrolling one long settings list — want tabs (or equivalent sectioned nav). Acceptance: a user can identify the owning section from its name, open a section via tab/rail/list (not endless scroll of unrelated controls), search by label/keyword, and reach any setting without scanning the whole surface. |
 | Pri-2 | UI-P22 | **Search results show message datetime** | Backlog | **W7** / V1.1 | `lib/ui/search/search_sheet.dart`, list projectors | Local and especially **remote/server** search hits must show a clear datetime (`whenLabel` and/or absolute date for older mail) so near-duplicate subjects/senders are distinguishable. Acceptance: every search result row shows a readable sent/received time; older-than-today items use a date (not only “Yesterday”-style relative labels when that would collide). |
 | Pri-2 | UI-P23 | **Folder context menu: mark all read/unread** | Backlog — post-V1 | V1.1+ | sidebar folder tree, `MailboxCubit`, provider `setUnread` bulk | Right-click (desktop) / long-press menu on a folder → Mark all as read / Mark all as unread for that folder’s messages (local optimistic + provider push where supported). Acceptance: action completes without opening the folder first; unread badge recounts. |
 | Pri-2 | UI-P24 | **Ctrl+A select all messages** | Backlog | **W7** | `mail_workspace.dart`, `keyboard_intents.dart`, `MailboxCubit` | With list focus (and not while editing text), Ctrl+A selects all currently visible/projected messages for existing bulk actions (move, mark read, etc.). Respect text-field safety. Acceptance: Ctrl+A fills `selectedMessageIds`; Escape / click clears; works with threaded and flat modes. |
 | Pri-3 | UI-P25 | **Discoverable per-message multi-select** | Backlog — post-V1 | V1.1+ | message list row, density | Ctrl/Shift multi-select already landed (UI-L6). Add clearer individual selection (e.g. always-available checkbox or hover affordance on desktop; keep mobile long-press). Acceptance: user can add/remove single rows from the bulk set without memorizing modifier keys. |
 | Pri-1 | UI-P26 | **Honor remote read/unread from other clients on sync** | Backlog | **W7** (ties UI-P5 / [DEF-007](DEFECTS.md)) | `imap_smtp_mail_provider.dart`, `sync_engine.dart`, upsert merge | IMAP already FETCHes `FLAGS` / Graph `isRead`. Ensure sync applies server Seen/read for mail already read in another client, without undoing in-flight local mark-read/unread (coordinate merge with DEF-007). Acceptance: mark read in Thunderbird/Outlook → next ByteMail sync shows read; local mark then immediate sync does not flicker back incorrectly. |
-| Pri-2 | UI-P27 | **Auto-mark as read after open dwell** | Backlog — **V1** ([DEF-034](DEFECTS.md)) | **W7** (not W5 blocker) | `reading_pane.dart`, `MailboxCubit.setUnread`, timers | After an unread message is open/selected in the reading pane for **5 continuous seconds** (default ON, fixed delay for V1), mark read via existing unread mutation + provider push. Cancel timer on selection change. Acceptance: open unread → wait 5s → row dims / badge drops without manual mark; leave before 5s → stays unread. |
+| Pri-2 | UI-P27 | **Auto-mark as read after open dwell** | **Landed** (W7) — [DEF-034](DEFECTS.md) closed | **W7** (not W5 blocker) | `auto_mark_as_read.dart`, `reading_pane.dart` | After an unread message is open/selected in the reading pane for **5 continuous seconds** (default ON, fixed delay for V1), mark read via existing unread mutation + provider push. Cancel timer on selection change. |
 | Pri-2 | UI-P28 | **Auto-mark settings (delay / off)** | Backlog — **post-V1** | V1.1+ | `AppSettings`, Appearance / Reading section | User-configurable auto-mark dwell seconds and ability to disable auto-marking. Default remains 5s / ON when unset. Ties UI-P21 Reading & message list section. Acceptance: setting persists; 0 or Off disables; custom delay used instead of hardcoded 5s. |
+| Pri-2 | UI-P29 | **One-click clear active filters** | Backlog — **post-V1** | V1.1+ | filter bar / chip row, `MailboxCubit` | Dogfood gap after Final-wave Phase B: need a single obvious control (chip × / toolbar Clear) that resets ephemeral `userFilter` in one click without opening the filter sheet. Does **not** delete saved presets. Acceptance: with any active filter, one click restores the unfiltered list; control hidden or disabled when no filter is active. |
+| Pri-1 | UI-P30 | **Hold / pause auto-mark for in-view message (Unread filter)** | Backlog — **post-V1** | V1.1+ | `auto_mark_as_read.dart`, reading pane, filter projection | **Dogfood (2026-07-18):** with **Unread** (or any filter that excludes read) active, the 5s auto-mark (UI-P27) marks the open message read → it drops out of the filtered list and the reading pane closes/advances — jarring while still reading. Need an option to **disable / pause auto-mark for the currently in-view email** (and/or keep selection pinned after auto-mark under restrictive filters). Ties UI-P28 global off/delay. Acceptance: user can keep reading an auto-marked message without the pane vanishing mid-read when Unread filter is on; default V1 behavior may remain until this ships. |
 | | | *(additional items below)* | Planned | | | |
 
 ### Addition template (copy a row)
@@ -199,12 +201,12 @@ Sweep is **complete for V1** when:
 - [x] UI-P7 pull-to-refresh shipped (W2 — 2026-07-17, [UI-L10](UI_ENHANCEMENT_SWEEP.md))
 - [x] UI-P12 selection highlight shipped (W2 — 2026-07-17, [UI-L11](UI_ENHANCEMENT_SWEEP.md))
 - [x] UI-P1 unread recount shipped (W2 — 2026-07-17, [UI-L12](UI_ENHANCEMENT_SWEEP.md))
-- [ ] UI-P6 density consistency pass (W7)
-- [ ] UI-P8 empty states for main panes (W7)
+- [x] UI-P6 density consistency pass (W7)
+- [x] UI-P8 empty states for main panes (W7)
 - [ ] UI-P5 DEF-007 read-merge fixed or documented workaround
-- [ ] UI-P27 / [DEF-034](DEFECTS.md) auto-mark 5s shipped (V1; not W5 blocker)
+- [x] UI-P27 / [DEF-034](DEFECTS.md) auto-mark 5s shipped (V1; not W5 blocker)
 - [ ] All **Pri-1** rows in §4 and §6 resolved or explicitly deferred with reason
-- [ ] UI-P16–P20 shipped **or** explicitly deferred to V1.1 with reason (custom themes, export, fonts, sig images)
+- [x] UI-P16–P18 shipped (W7); UI-P19/P20 tracked with W4 (partial / code landed)
 - [ ] No open **Pri-2** sweep items blocking V1 exit checklist appearance gates
 
 ---
@@ -230,6 +232,9 @@ Sweep is **complete for V1** when:
 | 2026-07-17 | Added UI-P21 post-V1 settings information architecture: functional sections, adaptive navigation, and settings search |
 | 2026-07-17 | Backlog UI-P22–P26: search result datetimes; folder mark-all read; Ctrl+A; discoverable multi-select; remote Seen sync (ties DEF-007) |
 | 2026-07-17 | DEF-034 / UI-P27 V1 auto-mark 5s (default ON, fixed delay); UI-P28 post-V1 settings (delay / off) |
+| 2026-07-18 | UI-P29 post-V1 one-click clear active filters (dogfood after Phase B) |
+| 2026-07-18 | UI-P30 Pri-1 post-V1: pause/hold auto-mark for in-view message under Unread filter |
+| 2026-07-18 | UI-P21 notes clarified: **tabs / section navigation** (desktop tabs or rail; mobile section pages; not one endless scroll); status confirmed **post-V1** (operator dogfood) |
 
 ---
 

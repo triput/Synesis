@@ -2,9 +2,9 @@
 // File: lib/ui/shell/reading_pane.dart
 // Description: Reading pane with adaptive actions and portrait message paging
 // Component: UI
-// Version: 1.3 (Gold Master)
+// Version: 1.4 (Gold Master)
 // Created: 2026-07-14
-// Last Update: 2026-07-17
+// Last Update: 2026-07-18
 // ==============================================================================
 
 import 'dart:async';
@@ -20,7 +20,10 @@ import 'package:bytemail/domain/models.dart';
 import 'package:bytemail/theme/app_theme.dart';
 import 'package:bytemail/theme/density.dart';
 import 'package:bytemail/theme/theme_tokens.dart';
+import 'package:bytemail/ui/common/empty_state.dart';
 import 'package:bytemail/ui/shell/address_scope_action.dart';
+import 'package:bytemail/ui/shell/auto_mark_as_read.dart';
+import 'package:bytemail/ui/shell/message_attachments_panel.dart';
 import 'package:bytemail/ui/shell/message_body_find.dart';
 import 'package:bytemail/ui/shell/message_body_view.dart';
 import 'package:printing/printing.dart';
@@ -133,6 +136,10 @@ class _ReadingPaneState extends State<ReadingPane> {
   /// Message ids allowed to load remote images for this app session only.
   final Set<String> _sessionAllowedRemoteImages = <String>{};
 
+  /// DEF-034 / UI-P27: default-on 5s dwell before an open unread message is
+  /// auto-marked read. No settings toggle.
+  final AutoMarkAsReadController _autoMarkAsRead = AutoMarkAsReadController();
+
   bool _findOpen = false;
   String _findQuery = '';
   int _findActiveIndex = 0;
@@ -151,6 +158,7 @@ class _ReadingPaneState extends State<ReadingPane> {
         _openFind(notifyParent: true);
       });
     }
+    _syncAutoMarkAsRead();
   }
 
   @override
@@ -170,6 +178,22 @@ class _ReadingPaneState extends State<ReadingPane> {
     if (oldId != newId) {
       _resetFindForMessageChange();
     }
+    _syncAutoMarkAsRead();
+  }
+
+  /// Reconciles the DEF-034 dwell timer against the currently open message.
+  void _syncAutoMarkAsRead() {
+    _autoMarkAsRead.update(
+      messageId: widget.message?.id,
+      unread: widget.message?.unread ?? false,
+      onMarkRead: widget.onMarkRead,
+    );
+  }
+
+  @override
+  void dispose() {
+    _autoMarkAsRead.dispose();
+    super.dispose();
   }
 
   void _allowRemoteImagesForMessage(String messageId) {
@@ -299,7 +323,6 @@ class _ReadingPaneState extends State<ReadingPane> {
 
   Widget _buildBody(BuildContext context) {
     final ThemeTokens t = tokensOf(context);
-    final Color secondaryText = Color.lerp(t.muted, t.text, 0.28)!;
     if (widget.message == null) {
       if (widget.findInMessageRequested) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -310,8 +333,12 @@ class _ReadingPaneState extends State<ReadingPane> {
       }
       return Container(
         color: t.content,
-        alignment: Alignment.center,
-        child: Text('Select a message', style: TextStyle(color: secondaryText)),
+        child: EmptyState(
+          title: 'Select a message',
+          subtitle: 'Choose a conversation from the list to read it here.',
+          icon: Icons.mark_email_unread_outlined,
+          density: widget.density,
+        ),
       );
     }
 
@@ -931,20 +958,40 @@ class _ReadingPaneContent extends StatelessWidget {
               Expanded(
                 child: Padding(
                   padding: pad,
-                  child: MessageBodyView(
-                    body: msg.body,
-                    isLoadingBody: isLoadingBody,
-                    bodyErrorMessage: bodyErrorMessage,
-                    bodySize: density.bodySize,
-                    muted: secondaryText,
-                    blockRemoteImages: blockRemoteImages,
-                    allowRemoteImages: allowRemoteImages,
-                    onLoadRemoteImages: onLoadRemoteImages,
-                    findQuery: findOpen ? findQuery : '',
-                    findActiveIndex: findActiveIndex,
-                    findNavigateEpoch: findNavigateEpoch,
-                    findNavigateReverse: findNavigateReverse,
-                    onFindMatchCountChanged: onFindMatchCountChanged,
+                  child: LayoutBuilder(
+                    builder:
+                        (BuildContext context, BoxConstraints bodyConstraints) {
+                      // Quick reply needs ~52px; hide it in short split panes
+                      // so MessageBodyView keeps the reserved min body slot.
+                      const double quickReplyReserve = 56;
+                      final bool showQuickReply = !inTrash &&
+                          bodyConstraints.maxHeight >=
+                              (minBodyHeight + quickReplyReserve);
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: <Widget>[
+                          MessageAttachmentsPanel(message: msg),
+                          Expanded(
+                            child: MessageBodyView(
+                              body: msg.body,
+                              isLoadingBody: isLoadingBody,
+                              bodyErrorMessage: bodyErrorMessage,
+                              bodySize: density.bodySize,
+                              muted: secondaryText,
+                              blockRemoteImages: blockRemoteImages,
+                              allowRemoteImages: allowRemoteImages,
+                              onLoadRemoteImages: onLoadRemoteImages,
+                              findQuery: findOpen ? findQuery : '',
+                              findActiveIndex: findActiveIndex,
+                              findNavigateEpoch: findNavigateEpoch,
+                              findNavigateReverse: findNavigateReverse,
+                              onFindMatchCountChanged: onFindMatchCountChanged,
+                            ),
+                          ),
+                          if (showQuickReply) QuickReplyBar(message: msg),
+                        ],
+                      );
+                    },
                   ),
                 ),
               ),

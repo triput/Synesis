@@ -166,6 +166,8 @@ TC-12 Account health panel ◄── diagnostics_service           │
 
 ## 7. TC-3 — DB encryption at rest
 
+**Status:** **Landed** (W7, 2026-07-18) — SQLite3MultipleCiphers via `sqlite3` hooks; see [W7_SQLCIPHER_SPIKE.md](W7_SQLCIPHER_SPIKE.md).
+
 **Goal:** Opt-in SQLCipher per locked ROADMAP decision.
 
 ### Work
@@ -195,6 +197,8 @@ TC-12 Account health panel ◄── diagnostics_service           │
 ---
 
 ## 8. TC-4 — Focus override management UI
+
+**Status:** **Landed** (W7, 2026-07-18) — `focus_rules_sheet.dart` + `deleteFocusRule`.
 
 **Goal:** Make Focus scorer user-editable without SQL.
 

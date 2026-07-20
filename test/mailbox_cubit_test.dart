@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:bytemail/compose/account_signature.dart';
 import 'package:bytemail/domain/address_match_scope.dart';
 import 'package:bytemail/domain/models.dart';
 import 'package:bytemail/domain/sync_profile.dart';
@@ -10,6 +11,7 @@ import 'package:bytemail/query/message_query.dart';
 import 'package:bytemail/repository/mail_repository.dart';
 import 'package:bytemail/settings/app_settings_cubit.dart';
 import 'package:bytemail/sync/sync_engine.dart';
+import 'package:bytemail/theme/custom_theme.dart';
 import 'package:bytemail/ui/mailbox/mailbox_cubit.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -235,6 +237,7 @@ class _RecordingRepo implements MailRepository {
     String? attachmentRefsJson,
     String? signatureId,
     int? sendAfter,
+    String state = 'queued',
   }) async => 'out-1';
 
   @override
@@ -573,10 +576,11 @@ class _RecordingRepo implements MailRepository {
   }) async {}
 
   @override
-  Future<void> upsertMessages(
+  Future<List<MailMessage>> upsertMessages(
     List<MailMessage> messages, {
     required String folderId,
-  }) async {}
+  }) async =>
+      const <MailMessage>[];
 
   @override
   Future<void> updateMessageBody(String messageId, String body) async {}
@@ -641,6 +645,97 @@ class _RecordingRepo implements MailRepository {
     _focusRules.removeWhere((FocusRule existing) => existing.id == rule.id);
     _focusRules.add(rule);
   }
+
+  @override
+  Future<void> deleteFocusRule(String id) async {
+    _focusRules.removeWhere((FocusRule existing) => existing.id == id);
+  }
+
+  @override
+  Future<void> updateOutboxContent(
+    String id, {
+    String? to,
+    String? subject,
+    String? body,
+    String? cc,
+    String? bcc,
+    String? composeMode,
+    String? inReplyTo,
+    String? referencesJson,
+    String? attachmentRefsJson,
+    String? signatureId,
+    int? sendAfter,
+    bool clearSendAfter = false,
+  }) async {}
+
+  // --- Compose assets (signatures / templates / outbound blobs) ---
+
+  @override
+  Future<List<MailSignature>> listSignatures(String accountId) async =>
+      const <MailSignature>[];
+
+  @override
+  Future<MailSignature?> getSignature(String id) async => null;
+
+  @override
+  Future<String> upsertSignature(MailSignature signature) async =>
+      signature.id;
+
+  @override
+  Future<void> deleteSignature(String id) async {}
+
+  @override
+  Future<List<MailSignatureAsset>> listSignatureAssets(
+    String signatureId,
+  ) async => const <MailSignatureAsset>[];
+
+  @override
+  Future<String> addSignatureAsset({
+    required String signatureId,
+    required String sourcePath,
+    required String mimeType,
+    String? contentId,
+  }) async => '';
+
+  @override
+  Future<List<MailTemplate>> listTemplates({String? accountId}) async =>
+      const <MailTemplate>[];
+
+  @override
+  Future<String> upsertTemplate(MailTemplate template) async => template.id;
+
+  @override
+  Future<void> deleteTemplate(String id) async {}
+
+  @override
+  Future<OutboundBlobRef> stageAttachmentBlob({
+    required String accountId,
+    required String sourcePath,
+    String? fileName,
+  }) {
+    throw UnsupportedError('Attachment staging is not implemented.');
+  }
+
+  @override
+  Future<OutboundBlobRef?> getAttachmentBlob(String id) async => null;
+
+  @override
+  Future<void> deleteAttachmentBlob(String id) async {}
+
+  // --- Custom themes (UI-P16) ---
+
+  @override
+  Future<List<CustomTheme>> listCustomThemes() async =>
+      const <CustomTheme>[];
+
+  @override
+  Future<CustomTheme?> getCustomTheme(String id) async => null;
+
+  @override
+  Future<String> upsertCustomTheme(CustomTheme theme) async => theme.id;
+
+  @override
+  Future<void> deleteCustomTheme(String id) async {}
 }
 
 class _ThrowingHeaderProvider extends MailProvider {

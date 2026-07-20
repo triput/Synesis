@@ -1372,6 +1372,30 @@ class $MessagesTable extends Messages with TableInfo<$MessagesTable, Message> {
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _toRecipientsMeta = const VerificationMeta(
+    'toRecipients',
+  );
+  @override
+  late final GeneratedColumn<String> toRecipients = GeneratedColumn<String>(
+    'to_recipients',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _ccRecipientsMeta = const VerificationMeta(
+    'ccRecipients',
+  );
+  @override
+  late final GeneratedColumn<String> ccRecipients = GeneratedColumn<String>(
+    'cc_recipients',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
   static const VerificationMeta _starredMeta = const VerificationMeta(
     'starred',
   );
@@ -1464,6 +1488,8 @@ class $MessagesTable extends Messages with TableInfo<$MessagesTable, Message> {
     pinned,
     hasAttachments,
     rawHeaders,
+    toRecipients,
+    ccRecipients,
     starred,
     threadId,
     snoozedUntil,
@@ -1613,6 +1639,24 @@ class $MessagesTable extends Messages with TableInfo<$MessagesTable, Message> {
         rawHeaders.isAcceptableOrUnknown(data['raw_headers']!, _rawHeadersMeta),
       );
     }
+    if (data.containsKey('to_recipients')) {
+      context.handle(
+        _toRecipientsMeta,
+        toRecipients.isAcceptableOrUnknown(
+          data['to_recipients']!,
+          _toRecipientsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('cc_recipients')) {
+      context.handle(
+        _ccRecipientsMeta,
+        ccRecipients.isAcceptableOrUnknown(
+          data['cc_recipients']!,
+          _ccRecipientsMeta,
+        ),
+      );
+    }
     if (data.containsKey('starred')) {
       context.handle(
         _starredMeta,
@@ -1728,6 +1772,14 @@ class $MessagesTable extends Messages with TableInfo<$MessagesTable, Message> {
         DriftSqlType.string,
         data['${effectivePrefix}raw_headers'],
       ),
+      toRecipients: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}to_recipients'],
+      )!,
+      ccRecipients: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}cc_recipients'],
+      )!,
       starred: attachedDatabase.typeMapping.read(
         DriftSqlType.bool,
         data['${effectivePrefix}starred'],
@@ -1778,6 +1830,8 @@ class Message extends DataClass implements Insertable<Message> {
   final bool pinned;
   final bool hasAttachments;
   final String? rawHeaders;
+  final String toRecipients;
+  final String ccRecipients;
   final bool starred;
   final String? threadId;
   final int? snoozedUntil;
@@ -1801,6 +1855,8 @@ class Message extends DataClass implements Insertable<Message> {
     required this.pinned,
     required this.hasAttachments,
     this.rawHeaders,
+    required this.toRecipients,
+    required this.ccRecipients,
     required this.starred,
     this.threadId,
     this.snoozedUntil,
@@ -1831,6 +1887,8 @@ class Message extends DataClass implements Insertable<Message> {
     if (!nullToAbsent || rawHeaders != null) {
       map['raw_headers'] = Variable<String>(rawHeaders);
     }
+    map['to_recipients'] = Variable<String>(toRecipients);
+    map['cc_recipients'] = Variable<String>(ccRecipients);
     map['starred'] = Variable<bool>(starred);
     if (!nullToAbsent || threadId != null) {
       map['thread_id'] = Variable<String>(threadId);
@@ -1868,6 +1926,8 @@ class Message extends DataClass implements Insertable<Message> {
       rawHeaders: rawHeaders == null && nullToAbsent
           ? const Value.absent()
           : Value(rawHeaders),
+      toRecipients: Value(toRecipients),
+      ccRecipients: Value(ccRecipients),
       starred: Value(starred),
       threadId: threadId == null && nullToAbsent
           ? const Value.absent()
@@ -1907,6 +1967,8 @@ class Message extends DataClass implements Insertable<Message> {
       pinned: serializer.fromJson<bool>(json['pinned']),
       hasAttachments: serializer.fromJson<bool>(json['hasAttachments']),
       rawHeaders: serializer.fromJson<String?>(json['rawHeaders']),
+      toRecipients: serializer.fromJson<String>(json['toRecipients']),
+      ccRecipients: serializer.fromJson<String>(json['ccRecipients']),
       starred: serializer.fromJson<bool>(json['starred']),
       threadId: serializer.fromJson<String?>(json['threadId']),
       snoozedUntil: serializer.fromJson<int?>(json['snoozedUntil']),
@@ -1937,6 +1999,8 @@ class Message extends DataClass implements Insertable<Message> {
       'pinned': serializer.toJson<bool>(pinned),
       'hasAttachments': serializer.toJson<bool>(hasAttachments),
       'rawHeaders': serializer.toJson<String?>(rawHeaders),
+      'toRecipients': serializer.toJson<String>(toRecipients),
+      'ccRecipients': serializer.toJson<String>(ccRecipients),
       'starred': serializer.toJson<bool>(starred),
       'threadId': serializer.toJson<String?>(threadId),
       'snoozedUntil': serializer.toJson<int?>(snoozedUntil),
@@ -1963,6 +2027,8 @@ class Message extends DataClass implements Insertable<Message> {
     bool? pinned,
     bool? hasAttachments,
     Value<String?> rawHeaders = const Value.absent(),
+    String? toRecipients,
+    String? ccRecipients,
     bool? starred,
     Value<String?> threadId = const Value.absent(),
     Value<int?> snoozedUntil = const Value.absent(),
@@ -1986,6 +2052,8 @@ class Message extends DataClass implements Insertable<Message> {
     pinned: pinned ?? this.pinned,
     hasAttachments: hasAttachments ?? this.hasAttachments,
     rawHeaders: rawHeaders.present ? rawHeaders.value : this.rawHeaders,
+    toRecipients: toRecipients ?? this.toRecipients,
+    ccRecipients: ccRecipients ?? this.ccRecipients,
     starred: starred ?? this.starred,
     threadId: threadId.present ? threadId.value : this.threadId,
     snoozedUntil: snoozedUntil.present ? snoozedUntil.value : this.snoozedUntil,
@@ -2027,6 +2095,12 @@ class Message extends DataClass implements Insertable<Message> {
       rawHeaders: data.rawHeaders.present
           ? data.rawHeaders.value
           : this.rawHeaders,
+      toRecipients: data.toRecipients.present
+          ? data.toRecipients.value
+          : this.toRecipients,
+      ccRecipients: data.ccRecipients.present
+          ? data.ccRecipients.value
+          : this.ccRecipients,
       starred: data.starred.present ? data.starred.value : this.starred,
       threadId: data.threadId.present ? data.threadId.value : this.threadId,
       snoozedUntil: data.snoozedUntil.present
@@ -2059,6 +2133,8 @@ class Message extends DataClass implements Insertable<Message> {
           ..write('pinned: $pinned, ')
           ..write('hasAttachments: $hasAttachments, ')
           ..write('rawHeaders: $rawHeaders, ')
+          ..write('toRecipients: $toRecipients, ')
+          ..write('ccRecipients: $ccRecipients, ')
           ..write('starred: $starred, ')
           ..write('threadId: $threadId, ')
           ..write('snoozedUntil: $snoozedUntil, ')
@@ -2087,6 +2163,8 @@ class Message extends DataClass implements Insertable<Message> {
     pinned,
     hasAttachments,
     rawHeaders,
+    toRecipients,
+    ccRecipients,
     starred,
     threadId,
     snoozedUntil,
@@ -2114,6 +2192,8 @@ class Message extends DataClass implements Insertable<Message> {
           other.pinned == this.pinned &&
           other.hasAttachments == this.hasAttachments &&
           other.rawHeaders == this.rawHeaders &&
+          other.toRecipients == this.toRecipients &&
+          other.ccRecipients == this.ccRecipients &&
           other.starred == this.starred &&
           other.threadId == this.threadId &&
           other.snoozedUntil == this.snoozedUntil &&
@@ -2139,6 +2219,8 @@ class MessagesCompanion extends UpdateCompanion<Message> {
   final Value<bool> pinned;
   final Value<bool> hasAttachments;
   final Value<String?> rawHeaders;
+  final Value<String> toRecipients;
+  final Value<String> ccRecipients;
   final Value<bool> starred;
   final Value<String?> threadId;
   final Value<int?> snoozedUntil;
@@ -2163,6 +2245,8 @@ class MessagesCompanion extends UpdateCompanion<Message> {
     this.pinned = const Value.absent(),
     this.hasAttachments = const Value.absent(),
     this.rawHeaders = const Value.absent(),
+    this.toRecipients = const Value.absent(),
+    this.ccRecipients = const Value.absent(),
     this.starred = const Value.absent(),
     this.threadId = const Value.absent(),
     this.snoozedUntil = const Value.absent(),
@@ -2188,6 +2272,8 @@ class MessagesCompanion extends UpdateCompanion<Message> {
     this.pinned = const Value.absent(),
     this.hasAttachments = const Value.absent(),
     this.rawHeaders = const Value.absent(),
+    this.toRecipients = const Value.absent(),
+    this.ccRecipients = const Value.absent(),
     this.starred = const Value.absent(),
     this.threadId = const Value.absent(),
     this.snoozedUntil = const Value.absent(),
@@ -2223,6 +2309,8 @@ class MessagesCompanion extends UpdateCompanion<Message> {
     Expression<bool>? pinned,
     Expression<bool>? hasAttachments,
     Expression<String>? rawHeaders,
+    Expression<String>? toRecipients,
+    Expression<String>? ccRecipients,
     Expression<bool>? starred,
     Expression<String>? threadId,
     Expression<int>? snoozedUntil,
@@ -2248,6 +2336,8 @@ class MessagesCompanion extends UpdateCompanion<Message> {
       if (pinned != null) 'pinned': pinned,
       if (hasAttachments != null) 'has_attachments': hasAttachments,
       if (rawHeaders != null) 'raw_headers': rawHeaders,
+      if (toRecipients != null) 'to_recipients': toRecipients,
+      if (ccRecipients != null) 'cc_recipients': ccRecipients,
       if (starred != null) 'starred': starred,
       if (threadId != null) 'thread_id': threadId,
       if (snoozedUntil != null) 'snoozed_until': snoozedUntil,
@@ -2276,6 +2366,8 @@ class MessagesCompanion extends UpdateCompanion<Message> {
     Value<bool>? pinned,
     Value<bool>? hasAttachments,
     Value<String?>? rawHeaders,
+    Value<String>? toRecipients,
+    Value<String>? ccRecipients,
     Value<bool>? starred,
     Value<String?>? threadId,
     Value<int?>? snoozedUntil,
@@ -2301,6 +2393,8 @@ class MessagesCompanion extends UpdateCompanion<Message> {
       pinned: pinned ?? this.pinned,
       hasAttachments: hasAttachments ?? this.hasAttachments,
       rawHeaders: rawHeaders ?? this.rawHeaders,
+      toRecipients: toRecipients ?? this.toRecipients,
+      ccRecipients: ccRecipients ?? this.ccRecipients,
       starred: starred ?? this.starred,
       threadId: threadId ?? this.threadId,
       snoozedUntil: snoozedUntil ?? this.snoozedUntil,
@@ -2362,6 +2456,12 @@ class MessagesCompanion extends UpdateCompanion<Message> {
     if (rawHeaders.present) {
       map['raw_headers'] = Variable<String>(rawHeaders.value);
     }
+    if (toRecipients.present) {
+      map['to_recipients'] = Variable<String>(toRecipients.value);
+    }
+    if (ccRecipients.present) {
+      map['cc_recipients'] = Variable<String>(ccRecipients.value);
+    }
     if (starred.present) {
       map['starred'] = Variable<bool>(starred.value);
     }
@@ -2407,6 +2507,8 @@ class MessagesCompanion extends UpdateCompanion<Message> {
           ..write('pinned: $pinned, ')
           ..write('hasAttachments: $hasAttachments, ')
           ..write('rawHeaders: $rawHeaders, ')
+          ..write('toRecipients: $toRecipients, ')
+          ..write('ccRecipients: $ccRecipients, ')
           ..write('starred: $starred, ')
           ..write('threadId: $threadId, ')
           ..write('snoozedUntil: $snoozedUntil, ')
@@ -9584,6 +9686,8 @@ typedef $$MessagesTableCreateCompanionBuilder =
       Value<bool> pinned,
       Value<bool> hasAttachments,
       Value<String?> rawHeaders,
+      Value<String> toRecipients,
+      Value<String> ccRecipients,
       Value<bool> starred,
       Value<String?> threadId,
       Value<int?> snoozedUntil,
@@ -9610,6 +9714,8 @@ typedef $$MessagesTableUpdateCompanionBuilder =
       Value<bool> pinned,
       Value<bool> hasAttachments,
       Value<String?> rawHeaders,
+      Value<String> toRecipients,
+      Value<String> ccRecipients,
       Value<bool> starred,
       Value<String?> threadId,
       Value<int?> snoozedUntil,
@@ -9740,6 +9846,16 @@ class $$MessagesTableFilterComposer
 
   ColumnFilters<String> get rawHeaders => $composableBuilder(
     column: $table.rawHeaders,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get toRecipients => $composableBuilder(
+    column: $table.toRecipients,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get ccRecipients => $composableBuilder(
+    column: $table.ccRecipients,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -9906,6 +10022,16 @@ class $$MessagesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get toRecipients => $composableBuilder(
+    column: $table.toRecipients,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get ccRecipients => $composableBuilder(
+    column: $table.ccRecipients,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<bool> get starred => $composableBuilder(
     column: $table.starred,
     builder: (column) => ColumnOrderings(column),
@@ -10028,6 +10154,16 @@ class $$MessagesTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<String> get toRecipients => $composableBuilder(
+    column: $table.toRecipients,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get ccRecipients => $composableBuilder(
+    column: $table.ccRecipients,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<bool> get starred =>
       $composableBuilder(column: $table.starred, builder: (column) => column);
 
@@ -10143,6 +10279,8 @@ class $$MessagesTableTableManager
                 Value<bool> pinned = const Value.absent(),
                 Value<bool> hasAttachments = const Value.absent(),
                 Value<String?> rawHeaders = const Value.absent(),
+                Value<String> toRecipients = const Value.absent(),
+                Value<String> ccRecipients = const Value.absent(),
                 Value<bool> starred = const Value.absent(),
                 Value<String?> threadId = const Value.absent(),
                 Value<int?> snoozedUntil = const Value.absent(),
@@ -10167,6 +10305,8 @@ class $$MessagesTableTableManager
                 pinned: pinned,
                 hasAttachments: hasAttachments,
                 rawHeaders: rawHeaders,
+                toRecipients: toRecipients,
+                ccRecipients: ccRecipients,
                 starred: starred,
                 threadId: threadId,
                 snoozedUntil: snoozedUntil,
@@ -10193,6 +10333,8 @@ class $$MessagesTableTableManager
                 Value<bool> pinned = const Value.absent(),
                 Value<bool> hasAttachments = const Value.absent(),
                 Value<String?> rawHeaders = const Value.absent(),
+                Value<String> toRecipients = const Value.absent(),
+                Value<String> ccRecipients = const Value.absent(),
                 Value<bool> starred = const Value.absent(),
                 Value<String?> threadId = const Value.absent(),
                 Value<int?> snoozedUntil = const Value.absent(),
@@ -10217,6 +10359,8 @@ class $$MessagesTableTableManager
                 pinned: pinned,
                 hasAttachments: hasAttachments,
                 rawHeaders: rawHeaders,
+                toRecipients: toRecipients,
+                ccRecipients: ccRecipients,
                 starred: starred,
                 threadId: threadId,
                 snoozedUntil: snoozedUntil,

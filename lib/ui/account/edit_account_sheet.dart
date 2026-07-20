@@ -17,6 +17,8 @@ import 'package:bytemail/domain/sync_profile.dart';
 import 'package:bytemail/repository/mail_repository.dart';
 import 'package:bytemail/sync/sync_engine.dart';
 import 'package:bytemail/theme/app_theme.dart';
+import 'package:bytemail/ui/account/signatures_sheet.dart';
+import 'package:bytemail/ui/account/templates_sheet.dart';
 import 'package:bytemail/ui/mailbox/mailbox_cubit.dart';
 import 'package:bytemail/ui/settings/account_color_picker.dart';
 
@@ -391,6 +393,22 @@ class _EditAccountFormState extends State<_EditAccountForm> {
             const SizedBox(height: 8),
             Text(_error!, style: TextStyle(color: t.coral, fontSize: 13)),
           ],
+          const SizedBox(height: 12),
+          OutlinedButton.icon(
+            onPressed: _busy
+                ? null
+                : () => showSignaturesSheet(context, widget.account),
+            icon: const Icon(Icons.draw_outlined),
+            label: const Text('Manage signatures'),
+          ),
+          const SizedBox(height: 8),
+          OutlinedButton.icon(
+            onPressed: _busy
+                ? null
+                : () => showTemplatesSheet(context, widget.account),
+            icon: const Icon(Icons.article_outlined),
+            label: const Text('Manage templates'),
+          ),
           const SizedBox(height: 12),
           FilledButton(
             onPressed: _busy ? null : _save,

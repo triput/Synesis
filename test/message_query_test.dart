@@ -4,7 +4,7 @@
 // Component: Test
 // Version: 1.0 (Gold Master)
 // Created: 2026-07-16
-// Last Update: 2026-07-17
+// Last Update: 2026-07-18
 // ==============================================================================
 
 import 'package:bytemail/domain/models.dart';
@@ -32,6 +32,9 @@ MailMessage _msg({
   String snippet = 's',
   String body = 'b',
   String? threadId,
+  String toRecipients = '',
+  String ccRecipients = '',
+  String? rawHeaders,
   int whenEpochMs = 1000,
 }) {
   return MailMessage(
@@ -53,6 +56,9 @@ MailMessage _msg({
     trashedAt: trashedAt,
     isDraft: isDraft,
     threadId: threadId,
+    toRecipients: toRecipients,
+    ccRecipients: ccRecipients,
+    rawHeaders: rawHeaders,
     whenEpochMs: whenEpochMs,
   );
 }
@@ -220,6 +226,51 @@ void main() {
         attachQuery.matches(_msg(id: 'plain'), now: now),
         isFalse,
       );
+
+      final MessageQuery recipientQuery = MessageQuery.defaults.copyWith(
+        userFilter: const MessageViewFilter(recipientContains: 'carol'),
+      );
+      expect(
+        recipientQuery.matches(
+          _msg(
+            id: 'to-hit',
+            toRecipients: 'Bob <bob@example.com>, Carol <carol@example.com>',
+          ),
+          now: now,
+        ),
+        isTrue,
+      );
+      expect(
+        recipientQuery.matches(
+          _msg(
+            id: 'cc-hit',
+            ccRecipients: 'Carol <carol@example.com>',
+          ),
+          now: now,
+        ),
+        isTrue,
+      );
+      expect(
+        recipientQuery.matches(
+          _msg(id: 'miss', toRecipients: 'bob@example.com'),
+          now: now,
+        ),
+        isFalse,
+      );
+
+      final MessageQuery rawRecipientQuery = MessageQuery.defaults.copyWith(
+        userFilter: const MessageViewFilter(recipientContains: 'eve@'),
+      );
+      expect(
+        rawRecipientQuery.matches(
+          _msg(
+            id: 'raw-hit',
+            rawHeaders: 'To: Bob <bob@example.com>\nCc: Eve <eve@example.com>\n',
+          ),
+          now: now,
+        ),
+        isTrue,
+      );
     });
 
     test('include flags relax draft and trash exclusions', () {
@@ -332,6 +383,8 @@ void main() {
           subject: 'Quarterly invoice review',
           body: 'Please review the invoice attachment',
           hasAttachments: true,
+          toRecipients: 'Me <me@byte.io>, Carol <carol@example.com>',
+          ccRecipients: 'Ops <ops@byte.io>',
           whenEpochMs: nowMs - 3,
         ),
         _msg(
@@ -420,6 +473,20 @@ void main() {
         ),
       );
       expect(keyword.map((MailMessage m) => m.id), <String>['unread']);
+
+      final List<MailMessage> recipient = await repo.listMessages(
+        MessageQuery.defaults.copyWith(
+          userFilter: const MessageViewFilter(recipientContains: 'carol'),
+        ),
+      );
+      expect(recipient.map((MailMessage m) => m.id), <String>['unread']);
+
+      final List<MailMessage> ccRecipient = await repo.listMessages(
+        MessageQuery.defaults.copyWith(
+          userFilter: const MessageViewFilter(recipientContains: 'ops@'),
+        ),
+      );
+      expect(ccRecipient.map((MailMessage m) => m.id), <String>['unread']);
     });
 
     test('includeDrafts and includeTrashed surface excluded rows', () async {
@@ -517,6 +584,20 @@ void main() {
 
       final MailMessage? row = await repo.getMessage('r2');
       expect(row?.unread, isFalse);
+    });
+
+    test('parses To/Cc from rawHeaders when recipient columns empty', () async {
+      await repo.upsertMessages(<MailMessage>[
+        _msg(
+          id: 'hdr',
+          rawHeaders:
+              'To: Bob <bob@example.com>\nCc: Carol <carol@example.com>\n',
+        ),
+      ], folderId: 'inbox-work');
+
+      final MailMessage? row = await repo.getMessage('hdr');
+      expect(row?.toRecipients, contains('bob@example.com'));
+      expect(row?.ccRecipients, contains('carol@example.com'));
     });
   });
 }

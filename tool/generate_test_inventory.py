@@ -37,7 +37,7 @@ FILE_META: dict[str, dict[str, str]] = {
     },
     "app_settings_cubit_test.dart": {
         "wave": "W1",
-        "tier_refs": "W1;W2;W3;W5",
+        "tier_refs": "W1;W2;W3;W5;W7",
         "kind": "bloc",
         "component": "Settings",
         "platform": "All",
@@ -45,6 +45,13 @@ FILE_META: dict[str, dict[str, str]] = {
     "compose_prefill_test.dart": {
         "wave": "W1",
         "tier_refs": "TA-1",
+        "kind": "unit",
+        "component": "Compose",
+        "platform": "All",
+    },
+    "compose_draft_test.dart": {
+        "wave": "W4",
+        "tier_refs": "TA-2;TB-12",
         "kind": "unit",
         "component": "Compose",
         "platform": "All",
@@ -177,9 +184,9 @@ FILE_META: dict[str, dict[str, str]] = {
     },
     "message_filter_bar_test.dart": {
         "wave": "W2",
-        "tier_refs": "TB-2;TB-14",
+        "tier_refs": "TB-2;TB-14;Final",
         "kind": "widget",
-        "component": "UI / List",
+        "component": "UI / Filters",
         "platform": "All",
     },
     "message_headers_sheet_test.dart": {
@@ -212,9 +219,9 @@ FILE_META: dict[str, dict[str, str]] = {
     },
     "message_query_test.dart": {
         "wave": "W0",
-        "tier_refs": "TA-0;TB-2",
+        "tier_refs": "TA-0;TB-2;Final",
         "kind": "unit",
-        "component": "Data / Query",
+        "component": "Data / Query / Filters",
         "platform": "All",
     },
     "mime_builder_test.dart": {
@@ -229,6 +236,20 @@ FILE_META: dict[str, dict[str, str]] = {
         "tier_refs": "TC-2",
         "kind": "unit",
         "component": "Sync / Network",
+        "platform": "All",
+    },
+    "notification_service_test.dart": {
+        "wave": "W6",
+        "tier_refs": "TA-6;TC-7",
+        "kind": "unit",
+        "component": "Notifications",
+        "platform": "All",
+    },
+    "sync_engine_new_mail_notify_test.dart": {
+        "wave": "W6",
+        "tier_refs": "TA-6",
+        "kind": "integration",
+        "component": "Sync / Notifications",
         "platform": "All",
     },
     "oauth_identity_manager_test.dart": {
@@ -271,6 +292,13 @@ FILE_META: dict[str, dict[str, str]] = {
         "tier_refs": "TC-6",
         "kind": "unit",
         "component": "Privacy / HTML",
+        "platform": "All",
+    },
+    "saved_message_filter_test.dart": {
+        "wave": "Final",
+        "tier_refs": "Final;Filters",
+        "kind": "unit",
+        "component": "Filters",
         "platform": "All",
     },
     "schema_migration_v4_to_v5_test.dart": {
@@ -336,6 +364,55 @@ FILE_META: dict[str, dict[str, str]] = {
         "component": "UI / Theme",
         "platform": "All",
     },
+    "auto_mark_as_read_test.dart": {
+        "wave": "W7",
+        "tier_refs": "UI-P27;DEF-034",
+        "kind": "unit",
+        "component": "UI / Reading",
+        "platform": "All",
+    },
+    "custom_theme_store_test.dart": {
+        "wave": "W7",
+        "tier_refs": "UI-P16;TC-0",
+        "kind": "unit",
+        "component": "UI / Theme",
+        "platform": "All",
+    },
+    "db_encryption_config_test.dart": {
+        "wave": "W7",
+        "tier_refs": "TC-3",
+        "kind": "unit",
+        "component": "Data / Encryption",
+        "platform": "All",
+    },
+    "db_encryption_migrator_test.dart": {
+        "wave": "W7",
+        "tier_refs": "TC-3",
+        "kind": "integration",
+        "component": "Data / Encryption",
+        "platform": "All",
+    },
+    "empty_state_test.dart": {
+        "wave": "W7",
+        "tier_refs": "UI-P8",
+        "kind": "widget",
+        "component": "UI / Empty states",
+        "platform": "All",
+    },
+    "focus_rules_store_test.dart": {
+        "wave": "W7",
+        "tier_refs": "TC-4",
+        "kind": "unit",
+        "component": "Focus / Overrides",
+        "platform": "All",
+    },
+    "settings_export_service_test.dart": {
+        "wave": "W7",
+        "tier_refs": "UI-P17",
+        "kind": "unit",
+        "component": "Settings",
+        "platform": "All",
+    },
     "thread_id_test.dart": {
         "wave": "W2",
         "tier_refs": "TB-1",
@@ -361,6 +438,7 @@ GROUP_WAVE: dict[tuple[str, str], str] = {
     ("app_settings_cubit_test.dart", "AppSettingsCubit pushOnCellular"): "W3",
     ("app_settings_cubit_test.dart", "AppSettingsCubit readingPanePosition"): "W5",
     ("app_settings_cubit_test.dart", "AppSettingsCubit visualFocusEnabled"): "W5",
+    ("app_settings_cubit_test.dart", "AppSettingsCubit notifications"): "W6",
     ("drift_mail_repository_test.dart", "DriftMailRepository.wipeAccount"): "W0",
     ("drift_mail_repository_test.dart", "DriftMailRepository.setUnreadBulk"): "W1",
     ("drift_mail_repository_test.dart", "DriftMailRepository.recountUnreadCounts"): "W2",
@@ -390,6 +468,11 @@ GROUP_WAVE: dict[tuple[str, str], str] = {
 
 # Case-level wave overrides (file, test_name) -> wave.
 CASE_WAVE: dict[tuple[str, str], str] = {
+    ("message_filter_bar_test.dart", "advanced sheet sets recipientContains"): "Final",
+    ("message_filter_bar_test.dart", "shows Saved chip when callbacks provided"): "Final",
+    ("message_query_test.dart", "userFilter unread, sender, date, keyword, attachments"): "Final",
+    ("message_query_test.dart", "userFilter unread, sender, date, attachments, keyword via FTS"): "Final",
+    ("message_query_test.dart", "parses To/Cc from rawHeaders when recipient columns empty"): "Final",
     ("mailbox_cubit_test.dart", "togglePinSelected pins locally without sync jobs"): "W2",
     ("mailbox_cubit_test.dart", "snoozeSelected hides message until expiry then refresh shows it"): "W2",
     ("mailbox_cubit_test.dart", "markFocusBucket upserts sender rule and updates message"): "Foundation",
@@ -562,6 +645,22 @@ def wave_sort_key(wave: str) -> tuple[int, str]:
 
 
 def manual_companion(wave: str, file_name: str) -> str:
+    if wave == "W7" or file_name in {
+        "auto_mark_as_read_test.dart",
+        "custom_theme_store_test.dart",
+        "db_encryption_config_test.dart",
+        "db_encryption_migrator_test.dart",
+        "empty_state_test.dart",
+        "focus_rules_store_test.dart",
+        "settings_export_service_test.dart",
+        "theme_tokens_test.dart",
+    }:
+        return "W7_HARDENING_CHECKLIST"
+    if wave == "W6" or file_name in {
+        "notification_service_test.dart",
+        "sync_engine_new_mail_notify_test.dart",
+    }:
+        return "W6_NOTIFICATIONS_CHECKLIST"
     if wave == "W5" or file_name in {
         "mail_split_layout_test.dart",
         "mailbox_shortcuts_test.dart",
@@ -810,10 +909,10 @@ def write_xlsx(rows: list[dict[str, str]]) -> None:
         ),
         (
             "W6 Notifications",
-            "No notification service automated tests yet",
-            "Pri-1",
+            "SyncEngine onNewUnread integration test not yet cataloged",
+            "Pri-2",
             "Renee",
-            "Blocked until W5 lands",
+            "notification_service_test.dart landed; sync hook manual in W6 checklist",
         ),
         (
             "CI",

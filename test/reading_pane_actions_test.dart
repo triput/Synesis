@@ -104,7 +104,9 @@ void main() {
 
       expect(find.widgetWithText(OutlinedButton, 'Reply'), findsOneWidget);
       expect(find.widgetWithText(OutlinedButton, 'Delete'), findsOneWidget);
-      expect(find.byType(IconButton), findsNothing);
+      // Wide layout keeps primary actions labeled; icon-only Reply must not
+      // appear (QuickReplyBar may still mount an "Open full compose" icon).
+      expect(find.byTooltip('Reply'), findsNothing);
       expect(find.byTooltip('More actions'), findsOneWidget);
     });
 

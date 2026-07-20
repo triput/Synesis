@@ -4,7 +4,7 @@
 // Component: Data / Sync
 // Version: 1.0 (Gold Master)
 // Created: 2026-07-17
-// Last Update: 2026-07-17
+// Last Update: 2026-07-18
 // ==============================================================================
 
 import 'dart:async';
@@ -16,6 +16,7 @@ import 'package:bytemail/mailbox/mailbox_mutation_result.dart';
 import 'package:bytemail/mailbox/message_action_service.dart'
     show MailboxMutationApply;
 import 'package:bytemail/protocol/mail_provider.dart';
+import 'package:bytemail/repository/drift/drift_mappers.dart';
 import 'package:bytemail/repository/mail_repository.dart';
 import 'package:bytemail/sync/sync_engine.dart';
 import 'package:bytemail/ui/mailbox/mailbox_state.dart';
@@ -248,6 +249,8 @@ class MessageBodyCache {
       _fetchedHeaderIds.add(messageId);
       if (rawHeaders != null && rawHeaders.trim().isNotEmpty) {
         await _repository.updateMessageRawHeaders(messageId, rawHeaders);
+        final ({String to, String cc}) parsed =
+            recipientsFromRawHeaders(rawHeaders);
         final FocusOverrideRegistry overrides = FocusOverrideRegistry(
           rules: await _repository.listFocusRules(
             accountId: message.accountId,
@@ -273,7 +276,12 @@ class MessageBodyCache {
         final List<MailMessage> updated = latest.messages
             .map(
               (MailMessage m) => m.id == messageId
-                  ? m.copyWith(rawHeaders: rawHeaders, bucket: scored)
+                  ? m.copyWith(
+                      rawHeaders: rawHeaders,
+                      toRecipients: parsed.to,
+                      ccRecipients: parsed.cc,
+                      bucket: scored,
+                    )
                   : m,
             )
             .toList(growable: false);

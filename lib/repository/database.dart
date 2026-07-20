@@ -2,17 +2,18 @@
 // File: lib/repository/database.dart
 // Description: Drift schema and application-support SQLite connection.
 // Component: Data
-// Version: 1.0 (Gold Master)
+// Version: 1.1 (Gold Master)
 // Created: 2026-07-14
-// Last Update: 2026-07-16
+// Last Update: 2026-07-18
 // ==============================================================================
 
 import 'dart:io';
 
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
-import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart';
+import 'package:sqlite3/sqlite3.dart';
+import 'package:bytemail/repository/db_encryption_config.dart';
 
 part 'database.g.dart';
 
@@ -77,6 +78,10 @@ class Messages extends Table {
   BoolColumn get hasAttachments =>
       boolean().withDefault(const Constant(false))();
   TextColumn get rawHeaders => text().nullable()();
+  TextColumn get toRecipients =>
+      text().named('to_recipients').withDefault(const Constant(''))();
+  TextColumn get ccRecipients =>
+      text().named('cc_recipients').withDefault(const Constant(''))();
   BoolColumn get starred => boolean().withDefault(const Constant(false))();
   TextColumn get threadId => text().nullable()();
   IntColumn get snoozedUntil => integer().nullable()();
@@ -313,7 +318,7 @@ class ByteMailDatabase extends _$ByteMailDatabase {
   factory ByteMailDatabase.open() => ByteMailDatabase(_openConnection());
 
   @override
-  int get schemaVersion => 5;
+  int get schemaVersion => 6;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -429,6 +434,10 @@ class ByteMailDatabase extends _$ByteMailDatabase {
           ')',
         );
       }
+      if (from < 6) {
+        await migrator.addColumn(messages, messages.toRecipients);
+        await migrator.addColumn(messages, messages.ccRecipients);
+      }
     },
   );
 }
@@ -436,7 +445,25 @@ class ByteMailDatabase extends _$ByteMailDatabase {
 LazyDatabase _openConnection() {
   return LazyDatabase(() async {
     final Directory directory = await getApplicationSupportDirectory();
-    final File file = File(path.join(directory.path, 'bytemail.sqlite'));
-    return NativeDatabase.createInBackground(file);
+    final File file = File(
+      DbEncryptionPaths.databasePath(directory.path),
+    );
+    // Opt-in, disabled by default: resolveActivePassphrase() only returns
+    // non-null when the user has explicitly enabled encryption AND a
+    // passphrase is present in the OS keystore. Any other state (disabled,
+    // or a corrupted/missing keystore entry) falls back to a plain,
+    // unencrypted open so a preference glitch never locks a user out.
+    final String? passphrase = await DbEncryptionConfig()
+        .resolveActivePassphrase();
+    return NativeDatabase.createInBackground(
+      file,
+      setup: passphrase == null
+          ? null
+          : (Database rawDb) {
+              rawDb.execute(
+                "PRAGMA key = '${passphrase.replaceAll("'", "''")}';",
+              );
+            },
+    );
   });
 }

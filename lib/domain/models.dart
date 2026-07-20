@@ -4,7 +4,7 @@
 // Component: Domain
 // Version: 1.0 (Gold Master)
 // Created: 2026-07-14
-// Last Update: 2026-07-17
+// Last Update: 2026-07-18
 // ==============================================================================
 
 import 'package:flutter/material.dart';
@@ -112,6 +112,8 @@ class MailMessage {
     this.hasAttachments = false,
     this.whenEpochMs,
     this.rawHeaders,
+    this.toRecipients = '',
+    this.ccRecipients = '',
     this.starred = false,
     this.threadId,
     this.snoozedUntil,
@@ -137,6 +139,13 @@ class MailMessage {
   final bool hasAttachments;
   final int? whenEpochMs;
   final String? rawHeaders;
+
+  /// Denormalized To: header line for list filtering (name + address text).
+  final String toRecipients;
+
+  /// Denormalized Cc: header line for list filtering (name + address text).
+  final String ccRecipients;
+
   final bool starred;
   final String? threadId;
   final int? snoozedUntil;
@@ -162,6 +171,8 @@ class MailMessage {
     bool? hasAttachments,
     int? whenEpochMs,
     String? rawHeaders,
+    String? toRecipients,
+    String? ccRecipients,
     bool? starred,
     String? threadId,
     int? snoozedUntil,
@@ -189,6 +200,8 @@ class MailMessage {
       hasAttachments: hasAttachments ?? this.hasAttachments,
       whenEpochMs: whenEpochMs ?? this.whenEpochMs,
       rawHeaders: rawHeaders ?? this.rawHeaders,
+      toRecipients: toRecipients ?? this.toRecipients,
+      ccRecipients: ccRecipients ?? this.ccRecipients,
       starred: starred ?? this.starred,
       threadId: threadId ?? this.threadId,
       snoozedUntil: clearSnoozedUntil

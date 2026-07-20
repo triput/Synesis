@@ -8,11 +8,13 @@
 // ==============================================================================
 
 import 'package:bytemail/domain/models.dart';
+import 'package:bytemail/mime/outgoing_envelope.dart';
 import 'package:bytemail/protocol/mail_provider.dart';
 import 'package:bytemail/query/message_query.dart';
 import 'package:bytemail/repository/mail_repository.dart';
 import 'package:bytemail/sync/sync_engine.dart';
 import 'package:bytemail/outbox/outbox_recipients.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 class _RecordingSendProvider extends MailProvider {
@@ -72,6 +74,23 @@ class _RecordingSendProvider extends MailProvider {
       'body': body,
     });
   }
+
+  @override
+  Future<void> sendEnvelope(OutgoingEnvelope envelope) async {
+    if (throwOnSend != null) {
+      throw throwOnSend!;
+    }
+    envelopes.add(envelope);
+    await send(
+      to: envelope.to,
+      cc: envelope.cc,
+      bcc: envelope.bcc,
+      subject: envelope.subject,
+      body: envelope.textBody,
+    );
+  }
+
+  final List<OutgoingEnvelope> envelopes = <OutgoingEnvelope>[];
 
   @override
   Future<void> setRead(
@@ -212,6 +231,16 @@ class _SendOutboxRepo implements MailRepository {
   @override
   Future<List<OutboxItem>> listOutbox() async =>
       List<OutboxItem>.from(outbox);
+
+  @override
+  Future<List<MailAccount>> listAccounts() async => <MailAccount>[
+        MailAccount(
+          id: 'work',
+          label: 'Work',
+          address: 'me@byte.io',
+          accent: const Color(0xFF3366FF),
+        ),
+      ];
 
   @override
   Future<void> updateOutboxState(
@@ -380,6 +409,38 @@ void main() {
       expect(repo.reclaimSendingCalls, greaterThan(0));
       expect(repo.outbox.single.state, 'sent');
       expect(provider.sends, hasLength(1));
+    });
+
+    test('skips queued items with future send_after', () async {
+      final _RecordingSendProvider provider = _RecordingSendProvider();
+      final int future =
+          DateTime.now().millisecondsSinceEpoch + 60 * 60 * 1000;
+      final _SendOutboxRepo repo = _SendOutboxRepo(
+        outbox: <OutboxItem>[
+          OutboxItem(
+            id: 'out-sched',
+            accountId: 'work',
+            to: 'a@byte.io',
+            subject: 'Later',
+            body: 'Body',
+            state: 'queued',
+            attempts: 0,
+            createdAt: 1,
+            sendAfter: future,
+          ),
+        ],
+      )..enqueueSendJob('work');
+      final SyncEngine engine = SyncEngine(
+        repository: repo,
+        resolveProvider: (_) async => provider,
+      );
+
+      await engine.kick();
+
+      expect(repo.outbox.single.state, 'queued');
+      expect(provider.sends, isEmpty);
+      expect(provider.envelopes, isEmpty);
+      expect(repo.completedJobs.single['success'], isTrue);
     });
   });
 }

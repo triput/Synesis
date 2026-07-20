@@ -4,16 +4,18 @@
 // Component: UI
 // Version: 1.0 (Gold Master)
 // Created: 2026-07-14
-// Last Update: 2026-07-14
+// Last Update: 2026-07-18
 // ==============================================================================
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:bytemail/domain/models.dart';
 import 'package:bytemail/theme/app_theme.dart';
+import 'package:bytemail/theme/density.dart';
 import 'package:bytemail/ui/account/add_account_sheet.dart';
 import 'package:bytemail/ui/account/edit_account_sheet.dart';
 import 'package:bytemail/ui/account/remove_account_dialog.dart';
+import 'package:bytemail/ui/common/empty_state.dart';
 import 'package:bytemail/ui/mailbox/mailbox_cubit.dart';
 
 Future<void> showManageAccountsSheet(BuildContext context) {
@@ -83,18 +85,16 @@ class _ManageAccountsSheet extends StatelessWidget {
         ),
         const SizedBox(height: 16),
         if (accounts.isEmpty) ...[
-          Text(
-            'No accounts yet. Add one to start syncing mail.',
-            style: TextStyle(color: t.muted, fontSize: 13),
-          ),
-          const SizedBox(height: 12),
-          FilledButton.icon(
-            onPressed: () {
+          EmptyState(
+            title: 'No accounts yet',
+            subtitle: 'Add an account to start syncing mail on this device.',
+            icon: Icons.person_add_alt_1_outlined,
+            density: ViewDensity.calm,
+            actionLabel: 'Add account',
+            onAction: () {
               Navigator.pop(context);
               showAddAccountSheet(context);
             },
-            icon: const Icon(Icons.person_add_alt_1),
-            label: const Text('Add account'),
           ),
         ] else
           for (final MailAccount account in accounts)

@@ -71,5 +71,9 @@ app.*.map.json
 !.vscode/extensions.json
 
 # Custom Ignore Rules
+# Local OAuth client IDs (copy from oauth_local.json.example) — never commit.
+oauth_local.json
+dart_defines.json
+
 # Ignore the docs directory (contains detailed specifications and non-public info)
 internal.docs/

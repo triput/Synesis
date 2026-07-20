@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="docs/branding/branding_logo_lockup_google.png" alt="bytemail" width="360" />
+</p>
+
 # Local Multi-Agent Architecture & Engineering Standards | ByteMail
 
 This workspace utilizes a specialized multi-agent framework to orchestrate software development lifecycles, architectural reviews, and quality gates directly within VS Code. The environment leverages a **"Leadership Trifecta"** model (Management, Implementation, and Quality Assurance) alongside a dedicated Knowledge Management layer specifically tuned for the ByteMail Flutter/Dart ecosystem.
@@ -101,5 +105,5 @@ When a request is submitted to **Steve**, the workflow advances through five seq
 
 *   **Defect Tracking:** Always document defects discovered in the codebase inside the `DEFECTS.md` log.
 *   **System Updates:** Always update the workspace `README.md`, internal architecture documentation, or roadmap logs when implementing major foundational features to ensure Page's records match reality.
-*   **Automated test inventory:** `docs/V1_AUTOMATED_TEST_INVENTORY.csv` is the canonical catalog of automated coverage (~306 cases / 46 files). Wave checklists and tier docs link by `test_id` / `wave` filter — see [TEST_INVENTORY.md](docs/TEST_INVENTORY.md). Manual E2E (`docs/V1_MANUAL_E2E_MATRIX.csv`, FW-5) stays separate.
+*   **Automated test inventory:** `docs/V1_AUTOMATED_TEST_INVENTORY.csv` is the canonical catalog of automated coverage (~389 cases / 56 files). Wave checklists ([W5](docs/W5_WINDOWS_CHECKLIST.md), [W6](docs/W6_NOTIFICATIONS_CHECKLIST.md), [W4](docs/W4_COMPOSE_CHECKLIST.md), [W7](docs/W7_HARDENING_CHECKLIST.md), etc.) and tier docs link by `test_id` / `wave` filter — see [TEST_INVENTORY.md](docs/TEST_INVENTORY.md). Manual E2E (`docs/V1_MANUAL_E2E_MATRIX.csv`, FW-5) stays separate.
 *   **Final wave system prompt (FW-6):** At V1 Final wave close, capture the team workflow into `docs/MULTI_AGENT_SYSTEM_PROMPT.md` — a portable multi-agent playbook for future projects.

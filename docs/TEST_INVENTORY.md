@@ -6,7 +6,7 @@ ByteMail tracks **automated** unit, widget, and BLoC tests in a versionable inve
 
 | Artifact | Role |
 | --- | --- |
-| [`V1_AUTOMATED_TEST_INVENTORY.csv`](V1_AUTOMATED_TEST_INVENTORY.csv) | **Canonical** git-tracked source (~306 cases / 46 files). Diff-friendly; edit or regenerate. |
+| [`V1_AUTOMATED_TEST_INVENTORY.csv`](V1_AUTOMATED_TEST_INVENTORY.csv) | **Canonical** git-tracked source (~389 cases / 56 files). Diff-friendly; edit or regenerate. |
 | [`V1_AUTOMATED_TEST_INVENTORY.xlsx`](V1_AUTOMATED_TEST_INVENTORY.xlsx) | Operator workbook (Automated, By_File, Wave_Summary, Coverage_Gaps, Readme sheets). Regenerated from CSV. |
 | [`../tool/generate_test_inventory.py`](../tool/generate_test_inventory.py) | Scanner/regenerator for both artifacts. |
 
@@ -44,7 +44,7 @@ Use full regeneration when many `test/*_test.dart` files change or Renee’s wav
 | `manual_companion` | Optional link to manual checklist section. |
 | `notes` | Source line or operator notes. |
 
-Filter examples: `wave=W5` for Windows desktop wave; `tier_refs` contains `TA-0`; `kind=bloc`.
+Filter examples: `wave=W5` for Windows desktop wave; `wave=W6` for notifications wave; `tier_refs` contains `TA-0`; `kind=bloc`.
 
 ## Wave-close ritual
 
@@ -57,6 +57,7 @@ Filter examples: `wave=W5` for Windows desktop wave; `tier_refs` contains `TA-0`
 Wave checklists are the operator runbooks; they **link** the inventory instead of duplicating full file lists:
 
 - [W5 Windows checklist](W5_WINDOWS_CHECKLIST.md) — filter inventory `wave=W5`
+- [W6 Notifications checklist](W6_NOTIFICATIONS_CHECKLIST.md) — filter `wave=W6`
 - [W2 AVD checklist](W2_AVD_CHECKLIST.md) — filter `wave=W2`
 
 See also [V1 tier integration](V1_TIER_INTEGRATION.md) §5 for wave exit criteria.

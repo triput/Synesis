@@ -2,7 +2,7 @@
 
 Use this checklist to verify the SPEC milestone exits before the v1 release.
 
-**Work order to reach sign-off:** feature waves W2–W7, remaining [Planned backlog](ROADMAP.md#planned-backlog-post-foundation) items, then the [Final wave (V1 exit / release readiness)](ROADMAP.md#final-wave-v1-exit--release-readiness) in [ROADMAP.md](ROADMAP.md) (refactor → coverage → user docs + doc sweep → manual E2E matrix → reusable multi-agent system prompt playbook, **FW-6**).
+**Work order to reach sign-off:** ~~feature waves W0–W7~~ **W0–W7 landed** (W4/W7 operator validation complete 2026-07-18; checkbox tick-off pending in checklist files), then the broadened [Final wave](FINAL_WAVE_PLAN.md) in [ROADMAP.md](ROADMAP.md) — Phases A–F **landed**; **Phase G** (FW-5 E2E finalize) + V1 exit sign-off **open**.
 
 ## M0 — Planning + BLoC foundation
 - [ ] Application shell uses BLoC/Cubit state only.

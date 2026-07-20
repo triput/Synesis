@@ -4,7 +4,7 @@
 // Component: Repository / Data
 // Version: 1.0 (Gold Master)
 // Created: 2026-07-17
-// Last Update: 2026-07-17
+// Last Update: 2026-07-18
 // ==============================================================================
 
 import 'package:bytemail/domain/models.dart';
@@ -64,6 +64,15 @@ class DriftMessageStore {
           (Messages table) =>
               table.fromAddress.like(pattern, escapeChar: r'\') |
               table.fromName.like(pattern, escapeChar: r'\'),
+        );
+      }
+      final String? recipient = userFilter.recipientContains?.trim();
+      if (recipient != null && recipient.isNotEmpty) {
+        final String pattern = '%${_escapeLike(recipient)}%';
+        select.where(
+          (Messages table) =>
+              table.toRecipients.like(pattern, escapeChar: r'\') |
+              table.ccRecipients.like(pattern, escapeChar: r'\'),
         );
       }
       final int? after = userFilter.receivedAfterEpochMs;
@@ -139,13 +148,15 @@ class DriftMessageStore {
     return row == null ? null : messageFromRow(row);
   }
 
-  Future<void> upsertMessages(
+  /// Upserts messages and returns newly inserted unread rows (W6 detection).
+  Future<List<MailMessage>> upsertMessages(
     List<MailMessage> messages, {
     required String folderId,
   }) async {
     if (messages.isEmpty) {
-      return;
+      return const <MailMessage>[];
     }
+    final List<MailMessage> newlyInsertedUnread = <MailMessage>[];
     await _database.transaction(() async {
       for (final MailMessage message in messages) {
         await _folders.ensureFolder(message.accountId, folderId);
@@ -162,6 +173,14 @@ class DriftMessageStore {
           incomingRawHeaders: message.rawHeaders,
           existingRawHeaders: existing?.rawHeaders,
         );
+        final ({String toRecipients, String ccRecipients}) recipients =
+            recipientsForUpsert(
+              incomingToRecipients: message.toRecipients,
+              incomingCcRecipients: message.ccRecipients,
+              rawHeaders: rawHeadersToStore,
+              existingToRecipients: existing?.toRecipients,
+              existingCcRecipients: existing?.ccRecipients,
+            );
         // DEF-007 partial: keep local read when sync would flicker back to unread.
         final bool unreadToStore =
             existing != null && !existing.unread && message.unread
@@ -193,6 +212,8 @@ class DriftMessageStore {
                 ),
                 hasAttachments: Value<bool>(message.hasAttachments),
                 rawHeaders: Value<String?>(rawHeadersToStore),
+                toRecipients: Value<String>(recipients.toRecipients),
+                ccRecipients: Value<String>(recipients.ccRecipients),
                 starred: Value<bool>(
                   existing != null ? existing.starred : message.starred,
                 ),
@@ -215,10 +236,16 @@ class DriftMessageStore {
                 ),
               ),
             );
+        if (existing == null && unreadToStore) {
+          newlyInsertedUnread.add(
+            message.copyWith(unread: unreadToStore, folderId: folderId),
+          );
+        }
       }
       await _folders.recountUnreadFromMessages();
     });
     _notify();
+    return newlyInsertedUnread;
   }
 
   Future<void> updateMessageBody(String messageId, String body) async {
@@ -233,9 +260,24 @@ class DriftMessageStore {
     String messageId,
     String rawHeaders,
   ) async {
+    final MailMessage? existing = await getMessage(messageId);
+    final ({String toRecipients, String ccRecipients}) recipients =
+        recipientsForUpsert(
+          incomingToRecipients: '',
+          incomingCcRecipients: '',
+          rawHeaders: rawHeaders,
+          existingToRecipients: existing?.toRecipients,
+          existingCcRecipients: existing?.ccRecipients,
+        );
     await (_database.update(_database.messages)
           ..where((Messages table) => table.id.equals(messageId)))
-        .write(MessagesCompanion(rawHeaders: Value<String?>(rawHeaders)));
+        .write(
+          MessagesCompanion(
+            rawHeaders: Value<String?>(rawHeaders),
+            toRecipients: Value<String>(recipients.toRecipients),
+            ccRecipients: Value<String>(recipients.ccRecipients),
+          ),
+        );
   }
 
   Future<void> updateMessageFocusBucket(

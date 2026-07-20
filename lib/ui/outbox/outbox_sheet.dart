@@ -15,6 +15,7 @@ import 'package:bytemail/sync/sync_engine.dart';
 import 'package:bytemail/theme/app_theme.dart';
 import 'package:bytemail/theme/theme_tokens.dart';
 import 'package:bytemail/outbox/send_error_messages.dart';
+import 'package:bytemail/ui/compose/compose_sheet.dart';
 import 'package:bytemail/ui/mailbox/mailbox_cubit.dart';
 
 /// Opens the outbox inspector so users can see queued/failed sends and act.
@@ -66,7 +67,8 @@ class _OutboxSheetBodyState extends State<_OutboxSheetBody> {
           (OutboxItem item) =>
               item.state == 'queued' ||
               item.state == 'sending' ||
-              item.state == 'failed',
+              item.state == 'failed' ||
+              item.state == 'draft',
         )
         .toList(growable: false);
     if (!mounted) {
@@ -255,6 +257,16 @@ class _OutboxSheetBodyState extends State<_OutboxSheetBody> {
                     busy: _busy,
                     onRetry: () => _retry(_items[index]),
                     onDiscard: () => _discard(_items[index]),
+                    onEditDraft: _items[index].state == 'draft'
+                        ? () async {
+                            final OutboxItem item = _items[index];
+                            Navigator.pop(context);
+                            await showComposeSheet(
+                              context,
+                              resumeOutbox: item,
+                            );
+                          }
+                        : null,
                   );
                 },
               ),
@@ -272,6 +284,7 @@ class _OutboxTile extends StatelessWidget {
     required this.busy,
     required this.onRetry,
     required this.onDiscard,
+    this.onEditDraft,
   });
 
   final OutboxItem item;
@@ -279,6 +292,7 @@ class _OutboxTile extends StatelessWidget {
   final bool busy;
   final VoidCallback onRetry;
   final VoidCallback onDiscard;
+  final VoidCallback? onEditDraft;
 
   @override
   Widget build(BuildContext context) {
@@ -289,7 +303,11 @@ class _OutboxTile extends StatelessWidget {
     final String statusLabel = switch (item.state) {
       'failed' => 'Failed',
       'sending' => 'Sending',
-      _ => 'Queued',
+      'draft' => 'Draft',
+      _ => item.sendAfter != null &&
+              item.sendAfter! > DateTime.now().millisecondsSinceEpoch
+          ? 'Scheduled'
+          : 'Queued',
     };
     final Color statusColor = switch (item.state) {
       'failed' => t.coral,
@@ -356,10 +374,16 @@ class _OutboxTile extends StatelessWidget {
           const SizedBox(height: 8),
           Row(
             children: <Widget>[
-              TextButton(
-                onPressed: busy || item.state == 'sending' ? null : onRetry,
-                child: const Text('Retry'),
-              ),
+              if (onEditDraft != null)
+                TextButton(
+                  onPressed: busy ? null : onEditDraft,
+                  child: const Text('Edit'),
+                ),
+              if (item.state != 'draft')
+                TextButton(
+                  onPressed: busy || item.state == 'sending' ? null : onRetry,
+                  child: const Text('Retry'),
+                ),
               TextButton(
                 onPressed: busy ? null : onDiscard,
                 child: Text('Discard', style: TextStyle(color: t.coral)),

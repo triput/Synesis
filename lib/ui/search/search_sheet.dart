@@ -4,7 +4,7 @@
 // Component: UI
 // Version: 1.1 (Gold Master)
 // Created: 2026-07-14
-// Last Update: 2026-07-17
+// Last Update: 2026-07-18
 // ==============================================================================
 
 import 'package:flutter/material.dart';
@@ -12,6 +12,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:bytemail/domain/models.dart';
 import 'package:bytemail/repository/mail_repository.dart';
 import 'package:bytemail/theme/app_theme.dart';
+import 'package:bytemail/theme/density.dart';
+import 'package:bytemail/ui/common/empty_state.dart';
 import 'package:bytemail/ui/mailbox/mailbox_cubit.dart';
 import 'package:bytemail/sync/sync_engine.dart';
 
@@ -126,20 +128,31 @@ class _SearchSheetBodyState extends State<_SearchSheetBody> {
           ),
           const SizedBox(height: 12),
           Expanded(
-            child: ListView.builder(
-              itemCount: _results.length,
-              itemBuilder: (BuildContext context, int index) {
-                final MailMessage msg = _results[index];
-                return ListTile(
-                  title: Text(msg.subject),
-                  subtitle: Text('${msg.fromName} · ${msg.snippet}'),
-                  onTap: () {
-                    context.read<MailboxCubit>().selectMessage(msg.id);
-                    Navigator.pop(context);
-                  },
-                );
-              },
-            ),
+            child: _results.isEmpty
+                ? EmptyState(
+                    title: _controller.text.trim().isEmpty
+                        ? 'Search your mail'
+                        : 'No matches',
+                    subtitle: _controller.text.trim().isEmpty
+                        ? 'Type to search locally, or queue a server search.'
+                        : 'Try different words or search older mail on the server.',
+                    icon: Icons.search_off_outlined,
+                    density: ViewDensity.calm,
+                  )
+                : ListView.builder(
+                    itemCount: _results.length,
+                    itemBuilder: (BuildContext context, int index) {
+                      final MailMessage msg = _results[index];
+                      return ListTile(
+                        title: Text(msg.subject),
+                        subtitle: Text('${msg.fromName} · ${msg.snippet}'),
+                        onTap: () {
+                          context.read<MailboxCubit>().selectMessage(msg.id);
+                          Navigator.pop(context);
+                        },
+                      );
+                    },
+                  ),
           ),
         ],
       ),

@@ -21,6 +21,9 @@ typedef NewMailNotificationCallback =
 abstract interface class DesktopController {
   bool get minimizeToTrayEnabled;
 
+  /// Whether the primary window currently has OS focus (desktop only).
+  bool get isWindowFocused;
+
   Future<void> initialize();
 
   Future<void> dispose();
@@ -43,6 +46,9 @@ class NoopDesktopController implements DesktopController {
 
   @override
   bool get minimizeToTrayEnabled => false;
+
+  @override
+  bool get isWindowFocused => true;
 
   @override
   Future<void> initialize() async {}
@@ -85,11 +91,15 @@ class WindowsDesktopController
 
   bool _minimizeToTrayEnabled;
   bool _initialized = false;
+  bool _isWindowFocused = true;
   final NewMailNotificationCallback? onNewMail;
   final String trayIconAsset;
 
   @override
   bool get minimizeToTrayEnabled => _minimizeToTrayEnabled;
+
+  @override
+  bool get isWindowFocused => _isWindowFocused;
 
   @override
   Future<void> initialize() async {
@@ -202,6 +212,16 @@ class WindowsDesktopController
   @override
   void onWindowClose() {
     unawaited(_handleWindowClose());
+  }
+
+  @override
+  void onWindowFocus() {
+    _isWindowFocused = true;
+  }
+
+  @override
+  void onWindowBlur() {
+    _isWindowFocused = false;
   }
 
   @override

@@ -4,12 +4,13 @@
 // Component: Repository / Data
 // Version: 1.0 (Gold Master)
 // Created: 2026-07-17
-// Last Update: 2026-07-17
+// Last Update: 2026-07-18
 // ==============================================================================
 
 import 'dart:convert';
 
 import 'package:bytemail/domain/models.dart';
+import 'package:bytemail/focus/focus_header_map.dart';
 import 'package:bytemail/repository/database.dart';
 import 'package:bytemail/repository/mail_repository.dart';
 
@@ -42,6 +43,8 @@ MailMessage messageFromRow(Message row) => MailMessage(
   hasAttachments: row.hasAttachments,
   whenEpochMs: row.whenEpochMs,
   rawHeaders: row.rawHeaders,
+  toRecipients: row.toRecipients,
+  ccRecipients: row.ccRecipients,
   starred: row.starred,
   threadId: row.threadId,
   snoozedUntil: row.snoozedUntil,
@@ -157,6 +160,50 @@ String? rawHeadersForUpsert({
     return cached;
   }
   return incomingRawHeaders;
+}
+
+/// Parsed To:/Cc: searchable lines from raw RFC822 header text.
+({String to, String cc}) recipientsFromRawHeaders(String? rawHeaders) {
+  final Map<String, String> headers = focusHeadersFromRaw(rawHeaders);
+  return (
+    to: headers['to'] ?? '',
+    cc: headers['cc'] ?? '',
+  );
+}
+
+/// Resolves denormalized recipient columns for message upsert.
+({String toRecipients, String ccRecipients}) recipientsForUpsert({
+  required String incomingToRecipients,
+  required String incomingCcRecipients,
+  required String? rawHeaders,
+  String? existingToRecipients,
+  String? existingCcRecipients,
+}) {
+  String toRecipients = incomingToRecipients.trim();
+  String ccRecipients = incomingCcRecipients.trim();
+
+  if (toRecipients.isEmpty && ccRecipients.isEmpty) {
+    final ({String to, String cc}) parsed = recipientsFromRawHeaders(
+      rawHeaders,
+    );
+    toRecipients = parsed.to;
+    ccRecipients = parsed.cc;
+  }
+
+  if (toRecipients.isEmpty) {
+    final String? cached = existingToRecipients?.trim();
+    if (cached != null && cached.isNotEmpty) {
+      toRecipients = cached;
+    }
+  }
+  if (ccRecipients.isEmpty) {
+    final String? cached = existingCcRecipients?.trim();
+    if (cached != null && cached.isNotEmpty) {
+      ccRecipients = cached;
+    }
+  }
+
+  return (toRecipients: toRecipients, ccRecipients: ccRecipients);
 }
 
 String toFtsQuery(String query) => query

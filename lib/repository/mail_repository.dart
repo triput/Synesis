@@ -2,16 +2,18 @@
 // File: lib/repository/mail_repository.dart
 // Description: Local-first mail persistence contract and queue domain types.
 // Component: Repository
-// Version: 1.0 (Gold Master)
+// Version: 1.1 (Gold Master)
 // Created: 2026-07-14
-// Last Update: 2026-07-17
+// Last Update: 2026-07-18
 // ==============================================================================
 
 import 'dart:convert';
 
+import 'package:bytemail/compose/account_signature.dart';
 import 'package:bytemail/domain/models.dart';
 import 'package:bytemail/domain/sync_profile.dart';
 import 'package:bytemail/query/message_query.dart';
+import 'package:bytemail/theme/custom_theme.dart';
 
 class OutboxItem {
   const OutboxItem({
@@ -129,6 +131,13 @@ abstract class MailRepository {
     );
   }
 
+  /// Removes a single Focus override rule by id (TC-4).
+  Future<void> deleteFocusRule(String id) {
+    throw UnsupportedError(
+      'Focus rule persistence is not implemented by this repository.',
+    );
+  }
+
   /// Counts outbox rows in `queued` or `sending` (pending send work).
   Future<int> countQueuedOutbox();
 
@@ -141,7 +150,9 @@ abstract class MailRepository {
     required String providerType,
     bool focusEnabled,
   });
-  Future<void> upsertMessages(
+  /// Inserts or updates messages. Returns newly inserted unread messages
+  /// (existing row was null and stored unread after DEF-007 merge).
+  Future<List<MailMessage>> upsertMessages(
     List<MailMessage> messages, {
     required String folderId,
   });
@@ -170,15 +181,88 @@ abstract class MailRepository {
     String? attachmentRefsJson,
     String? signatureId,
     int? sendAfter,
+    String state = 'queued',
   });
   Future<List<OutboxItem>> listOutbox();
   Future<void> updateOutboxState(String id, String state, {String? error});
+
+  /// Replaces draft/outbox content fields (used for autosave + schedule edits).
+  Future<void> updateOutboxContent(
+    String id, {
+    String? to,
+    String? subject,
+    String? body,
+    String? cc,
+    String? bcc,
+    String? composeMode,
+    String? inReplyTo,
+    String? referencesJson,
+    String? attachmentRefsJson,
+    String? signatureId,
+    int? sendAfter,
+    bool clearSendAfter = false,
+  }) async {}
 
   /// Removes a single outbox row (discard queued/failed/sent).
   Future<void> deleteOutbox(String id);
 
   /// Deletes outbox rows whose [state] is in [states]. Returns rows removed.
   Future<int> deleteOutboxInStates(Iterable<String> states);
+
+  // --- Compose assets (signatures / templates / outbound blobs) ---
+
+  Future<List<MailSignature>> listSignatures(String accountId) async =>
+      const <MailSignature>[];
+
+  Future<MailSignature?> getSignature(String id) async => null;
+
+  Future<String> upsertSignature(MailSignature signature) async =>
+      signature.id;
+
+  Future<void> deleteSignature(String id) async {}
+
+  Future<List<MailSignatureAsset>> listSignatureAssets(
+    String signatureId,
+  ) async =>
+      const <MailSignatureAsset>[];
+
+  Future<String> addSignatureAsset({
+    required String signatureId,
+    required String sourcePath,
+    required String mimeType,
+    String? contentId,
+  }) async =>
+      '';
+
+  Future<List<MailTemplate>> listTemplates({String? accountId}) async =>
+      const <MailTemplate>[];
+
+  Future<String> upsertTemplate(MailTemplate template) async => template.id;
+
+  Future<void> deleteTemplate(String id) async {}
+
+  // --- Custom themes (UI-P16) ---
+
+  Future<List<CustomTheme>> listCustomThemes() async =>
+      const <CustomTheme>[];
+
+  Future<CustomTheme?> getCustomTheme(String id) async => null;
+
+  Future<String> upsertCustomTheme(CustomTheme theme) async => theme.id;
+
+  Future<void> deleteCustomTheme(String id) async {}
+
+  Future<OutboundBlobRef> stageAttachmentBlob({
+    required String accountId,
+    required String sourcePath,
+    String? fileName,
+  }) {
+    throw UnsupportedError('Attachment staging is not implemented.');
+  }
+
+  Future<OutboundBlobRef?> getAttachmentBlob(String id) async => null;
+
+  Future<void> deleteAttachmentBlob(String id) async {}
 
   Future<void> enqueueSyncJob({
     required String accountId,

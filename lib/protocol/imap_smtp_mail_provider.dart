@@ -4,13 +4,15 @@
 // Component: Protocol / Integration
 // Version: 1.0 (Gold Master)
 // Created: 2026-07-14
-// Last Update: 2026-07-17
+// Last Update: 2026-07-18
 // ==============================================================================
 
 import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:bytemail/focus/focus_header_map.dart';
+import 'package:bytemail/mime/multipart_builder.dart';
+import 'package:bytemail/mime/outgoing_envelope.dart';
 import 'package:bytemail/protocol/mail_date_parser.dart';
 import 'package:bytemail/protocol/mail_provider.dart';
 import 'package:bytemail/protocol/thread_id.dart';
@@ -325,7 +327,7 @@ class ImapSmtpMailProvider extends MailProvider {
       throw const ProtocolException('A recipient is required to send mail.');
     }
     final SmtpClient smtp = SmtpClient(_smtpClientDomain());
-    MimeMessage? builtMessage;
+    late final MimeMessage builtMessage;
     try {
       await smtp.connectToServer(
         smtpHost,
@@ -368,9 +370,74 @@ class ImapSmtpMailProvider extends MailProvider {
     } finally {
       await smtp.disconnect();
     }
-    if (builtMessage != null) {
-      await _appendToSentBestEffort(builtMessage);
+    await _appendToSentBestEffort(builtMessage);
+  }
+
+  @override
+  Future<void> sendEnvelope(OutgoingEnvelope envelope) async {
+    final List<String> toClean = envelope.to
+        .map((String a) => a.trim())
+        .where((String a) => a.isNotEmpty)
+        .toList(growable: false);
+    final List<String> ccClean = envelope.cc
+        .map((String a) => a.trim())
+        .where((String a) => a.isNotEmpty)
+        .toList(growable: false);
+    final List<String> bccClean = envelope.bcc
+        .map((String a) => a.trim())
+        .where((String a) => a.isNotEmpty)
+        .toList(growable: false);
+    if (toClean.isEmpty && ccClean.isEmpty && bccClean.isEmpty) {
+      throw const ProtocolException('A recipient is required to send mail.');
     }
+    final OutgoingEnvelope normalized = OutgoingEnvelope(
+      from: envelope.from.trim().isEmpty ? user : envelope.from,
+      to: toClean.isEmpty && (ccClean.isNotEmpty || bccClean.isNotEmpty)
+          ? <String>[user]
+          : toClean,
+      cc: ccClean,
+      bcc: bccClean,
+      subject: envelope.subject,
+      textBody: envelope.textBody,
+      htmlBody: envelope.htmlBody,
+      attachmentPaths: envelope.attachmentPaths,
+      inReplyTo: envelope.inReplyTo,
+      references: envelope.references,
+    );
+    final Uint8List mimeBytes =
+        await buildMultipartMessageInIsolate(normalized);
+    final MimeMessage builtMessage = MimeMessage.parseFromData(mimeBytes);
+    final SmtpClient smtp = SmtpClient(_smtpClientDomain());
+    try {
+      await smtp.connectToServer(
+        smtpHost,
+        smtpPort,
+        isSecure: smtpPort == 465,
+      );
+      await smtp.ehlo();
+      if (smtpPort != 465 && smtp.serverInfo.supportsStartTls) {
+        final SmtpResponse tlsResponse = await smtp.startTls();
+        if (!tlsResponse.isOkStatus) {
+          throw ProtocolException(
+            'SMTP STARTTLS failed: $tlsResponse',
+          );
+        }
+      }
+      if (authMode == ImapAuthMode.xoauth2) {
+        await smtp.authenticate(user, password, AuthMechanism.xoauth2);
+      } else {
+        await smtp.authenticate(user, password);
+      }
+      final SmtpResponse response = await smtp.sendMessage(builtMessage);
+      if (!response.isOkStatus) {
+        throw ProtocolException('SMTP server rejected the message: $response');
+      }
+    } catch (error) {
+      throw _protocolError('Unable to send SMTP mail.', error);
+    } finally {
+      await smtp.disconnect();
+    }
+    await _appendToSentBestEffort(builtMessage);
   }
 
   List<MailAddress> _mailAddresses(List<String> addresses) {
@@ -786,7 +853,33 @@ class ImapSmtpMailProvider extends MailProvider {
         feedbackId: message.getHeaderValue('feedback-id'),
         xMailer: message.getHeaderValue('x-mailer'),
       ),
+      toRecipients: _envelopeRecipientsLine(message.to) ??
+          message.getHeaderValue('to') ??
+          '',
+      ccRecipients: _envelopeRecipientsLine(message.cc) ??
+          message.getHeaderValue('cc') ??
+          '',
     );
+  }
+
+  String? _envelopeRecipientsLine(List<MailAddress>? addresses) {
+    if (addresses == null || addresses.isEmpty) {
+      return null;
+    }
+    final List<String> parts = <String>[];
+    for (final MailAddress address in addresses) {
+      final String email = address.email.trim();
+      if (email.isEmpty) {
+        continue;
+      }
+      final String? name = address.personalName?.trim();
+      if (name == null || name.isEmpty) {
+        parts.add(email);
+      } else {
+        parts.add('$name <$email>');
+      }
+    }
+    return parts.isEmpty ? null : parts.join(', ');
   }
 
   String? _formatMimeHeaders(MimeMessage message) {
@@ -806,7 +899,21 @@ class ImapSmtpMailProvider extends MailProvider {
     return atIndex == -1 ? smtpHost : user.substring(atIndex + 1);
   }
 
-  ProtocolException _protocolError(String message, Object error) => error is ProtocolException
-      ? error
-      : ProtocolException(message, cause: error);
+  ProtocolException _protocolError(String message, Object error) {
+    if (error is ProtocolException) {
+      return error;
+    }
+    final String detail = error.toString();
+    if (authMode == ImapAuthMode.xoauth2 &&
+        detail.toUpperCase().contains('AUTHENTICATIONFAILED')) {
+      return ProtocolException(
+        '$message Gmail XOAUTH2 rejected the access token. Confirm IMAP is '
+        'enabled in Gmail settings, the OAuth consent screen includes '
+        'https://mail.google.com/, then remove this account and Sign in with '
+        'Google again.',
+        cause: error,
+      );
+    }
+    return ProtocolException(message, cause: error);
+  }
 }

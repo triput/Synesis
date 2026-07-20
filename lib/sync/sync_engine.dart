@@ -4,20 +4,21 @@
 // Component: Sync
 // Version: 1.2 (Gold Master)
 // Created: 2026-07-14
-// Last Update: 2026-07-17
+// Last Update: 2026-07-18
 // ==============================================================================
 
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:bytemail/compose/outgoing_message_builder.dart';
 import 'package:bytemail/domain/models.dart';
 import 'package:bytemail/domain/sync_profile.dart';
 import 'package:bytemail/focus/focus.dart';
+import 'package:bytemail/mime/outgoing_envelope.dart';
 import 'package:bytemail/protocol/graph_mail_provider.dart';
 import 'package:bytemail/protocol/mail_provider.dart';
 import 'package:bytemail/protocol/thread_id.dart';
 import 'package:bytemail/repository/mail_repository.dart';
-import 'package:bytemail/outbox/outbox_recipients.dart';
 import 'package:bytemail/outbox/send_error_messages.dart';
 import 'package:bytemail/sync/imap_idle_service.dart';
 import 'package:bytemail/sync/network_sync_policy.dart';
@@ -27,6 +28,9 @@ import 'package:flutter/foundation.dart'
     show TargetPlatform, defaultTargetPlatform, kIsWeb;
 
 typedef ProviderResolver = Future<MailProvider?> Function(String accountId);
+
+/// Invoked when newly inserted unread inbox messages arrive (non-bootstrap sync).
+typedef NewUnreadMailHandler = Future<void> Function(List<MailMessage> messages);
 
 /// Reads device trash auto-purge retention in days (default 30).
 typedef TrashRetentionDaysReader = int Function();
@@ -50,6 +54,7 @@ class SyncEngine {
     ConnectivityReader? readConnectivity,
     NetworkSyncPolicy? networkPolicy,
     Connectivity? connectivity,
+    NewUnreadMailHandler? onNewUnread,
   }) : _repository = repository,
        _resolveProvider = resolveProvider,
        _trashRetentionDays = trashRetentionDays ?? (() => 30),
@@ -59,7 +64,8 @@ class SyncEngine {
            (() => (connectivity ?? Connectivity()).checkConnectivity()),
        _networkPolicy = networkPolicy ??
            NetworkSyncPolicy(isDesktop: _detectDesktop()),
-       _connectivity = connectivity {
+       _connectivity = connectivity,
+       _onNewUnread = onNewUnread {
     _idleService = ImapIdleService(
       resolveProvider: resolveProvider,
       onMailboxChanged: _onIdleWake,
@@ -79,6 +85,7 @@ class SyncEngine {
   final ConnectivityReader _readConnectivity;
   final NetworkSyncPolicy _networkPolicy;
   final Connectivity? _connectivity;
+  final NewUnreadMailHandler? _onNewUnread;
 
   late final ImapIdleService _idleService;
   StreamSubscription<List<ConnectivityResult>>? _connectivitySub;
@@ -102,6 +109,11 @@ class SyncEngine {
       case TargetPlatform.fuchsia:
         return false;
     }
+  }
+
+  /// Resolves the live mail provider for [accountId] (attachments, etc.).
+  Future<MailProvider?> resolveMailProvider(String accountId) {
+    return _resolveProvider(accountId);
   }
 
   /// Begins connectivity listening so reconnect kicks and IDLE policy refresh.
@@ -296,15 +308,17 @@ class SyncEngine {
   Future<String?> _processJob(SyncJob job) async {
     switch (job.type) {
       case 'bootstrap':
+        await _syncFolderListBestEffort(job);
+        return _syncInbox(job, notifyNewMail: false);
       case 'incremental':
         await _syncFolderListBestEffort(job);
-        return _syncInbox(job);
+        return _syncInbox(job, notifyNewMail: true);
       case pushWakeJobType:
         await enqueueIncremental(job.accountId);
         return null;
       case 'full_folder':
         await _syncFolderListBestEffort(job);
-        return _syncFolderMessages(job);
+        return _syncFolderMessages(job, notifyNewMail: true);
       case 'send_outbox':
         await _sendOutbox(job);
         return null;
@@ -469,7 +483,10 @@ class SyncEngine {
     });
   }
 
-  Future<String?> _syncInbox(SyncJob job) async {
+  Future<String?> _syncInbox(
+    SyncJob job, {
+    required bool notifyNewMail,
+  }) async {
     final ResolvedSyncPolicy policy = await _resolvePolicy(job.accountId);
     final String folderId = MailFolder.inboxId(job.accountId);
     if (!policy.allowsFolder(
@@ -486,6 +503,7 @@ class SyncEngine {
         folderId: folderId,
         remoteId: provider is GraphMailProvider ? 'inbox' : 'INBOX',
         isInbox: true,
+        notifyNewMail: notifyNewMail,
       );
     });
     await WidgetSnapshotService(_repository).refreshAll();
@@ -503,7 +521,10 @@ class SyncEngine {
     return jsonEncode(cursor);
   }
 
-  Future<String?> _syncFolderMessages(SyncJob job) async {
+  Future<String?> _syncFolderMessages(
+    SyncJob job, {
+    required bool notifyNewMail,
+  }) async {
     final Map<String, Object?> payload = _decodePayload(job.payloadJson);
     final String? folderId = payload['folderId'] as String?;
     final String? remoteId = payload['remoteId'] as String?;
@@ -512,7 +533,7 @@ class SyncEngine {
         remoteId == null ||
         remoteId.isEmpty) {
       // Legacy full_folder with no payload: keep inbox behavior.
-      return _syncInbox(job);
+      return _syncInbox(job, notifyNewMail: notifyNewMail);
     }
 
     final ResolvedSyncPolicy policy = await _resolvePolicy(job.accountId);
@@ -533,6 +554,7 @@ class SyncEngine {
         folderId: folderId,
         remoteId: remoteId,
         isInbox: isInbox,
+        notifyNewMail: notifyNewMail,
       );
     });
     await WidgetSnapshotService(_repository).refreshAll();
@@ -548,6 +570,7 @@ class SyncEngine {
     required String folderId,
     required String remoteId,
     required bool isInbox,
+    required bool notifyNewMail,
   }) async {
     if (provider is GraphMailProvider) {
       final bool usedDelta = await _tryGraphDelta(
@@ -556,6 +579,7 @@ class SyncEngine {
         folderId: folderId,
         remoteId: remoteId,
         isInbox: isInbox,
+        notifyNewMail: notifyNewMail,
       );
       if (usedDelta) {
         return;
@@ -565,7 +589,7 @@ class SyncEngine {
     final List<RemoteMessageHeader> messages = isInbox
         ? await provider.listRecentInbox()
         : await provider.listRecentInFolder(remoteId);
-    await _repository.upsertMessages(
+    final List<MailMessage> newlyUnread = await _repository.upsertMessages(
       messages
           .map(
             (RemoteMessageHeader header) => _toMailMessage(
@@ -576,6 +600,11 @@ class SyncEngine {
           )
           .toList(growable: false),
       folderId: folderId,
+    );
+    await _maybeNotifyNewUnread(
+      isInbox: isInbox,
+      notifyNewMail: notifyNewMail,
+      messages: newlyUnread,
     );
 
     if (provider is GraphMailProvider) {
@@ -595,6 +624,7 @@ class SyncEngine {
     required String folderId,
     required String remoteId,
     required bool isInbox,
+    required bool notifyNewMail,
   }) async {
     final String? existing = await _repository.getCursor(
       job.accountId,
@@ -612,6 +642,7 @@ class SyncEngine {
         job: job,
         folderId: folderId,
         isInbox: isInbox,
+        notifyNewMail: notifyNewMail,
         delta: delta,
       );
       return true;
@@ -664,10 +695,11 @@ class SyncEngine {
     required SyncJob job,
     required String folderId,
     required bool isInbox,
+    required bool notifyNewMail,
     required GraphDeltaResult delta,
   }) async {
     if (delta.changed.isNotEmpty) {
-      await _repository.upsertMessages(
+      final List<MailMessage> newlyUnread = await _repository.upsertMessages(
         delta.changed
             .map(
               (RemoteMessageHeader header) => _toMailMessage(
@@ -678,6 +710,11 @@ class SyncEngine {
             )
             .toList(growable: false),
         folderId: folderId,
+      );
+      await _maybeNotifyNewUnread(
+        isInbox: isInbox,
+        notifyNewMail: notifyNewMail,
+        messages: newlyUnread,
       );
     }
     for (final String providerId in delta.removedProviderIds) {
@@ -695,9 +732,40 @@ class SyncEngine {
     }
   }
 
+  Future<void> _maybeNotifyNewUnread({
+    required bool isInbox,
+    required bool notifyNewMail,
+    required List<MailMessage> messages,
+  }) async {
+    if (!notifyNewMail || !isInbox || messages.isEmpty) {
+      return;
+    }
+    final NewUnreadMailHandler? handler = _onNewUnread;
+    if (handler == null) {
+      return;
+    }
+    await handler(messages);
+  }
+
   Future<void> _sendOutbox(SyncJob job) async {
     int failureCount = 0;
     String? firstError;
+    final int nowMs = DateTime.now().millisecondsSinceEpoch;
+    final List<MailAccount> accounts = await _repository.listAccounts();
+    String fromAddress = job.accountId;
+    for (final MailAccount account in accounts) {
+      if (account.id == job.accountId) {
+        fromAddress = account.address;
+        break;
+      }
+    }
+    final OutgoingMessageBuilder builder = OutgoingMessageBuilder(
+      resolveBlobPath: (String blobId) async {
+        return (await _repository.getAttachmentBlob(blobId))?.path;
+      },
+      loadSignature: _repository.getSignature,
+      loadSignatureAssets: _repository.listSignatureAssets,
+    );
     await _withProvider(job.accountId, (MailProvider provider) async {
       final List<OutboxItem> queued = (await _repository.listOutbox())
           .where(
@@ -706,18 +774,24 @@ class SyncEngine {
           )
           .toList(growable: false);
       for (final OutboxItem item in queued) {
+        final int? sendAfter = item.sendAfter;
+        if (sendAfter != null && sendAfter > nowMs) {
+          continue;
+        }
         await _repository.updateOutboxState(item.id, 'sending');
         try {
-          final List<String> to = splitOutboxRecipients(item.to);
-          final List<String> cc = splitOutboxRecipients(item.cc);
-          final List<String> bcc = splitOutboxRecipients(item.bcc);
-          await provider.send(
-            to: to,
-            cc: cc,
-            bcc: bcc,
-            subject: item.subject,
-            body: item.body,
+          final OutgoingEnvelope envelope = await builder.build(
+            item: item,
+            fromAddress: fromAddress,
           );
+          if (envelope.to.isEmpty &&
+              envelope.cc.isEmpty &&
+              envelope.bcc.isEmpty) {
+            throw const ProtocolException(
+              'A recipient is required to send mail.',
+            );
+          }
+          await provider.sendEnvelope(envelope);
           await _repository.updateOutboxState(item.id, 'sent');
         } on Object catch (error) {
           failureCount += 1;
@@ -846,6 +920,9 @@ class SyncEngine {
       hasAttachments: header.hasAttachments,
       whenEpochMs: whenEpochMs,
       threadId: threadRoot == null ? null : '$accountId:$threadRoot',
+      rawHeaders: header.rawHeaders,
+      toRecipients: header.toRecipients,
+      ccRecipients: header.ccRecipients,
     );
   }
 

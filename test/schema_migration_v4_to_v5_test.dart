@@ -1,10 +1,10 @@
 // ==============================================================================
 // File: test/schema_migration_v4_to_v5_test.dart
-// Description: Real file-backed SQLite migration from schema v4 to v5.
+// Description: Real file-backed SQLite migration from schema v4 to current (v6).
 // Component: Test
 // Version: 1.0 (Gold Master)
 // Created: 2026-07-16
-// Last Update: 2026-07-16
+// Last Update: 2026-07-18
 // ==============================================================================
 
 import 'dart:io';
@@ -16,7 +16,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as path;
 import 'package:sqlite3/sqlite3.dart';
 
-/// Creates a minimal pre-v5 (schema version 4) ByteMail database on disk.
+/// Creates a minimal schema version 4 ByteMail database on disk.
 void _writeSchemaV4Database(String filePath) {
   final Database db = sqlite3.open(filePath);
   try {
@@ -151,7 +151,7 @@ CREATE TABLE widget_snapshots (
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  test('opens v4 file database and migrates to schema v5', () async {
+  test('opens v4 file database and migrates to current schema (v6)', () async {
     final Directory tempDir = await Directory.systemTemp.createTemp(
       'bytemail_v4_mig_',
     );
@@ -175,7 +175,7 @@ void main() {
     final int userVersion =
         (await database.customSelect('PRAGMA user_version').getSingle())
             .read<int>('user_version');
-    expect(userVersion, 5);
+    expect(userVersion, 6);
 
     final Set<String> messageColumns =
         (await database.customSelect('PRAGMA table_info(messages)').get())
@@ -191,6 +191,8 @@ void main() {
         'is_draft',
         'draft_sync_provider_id',
         'raw_headers',
+        'to_recipients',
+        'cc_recipients',
       ]),
     );
 
@@ -238,7 +240,8 @@ void main() {
 
     final QueryRow legacy = await database
         .customSelect(
-          'SELECT id, subject, starred, thread_id, is_draft, raw_headers '
+          'SELECT id, subject, starred, thread_id, is_draft, raw_headers, '
+          'to_recipients, cc_recipients '
           "FROM messages WHERE id = 'msg-legacy'",
         )
         .getSingle();
@@ -248,5 +251,7 @@ void main() {
     expect(legacy.read<String?>('thread_id'), isNull);
     expect(legacy.read<int>('is_draft'), 0);
     expect(legacy.read<String>('raw_headers'), 'From: alice@byte.io');
+    expect(legacy.read<String>('to_recipients'), '');
+    expect(legacy.read<String>('cc_recipients'), '');
   });
 }

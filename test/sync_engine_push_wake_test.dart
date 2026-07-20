@@ -158,10 +158,11 @@ class _WakeRepo implements MailRepository {
       cursors['$accountId|$folderId|$key'];
 
   @override
-  Future<void> upsertMessages(
+  Future<List<MailMessage>> upsertMessages(
     List<MailMessage> messages, {
     required String folderId,
-  }) async {}
+  }) async =>
+      const <MailMessage>[];
 
   @override
   Future<void> upsertFolders(List<MailFolder> folders) async {}

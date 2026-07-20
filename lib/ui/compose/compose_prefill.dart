@@ -1,11 +1,13 @@
 // ==============================================================================
 // File: lib/ui/compose/compose_prefill.dart
-// Description: Thin reply / reply-all / forward compose prefill (no HTML quote)
+// Description: Reply / reply-all / forward compose prefill with HTML quote.
 // Component: UI
-// Version: 1.0 (Gold Master)
+// Version: 1.1 (Gold Master)
 // Created: 2026-07-17
 // Last Update: 2026-07-17
 // ==============================================================================
+
+import 'dart:convert';
 
 import 'package:bytemail/domain/models.dart';
 import 'package:bytemail/outbox/outbox_recipients.dart';
@@ -15,10 +17,7 @@ export 'package:bytemail/outbox/outbox_recipients.dart'
 
 enum ComposeMode { newMessage, reply, replyAll, forward }
 
-/// Minimal envelope used to open [showComposeSheet] for reply / forward.
-///
-/// Full quoted HTML bodies are deferred to W4 — this only sets To/Cc/Subject
-/// and a plain forward snippet.
+/// Envelope used to open [showComposeSheet] for reply / forward.
 class ComposePrefill {
   const ComposePrefill({
     required this.mode,
@@ -27,6 +26,7 @@ class ComposePrefill {
     this.cc = const <String>[],
     this.subject = '',
     this.body = '',
+    this.bodyHtml,
     this.inReplyTo,
     this.referencesJson,
   });
@@ -37,6 +37,7 @@ class ComposePrefill {
   final List<String> cc;
   final String subject;
   final String body;
+  final String? bodyHtml;
   final String? inReplyTo;
   final String? referencesJson;
 
@@ -66,6 +67,9 @@ class ComposePrefill {
   }) {
     final String subject = ensureReplySubject(message.subject);
     final String? inReplyTo = _nullIfBlank(message.messageIdHeader);
+    final String? referencesJson = buildReferencesJson(message);
+    final String quotePlain = buildReplyQuotePlain(message);
+    final String quoteHtml = buildReplyQuoteHtml(message);
 
     if (!replyAll) {
       return ComposePrefill(
@@ -73,7 +77,10 @@ class ComposePrefill {
         accountId: message.accountId,
         to: _nonEmptyAddresses(<String>[message.fromAddress]),
         subject: subject,
+        body: quotePlain,
+        bodyHtml: quoteHtml,
         inReplyTo: inReplyTo,
+        referencesJson: referencesJson,
       );
     }
 
@@ -117,18 +124,93 @@ class ComposePrefill {
       to: _nonEmptyAddresses(to),
       cc: _nonEmptyAddresses(cc),
       subject: subject,
+      body: quotePlain,
+      bodyHtml: quoteHtml,
       inReplyTo: inReplyTo,
+      referencesJson: referencesJson,
     );
   }
 
-  /// Forward prefill with plain forwarded-message snippet (no HTML quote).
+  /// Forward prefill with plain + HTML forwarded-message blocks.
   factory ComposePrefill.forward(MailMessage message) {
     return ComposePrefill(
       mode: ComposeMode.forward,
       accountId: message.accountId,
       subject: ensureForwardSubject(message.subject),
       body: buildForwardBody(message),
+      bodyHtml: buildForwardBodyHtml(message),
     );
+  }
+
+  /// Builds References header JSON from [message] headers + Message-ID.
+  static String? buildReferencesJson(MailMessage message) {
+    final List<String> refs = <String>[];
+    final String? raw = message.rawHeaders?.trim();
+    if (raw != null && raw.isNotEmpty) {
+      final String? existing = _headerValue(raw, 'References');
+      if (existing != null && existing.trim().isNotEmpty) {
+        for (final String token in existing.split(RegExp(r'\s+'))) {
+          final String t = token.trim();
+          if (t.isNotEmpty) {
+            refs.add(t);
+          }
+        }
+      }
+      final String? parent = _headerValue(raw, 'In-Reply-To')?.trim();
+      if (parent != null &&
+          parent.isNotEmpty &&
+          !refs.any((String r) => r.toLowerCase() == parent.toLowerCase())) {
+        refs.add(parent);
+      }
+    }
+    final String? mid = _nullIfBlank(message.messageIdHeader);
+    if (mid != null &&
+        !refs.any((String r) => r.toLowerCase() == mid.toLowerCase())) {
+      refs.add(mid);
+    }
+    if (refs.isEmpty) {
+      return null;
+    }
+    return jsonEncode(refs);
+  }
+
+  /// Plain reply quote with blank composer space above.
+  static String buildReplyQuotePlain(MailMessage message) {
+    final String fromLabel = message.fromName.trim().isEmpty
+        ? message.fromAddress
+        : '${message.fromName} <${message.fromAddress}>';
+    final String quoted = _forwardContent(message)
+        .split('\n')
+        .map((String line) => '> $line')
+        .join('\n');
+    return '\n\nOn $fromLabel wrote:\n$quoted';
+  }
+
+  /// HTML reply quote with blank composer space above.
+  static String buildReplyQuoteHtml(MailMessage message) {
+    final String fromLabel = _escapeHtml(
+      message.fromName.trim().isEmpty
+          ? message.fromAddress
+          : '${message.fromName} <${message.fromAddress}>',
+    );
+    final String inner = _quoteHtmlInner(message);
+    return '<div><br></div><div><br></div>'
+        '<blockquote style="margin:0 0 0 0.8ex;border-left:2px solid #ccc;'
+        'padding-left:1ex;">'
+        '<div>On $fromLabel wrote:</div>$inner</blockquote>';
+  }
+
+  /// HTML forward body block.
+  static String buildForwardBodyHtml(MailMessage message) {
+    final String fromLabel = _escapeHtml(
+      message.fromName.trim().isEmpty
+          ? message.fromAddress
+          : '${message.fromName} <${message.fromAddress}>',
+    );
+    final String inner = _quoteHtmlInner(message);
+    return '<div><br></div>'
+        '<div>---------- Forwarded message ----------</div>'
+        '<div>From: $fromLabel</div><div><br></div>$inner';
   }
 
   /// Ensures a single `Re:` prefix (case-insensitive).
@@ -245,4 +327,22 @@ String _stripSimpleMarkup(String raw) {
       .replaceAll(RegExp(r'[ \t]+\n'), '\n')
       .replaceAll(RegExp(r'\n{3,}'), '\n\n')
       .replaceAll(RegExp(r'[ \t]{2,}'), ' ');
+}
+
+String _quoteHtmlInner(MailMessage message) {
+  final String body = message.body.trim();
+  if (body.contains('<') && body.contains('>')) {
+    return body;
+  }
+  final String plain = _forwardContent(message);
+  return '<pre style="white-space:pre-wrap;font-family:inherit;">'
+      '${_escapeHtml(plain)}</pre>';
+}
+
+String _escapeHtml(String raw) {
+  return raw
+      .replaceAll('&', '&amp;')
+      .replaceAll('<', '&lt;')
+      .replaceAll('>', '&gt;')
+      .replaceAll('"', '&quot;');
 }

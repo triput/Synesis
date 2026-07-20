@@ -4,16 +4,19 @@
 // Component: Protocol / Integration
 // Version: 1.0 (Gold Master)
 // Created: 2026-07-14
-// Last Update: 2026-07-17
+// Last Update: 2026-07-18
 // ==============================================================================
 
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:bytemail/focus/focus_header_map.dart';
+import 'package:bytemail/mime/outgoing_envelope.dart';
 import 'package:bytemail/protocol/mail_provider.dart';
 import 'package:http/http.dart' as http;
+import 'package:path/path.dart' as p;
 
 /// Thrown when Graph rejects the bearer token and interactive re-auth is needed.
 class GraphAuthException implements Exception {
@@ -83,8 +86,8 @@ class GraphMailProvider extends MailProvider {
   static const String graphDeltaCursorKey = 'graph_delta';
   static const int _maxDeltaPages = 20;
   static const String _messageSelect =
-      'id,subject,from,receivedDateTime,bodyPreview,internetMessageId,'
-      'conversationId,isRead,hasAttachments,internetMessageHeaders';
+      'id,subject,from,toRecipients,ccRecipients,receivedDateTime,bodyPreview,'
+      'internetMessageId,conversationId,isRead,hasAttachments,internetMessageHeaders';
 
   static const int _maxMailFolderPages = 20;
 
@@ -338,6 +341,82 @@ class GraphMailProvider extends MailProvider {
     }
     if (bccClean.isNotEmpty) {
       message['bccRecipients'] = _graphRecipients(bccClean);
+    }
+    final String payload = jsonEncode(<String, Object>{
+      'message': message,
+      'saveToSentItems': true,
+    });
+    final http.Response response = await _sendAuthorized(
+      (Map<String, String> headers) => _client.post(
+        _uri('/me/sendMail'),
+        headers: headers,
+        body: payload,
+      ),
+      contentType: 'application/json',
+    );
+    _ensureSuccess(response);
+  }
+
+  @override
+  Future<void> sendEnvelope(OutgoingEnvelope envelope) async {
+    final List<String> toClean = _cleanAddresses(envelope.to);
+    final List<String> ccClean = _cleanAddresses(envelope.cc);
+    final List<String> bccClean = _cleanAddresses(envelope.bcc);
+    if (toClean.isEmpty && ccClean.isEmpty && bccClean.isEmpty) {
+      throw const ProtocolException('A recipient is required to send mail.');
+    }
+    final bool useHtml =
+        envelope.htmlBody != null && envelope.htmlBody!.trim().isNotEmpty;
+    final Map<String, Object> message = <String, Object>{
+      'subject': envelope.subject,
+      'body': <String, String>{
+        'contentType': useHtml ? 'HTML' : 'Text',
+        'content': useHtml ? envelope.htmlBody!.trim() : envelope.textBody,
+      },
+      'toRecipients': _graphRecipients(
+        toClean.isNotEmpty ? toClean : <String>[envelope.from],
+      ),
+    };
+    if (ccClean.isNotEmpty) {
+      message['ccRecipients'] = _graphRecipients(ccClean);
+    }
+    if (bccClean.isNotEmpty) {
+      message['bccRecipients'] = _graphRecipients(bccClean);
+    }
+    final List<Map<String, Object>> headers = <Map<String, Object>>[];
+    final String? inReplyTo = envelope.inReplyTo?.trim();
+    if (inReplyTo != null && inReplyTo.isNotEmpty) {
+      headers.add(<String, Object>{
+        'name': 'In-Reply-To',
+        'value': inReplyTo,
+      });
+    }
+    final String? references = envelope.references?.trim();
+    if (references != null && references.isNotEmpty) {
+      headers.add(<String, Object>{
+        'name': 'References',
+        'value': references,
+      });
+    }
+    if (headers.isNotEmpty) {
+      message['internetMessageHeaders'] = headers;
+    }
+    if (envelope.attachmentPaths.isNotEmpty) {
+      final List<Map<String, Object>> attachments = <Map<String, Object>>[];
+      for (final String path in envelope.attachmentPaths) {
+        final File file = File(path);
+        if (!await file.exists()) {
+          throw ProtocolException('Attachment missing: $path');
+        }
+        final Uint8List bytes = await file.readAsBytes();
+        attachments.add(<String, Object>{
+          '@odata.type': '#microsoft.graph.fileAttachment',
+          'name': p.basename(path),
+          'contentType': 'application/octet-stream',
+          'contentBytes': base64Encode(bytes),
+        });
+      }
+      message['attachments'] = attachments;
     }
     final String payload = jsonEncode(<String, Object>{
       'message': message,
@@ -670,6 +749,10 @@ class GraphMailProvider extends MailProvider {
         json['from'] as Map<Object?, Object?>?;
     final Map<Object?, Object?>? emailAddress =
         from?['emailAddress'] as Map<Object?, Object?>?;
+    final String toRecipients =
+        _graphRecipientsLine(json['toRecipients'] as List<Object?>?) ?? '';
+    final String ccRecipients =
+        _graphRecipientsLine(json['ccRecipients'] as List<Object?>?) ?? '';
     return RemoteMessageHeader(
       providerId: id,
       subject: json['subject'] as String? ?? '',
@@ -682,6 +765,8 @@ class GraphMailProvider extends MailProvider {
       isRead: json['isRead'] as bool? ?? false,
       hasAttachments: json['hasAttachments'] as bool? ?? false,
       classificationHeaders: _classificationHeadersFromJson(json),
+      toRecipients: toRecipients,
+      ccRecipients: ccRecipients,
     );
   }
 

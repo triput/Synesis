@@ -1,8 +1,29 @@
+<p align="center">
+  <img src="docs/branding/branding_logo_lockup_google.png" alt="bytemail" width="360" />
+</p>
+
 # ByteMail
 
 Local-first Flutter email client for **Windows** and **Android**.
 
 See [docs/SPEC.md](docs/SPEC.md) for the technical specification and [mockups](mockups) for the visual direction.
+
+**Web (LiveBytes mothership):** marketing + Privacy + Terms live at `https://livebytes.net/bytemail/` — source in sibling [`../LiveBytes`](../LiveBytes) (`website/`, strategy docs). Thin backlog stubs: [`docs/POST_V1_WEB_AND_LEGAL.md`](docs/POST_V1_WEB_AND_LEGAL.md), [`docs/POST_V1_LIVEBYTES_WEB_STRATEGY.md`](docs/POST_V1_LIVEBYTES_WEB_STRATEGY.md).
+
+## Documentation
+
+| Doc | Audience |
+| --- | --- |
+| [SPEC.md](docs/SPEC.md) | Product & technical requirements |
+| [ARCHITECTURE_OVERVIEW.md](docs/ARCHITECTURE_OVERVIEW.md) | How ByteMail works under the hood (no code required) |
+| [**USER_GUIDE.md**](docs/USER_GUIDE.md) | End-user manual — accounts, filters, Focus, settings |
+| [**QUICK_START.md**](docs/QUICK_START.md) | Short path to first sync |
+| [**DART_IN_BYTEMAIL.md**](docs/DART_IN_BYTEMAIL.md) | Curious engineer tour — Dart/Flutter patterns in *this* repo |
+| [AGENTS.md](AGENTS.md) | Multi-agent delivery workflow |
+| [TEST_INVENTORY.md](docs/TEST_INVENTORY.md) | Automated test catalog |
+| [V1_TIER_INTEGRATION.md](docs/V1_TIER_INTEGRATION.md) | Wave integration plan |
+| [ROADMAP.md](docs/ROADMAP.md) | Milestones and exit gates |
+| [FINAL_WAVE_PLAN.md](docs/FINAL_WAVE_PLAN.md) | V1 exit / release readiness (in progress) |
 
 ## Run
 
@@ -15,15 +36,21 @@ flutter run -d android
 
 ### Microsoft Graph (with Entra OAuth)
 
+**Normal path:** ByteMail ships its own Entra **public** client ID ([`lib/auth/oauth_public_clients.dart`](lib/auth/oauth_public_clients.dart)). End users only click **Sign in with Microsoft** — no digging for IDs.
+
+**Overrides (dev / CI):** `--dart-define=BYTEMAIL_GRAPH_CLIENT_ID=…` → OS env → gitignored `oauth_local.json` (see [`oauth_local.json.example`](oauth_local.json.example)) → shipped defaults.
+
 ```bash
 flutter run -d windows --dart-define=BYTEMAIL_GRAPH_CLIENT_ID=YOUR_APP_CLIENT_ID
 # optional tenant (defaults to common):
 flutter run -d windows --dart-define=BYTEMAIL_GRAPH_CLIENT_ID=YOUR_APP_CLIENT_ID --dart-define=BYTEMAIL_GRAPH_TENANT=common
 ```
 
-Without `BYTEMAIL_GRAPH_CLIENT_ID`, Add Account keeps the local Graph token-paste path for spike testing.
+If no Graph client ID is available from any source, Add Account keeps a token-paste spike path (not the dogfood path).
 
 ### Google OAuth (Gmail IMAP/SMTP)
+
+Same model — shipped Google public client ID in `oauth_public_clients.dart`, with the same override chain.
 
 ```bash
 flutter run -d windows --dart-define=BYTEMAIL_GOOGLE_CLIENT_ID=YOUR_GOOGLE_CLIENT_ID
@@ -31,7 +58,7 @@ flutter run -d windows --dart-define=BYTEMAIL_GOOGLE_CLIENT_ID=YOUR_GOOGLE_CLIEN
 flutter run -d windows --dart-define=BYTEMAIL_GOOGLE_CLIENT_ID=YOUR_GOOGLE_CLIENT_ID --dart-define=BYTEMAIL_GOOGLE_CLIENT_SECRET=YOUR_SECRET
 ```
 
-Without `BYTEMAIL_GOOGLE_CLIENT_ID`, the Google tab shows setup guidance; Gmail still works via the **IMAP / Other** tab with an app password.
+Without a Google client ID from any source, the Google tab shows setup guidance; Gmail still works via the **IMAP / Other** tab with an app password.
 
 ### IMAP / Other
 
@@ -108,9 +135,10 @@ flutter run -d windows \
 **Notes**
 
 - Redirect ports/schemes are intentionally separate from Microsoft Graph (`8765` / `bytemail://auth`).
+- **IMAP XOAUTH2** requires the consent-screen scope `https://mail.google.com/` (restricted). If sync fails with `AUTHENTICATIONFAILED` after Sign in with Google, add that scope on the consent screen, enable the Gmail API, turn on IMAP in the Gmail account, then remove the account in ByteMail and sign in again so consent is re-granted.
 - App passwords remain supported on the **IMAP / Other** tab for Gmail users who prefer that path.
 - **Look up settings** on the IMAP tab uses Thunderbird ISPDB autoconfig; manual host/port entry still works when discovery fails.
-- Do not commit client secrets; pass them only via `--dart-define` or local launch configs.
+- Product builds ship public client IDs (and the Google Desktop client secret, which Google treats as non-confidential) via `lib/auth/oauth_public_clients.dart`. Overrides: dart-define / env / `oauth_local.json`.
 
 ## Current status (v0 shell + W0 platform base + W1 message actions + W2 list UX + W3 sync & privacy)
 
@@ -157,7 +185,9 @@ flutter run -d windows \
 | Push / near-push | Graph delta + cursor; IMAP IDLE; network policy via `connectivity_plus`; `pushOnCellular` default off |
 | Remote images | Block by default; per-message “Load images”; toggle in Appearance |
 
-**Next wave (W5):** desktop shell — reading-pane layout, keymap, tray, `.eml`, Ctrl+F, detached message window. W4 compose remains the last feature wave after W5 and W6.
+**Final wave (in progress, 2026-07-18):** Phases A–F **landed** (branding, saved list filters, FW-1…FW-6 docs cluster, W4/W7 operator validation). Phase G (FW-5 E2E finalize) + V1 exit **open**. See [FINAL_WAVE_PLAN.md](docs/FINAL_WAVE_PLAN.md) and [USER_GUIDE.md](docs/USER_GUIDE.md).
+
+**Next:** Final wave Phase G (FW-5 E2E finalize) → [V1_EXIT_CHECKLIST.md](docs/V1_EXIT_CHECKLIST.md) sign-off. W4/W7 checkbox tick-off in checklist files remains operator-owned.
 
 - Flutter project scaffolded for Android + Windows
 - Module placeholders matching SPEC architecture (`account`, `auth`, `sync`, `repository`, …)

@@ -4,10 +4,11 @@
 // Component: Query / Domain
 // Version: 1.0 (Gold Master)
 // Created: 2026-07-16
-// Last Update: 2026-07-17
+// Last Update: 2026-07-18
 // ==============================================================================
 
 import 'package:bytemail/domain/models.dart';
+import 'package:bytemail/focus/focus_header_map.dart';
 
 /// User-facing list filters stacked on top of folder/focus scope.
 ///
@@ -17,6 +18,7 @@ class MessageViewFilter {
     this.unread,
     this.starred,
     this.senderContains,
+    this.recipientContains,
     this.receivedAfterEpochMs,
     this.receivedBeforeEpochMs,
     this.keyword,
@@ -31,6 +33,9 @@ class MessageViewFilter {
 
   /// Case-insensitive substring match against from name or address.
   final String? senderContains;
+
+  /// Case-insensitive substring match against to/cc name or address fields.
+  final String? recipientContains;
 
   /// Inclusive lower bound on [MailMessage.whenEpochMs].
   final int? receivedAfterEpochMs;
@@ -48,6 +53,7 @@ class MessageViewFilter {
     bool? unread,
     bool? starred,
     String? senderContains,
+    String? recipientContains,
     int? receivedAfterEpochMs,
     int? receivedBeforeEpochMs,
     String? keyword,
@@ -55,6 +61,7 @@ class MessageViewFilter {
     bool clearUnread = false,
     bool clearStarred = false,
     bool clearSenderContains = false,
+    bool clearRecipientContains = false,
     bool clearReceivedAfterEpochMs = false,
     bool clearReceivedBeforeEpochMs = false,
     bool clearKeyword = false,
@@ -66,6 +73,9 @@ class MessageViewFilter {
       senderContains: clearSenderContains
           ? null
           : (senderContains ?? this.senderContains),
+      recipientContains: clearRecipientContains
+          ? null
+          : (recipientContains ?? this.recipientContains),
       receivedAfterEpochMs: clearReceivedAfterEpochMs
           ? null
           : (receivedAfterEpochMs ?? this.receivedAfterEpochMs),
@@ -99,6 +109,12 @@ class MessageViewFilter {
         return false;
       }
     }
+    final String? recipient = recipientContains?.trim();
+    if (recipient != null && recipient.isNotEmpty) {
+      if (!_matchesRecipient(message, recipient)) {
+        return false;
+      }
+    }
     final int? after = receivedAfterEpochMs;
     if (after != null) {
       final int epoch = message.whenEpochMs ?? 0;
@@ -126,6 +142,45 @@ class MessageViewFilter {
     return true;
   }
 
+  static bool _matchesRecipient(MailMessage message, String needle) {
+    final String lowerNeedle = needle.toLowerCase();
+    String toLine = message.toRecipients;
+    String ccLine = message.ccRecipients;
+    if (toLine.isEmpty && ccLine.isEmpty) {
+      final Map<String, String> headers = focusHeadersFromRaw(message.rawHeaders);
+      toLine = headers['to'] ?? '';
+      ccLine = headers['cc'] ?? '';
+    }
+    return toLine.toLowerCase().contains(lowerNeedle) ||
+        ccLine.toLowerCase().contains(lowerNeedle);
+  }
+
+  Map<String, dynamic> toJson() => <String, dynamic>{
+        if (unread != null) 'unread': unread,
+        if (starred != null) 'starred': starred,
+        if (senderContains != null) 'senderContains': senderContains,
+        if (recipientContains != null) 'recipientContains': recipientContains,
+        if (receivedAfterEpochMs != null)
+          'receivedAfterEpochMs': receivedAfterEpochMs,
+        if (receivedBeforeEpochMs != null)
+          'receivedBeforeEpochMs': receivedBeforeEpochMs,
+        if (keyword != null) 'keyword': keyword,
+        if (hasAttachments != null) 'hasAttachments': hasAttachments,
+      };
+
+  static MessageViewFilter fromJson(Map<String, dynamic> json) {
+    return MessageViewFilter(
+      unread: json['unread'] as bool?,
+      starred: json['starred'] as bool?,
+      senderContains: json['senderContains'] as String?,
+      recipientContains: json['recipientContains'] as String?,
+      receivedAfterEpochMs: json['receivedAfterEpochMs'] as int?,
+      receivedBeforeEpochMs: json['receivedBeforeEpochMs'] as int?,
+      keyword: json['keyword'] as String?,
+      hasAttachments: json['hasAttachments'] as bool?,
+    );
+  }
+
   static bool _matchesKeyword(MailMessage message, String keyword) {
     final String needle = keyword.toLowerCase();
     return message.subject.toLowerCase().contains(needle) ||
@@ -141,6 +196,7 @@ class MessageViewFilter {
         other.unread == unread &&
         other.starred == starred &&
         other.senderContains == senderContains &&
+        other.recipientContains == recipientContains &&
         other.receivedAfterEpochMs == receivedAfterEpochMs &&
         other.receivedBeforeEpochMs == receivedBeforeEpochMs &&
         other.keyword == keyword &&
@@ -152,6 +208,7 @@ class MessageViewFilter {
         unread,
         starred,
         senderContains,
+        recipientContains,
         receivedAfterEpochMs,
         receivedBeforeEpochMs,
         keyword,

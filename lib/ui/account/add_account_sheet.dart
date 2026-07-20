@@ -516,13 +516,32 @@ class _AddAccountFormState extends State<_AddAccountForm>
                         ),
                       ],
                     ] else ...[
+                      Text(
+                        'Microsoft browser sign-in is not configured yet.\n\n'
+                        'Add your Entra Application (client) ID to '
+                        'oauth_local.json in the project root (see '
+                        'oauth_local.json.example), set BYTEMAIL_GRAPH_CLIENT_ID '
+                        'in the environment, or pass '
+                        '--dart-define=BYTEMAIL_GRAPH_CLIENT_ID=… then restart.\n\n'
+                        'Until then you can paste a Graph access token below, '
+                        'or use IMAP / Other.',
+                        style: TextStyle(color: t.muted, fontSize: 13),
+                      ),
+                      const SizedBox(height: 16),
+                      TextField(
+                        controller: _address,
+                        decoration: const InputDecoration(
+                          labelText: 'Email address',
+                          hintText: 'you@example.com',
+                        ),
+                        keyboardType: TextInputType.emailAddress,
+                      ),
                       TextField(
                         controller: _graphToken,
                         decoration: const InputDecoration(
                           labelText: 'Graph access token',
                           helperText:
-                              'Paste a Graph token with Mail.ReadWrite + Mail.Send. '
-                              'Configure Entra (README) for browser sign-in.',
+                              'Paste a Graph token with Mail.ReadWrite + Mail.Send.',
                         ),
                         minLines: 3,
                         maxLines: 6,
@@ -555,12 +574,10 @@ class _AddAccountFormState extends State<_AddAccountForm>
                       ),
                     ] else ...[
                       Text(
-                        'Google OAuth is not configured for this build '
-                        '(see README → Google OAuth setup).',
-                        style: TextStyle(color: t.muted, fontSize: 13),
-                      ),
-                      const SizedBox(height: 12),
-                      Text(
+                        'Google browser sign-in is not configured yet.\n\n'
+                        'Add BYTEMAIL_GOOGLE_CLIENT_ID to oauth_local.json '
+                        '(see oauth_local.json.example), set it in the '
+                        'environment, or pass --dart-define, then restart.\n\n'
                         'You can still add Gmail on the IMAP / Other tab with an '
                         'app password from Google Account → Security.',
                         style: TextStyle(color: t.muted, fontSize: 13),

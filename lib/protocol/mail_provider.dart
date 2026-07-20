@@ -4,10 +4,12 @@
 // Component: Protocol
 // Version: 1.0 (Gold Master)
 // Created: 2026-07-14
-// Last Update: 2026-07-17
+// Last Update: 2026-07-18
 // ==============================================================================
 
 import 'dart:typed_data';
+
+import 'package:bytemail/mime/outgoing_envelope.dart';
 
 /// Feature set advertised by a [MailProvider].
 class MailCapabilities {
@@ -101,6 +103,9 @@ class RemoteMessageHeader {
     this.isRead = false,
     this.hasAttachments = false,
     this.classificationHeaders = const <String, String>{},
+    this.toRecipients = '',
+    this.ccRecipients = '',
+    this.rawHeaders,
   });
 
   final String providerId;
@@ -126,6 +131,15 @@ class RemoteMessageHeader {
 
   /// RFC headers used for Focus scoring (List-Id, List-Unsubscribe, etc.).
   final Map<String, String> classificationHeaders;
+
+  /// Denormalized To: line for local recipient filters (Graph/IMAP sync).
+  final String toRecipients;
+
+  /// Denormalized Cc: line for local recipient filters (Graph/IMAP sync).
+  final String ccRecipients;
+
+  /// Optional raw RFC822 header block when the provider supplies it at sync time.
+  final String? rawHeaders;
 }
 
 /// A recoverable failure while communicating with a mail provider.
@@ -186,6 +200,19 @@ abstract class MailProvider {
     required String subject,
     required String body,
   });
+
+  /// Sends a rich envelope (HTML, threading headers, attachments).
+  ///
+  /// Default falls back to plain [send] using [OutgoingEnvelope.textBody].
+  Future<void> sendEnvelope(OutgoingEnvelope envelope) {
+    return send(
+      to: envelope.to,
+      cc: envelope.cc,
+      bcc: envelope.bcc,
+      subject: envelope.subject,
+      body: envelope.textBody,
+    );
+  }
 
   Future<List<RemoteMessageHeader>> searchRemote(String query);
 

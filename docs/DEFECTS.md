@@ -10,32 +10,6 @@
 
 ## Open
 
-### DEF-034 — No auto-mark-as-read after viewing a message
-
-| Field | Value |
-| --- | --- |
-| Priority | **Pri-2** |
-| Status | Open |
-| Area | `lib/ui/shell/reading_pane.dart`, `lib/ui/mailbox/mailbox_cubit.dart`, `lib/mailbox/message_action_service.dart` |
-| Platforms | All |
-| Logged | 2026-07-17 |
-| Wave | **V1** (schedule in **W7** polish or anytime after W5 lands) — **not a W5 blocker** |
-| Related | [UI-P27](UI_ENHANCEMENT_SWEEP.md), post-V1 [UI-P28](UI_ENHANCEMENT_SWEEP.md) |
-
-**Summary**  
-Opening/selecting a message leaves it unread until the user manually marks it read. Users expect the message to mark read automatically after it has been open in the reading pane for a short dwell time.
-
-**Expected (V1)**  
-With auto-mark enabled by default: when an unread message remains the selected/open reading-pane message for **5 continuous seconds**, ByteMail marks it read locally and pushes Seen/read to the provider (same path as manual mark-read). Changing selection or closing before 5s cancels the timer. Already-read messages are no-ops. Detached/secondary windows should follow the same policy if they show a message.
-
-**Actual**  
-Read state changes only via explicit mark-read/unread actions (toolbar, shortcut, bulk).
-
-**Out of scope for this defect (post-V1 — UI-P28)**  
-User settings to change the dwell time or disable auto-marking. V1 ships fixed 5s, default ON (no Appearance toggle required for V1).
-
----
-
 ### DEF-011 — IMAP edit ignores host/port/user changes without a new password
 
 | Field | Value |
@@ -292,6 +266,60 @@ Each call runs to completion independently with no mutex or generation token.
 ---
 
 ## Closed
+
+### DEF-038 — Microsoft / Google Sign-in missing in dogfood build (Pri-1)
+
+| Field | Value |
+| --- | --- |
+| Priority | **Pri-1** |
+| Status | **Closed** (2026-07-18) |
+| Area | `oauth_config_resolver.dart`, `main.dart`, Add Account sheet, README |
+| Platforms | Windows (also Android once IDs present) |
+| Logged | 2026-07-18 |
+
+**Summary**  
+Operator dogfood build showed Microsoft/Google tabs but no **Sign in with …** buttons. OAuth was gated only on compile-time `--dart-define` client IDs; plain `flutter run` baked empty IDs.
+
+**Resolution**  
+`OAuthConfigResolver` merges dart-define → OS environment → gitignored `oauth_local.json`. Clearer unconfigured copy on Add Account. Example: `oauth_local.json.example`. Operator must still supply Entra + Google public client IDs once.
+
+---
+
+### DEF-034 — No auto-mark-as-read after viewing a message
+
+| Field | Value |
+| --- | --- |
+| Priority | Pri-2 |
+| Status | **Closed** (2026-07-18) |
+| Area | `lib/ui/shell/auto_mark_as_read.dart`, `lib/ui/shell/reading_pane.dart` |
+| Platforms | All |
+| Logged | 2026-07-17 |
+| Closed | 2026-07-18 |
+| Wave | **W7** |
+| Related | [UI-P27](UI_ENHANCEMENT_SWEEP.md); post-V1 [UI-P28](UI_ENHANCEMENT_SWEEP.md) remains open |
+
+**Resolution**  
+`AutoMarkAsReadController` starts a **5s** dwell timer when an unread message is selected in the reading pane; on fire it calls the existing `onMarkRead` path (local + provider Seen). Selection change / dispose / already-read cancels the timer. Default ON with fixed delay (no Appearance toggle — UI-P28). Coverage: `test/auto_mark_as_read_test.dart`.
+
+---
+
+### DEF-037 — Windows build fails STL1011 on flutter_local_notifications_windows
+
+| Field | Value |
+| --- | --- |
+| Priority | **Pri-1** |
+| Status | **Closed** (2026-07-17) |
+| Area | `windows/CMakeLists.txt`, `flutter_local_notifications_windows` |
+| Platforms | Windows (VS 18 / recent MSVC) |
+| Logged | 2026-07-17 |
+
+**Summary**  
+After W6 added `flutter_local_notifications` (Android), Windows debug builds failed compiling the transitive `flutter_local_notifications_windows` FFI plugin: `STL1011` / `static assertion failed` on deprecated `<experimental/coroutine>`.
+
+**Resolution**  
+Define `_SILENCE_EXPERIMENTAL_COROUTINE_DEPRECATION_WARNINGS` in `windows/CMakeLists.txt`. Windows new-mail toasts remain on `local_notifier`; the Flutter notifications package is only used on Android at runtime.
+
+---
 
 ### DEF-036 — Print PDF uses Helvetica (no Unicode / em dash)
 

@@ -4,7 +4,7 @@
 // Component: UI
 // Version: 1.2 (Gold Master)
 // Created: 2026-07-14
-// Last Update: 2026-07-17
+// Last Update: 2026-07-18
 // ==============================================================================
 
 import 'package:flutter/foundation.dart';
@@ -12,12 +12,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:bytemail/domain/address_match_scope.dart';
 import 'package:bytemail/domain/models.dart';
+import 'package:bytemail/domain/saved_message_filter.dart';
 import 'package:bytemail/mailbox/message_list_projector.dart';
 import 'package:bytemail/query/message_query.dart';
 import 'package:bytemail/settings/app_settings_state.dart';
 import 'package:bytemail/theme/app_theme.dart';
 import 'package:bytemail/theme/density.dart';
 import 'package:bytemail/theme/theme_tokens.dart';
+import 'package:bytemail/ui/common/empty_state.dart';
 import 'package:bytemail/ui/mailbox/message_filter_bar.dart';
 import 'package:bytemail/ui/shell/address_scope_action.dart';
 
@@ -44,6 +46,11 @@ class MessageListPane extends StatelessWidget {
     this.userFilter,
     this.onUserFilterChanged,
     this.onClearUserFilter,
+    this.savedFilters = const <SavedMessageFilter>[],
+    this.onApplySavedFilter,
+    this.onSaveCurrentFilter,
+    this.onRenameSavedFilter,
+    this.onDeleteSavedFilter,
     this.onToggleThreadExpand,
     this.onMarkReadBulk,
     this.onMarkUnreadBulk,
@@ -82,6 +89,12 @@ class MessageListPane extends StatelessWidget {
   final MessageViewFilter? userFilter;
   final ValueChanged<MessageViewFilter>? onUserFilterChanged;
   final VoidCallback? onClearUserFilter;
+  final List<SavedMessageFilter> savedFilters;
+  final ValueChanged<MessageViewFilter>? onApplySavedFilter;
+  final Future<bool> Function(String name, MessageViewFilter filter)?
+      onSaveCurrentFilter;
+  final Future<void> Function(String id, String newName)? onRenameSavedFilter;
+  final Future<void> Function(String id)? onDeleteSavedFilter;
   final ValueChanged<String>? onToggleThreadExpand;
   final VoidCallback? onMarkReadBulk;
   final VoidCallback? onMarkUnreadBulk;
@@ -251,6 +264,11 @@ class MessageListPane extends StatelessWidget {
                     filter: userFilter,
                     onFilterChanged: onUserFilterChanged!,
                     onClearFilters: onClearUserFilter!,
+                    savedFilters: savedFilters,
+                    onApplySavedFilter: onApplySavedFilter,
+                    onSaveCurrentFilter: onSaveCurrentFilter,
+                    onRenameSavedFilter: onRenameSavedFilter,
+                    onDeleteSavedFilter: onDeleteSavedFilter,
                   ),
                 ],
               ],
@@ -290,11 +308,11 @@ class MessageListPane extends StatelessWidget {
             children: <Widget>[
               SizedBox(
                 height: MediaQuery.sizeOf(context).height * 0.35,
-                child: Center(
-                  child: Text(
-                    'No messages',
-                    style: TextStyle(color: t.muted, fontSize: 13),
-                  ),
+                child: EmptyState(
+                  title: 'No messages',
+                  subtitle: 'Sync or change filters to see mail here.',
+                  icon: Icons.mail_outline,
+                  density: density,
                 ),
               ),
             ],

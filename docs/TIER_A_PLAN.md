@@ -2,10 +2,10 @@
 
 | Field | Value |
 | --- | --- |
-| Status | **TA-0 + TA-5 landed in W0** (2026-07-16); **TA-1 + TA-4 landed in W1** (2026-07-17); TA-2, TA-3, TA-6 remain |
+| Status | **TA-0 + TA-5 landed in W0** (2026-07-16); **TA-1 + TA-4 landed in W1** (2026-07-17); **TA-6 landed in W6** (2026-07-17); **TA-2 + TA-3 in progress (W4)** — code landed, checklist pending |
 | Scope | Table-stakes parity ([COMPETITIVE_ANALYSIS.md](COMPETITIVE_ANALYSIS.md) §4) |
 | Baseline | SPEC v1.4, ROADMAP 2026-07-17, codebase audit |
-| Last updated | 2026-07-17 (W1 completion gate) |
+| Last updated | 2026-07-17 (W6 land + W4 compose code status) |
 
 Tier A closes the gap between **“foundation landed”** and **“feels like a real mail client.”** Each phase has explicit exit criteria, a file blast radius, and tests. Phases are sequenced by dependency; some work can run in parallel where noted.
 
@@ -15,15 +15,15 @@ Tier A closes the gap between **“foundation landed”** and **“feels like a 
 
 | # | Capability | Today | Target |
 | --- | --- | --- | --- |
-| A1 | **Attachments** — view, download, compose | `hasAttachments` flag only | On-demand fetch, local cache, MIME send |
+| A1 | **Attachments** — view, download, compose | **Landed (code) with W4** (checklist pending) | On-demand fetch, local cache, MIME send |
 | A2 | **Reply / Reply-all / Forward** | **Landed (W1)** | Opens compose with `ComposePrefill` envelope (full HTML quote in W4) |
 | A3 | **Delete / Archive / Move** | **Landed (W1)** | Optimistic local + provider sync; trash + recover + auto-purge |
 | A4 | **Flag / star** | **Landed (W1)** | Toggle + list column + filter-ready column |
-| A5 | **CC / BCC + quoted reply** | Plain To only | Full recipient envelope |
-| A6 | **Signatures** | Missing | Per-account named signatures + default/none |
+| A5 | **CC / BCC + quoted reply** | **Landed (code) with W4** (checklist pending) | Full recipient envelope |
+| A6 | **Signatures** | **Landed (code) with W4** (checklist pending) | Per-account named signatures + default/none + HTML/images |
 | A7 | **Junk / not junk** | **Landed (W1)** | Folder role + move actions |
-| A8 | **Browser OAuth** | Manual Graph token paste | Entra + Google system-browser flow |
-| A9 | **New-mail notifications** | Desktop callback seam only | Android + Windows user-visible alerts |
+| A8 | **Browser OAuth** | **Landed in code** (W0) | Entra + Google system-browser flow |
+| A9 | **New-mail notifications** | **Landed (W6)** | Android + Windows user-visible alerts |
 
 **Tier A complete when:** a user on Windows or Android can add an account via OAuth, receive a notification for new mail, open a message with attachments, star it, reply with signature and CC, archive or mark junk, and delete — with offline queue behavior preserved for send.
 
@@ -85,7 +85,8 @@ TA-6 Notifications ◄────────── parallel track; needs sync 
 | **TA-0** | **Landed** — schema v5, MailProvider mutations, MIME isolate |
 | **TA-5** | **Landed in code** — Entra + Google PKCE; live Graph E2E = operator Entra registration |
 | **TA-1, TA-4** | **Landed** — W1 message actions + junk + trash (2026-07-17) |
-| **TA-2, TA-3, TA-6** | Not started — W4 / W6 |
+| **TA-2, TA-3** | **In progress** — W4 code landed; [W4_COMPOSE_CHECKLIST.md](W4_COMPOSE_CHECKLIST.md) pending |
+| **TA-6** | **Landed** — W6 (2026-07-17); [W6_NOTIFICATIONS_CHECKLIST.md](W6_NOTIFICATIONS_CHECKLIST.md) passed |
 
 ---
 

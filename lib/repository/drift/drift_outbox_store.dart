@@ -61,11 +61,13 @@ class DriftOutboxStore {
     String? attachmentRefsJson,
     String? signatureId,
     int? sendAfter,
+    String state = 'queued',
   }) async {
     final String id = _uuid.v4();
     final List<String> toList = _recipientListForStorage(to);
     final List<String> ccList = _recipientListForStorage(cc);
     final List<String> bccList = _recipientListForStorage(bcc);
+    _validateOutboxState(state);
     await _database
         .into(_database.outbox)
         .insert(
@@ -75,7 +77,7 @@ class DriftOutboxStore {
             recipientsJson: jsonEncode(toList),
             subject: subject,
             body: body,
-            state: 'queued',
+            state: state,
             createdAt: DateTime.now().millisecondsSinceEpoch,
             ccJson: Value<String?>(
               ccList.isEmpty ? null : jsonEncode(ccList),
@@ -93,6 +95,73 @@ class DriftOutboxStore {
         );
     _notify();
     return id;
+  }
+
+  Future<void> updateOutboxContent(
+    String id, {
+    String? to,
+    String? subject,
+    String? body,
+    String? cc,
+    String? bcc,
+    String? composeMode,
+    String? inReplyTo,
+    String? referencesJson,
+    String? attachmentRefsJson,
+    String? signatureId,
+    int? sendAfter,
+    bool clearSendAfter = false,
+  }) async {
+    await (_database.update(
+      _database.outbox,
+    )..where((Outbox table) => table.id.equals(id))).write(
+      OutboxCompanion(
+        recipientsJson: to == null
+            ? const Value<String>.absent()
+            : Value<String>(jsonEncode(_recipientListForStorage(to))),
+        subject: subject == null
+            ? const Value<String>.absent()
+            : Value<String>(subject),
+        body: body == null ? const Value<String>.absent() : Value<String>(body),
+        ccJson: cc == null
+            ? const Value<String?>.absent()
+            : Value<String?>(
+                () {
+                  final List<String> list = _recipientListForStorage(cc);
+                  return list.isEmpty ? null : jsonEncode(list);
+                }(),
+              ),
+        bccJson: bcc == null
+            ? const Value<String?>.absent()
+            : Value<String?>(
+                () {
+                  final List<String> list = _recipientListForStorage(bcc);
+                  return list.isEmpty ? null : jsonEncode(list);
+                }(),
+              ),
+        composeMode: composeMode == null
+            ? const Value<String>.absent()
+            : Value<String>(composeMode),
+        inReplyTo: inReplyTo == null
+            ? const Value<String?>.absent()
+            : Value<String?>(inReplyTo),
+        referencesJson: referencesJson == null
+            ? const Value<String?>.absent()
+            : Value<String?>(referencesJson),
+        attachmentRefsJson: attachmentRefsJson == null
+            ? const Value<String?>.absent()
+            : Value<String?>(attachmentRefsJson),
+        signatureId: signatureId == null
+            ? const Value<String?>.absent()
+            : Value<String?>(signatureId),
+        sendAfter: clearSendAfter
+            ? const Value<int?>(null)
+            : (sendAfter == null
+                ? const Value<int?>.absent()
+                : Value<int?>(sendAfter)),
+      ),
+    );
+    _notify();
   }
 
   Future<List<OutboxItem>> listOutbox() async {
@@ -191,7 +260,13 @@ class DriftOutboxStore {
   }
 
   void _validateOutboxState(String state) {
-    const Set<String> valid = <String>{'queued', 'sending', 'sent', 'failed'};
+    const Set<String> valid = <String>{
+      'queued',
+      'sending',
+      'sent',
+      'failed',
+      'draft',
+    };
     if (!valid.contains(state)) {
       throw ArgumentError.value(state, 'state', 'Unsupported outbox state.');
     }

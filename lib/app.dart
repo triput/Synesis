@@ -2,9 +2,9 @@
 // File: lib/app.dart
 // Description: Root MaterialApp with BLoC providers and theme binding
 // Component: UI
-// Version: 1.1 (Gold Master)
+// Version: 1.2 (Gold Master)
 // Created: 2026-07-14
-// Last Update: 2026-07-17
+// Last Update: 2026-07-18
 // ==============================================================================
 
 import 'dart:async';
@@ -20,12 +20,15 @@ import 'package:bytemail/desktop/windows_desktop_controller.dart';
 import 'package:bytemail/mailbox/message_action_service.dart';
 import 'package:bytemail/mailbox/message_body_cache.dart';
 import 'package:bytemail/mime/eml_codec.dart';
+import 'package:bytemail/notifications/app_foreground_tracker.dart';
 import 'package:bytemail/repository/mail_repository.dart';
 import 'package:bytemail/settings/app_settings_cubit.dart';
 import 'package:bytemail/settings/app_settings_state.dart';
 import 'package:bytemail/sync/retention_service.dart';
 import 'package:bytemail/sync/sync_engine.dart';
 import 'package:bytemail/theme/app_theme.dart';
+import 'package:bytemail/theme/custom_theme.dart';
+import 'package:bytemail/theme/theme_tokens.dart';
 import 'package:bytemail/ui/mailbox/mailbox_cubit.dart';
 import 'package:bytemail/ui/shell/eml_preview_sheet.dart';
 import 'package:bytemail/ui/shell/mail_workspace.dart';
@@ -44,6 +47,7 @@ class ByteMailApp extends StatelessWidget {
     this.desktopController = const NoopDesktopController(),
     this.detachedMessageWindowController =
         const NoopDetachedMessageWindowController(),
+    this.foregroundTracker,
     this.launchEmlPath,
   });
 
@@ -57,13 +61,14 @@ class ByteMailApp extends StatelessWidget {
   final AppSettingsCubit? settingsCubit;
   final DesktopController desktopController;
   final DetachedMessageWindowController detachedMessageWindowController;
+  final AppForegroundTracker? foregroundTracker;
   final String? launchEmlPath;
 
   @override
   Widget build(BuildContext context) {
     final RetentionService retention =
         retentionService ?? RetentionService(repository);
-    return MultiRepositoryProvider(
+    final Widget tree = MultiRepositoryProvider(
       providers: [
         RepositoryProvider<MailRepository>.value(value: repository),
         RepositoryProvider<SyncEngine>.value(value: syncEngine),
@@ -121,18 +126,156 @@ class ByteMailApp extends StatelessWidget {
           },
           child: BlocBuilder<AppSettingsCubit, AppSettingsState>(
             builder: (context, settings) {
-              return MaterialApp(
-                title: 'ByteMail',
-                debugShowCheckedModeBanner: false,
-                theme: AppTheme.materialThemeFor(settings.themeId),
-                home: _LaunchHome(launchEmlPath: launchEmlPath),
+              return _ThemedMailApp(
+                settings: settings,
+                repository: repository,
+                launchEmlPath: launchEmlPath,
               );
             },
           ),
         ),
       ),
     );
+    final AppForegroundTracker? tracker = foregroundTracker;
+    if (tracker == null) {
+      return tree;
+    }
+    return _ForegroundLifecycleBinder(tracker: tracker, child: tree);
   }
+}
+
+/// Resolves the active [ThemeData] — including an optional custom theme
+/// fork (UI-P16) loaded from [MailRepository] — and hosts the [MaterialApp].
+///
+/// Custom theme tokens live in the database rather than
+/// [SharedPreferences]-backed settings, so they are loaded asynchronously and
+/// cached locally; [AppTheme.materialThemeFor] runs synchronously in `build`
+/// using the most recently resolved tokens (falling back to the built-in
+/// pack while a newly selected custom theme loads).
+class _ThemedMailApp extends StatefulWidget {
+  const _ThemedMailApp({
+    required this.settings,
+    required this.repository,
+    this.launchEmlPath,
+  });
+
+  final AppSettingsState settings;
+  final MailRepository repository;
+  final String? launchEmlPath;
+
+  @override
+  State<_ThemedMailApp> createState() => _ThemedMailAppState();
+}
+
+class _ThemedMailAppState extends State<_ThemedMailApp> {
+  String? _loadedCustomThemeId;
+  ThemeTokens? _loadedTokens;
+
+  @override
+  void initState() {
+    super.initState();
+    _syncCustomTheme();
+  }
+
+  @override
+  void didUpdateWidget(covariant _ThemedMailApp oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    _syncCustomTheme();
+  }
+
+  void _syncCustomTheme() {
+    final String? id = widget.settings.customThemeId;
+    if (id == null) {
+      if (_loadedCustomThemeId != null || _loadedTokens != null) {
+        setState(() {
+          _loadedCustomThemeId = null;
+          _loadedTokens = null;
+        });
+      }
+      return;
+    }
+    if (id == _loadedCustomThemeId) {
+      return;
+    }
+    unawaited(_loadCustomTheme(id));
+  }
+
+  Future<void> _loadCustomTheme(String id) async {
+    try {
+      final CustomTheme? theme = await widget.repository.getCustomTheme(id);
+      if (!mounted || widget.settings.customThemeId != id) {
+        return;
+      }
+      setState(() {
+        _loadedCustomThemeId = id;
+        _loadedTokens = theme?.resolveTokens();
+      });
+    } catch (_) {
+      if (!mounted || widget.settings.customThemeId != id) {
+        return;
+      }
+      setState(() {
+        _loadedCustomThemeId = id;
+        _loadedTokens = null;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final AppSettingsState settings = widget.settings;
+    final ThemeTokens? tokensOverride =
+        settings.customThemeId != null &&
+                settings.customThemeId == _loadedCustomThemeId
+            ? _loadedTokens
+            : null;
+    return MaterialApp(
+      title: 'ByteMail',
+      debugShowCheckedModeBanner: false,
+      theme: AppTheme.materialThemeFor(
+        settings.themeId,
+        tokensOverride: tokensOverride,
+        uiFontFamily: settings.uiFontFamily,
+        uiFontSizeScale: settings.uiFontSizeScale,
+        uiTextColorOverride: settings.uiTextColorArgb == null
+            ? null
+            : Color(settings.uiTextColorArgb!),
+      ),
+      home: _LaunchHome(launchEmlPath: widget.launchEmlPath),
+    );
+  }
+}
+
+/// Binds [AppForegroundTracker] to the Flutter app lifecycle.
+class _ForegroundLifecycleBinder extends StatefulWidget {
+  const _ForegroundLifecycleBinder({
+    required this.tracker,
+    required this.child,
+  });
+
+  final AppForegroundTracker tracker;
+  final Widget child;
+
+  @override
+  State<_ForegroundLifecycleBinder> createState() =>
+      _ForegroundLifecycleBinderState();
+}
+
+class _ForegroundLifecycleBinderState extends State<_ForegroundLifecycleBinder> {
+  @override
+  void initState() {
+    super.initState();
+    widget.tracker.attach();
+  }
+
+  @override
+  void dispose() {
+    widget.tracker.detach();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => widget.child;
 }
 
 class _LaunchHome extends StatefulWidget {

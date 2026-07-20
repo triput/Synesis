@@ -2,9 +2,9 @@
 // File: lib/ui/settings/appearance_sheet.dart
 // Description: Appearance, density, Focus, retention, and desktop settings sheet
 // Component: UI
-// Version: 1.0 (Gold Master)
+// Version: 1.1 (Gold Master)
 // Created: 2026-07-14
-// Last Update: 2026-07-17
+// Last Update: 2026-07-18
 // ==============================================================================
 
 import 'package:flutter/material.dart';
@@ -20,7 +20,12 @@ import 'package:bytemail/theme/density.dart';
 import 'package:bytemail/theme/theme_id.dart';
 import 'package:bytemail/ui/account/manage_accounts_sheet.dart';
 import 'package:bytemail/ui/mailbox/mailbox_cubit.dart';
+import 'package:bytemail/ui/settings/custom_theme_editor_sheet.dart';
+import 'package:bytemail/ui/settings/db_encryption_sheet.dart';
+import 'package:bytemail/ui/settings/focus_rules_sheet.dart';
+import 'package:bytemail/ui/settings/settings_export_import_controls.dart';
 import 'package:bytemail/ui/settings/sync_storage_sheet.dart';
+import 'package:bytemail/ui/settings/ui_font_settings_section.dart';
 
 Future<void> showAppearanceSheet(BuildContext context) {
   return showModalBottomSheet<void>(
@@ -65,6 +70,16 @@ Future<void> showAppearanceSheet(BuildContext context) {
                     trailing: const Icon(Icons.chevron_right),
                     onTap: () => showSyncStorageSheet(context),
                   ),
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: const Text('Encryption'),
+                    subtitle: Text(
+                      'Opt-in passphrase encryption for the local mailbox',
+                      style: TextStyle(color: t.muted, fontSize: 12),
+                    ),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () => showDbEncryptionSheet(context),
+                  ),
                   const SizedBox(height: 8),
                   Text('Theme', style: TextStyle(color: t.muted, fontSize: 12)),
                   const SizedBox(height: 8),
@@ -75,11 +90,18 @@ Future<void> showAppearanceSheet(BuildContext context) {
                       for (final id in ThemeId.values)
                         ChoiceChip(
                           label: Text(id.label),
-                          selected: settings.themeId == id,
+                          selected: settings.customThemeId == null &&
+                              settings.themeId == id,
                           onSelected: (_) => cubit.setTheme(id),
                         ),
                     ],
                   ),
+                  const SizedBox(height: 12),
+                  const CustomThemesSection(),
+                  const SizedBox(height: 18),
+                  const UiFontSettingsSection(),
+                  const SizedBox(height: 18),
+                  const SettingsExportImportControls(),
                   const SizedBox(height: 18),
                   Text('Density', style: TextStyle(color: t.muted, fontSize: 12)),
                   const SizedBox(height: 8),
@@ -232,6 +254,16 @@ Future<void> showAppearanceSheet(BuildContext context) {
                     ),
                     value: settings.unifiedFocusEnabled,
                     onChanged: cubit.setUnifiedFocusEnabled,
+                  ),
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: const Text('Focus override rules'),
+                    subtitle: Text(
+                      'Always classify a sender or domain as Focused or Other',
+                      style: TextStyle(color: t.muted, fontSize: 12),
+                    ),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () => showFocusRulesSheet(context),
                   ),
                   SwitchListTile(
                     contentPadding: EdgeInsets.zero,

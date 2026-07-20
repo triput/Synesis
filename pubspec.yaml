@@ -40,6 +40,8 @@ dependencies:
   desktop_multi_window: ^0.3.0
   pdf: 3.12.0
   flutter_widget_from_html: ^0.17.2
+  flutter_local_notifications: ^19.4.0
+  local_notifier: ^0.1.6
 
 dev_dependencies:
   flutter_test:
@@ -55,3 +57,13 @@ flutter:
     - windows/runner/resources/app_icon.ico
     - assets/fonts/OpenSans-Regular.ttf
     - assets/fonts/OpenSans-Bold.ttf
+
+# TC-3: swap the bundled SQLite build for SQLite3MultipleCiphers so opt-in
+# database encryption (lib/repository/db_encryption_config.dart) can apply
+# `PRAGMA key` at open time. This is a drop-in, API-compatible replacement —
+# unencrypted databases (the default) are completely unaffected. See
+# docs/W7_SQLCIPHER_SPIKE.md.
+hooks:
+  user_defines:
+    sqlite3:
+      source: sqlite3mc

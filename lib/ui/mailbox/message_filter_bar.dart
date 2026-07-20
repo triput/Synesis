@@ -4,13 +4,15 @@
 // Component: UI
 // Version: 1.0 (Gold Master)
 // Created: 2026-07-17
-// Last Update: 2026-07-17
+// Last Update: 2026-07-18
 // ==============================================================================
 
 import 'package:flutter/material.dart';
+import 'package:bytemail/domain/saved_message_filter.dart';
 import 'package:bytemail/query/message_query.dart';
 import 'package:bytemail/theme/app_theme.dart';
 import 'package:bytemail/theme/theme_tokens.dart';
+import 'package:bytemail/ui/mailbox/saved_filters_sheet.dart';
 
 /// Compact chip row for list filters. Focus chips stay independent of this bar.
 class MessageFilterBar extends StatelessWidget {
@@ -19,11 +21,22 @@ class MessageFilterBar extends StatelessWidget {
     required this.filter,
     required this.onFilterChanged,
     required this.onClearFilters,
+    this.savedFilters = const <SavedMessageFilter>[],
+    this.onApplySavedFilter,
+    this.onSaveCurrentFilter,
+    this.onRenameSavedFilter,
+    this.onDeleteSavedFilter,
   });
 
   final MessageViewFilter? filter;
   final ValueChanged<MessageViewFilter> onFilterChanged;
   final VoidCallback onClearFilters;
+  final List<SavedMessageFilter> savedFilters;
+  final ValueChanged<MessageViewFilter>? onApplySavedFilter;
+  final Future<bool> Function(String name, MessageViewFilter filter)?
+      onSaveCurrentFilter;
+  final Future<void> Function(String id, String newName)? onRenameSavedFilter;
+  final Future<void> Function(String id)? onDeleteSavedFilter;
 
   bool get _hasActiveFilter {
     final MessageViewFilter? f = filter;
@@ -34,10 +47,18 @@ class MessageFilterBar extends StatelessWidget {
         f.starred != null ||
         f.hasAttachments != null ||
         (f.senderContains != null && f.senderContains!.trim().isNotEmpty) ||
+        (f.recipientContains != null &&
+            f.recipientContains!.trim().isNotEmpty) ||
         f.receivedAfterEpochMs != null ||
         f.receivedBeforeEpochMs != null ||
         (f.keyword != null && f.keyword!.trim().isNotEmpty);
   }
+
+  bool get _savedEnabled =>
+      onApplySavedFilter != null &&
+      onSaveCurrentFilter != null &&
+      onRenameSavedFilter != null &&
+      onDeleteSavedFilter != null;
 
   MessageViewFilter get _current => filter ?? const MessageViewFilter();
 
@@ -78,6 +99,21 @@ class MessageFilterBar extends StatelessWidget {
     }
   }
 
+  Future<void> _openSavedSheet(BuildContext context) async {
+    if (!_savedEnabled) {
+      return;
+    }
+    await showSavedFiltersSheet(
+      context,
+      savedFilters: savedFilters,
+      currentFilter: _current,
+      onApply: onApplySavedFilter!,
+      onSaveCurrent: onSaveCurrentFilter!,
+      onRename: onRenameSavedFilter!,
+      onDelete: onDeleteSavedFilter!,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final ThemeTokens t = tokensOf(context);
@@ -85,6 +121,8 @@ class MessageFilterBar extends StatelessWidget {
     final bool advancedActive =
         (current.senderContains != null &&
             current.senderContains!.trim().isNotEmpty) ||
+        (current.recipientContains != null &&
+            current.recipientContains!.trim().isNotEmpty) ||
         current.receivedAfterEpochMs != null ||
         current.receivedBeforeEpochMs != null ||
         (current.keyword != null && current.keyword!.trim().isNotEmpty);
@@ -117,6 +155,15 @@ class MessageFilterBar extends StatelessWidget {
             icon: Icons.tune_rounded,
             onTap: () => _openAdvancedSheet(context),
           ),
+          if (_savedEnabled) ...<Widget>[
+            const SizedBox(width: 6),
+            _FilterChip(
+              label: 'Saved',
+              selected: false,
+              icon: Icons.bookmarks_outlined,
+              onTap: () => _openSavedSheet(context),
+            ),
+          ],
           if (_hasActiveFilter) ...<Widget>[
             const SizedBox(width: 6),
             TextButton(
@@ -197,7 +244,7 @@ class _FilterChip extends StatelessWidget {
   }
 }
 
-/// Modal sheet for sender, date range, and keyword filters.
+/// Modal sheet for sender, recipient, date range, and keyword filters.
 Future<MessageViewFilter?> showMessageFilterSheet(
   BuildContext context, {
   required MessageViewFilter initial,
@@ -226,6 +273,7 @@ class _MessageFilterSheet extends StatefulWidget {
 
 class _MessageFilterSheetState extends State<_MessageFilterSheet> {
   late final TextEditingController _senderController;
+  late final TextEditingController _recipientController;
   late final TextEditingController _keywordController;
   DateTime? _after;
   DateTime? _before;
@@ -235,6 +283,9 @@ class _MessageFilterSheetState extends State<_MessageFilterSheet> {
     super.initState();
     _senderController = TextEditingController(
       text: widget.initial.senderContains ?? '',
+    );
+    _recipientController = TextEditingController(
+      text: widget.initial.recipientContains ?? '',
     );
     _keywordController = TextEditingController(
       text: widget.initial.keyword ?? '',
@@ -252,6 +303,7 @@ class _MessageFilterSheetState extends State<_MessageFilterSheet> {
   @override
   void dispose() {
     _senderController.dispose();
+    _recipientController.dispose();
     _keywordController.dispose();
     super.dispose();
   }
@@ -284,10 +336,13 @@ class _MessageFilterSheetState extends State<_MessageFilterSheet> {
 
   void _apply() {
     final String sender = _senderController.text.trim();
+    final String recipient = _recipientController.text.trim();
     final String keyword = _keywordController.text.trim();
     final MessageViewFilter next = widget.initial.copyWith(
       senderContains: sender.isEmpty ? null : sender,
       clearSenderContains: sender.isEmpty,
+      recipientContains: recipient.isEmpty ? null : recipient,
+      clearRecipientContains: recipient.isEmpty,
       keyword: keyword.isEmpty ? null : keyword,
       clearKeyword: keyword.isEmpty,
       receivedAfterEpochMs: _after == null
@@ -342,6 +397,15 @@ class _MessageFilterSheetState extends State<_MessageFilterSheet> {
             controller: _senderController,
             decoration: const InputDecoration(
               labelText: 'Sender contains',
+              border: OutlineInputBorder(),
+              isDense: true,
+            ),
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: _recipientController,
+            decoration: const InputDecoration(
+              labelText: 'Recipient contains',
               border: OutlineInputBorder(),
               isDense: true,
             ),
