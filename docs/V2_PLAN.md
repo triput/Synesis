@@ -2,7 +2,7 @@
 
 | Field | Value |
 | --- | --- |
-| Status | **In progress** — **Wave 0 complete** (2026-07-27); **Wave H** (dependency hygiene) **in progress / next**; V2.0a PIM held until H exits |
+| Status | **In progress** — **Wave 0 complete**; **Wave H complete** (2026-07-27); **V2.0a PIM P0 unblocked** |
 | Headline | Contacts & calendar (TD-A) — not a new phone OS |
 | Prerequisite | V1 exit signed off; **V1.5 complete** ([V1_5_PLAN.md](V1_5_PLAN.md)) |
 | Watch | **P3 → V2.1** (not V2.0 critical path) |
@@ -51,21 +51,21 @@ Local store is provider-agnostic (`contacts` / `events` + sync cursors), same ph
 
 ## 4. Wave H — Dependency hygiene [pre-V2.0a gate]
 
-**Status:** **In progress** (2026-07-27). **Hold Wave 1 / V2.0a PIM P0** until Wave H exits (or a documented quick-scan pass — not requested for V2.0).
+**Status:** **Complete** (2026-07-27 Batch 4) — with known residuals in [WAVE_H_DEPENDENCY_HYGIENE.md](WAVE_H_DEPENDENCY_HYGIENE.md). **Wave 1 / V2.0a PIM P0 unblocked.**
 
 Per-version hygiene after V1.5 freeze: toolchain + pub debt + native/plugin skew + docs SDK pins. Checklist: [WAVE_H_DEPENDENCY_HYGIENE.md](WAVE_H_DEPENDENCY_HYGIENE.md).
 
-**Sequence:** Wave 0 → **Wave H** → V2.0a (P0–P2).
+**Sequence:** Wave 0 → **Wave H ✅** → V2.0a (P0–P2) **← open**.
 
 | Batch | Scope | Notes |
 | --- | --- | --- |
-| **H1 — SDK pin verify** | Flutter/Dart SDK, `environment.sdk`, README/docs pins | Confirm `flutter doctor`; align SPEC/ROADMAP/README SDK strings with repo |
-| **H2 — Soft upgrades** | Patch/minor `pub get` resolution | Low-risk bumps; no intentional majors in this batch |
-| **H3 — Pub majors** | `pub outdated` major candidates | Drift/build_runner/bloc_test/etc.; land with regression pass |
-| **H4 — Native / KGP / sqlite3mc** | Android Gradle/KGP, plugin native debt, `sqlite3mc` hook, Drift codegen skew | Verify TC-3 cipher hook still builds; run `build_runner` if drift_dev moves; Windows/Android smoke |
-| **H5 — Verify exit** | Full test + build matrix | `flutter test`; Windows + Android debug builds; inventory/docs touch if test count shifts |
+| **H1 — SDK pin verify** | Flutter/Dart SDK, `environment.sdk`, README/docs pins | ✅ `.flutter-version` 3.44.6 / `^3.12.2` |
+| **H2 — Soft upgrades** | Patch/minor `pub get` resolution | ✅ `uuid` 4.6.0, `webview_flutter_windows` 1.1.1 |
+| **H3 — Pub majors** | `pub outdated` major candidates | ✅ Landed or deferred with rationale |
+| **H4 — Native / KGP / sqlite3mc** | Android Gradle/KGP, plugin native debt, `sqlite3mc` hook | ✅ Android debug + sqlite3mc; KGP escape hatches kept |
+| **H5 — Verify exit** | Full test + build matrix | ✅ `flutter test` 510/510; Windows + Android debug PASS; analyze 0 errors |
 
-**Exit (Wave H):** SDK pins verified and documented; soft + major pub upgrades applied or explicitly deferred with rationale; native/KGP/sqlite3mc path green; Drift codegen matches sources; `flutter test` green; Windows + Android debug builds succeed. Only then open V2.0a P0 (local PIM schema).
+**Exit (Wave H):** ✅ Cleared. Open V2.0a P0 (local PIM schema). Residuals (operator dogfood H5-M\*, Pri-3 AppLinks/fln tests, KGP hatches, deferred majors) tracked in the Wave H checklist — do not re-hold PIM.
 
 ## 5. Implementation order (accepted — option A)
 
@@ -90,8 +90,8 @@ P6  Calendar module UI (month/week, CRUD) wired to local store
 | Wave | Scope |
 | --- | --- |
 | **Wave 0** | Account identity (A+B hybrid) — display names, rail labels — **complete** |
-| **Wave H** | Dependency hygiene — SDK pins, pub soft/majors, native/KGP/sqlite3mc — **in progress** |
-| **V2.0a** | P0–P2 — schema, Graph PIM sync, meeting-mail bridge — **held until Wave H exits** |
+| **Wave H** | Dependency hygiene — SDK pins, pub soft/majors, native/KGP/sqlite3mc — **complete** (2026-07-27) |
+| **V2.0a** | P0–P2 — schema, Graph PIM sync, meeting-mail bridge — **unblocked / next** |
 | **V2.0b** | P3–P4 — CardDAV/CalDAV (Runbox dogfood) |
 | **V2.0c** | P5–P6 — picker + Calendar module UI (deep CRUD) |
 | **V2.1** | Watch companion (P3); CalDAV depth / free-busy; Contacts polish |
@@ -140,4 +140,4 @@ Do not expand V1.5 scope — only avoid painting corners:
 
 ---
 
-*Wave 0 complete 2026-07-27 (account identity + rail overflow fix). Wave H (dependency hygiene) in progress — V2.0a PIM P0 opens after Wave H exit.*
+*Wave 0 complete 2026-07-27 (account identity + rail overflow fix). Wave H (dependency hygiene) complete 2026-07-27 — V2.0a PIM P0 unblocked.*
