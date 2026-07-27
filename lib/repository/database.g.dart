@@ -7975,6 +7975,3804 @@ class CustomThemesCompanion extends UpdateCompanion<CustomTheme> {
   }
 }
 
+class $ContactListsTable extends ContactLists
+    with TableInfo<$ContactListsTable, ContactListRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ContactListsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _accountIdMeta = const VerificationMeta(
+    'accountId',
+  );
+  @override
+  late final GeneratedColumn<String> accountId = GeneratedColumn<String>(
+    'account_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES accounts (id)',
+    ),
+  );
+  static const VerificationMeta _providerIdMeta = const VerificationMeta(
+    'providerId',
+  );
+  @override
+  late final GeneratedColumn<String> providerId = GeneratedColumn<String>(
+    'provider_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+    'name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _colorArgbMeta = const VerificationMeta(
+    'colorArgb',
+  );
+  @override
+  late final GeneratedColumn<int> colorArgb = GeneratedColumn<int>(
+    'color_argb',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _isDefaultMeta = const VerificationMeta(
+    'isDefault',
+  );
+  @override
+  late final GeneratedColumn<bool> isDefault = GeneratedColumn<bool>(
+    'is_default',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_default" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _isSelectedForDisplayMeta =
+      const VerificationMeta('isSelectedForDisplay');
+  @override
+  late final GeneratedColumn<bool> isSelectedForDisplay = GeneratedColumn<bool>(
+    'is_selected_for_display',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_selected_for_display" IN (0, 1))',
+    ),
+    defaultValue: const Constant(true),
+  );
+  static const VerificationMeta _sortIndexMeta = const VerificationMeta(
+    'sortIndex',
+  );
+  @override
+  late final GeneratedColumn<int> sortIndex = GeneratedColumn<int>(
+    'sort_index',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    accountId,
+    providerId,
+    name,
+    colorArgb,
+    isDefault,
+    isSelectedForDisplay,
+    sortIndex,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'contact_lists';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<ContactListRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('account_id')) {
+      context.handle(
+        _accountIdMeta,
+        accountId.isAcceptableOrUnknown(data['account_id']!, _accountIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_accountIdMeta);
+    }
+    if (data.containsKey('provider_id')) {
+      context.handle(
+        _providerIdMeta,
+        providerId.isAcceptableOrUnknown(data['provider_id']!, _providerIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_providerIdMeta);
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('color_argb')) {
+      context.handle(
+        _colorArgbMeta,
+        colorArgb.isAcceptableOrUnknown(data['color_argb']!, _colorArgbMeta),
+      );
+    }
+    if (data.containsKey('is_default')) {
+      context.handle(
+        _isDefaultMeta,
+        isDefault.isAcceptableOrUnknown(data['is_default']!, _isDefaultMeta),
+      );
+    }
+    if (data.containsKey('is_selected_for_display')) {
+      context.handle(
+        _isSelectedForDisplayMeta,
+        isSelectedForDisplay.isAcceptableOrUnknown(
+          data['is_selected_for_display']!,
+          _isSelectedForDisplayMeta,
+        ),
+      );
+    }
+    if (data.containsKey('sort_index')) {
+      context.handle(
+        _sortIndexMeta,
+        sortIndex.isAcceptableOrUnknown(data['sort_index']!, _sortIndexMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  ContactListRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return ContactListRow(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      accountId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}account_id'],
+      )!,
+      providerId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}provider_id'],
+      )!,
+      name: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name'],
+      )!,
+      colorArgb: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}color_argb'],
+      ),
+      isDefault: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_default'],
+      )!,
+      isSelectedForDisplay: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_selected_for_display'],
+      )!,
+      sortIndex: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}sort_index'],
+      ),
+    );
+  }
+
+  @override
+  $ContactListsTable createAlias(String alias) {
+    return $ContactListsTable(attachedDatabase, alias);
+  }
+}
+
+class ContactListRow extends DataClass implements Insertable<ContactListRow> {
+  final String id;
+  final String accountId;
+  final String providerId;
+  final String name;
+  final int? colorArgb;
+  final bool isDefault;
+  final bool isSelectedForDisplay;
+  final int? sortIndex;
+  const ContactListRow({
+    required this.id,
+    required this.accountId,
+    required this.providerId,
+    required this.name,
+    this.colorArgb,
+    required this.isDefault,
+    required this.isSelectedForDisplay,
+    this.sortIndex,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['account_id'] = Variable<String>(accountId);
+    map['provider_id'] = Variable<String>(providerId);
+    map['name'] = Variable<String>(name);
+    if (!nullToAbsent || colorArgb != null) {
+      map['color_argb'] = Variable<int>(colorArgb);
+    }
+    map['is_default'] = Variable<bool>(isDefault);
+    map['is_selected_for_display'] = Variable<bool>(isSelectedForDisplay);
+    if (!nullToAbsent || sortIndex != null) {
+      map['sort_index'] = Variable<int>(sortIndex);
+    }
+    return map;
+  }
+
+  ContactListsCompanion toCompanion(bool nullToAbsent) {
+    return ContactListsCompanion(
+      id: Value(id),
+      accountId: Value(accountId),
+      providerId: Value(providerId),
+      name: Value(name),
+      colorArgb: colorArgb == null && nullToAbsent
+          ? const Value.absent()
+          : Value(colorArgb),
+      isDefault: Value(isDefault),
+      isSelectedForDisplay: Value(isSelectedForDisplay),
+      sortIndex: sortIndex == null && nullToAbsent
+          ? const Value.absent()
+          : Value(sortIndex),
+    );
+  }
+
+  factory ContactListRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return ContactListRow(
+      id: serializer.fromJson<String>(json['id']),
+      accountId: serializer.fromJson<String>(json['accountId']),
+      providerId: serializer.fromJson<String>(json['providerId']),
+      name: serializer.fromJson<String>(json['name']),
+      colorArgb: serializer.fromJson<int?>(json['colorArgb']),
+      isDefault: serializer.fromJson<bool>(json['isDefault']),
+      isSelectedForDisplay: serializer.fromJson<bool>(
+        json['isSelectedForDisplay'],
+      ),
+      sortIndex: serializer.fromJson<int?>(json['sortIndex']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'accountId': serializer.toJson<String>(accountId),
+      'providerId': serializer.toJson<String>(providerId),
+      'name': serializer.toJson<String>(name),
+      'colorArgb': serializer.toJson<int?>(colorArgb),
+      'isDefault': serializer.toJson<bool>(isDefault),
+      'isSelectedForDisplay': serializer.toJson<bool>(isSelectedForDisplay),
+      'sortIndex': serializer.toJson<int?>(sortIndex),
+    };
+  }
+
+  ContactListRow copyWith({
+    String? id,
+    String? accountId,
+    String? providerId,
+    String? name,
+    Value<int?> colorArgb = const Value.absent(),
+    bool? isDefault,
+    bool? isSelectedForDisplay,
+    Value<int?> sortIndex = const Value.absent(),
+  }) => ContactListRow(
+    id: id ?? this.id,
+    accountId: accountId ?? this.accountId,
+    providerId: providerId ?? this.providerId,
+    name: name ?? this.name,
+    colorArgb: colorArgb.present ? colorArgb.value : this.colorArgb,
+    isDefault: isDefault ?? this.isDefault,
+    isSelectedForDisplay: isSelectedForDisplay ?? this.isSelectedForDisplay,
+    sortIndex: sortIndex.present ? sortIndex.value : this.sortIndex,
+  );
+  ContactListRow copyWithCompanion(ContactListsCompanion data) {
+    return ContactListRow(
+      id: data.id.present ? data.id.value : this.id,
+      accountId: data.accountId.present ? data.accountId.value : this.accountId,
+      providerId: data.providerId.present
+          ? data.providerId.value
+          : this.providerId,
+      name: data.name.present ? data.name.value : this.name,
+      colorArgb: data.colorArgb.present ? data.colorArgb.value : this.colorArgb,
+      isDefault: data.isDefault.present ? data.isDefault.value : this.isDefault,
+      isSelectedForDisplay: data.isSelectedForDisplay.present
+          ? data.isSelectedForDisplay.value
+          : this.isSelectedForDisplay,
+      sortIndex: data.sortIndex.present ? data.sortIndex.value : this.sortIndex,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ContactListRow(')
+          ..write('id: $id, ')
+          ..write('accountId: $accountId, ')
+          ..write('providerId: $providerId, ')
+          ..write('name: $name, ')
+          ..write('colorArgb: $colorArgb, ')
+          ..write('isDefault: $isDefault, ')
+          ..write('isSelectedForDisplay: $isSelectedForDisplay, ')
+          ..write('sortIndex: $sortIndex')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    accountId,
+    providerId,
+    name,
+    colorArgb,
+    isDefault,
+    isSelectedForDisplay,
+    sortIndex,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is ContactListRow &&
+          other.id == this.id &&
+          other.accountId == this.accountId &&
+          other.providerId == this.providerId &&
+          other.name == this.name &&
+          other.colorArgb == this.colorArgb &&
+          other.isDefault == this.isDefault &&
+          other.isSelectedForDisplay == this.isSelectedForDisplay &&
+          other.sortIndex == this.sortIndex);
+}
+
+class ContactListsCompanion extends UpdateCompanion<ContactListRow> {
+  final Value<String> id;
+  final Value<String> accountId;
+  final Value<String> providerId;
+  final Value<String> name;
+  final Value<int?> colorArgb;
+  final Value<bool> isDefault;
+  final Value<bool> isSelectedForDisplay;
+  final Value<int?> sortIndex;
+  final Value<int> rowid;
+  const ContactListsCompanion({
+    this.id = const Value.absent(),
+    this.accountId = const Value.absent(),
+    this.providerId = const Value.absent(),
+    this.name = const Value.absent(),
+    this.colorArgb = const Value.absent(),
+    this.isDefault = const Value.absent(),
+    this.isSelectedForDisplay = const Value.absent(),
+    this.sortIndex = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  ContactListsCompanion.insert({
+    required String id,
+    required String accountId,
+    required String providerId,
+    required String name,
+    this.colorArgb = const Value.absent(),
+    this.isDefault = const Value.absent(),
+    this.isSelectedForDisplay = const Value.absent(),
+    this.sortIndex = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       accountId = Value(accountId),
+       providerId = Value(providerId),
+       name = Value(name);
+  static Insertable<ContactListRow> custom({
+    Expression<String>? id,
+    Expression<String>? accountId,
+    Expression<String>? providerId,
+    Expression<String>? name,
+    Expression<int>? colorArgb,
+    Expression<bool>? isDefault,
+    Expression<bool>? isSelectedForDisplay,
+    Expression<int>? sortIndex,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (accountId != null) 'account_id': accountId,
+      if (providerId != null) 'provider_id': providerId,
+      if (name != null) 'name': name,
+      if (colorArgb != null) 'color_argb': colorArgb,
+      if (isDefault != null) 'is_default': isDefault,
+      if (isSelectedForDisplay != null)
+        'is_selected_for_display': isSelectedForDisplay,
+      if (sortIndex != null) 'sort_index': sortIndex,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  ContactListsCompanion copyWith({
+    Value<String>? id,
+    Value<String>? accountId,
+    Value<String>? providerId,
+    Value<String>? name,
+    Value<int?>? colorArgb,
+    Value<bool>? isDefault,
+    Value<bool>? isSelectedForDisplay,
+    Value<int?>? sortIndex,
+    Value<int>? rowid,
+  }) {
+    return ContactListsCompanion(
+      id: id ?? this.id,
+      accountId: accountId ?? this.accountId,
+      providerId: providerId ?? this.providerId,
+      name: name ?? this.name,
+      colorArgb: colorArgb ?? this.colorArgb,
+      isDefault: isDefault ?? this.isDefault,
+      isSelectedForDisplay: isSelectedForDisplay ?? this.isSelectedForDisplay,
+      sortIndex: sortIndex ?? this.sortIndex,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (accountId.present) {
+      map['account_id'] = Variable<String>(accountId.value);
+    }
+    if (providerId.present) {
+      map['provider_id'] = Variable<String>(providerId.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (colorArgb.present) {
+      map['color_argb'] = Variable<int>(colorArgb.value);
+    }
+    if (isDefault.present) {
+      map['is_default'] = Variable<bool>(isDefault.value);
+    }
+    if (isSelectedForDisplay.present) {
+      map['is_selected_for_display'] = Variable<bool>(
+        isSelectedForDisplay.value,
+      );
+    }
+    if (sortIndex.present) {
+      map['sort_index'] = Variable<int>(sortIndex.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ContactListsCompanion(')
+          ..write('id: $id, ')
+          ..write('accountId: $accountId, ')
+          ..write('providerId: $providerId, ')
+          ..write('name: $name, ')
+          ..write('colorArgb: $colorArgb, ')
+          ..write('isDefault: $isDefault, ')
+          ..write('isSelectedForDisplay: $isSelectedForDisplay, ')
+          ..write('sortIndex: $sortIndex, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $ContactsTable extends Contacts
+    with TableInfo<$ContactsTable, ContactRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ContactsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _accountIdMeta = const VerificationMeta(
+    'accountId',
+  );
+  @override
+  late final GeneratedColumn<String> accountId = GeneratedColumn<String>(
+    'account_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES accounts (id)',
+    ),
+  );
+  static const VerificationMeta _contactListIdMeta = const VerificationMeta(
+    'contactListId',
+  );
+  @override
+  late final GeneratedColumn<String> contactListId = GeneratedColumn<String>(
+    'contact_list_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES contact_lists (id)',
+    ),
+  );
+  static const VerificationMeta _providerIdMeta = const VerificationMeta(
+    'providerId',
+  );
+  @override
+  late final GeneratedColumn<String> providerId = GeneratedColumn<String>(
+    'provider_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _displayNameMeta = const VerificationMeta(
+    'displayName',
+  );
+  @override
+  late final GeneratedColumn<String> displayName = GeneratedColumn<String>(
+    'display_name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _givenNameMeta = const VerificationMeta(
+    'givenName',
+  );
+  @override
+  late final GeneratedColumn<String> givenName = GeneratedColumn<String>(
+    'given_name',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _familyNameMeta = const VerificationMeta(
+    'familyName',
+  );
+  @override
+  late final GeneratedColumn<String> familyName = GeneratedColumn<String>(
+    'family_name',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _companyMeta = const VerificationMeta(
+    'company',
+  );
+  @override
+  late final GeneratedColumn<String> company = GeneratedColumn<String>(
+    'company',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _notesMeta = const VerificationMeta('notes');
+  @override
+  late final GeneratedColumn<String> notes = GeneratedColumn<String>(
+    'notes',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _etagMeta = const VerificationMeta('etag');
+  @override
+  late final GeneratedColumn<String> etag = GeneratedColumn<String>(
+    'etag',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<int> updatedAt = GeneratedColumn<int>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _deletedAtMeta = const VerificationMeta(
+    'deletedAt',
+  );
+  @override
+  late final GeneratedColumn<int> deletedAt = GeneratedColumn<int>(
+    'deleted_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    accountId,
+    contactListId,
+    providerId,
+    displayName,
+    givenName,
+    familyName,
+    company,
+    notes,
+    etag,
+    updatedAt,
+    deletedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'contacts';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<ContactRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('account_id')) {
+      context.handle(
+        _accountIdMeta,
+        accountId.isAcceptableOrUnknown(data['account_id']!, _accountIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_accountIdMeta);
+    }
+    if (data.containsKey('contact_list_id')) {
+      context.handle(
+        _contactListIdMeta,
+        contactListId.isAcceptableOrUnknown(
+          data['contact_list_id']!,
+          _contactListIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_contactListIdMeta);
+    }
+    if (data.containsKey('provider_id')) {
+      context.handle(
+        _providerIdMeta,
+        providerId.isAcceptableOrUnknown(data['provider_id']!, _providerIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_providerIdMeta);
+    }
+    if (data.containsKey('display_name')) {
+      context.handle(
+        _displayNameMeta,
+        displayName.isAcceptableOrUnknown(
+          data['display_name']!,
+          _displayNameMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_displayNameMeta);
+    }
+    if (data.containsKey('given_name')) {
+      context.handle(
+        _givenNameMeta,
+        givenName.isAcceptableOrUnknown(data['given_name']!, _givenNameMeta),
+      );
+    }
+    if (data.containsKey('family_name')) {
+      context.handle(
+        _familyNameMeta,
+        familyName.isAcceptableOrUnknown(data['family_name']!, _familyNameMeta),
+      );
+    }
+    if (data.containsKey('company')) {
+      context.handle(
+        _companyMeta,
+        company.isAcceptableOrUnknown(data['company']!, _companyMeta),
+      );
+    }
+    if (data.containsKey('notes')) {
+      context.handle(
+        _notesMeta,
+        notes.isAcceptableOrUnknown(data['notes']!, _notesMeta),
+      );
+    }
+    if (data.containsKey('etag')) {
+      context.handle(
+        _etagMeta,
+        etag.isAcceptableOrUnknown(data['etag']!, _etagMeta),
+      );
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_updatedAtMeta);
+    }
+    if (data.containsKey('deleted_at')) {
+      context.handle(
+        _deletedAtMeta,
+        deletedAt.isAcceptableOrUnknown(data['deleted_at']!, _deletedAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  ContactRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return ContactRow(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      accountId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}account_id'],
+      )!,
+      contactListId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}contact_list_id'],
+      )!,
+      providerId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}provider_id'],
+      )!,
+      displayName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}display_name'],
+      )!,
+      givenName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}given_name'],
+      ),
+      familyName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}family_name'],
+      ),
+      company: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}company'],
+      ),
+      notes: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}notes'],
+      ),
+      etag: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}etag'],
+      ),
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}updated_at'],
+      )!,
+      deletedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}deleted_at'],
+      ),
+    );
+  }
+
+  @override
+  $ContactsTable createAlias(String alias) {
+    return $ContactsTable(attachedDatabase, alias);
+  }
+}
+
+class ContactRow extends DataClass implements Insertable<ContactRow> {
+  final String id;
+  final String accountId;
+  final String contactListId;
+  final String providerId;
+  final String displayName;
+  final String? givenName;
+  final String? familyName;
+  final String? company;
+  final String? notes;
+  final String? etag;
+  final int updatedAt;
+  final int? deletedAt;
+  const ContactRow({
+    required this.id,
+    required this.accountId,
+    required this.contactListId,
+    required this.providerId,
+    required this.displayName,
+    this.givenName,
+    this.familyName,
+    this.company,
+    this.notes,
+    this.etag,
+    required this.updatedAt,
+    this.deletedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['account_id'] = Variable<String>(accountId);
+    map['contact_list_id'] = Variable<String>(contactListId);
+    map['provider_id'] = Variable<String>(providerId);
+    map['display_name'] = Variable<String>(displayName);
+    if (!nullToAbsent || givenName != null) {
+      map['given_name'] = Variable<String>(givenName);
+    }
+    if (!nullToAbsent || familyName != null) {
+      map['family_name'] = Variable<String>(familyName);
+    }
+    if (!nullToAbsent || company != null) {
+      map['company'] = Variable<String>(company);
+    }
+    if (!nullToAbsent || notes != null) {
+      map['notes'] = Variable<String>(notes);
+    }
+    if (!nullToAbsent || etag != null) {
+      map['etag'] = Variable<String>(etag);
+    }
+    map['updated_at'] = Variable<int>(updatedAt);
+    if (!nullToAbsent || deletedAt != null) {
+      map['deleted_at'] = Variable<int>(deletedAt);
+    }
+    return map;
+  }
+
+  ContactsCompanion toCompanion(bool nullToAbsent) {
+    return ContactsCompanion(
+      id: Value(id),
+      accountId: Value(accountId),
+      contactListId: Value(contactListId),
+      providerId: Value(providerId),
+      displayName: Value(displayName),
+      givenName: givenName == null && nullToAbsent
+          ? const Value.absent()
+          : Value(givenName),
+      familyName: familyName == null && nullToAbsent
+          ? const Value.absent()
+          : Value(familyName),
+      company: company == null && nullToAbsent
+          ? const Value.absent()
+          : Value(company),
+      notes: notes == null && nullToAbsent
+          ? const Value.absent()
+          : Value(notes),
+      etag: etag == null && nullToAbsent ? const Value.absent() : Value(etag),
+      updatedAt: Value(updatedAt),
+      deletedAt: deletedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deletedAt),
+    );
+  }
+
+  factory ContactRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return ContactRow(
+      id: serializer.fromJson<String>(json['id']),
+      accountId: serializer.fromJson<String>(json['accountId']),
+      contactListId: serializer.fromJson<String>(json['contactListId']),
+      providerId: serializer.fromJson<String>(json['providerId']),
+      displayName: serializer.fromJson<String>(json['displayName']),
+      givenName: serializer.fromJson<String?>(json['givenName']),
+      familyName: serializer.fromJson<String?>(json['familyName']),
+      company: serializer.fromJson<String?>(json['company']),
+      notes: serializer.fromJson<String?>(json['notes']),
+      etag: serializer.fromJson<String?>(json['etag']),
+      updatedAt: serializer.fromJson<int>(json['updatedAt']),
+      deletedAt: serializer.fromJson<int?>(json['deletedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'accountId': serializer.toJson<String>(accountId),
+      'contactListId': serializer.toJson<String>(contactListId),
+      'providerId': serializer.toJson<String>(providerId),
+      'displayName': serializer.toJson<String>(displayName),
+      'givenName': serializer.toJson<String?>(givenName),
+      'familyName': serializer.toJson<String?>(familyName),
+      'company': serializer.toJson<String?>(company),
+      'notes': serializer.toJson<String?>(notes),
+      'etag': serializer.toJson<String?>(etag),
+      'updatedAt': serializer.toJson<int>(updatedAt),
+      'deletedAt': serializer.toJson<int?>(deletedAt),
+    };
+  }
+
+  ContactRow copyWith({
+    String? id,
+    String? accountId,
+    String? contactListId,
+    String? providerId,
+    String? displayName,
+    Value<String?> givenName = const Value.absent(),
+    Value<String?> familyName = const Value.absent(),
+    Value<String?> company = const Value.absent(),
+    Value<String?> notes = const Value.absent(),
+    Value<String?> etag = const Value.absent(),
+    int? updatedAt,
+    Value<int?> deletedAt = const Value.absent(),
+  }) => ContactRow(
+    id: id ?? this.id,
+    accountId: accountId ?? this.accountId,
+    contactListId: contactListId ?? this.contactListId,
+    providerId: providerId ?? this.providerId,
+    displayName: displayName ?? this.displayName,
+    givenName: givenName.present ? givenName.value : this.givenName,
+    familyName: familyName.present ? familyName.value : this.familyName,
+    company: company.present ? company.value : this.company,
+    notes: notes.present ? notes.value : this.notes,
+    etag: etag.present ? etag.value : this.etag,
+    updatedAt: updatedAt ?? this.updatedAt,
+    deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
+  );
+  ContactRow copyWithCompanion(ContactsCompanion data) {
+    return ContactRow(
+      id: data.id.present ? data.id.value : this.id,
+      accountId: data.accountId.present ? data.accountId.value : this.accountId,
+      contactListId: data.contactListId.present
+          ? data.contactListId.value
+          : this.contactListId,
+      providerId: data.providerId.present
+          ? data.providerId.value
+          : this.providerId,
+      displayName: data.displayName.present
+          ? data.displayName.value
+          : this.displayName,
+      givenName: data.givenName.present ? data.givenName.value : this.givenName,
+      familyName: data.familyName.present
+          ? data.familyName.value
+          : this.familyName,
+      company: data.company.present ? data.company.value : this.company,
+      notes: data.notes.present ? data.notes.value : this.notes,
+      etag: data.etag.present ? data.etag.value : this.etag,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ContactRow(')
+          ..write('id: $id, ')
+          ..write('accountId: $accountId, ')
+          ..write('contactListId: $contactListId, ')
+          ..write('providerId: $providerId, ')
+          ..write('displayName: $displayName, ')
+          ..write('givenName: $givenName, ')
+          ..write('familyName: $familyName, ')
+          ..write('company: $company, ')
+          ..write('notes: $notes, ')
+          ..write('etag: $etag, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('deletedAt: $deletedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    accountId,
+    contactListId,
+    providerId,
+    displayName,
+    givenName,
+    familyName,
+    company,
+    notes,
+    etag,
+    updatedAt,
+    deletedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is ContactRow &&
+          other.id == this.id &&
+          other.accountId == this.accountId &&
+          other.contactListId == this.contactListId &&
+          other.providerId == this.providerId &&
+          other.displayName == this.displayName &&
+          other.givenName == this.givenName &&
+          other.familyName == this.familyName &&
+          other.company == this.company &&
+          other.notes == this.notes &&
+          other.etag == this.etag &&
+          other.updatedAt == this.updatedAt &&
+          other.deletedAt == this.deletedAt);
+}
+
+class ContactsCompanion extends UpdateCompanion<ContactRow> {
+  final Value<String> id;
+  final Value<String> accountId;
+  final Value<String> contactListId;
+  final Value<String> providerId;
+  final Value<String> displayName;
+  final Value<String?> givenName;
+  final Value<String?> familyName;
+  final Value<String?> company;
+  final Value<String?> notes;
+  final Value<String?> etag;
+  final Value<int> updatedAt;
+  final Value<int?> deletedAt;
+  final Value<int> rowid;
+  const ContactsCompanion({
+    this.id = const Value.absent(),
+    this.accountId = const Value.absent(),
+    this.contactListId = const Value.absent(),
+    this.providerId = const Value.absent(),
+    this.displayName = const Value.absent(),
+    this.givenName = const Value.absent(),
+    this.familyName = const Value.absent(),
+    this.company = const Value.absent(),
+    this.notes = const Value.absent(),
+    this.etag = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.deletedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  ContactsCompanion.insert({
+    required String id,
+    required String accountId,
+    required String contactListId,
+    required String providerId,
+    required String displayName,
+    this.givenName = const Value.absent(),
+    this.familyName = const Value.absent(),
+    this.company = const Value.absent(),
+    this.notes = const Value.absent(),
+    this.etag = const Value.absent(),
+    required int updatedAt,
+    this.deletedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       accountId = Value(accountId),
+       contactListId = Value(contactListId),
+       providerId = Value(providerId),
+       displayName = Value(displayName),
+       updatedAt = Value(updatedAt);
+  static Insertable<ContactRow> custom({
+    Expression<String>? id,
+    Expression<String>? accountId,
+    Expression<String>? contactListId,
+    Expression<String>? providerId,
+    Expression<String>? displayName,
+    Expression<String>? givenName,
+    Expression<String>? familyName,
+    Expression<String>? company,
+    Expression<String>? notes,
+    Expression<String>? etag,
+    Expression<int>? updatedAt,
+    Expression<int>? deletedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (accountId != null) 'account_id': accountId,
+      if (contactListId != null) 'contact_list_id': contactListId,
+      if (providerId != null) 'provider_id': providerId,
+      if (displayName != null) 'display_name': displayName,
+      if (givenName != null) 'given_name': givenName,
+      if (familyName != null) 'family_name': familyName,
+      if (company != null) 'company': company,
+      if (notes != null) 'notes': notes,
+      if (etag != null) 'etag': etag,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (deletedAt != null) 'deleted_at': deletedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  ContactsCompanion copyWith({
+    Value<String>? id,
+    Value<String>? accountId,
+    Value<String>? contactListId,
+    Value<String>? providerId,
+    Value<String>? displayName,
+    Value<String?>? givenName,
+    Value<String?>? familyName,
+    Value<String?>? company,
+    Value<String?>? notes,
+    Value<String?>? etag,
+    Value<int>? updatedAt,
+    Value<int?>? deletedAt,
+    Value<int>? rowid,
+  }) {
+    return ContactsCompanion(
+      id: id ?? this.id,
+      accountId: accountId ?? this.accountId,
+      contactListId: contactListId ?? this.contactListId,
+      providerId: providerId ?? this.providerId,
+      displayName: displayName ?? this.displayName,
+      givenName: givenName ?? this.givenName,
+      familyName: familyName ?? this.familyName,
+      company: company ?? this.company,
+      notes: notes ?? this.notes,
+      etag: etag ?? this.etag,
+      updatedAt: updatedAt ?? this.updatedAt,
+      deletedAt: deletedAt ?? this.deletedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (accountId.present) {
+      map['account_id'] = Variable<String>(accountId.value);
+    }
+    if (contactListId.present) {
+      map['contact_list_id'] = Variable<String>(contactListId.value);
+    }
+    if (providerId.present) {
+      map['provider_id'] = Variable<String>(providerId.value);
+    }
+    if (displayName.present) {
+      map['display_name'] = Variable<String>(displayName.value);
+    }
+    if (givenName.present) {
+      map['given_name'] = Variable<String>(givenName.value);
+    }
+    if (familyName.present) {
+      map['family_name'] = Variable<String>(familyName.value);
+    }
+    if (company.present) {
+      map['company'] = Variable<String>(company.value);
+    }
+    if (notes.present) {
+      map['notes'] = Variable<String>(notes.value);
+    }
+    if (etag.present) {
+      map['etag'] = Variable<String>(etag.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<int>(updatedAt.value);
+    }
+    if (deletedAt.present) {
+      map['deleted_at'] = Variable<int>(deletedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ContactsCompanion(')
+          ..write('id: $id, ')
+          ..write('accountId: $accountId, ')
+          ..write('contactListId: $contactListId, ')
+          ..write('providerId: $providerId, ')
+          ..write('displayName: $displayName, ')
+          ..write('givenName: $givenName, ')
+          ..write('familyName: $familyName, ')
+          ..write('company: $company, ')
+          ..write('notes: $notes, ')
+          ..write('etag: $etag, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('deletedAt: $deletedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $ContactEmailsTable extends ContactEmails
+    with TableInfo<$ContactEmailsTable, ContactEmailRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ContactEmailsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _contactIdMeta = const VerificationMeta(
+    'contactId',
+  );
+  @override
+  late final GeneratedColumn<String> contactId = GeneratedColumn<String>(
+    'contact_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES contacts (id)',
+    ),
+  );
+  static const VerificationMeta _addressMeta = const VerificationMeta(
+    'address',
+  );
+  @override
+  late final GeneratedColumn<String> address = GeneratedColumn<String>(
+    'address',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _typeMeta = const VerificationMeta('type');
+  @override
+  late final GeneratedColumn<String> type = GeneratedColumn<String>(
+    'type',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('other'),
+  );
+  static const VerificationMeta _isPrimaryMeta = const VerificationMeta(
+    'isPrimary',
+  );
+  @override
+  late final GeneratedColumn<bool> isPrimary = GeneratedColumn<bool>(
+    'is_primary',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_primary" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    contactId,
+    address,
+    type,
+    isPrimary,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'contact_emails';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<ContactEmailRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('contact_id')) {
+      context.handle(
+        _contactIdMeta,
+        contactId.isAcceptableOrUnknown(data['contact_id']!, _contactIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_contactIdMeta);
+    }
+    if (data.containsKey('address')) {
+      context.handle(
+        _addressMeta,
+        address.isAcceptableOrUnknown(data['address']!, _addressMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_addressMeta);
+    }
+    if (data.containsKey('type')) {
+      context.handle(
+        _typeMeta,
+        type.isAcceptableOrUnknown(data['type']!, _typeMeta),
+      );
+    }
+    if (data.containsKey('is_primary')) {
+      context.handle(
+        _isPrimaryMeta,
+        isPrimary.isAcceptableOrUnknown(data['is_primary']!, _isPrimaryMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  ContactEmailRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return ContactEmailRow(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      contactId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}contact_id'],
+      )!,
+      address: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}address'],
+      )!,
+      type: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}type'],
+      )!,
+      isPrimary: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_primary'],
+      )!,
+    );
+  }
+
+  @override
+  $ContactEmailsTable createAlias(String alias) {
+    return $ContactEmailsTable(attachedDatabase, alias);
+  }
+}
+
+class ContactEmailRow extends DataClass implements Insertable<ContactEmailRow> {
+  final String id;
+  final String contactId;
+  final String address;
+  final String type;
+  final bool isPrimary;
+  const ContactEmailRow({
+    required this.id,
+    required this.contactId,
+    required this.address,
+    required this.type,
+    required this.isPrimary,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['contact_id'] = Variable<String>(contactId);
+    map['address'] = Variable<String>(address);
+    map['type'] = Variable<String>(type);
+    map['is_primary'] = Variable<bool>(isPrimary);
+    return map;
+  }
+
+  ContactEmailsCompanion toCompanion(bool nullToAbsent) {
+    return ContactEmailsCompanion(
+      id: Value(id),
+      contactId: Value(contactId),
+      address: Value(address),
+      type: Value(type),
+      isPrimary: Value(isPrimary),
+    );
+  }
+
+  factory ContactEmailRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return ContactEmailRow(
+      id: serializer.fromJson<String>(json['id']),
+      contactId: serializer.fromJson<String>(json['contactId']),
+      address: serializer.fromJson<String>(json['address']),
+      type: serializer.fromJson<String>(json['type']),
+      isPrimary: serializer.fromJson<bool>(json['isPrimary']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'contactId': serializer.toJson<String>(contactId),
+      'address': serializer.toJson<String>(address),
+      'type': serializer.toJson<String>(type),
+      'isPrimary': serializer.toJson<bool>(isPrimary),
+    };
+  }
+
+  ContactEmailRow copyWith({
+    String? id,
+    String? contactId,
+    String? address,
+    String? type,
+    bool? isPrimary,
+  }) => ContactEmailRow(
+    id: id ?? this.id,
+    contactId: contactId ?? this.contactId,
+    address: address ?? this.address,
+    type: type ?? this.type,
+    isPrimary: isPrimary ?? this.isPrimary,
+  );
+  ContactEmailRow copyWithCompanion(ContactEmailsCompanion data) {
+    return ContactEmailRow(
+      id: data.id.present ? data.id.value : this.id,
+      contactId: data.contactId.present ? data.contactId.value : this.contactId,
+      address: data.address.present ? data.address.value : this.address,
+      type: data.type.present ? data.type.value : this.type,
+      isPrimary: data.isPrimary.present ? data.isPrimary.value : this.isPrimary,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ContactEmailRow(')
+          ..write('id: $id, ')
+          ..write('contactId: $contactId, ')
+          ..write('address: $address, ')
+          ..write('type: $type, ')
+          ..write('isPrimary: $isPrimary')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, contactId, address, type, isPrimary);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is ContactEmailRow &&
+          other.id == this.id &&
+          other.contactId == this.contactId &&
+          other.address == this.address &&
+          other.type == this.type &&
+          other.isPrimary == this.isPrimary);
+}
+
+class ContactEmailsCompanion extends UpdateCompanion<ContactEmailRow> {
+  final Value<String> id;
+  final Value<String> contactId;
+  final Value<String> address;
+  final Value<String> type;
+  final Value<bool> isPrimary;
+  final Value<int> rowid;
+  const ContactEmailsCompanion({
+    this.id = const Value.absent(),
+    this.contactId = const Value.absent(),
+    this.address = const Value.absent(),
+    this.type = const Value.absent(),
+    this.isPrimary = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  ContactEmailsCompanion.insert({
+    required String id,
+    required String contactId,
+    required String address,
+    this.type = const Value.absent(),
+    this.isPrimary = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       contactId = Value(contactId),
+       address = Value(address);
+  static Insertable<ContactEmailRow> custom({
+    Expression<String>? id,
+    Expression<String>? contactId,
+    Expression<String>? address,
+    Expression<String>? type,
+    Expression<bool>? isPrimary,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (contactId != null) 'contact_id': contactId,
+      if (address != null) 'address': address,
+      if (type != null) 'type': type,
+      if (isPrimary != null) 'is_primary': isPrimary,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  ContactEmailsCompanion copyWith({
+    Value<String>? id,
+    Value<String>? contactId,
+    Value<String>? address,
+    Value<String>? type,
+    Value<bool>? isPrimary,
+    Value<int>? rowid,
+  }) {
+    return ContactEmailsCompanion(
+      id: id ?? this.id,
+      contactId: contactId ?? this.contactId,
+      address: address ?? this.address,
+      type: type ?? this.type,
+      isPrimary: isPrimary ?? this.isPrimary,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (contactId.present) {
+      map['contact_id'] = Variable<String>(contactId.value);
+    }
+    if (address.present) {
+      map['address'] = Variable<String>(address.value);
+    }
+    if (type.present) {
+      map['type'] = Variable<String>(type.value);
+    }
+    if (isPrimary.present) {
+      map['is_primary'] = Variable<bool>(isPrimary.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ContactEmailsCompanion(')
+          ..write('id: $id, ')
+          ..write('contactId: $contactId, ')
+          ..write('address: $address, ')
+          ..write('type: $type, ')
+          ..write('isPrimary: $isPrimary, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $ContactPhonesTable extends ContactPhones
+    with TableInfo<$ContactPhonesTable, ContactPhoneRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ContactPhonesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _contactIdMeta = const VerificationMeta(
+    'contactId',
+  );
+  @override
+  late final GeneratedColumn<String> contactId = GeneratedColumn<String>(
+    'contact_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES contacts (id)',
+    ),
+  );
+  static const VerificationMeta _numberMeta = const VerificationMeta('number');
+  @override
+  late final GeneratedColumn<String> number = GeneratedColumn<String>(
+    'number',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _typeMeta = const VerificationMeta('type');
+  @override
+  late final GeneratedColumn<String> type = GeneratedColumn<String>(
+    'type',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('other'),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [id, contactId, number, type];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'contact_phones';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<ContactPhoneRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('contact_id')) {
+      context.handle(
+        _contactIdMeta,
+        contactId.isAcceptableOrUnknown(data['contact_id']!, _contactIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_contactIdMeta);
+    }
+    if (data.containsKey('number')) {
+      context.handle(
+        _numberMeta,
+        number.isAcceptableOrUnknown(data['number']!, _numberMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_numberMeta);
+    }
+    if (data.containsKey('type')) {
+      context.handle(
+        _typeMeta,
+        type.isAcceptableOrUnknown(data['type']!, _typeMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  ContactPhoneRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return ContactPhoneRow(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      contactId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}contact_id'],
+      )!,
+      number: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}number'],
+      )!,
+      type: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}type'],
+      )!,
+    );
+  }
+
+  @override
+  $ContactPhonesTable createAlias(String alias) {
+    return $ContactPhonesTable(attachedDatabase, alias);
+  }
+}
+
+class ContactPhoneRow extends DataClass implements Insertable<ContactPhoneRow> {
+  final String id;
+  final String contactId;
+  final String number;
+  final String type;
+  const ContactPhoneRow({
+    required this.id,
+    required this.contactId,
+    required this.number,
+    required this.type,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['contact_id'] = Variable<String>(contactId);
+    map['number'] = Variable<String>(number);
+    map['type'] = Variable<String>(type);
+    return map;
+  }
+
+  ContactPhonesCompanion toCompanion(bool nullToAbsent) {
+    return ContactPhonesCompanion(
+      id: Value(id),
+      contactId: Value(contactId),
+      number: Value(number),
+      type: Value(type),
+    );
+  }
+
+  factory ContactPhoneRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return ContactPhoneRow(
+      id: serializer.fromJson<String>(json['id']),
+      contactId: serializer.fromJson<String>(json['contactId']),
+      number: serializer.fromJson<String>(json['number']),
+      type: serializer.fromJson<String>(json['type']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'contactId': serializer.toJson<String>(contactId),
+      'number': serializer.toJson<String>(number),
+      'type': serializer.toJson<String>(type),
+    };
+  }
+
+  ContactPhoneRow copyWith({
+    String? id,
+    String? contactId,
+    String? number,
+    String? type,
+  }) => ContactPhoneRow(
+    id: id ?? this.id,
+    contactId: contactId ?? this.contactId,
+    number: number ?? this.number,
+    type: type ?? this.type,
+  );
+  ContactPhoneRow copyWithCompanion(ContactPhonesCompanion data) {
+    return ContactPhoneRow(
+      id: data.id.present ? data.id.value : this.id,
+      contactId: data.contactId.present ? data.contactId.value : this.contactId,
+      number: data.number.present ? data.number.value : this.number,
+      type: data.type.present ? data.type.value : this.type,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ContactPhoneRow(')
+          ..write('id: $id, ')
+          ..write('contactId: $contactId, ')
+          ..write('number: $number, ')
+          ..write('type: $type')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, contactId, number, type);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is ContactPhoneRow &&
+          other.id == this.id &&
+          other.contactId == this.contactId &&
+          other.number == this.number &&
+          other.type == this.type);
+}
+
+class ContactPhonesCompanion extends UpdateCompanion<ContactPhoneRow> {
+  final Value<String> id;
+  final Value<String> contactId;
+  final Value<String> number;
+  final Value<String> type;
+  final Value<int> rowid;
+  const ContactPhonesCompanion({
+    this.id = const Value.absent(),
+    this.contactId = const Value.absent(),
+    this.number = const Value.absent(),
+    this.type = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  ContactPhonesCompanion.insert({
+    required String id,
+    required String contactId,
+    required String number,
+    this.type = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       contactId = Value(contactId),
+       number = Value(number);
+  static Insertable<ContactPhoneRow> custom({
+    Expression<String>? id,
+    Expression<String>? contactId,
+    Expression<String>? number,
+    Expression<String>? type,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (contactId != null) 'contact_id': contactId,
+      if (number != null) 'number': number,
+      if (type != null) 'type': type,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  ContactPhonesCompanion copyWith({
+    Value<String>? id,
+    Value<String>? contactId,
+    Value<String>? number,
+    Value<String>? type,
+    Value<int>? rowid,
+  }) {
+    return ContactPhonesCompanion(
+      id: id ?? this.id,
+      contactId: contactId ?? this.contactId,
+      number: number ?? this.number,
+      type: type ?? this.type,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (contactId.present) {
+      map['contact_id'] = Variable<String>(contactId.value);
+    }
+    if (number.present) {
+      map['number'] = Variable<String>(number.value);
+    }
+    if (type.present) {
+      map['type'] = Variable<String>(type.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ContactPhonesCompanion(')
+          ..write('id: $id, ')
+          ..write('contactId: $contactId, ')
+          ..write('number: $number, ')
+          ..write('type: $type, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $CalendarsTable extends Calendars
+    with TableInfo<$CalendarsTable, CalendarRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $CalendarsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _accountIdMeta = const VerificationMeta(
+    'accountId',
+  );
+  @override
+  late final GeneratedColumn<String> accountId = GeneratedColumn<String>(
+    'account_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES accounts (id)',
+    ),
+  );
+  static const VerificationMeta _providerIdMeta = const VerificationMeta(
+    'providerId',
+  );
+  @override
+  late final GeneratedColumn<String> providerId = GeneratedColumn<String>(
+    'provider_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+    'name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _colorArgbMeta = const VerificationMeta(
+    'colorArgb',
+  );
+  @override
+  late final GeneratedColumn<int> colorArgb = GeneratedColumn<int>(
+    'color_argb',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _colorOverrideArgbMeta = const VerificationMeta(
+    'colorOverrideArgb',
+  );
+  @override
+  late final GeneratedColumn<int> colorOverrideArgb = GeneratedColumn<int>(
+    'color_override_argb',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _isDefaultMeta = const VerificationMeta(
+    'isDefault',
+  );
+  @override
+  late final GeneratedColumn<bool> isDefault = GeneratedColumn<bool>(
+    'is_default',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_default" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _isSelectedForDisplayMeta =
+      const VerificationMeta('isSelectedForDisplay');
+  @override
+  late final GeneratedColumn<bool> isSelectedForDisplay = GeneratedColumn<bool>(
+    'is_selected_for_display',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_selected_for_display" IN (0, 1))',
+    ),
+    defaultValue: const Constant(true),
+  );
+  static const VerificationMeta _sortIndexMeta = const VerificationMeta(
+    'sortIndex',
+  );
+  @override
+  late final GeneratedColumn<int> sortIndex = GeneratedColumn<int>(
+    'sort_index',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    accountId,
+    providerId,
+    name,
+    colorArgb,
+    colorOverrideArgb,
+    isDefault,
+    isSelectedForDisplay,
+    sortIndex,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'calendars';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<CalendarRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('account_id')) {
+      context.handle(
+        _accountIdMeta,
+        accountId.isAcceptableOrUnknown(data['account_id']!, _accountIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_accountIdMeta);
+    }
+    if (data.containsKey('provider_id')) {
+      context.handle(
+        _providerIdMeta,
+        providerId.isAcceptableOrUnknown(data['provider_id']!, _providerIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_providerIdMeta);
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('color_argb')) {
+      context.handle(
+        _colorArgbMeta,
+        colorArgb.isAcceptableOrUnknown(data['color_argb']!, _colorArgbMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_colorArgbMeta);
+    }
+    if (data.containsKey('color_override_argb')) {
+      context.handle(
+        _colorOverrideArgbMeta,
+        colorOverrideArgb.isAcceptableOrUnknown(
+          data['color_override_argb']!,
+          _colorOverrideArgbMeta,
+        ),
+      );
+    }
+    if (data.containsKey('is_default')) {
+      context.handle(
+        _isDefaultMeta,
+        isDefault.isAcceptableOrUnknown(data['is_default']!, _isDefaultMeta),
+      );
+    }
+    if (data.containsKey('is_selected_for_display')) {
+      context.handle(
+        _isSelectedForDisplayMeta,
+        isSelectedForDisplay.isAcceptableOrUnknown(
+          data['is_selected_for_display']!,
+          _isSelectedForDisplayMeta,
+        ),
+      );
+    }
+    if (data.containsKey('sort_index')) {
+      context.handle(
+        _sortIndexMeta,
+        sortIndex.isAcceptableOrUnknown(data['sort_index']!, _sortIndexMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  CalendarRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return CalendarRow(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      accountId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}account_id'],
+      )!,
+      providerId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}provider_id'],
+      )!,
+      name: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name'],
+      )!,
+      colorArgb: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}color_argb'],
+      )!,
+      colorOverrideArgb: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}color_override_argb'],
+      ),
+      isDefault: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_default'],
+      )!,
+      isSelectedForDisplay: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_selected_for_display'],
+      )!,
+      sortIndex: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}sort_index'],
+      ),
+    );
+  }
+
+  @override
+  $CalendarsTable createAlias(String alias) {
+    return $CalendarsTable(attachedDatabase, alias);
+  }
+}
+
+class CalendarRow extends DataClass implements Insertable<CalendarRow> {
+  final String id;
+  final String accountId;
+  final String providerId;
+  final String name;
+  final int colorArgb;
+  final int? colorOverrideArgb;
+  final bool isDefault;
+  final bool isSelectedForDisplay;
+  final int? sortIndex;
+  const CalendarRow({
+    required this.id,
+    required this.accountId,
+    required this.providerId,
+    required this.name,
+    required this.colorArgb,
+    this.colorOverrideArgb,
+    required this.isDefault,
+    required this.isSelectedForDisplay,
+    this.sortIndex,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['account_id'] = Variable<String>(accountId);
+    map['provider_id'] = Variable<String>(providerId);
+    map['name'] = Variable<String>(name);
+    map['color_argb'] = Variable<int>(colorArgb);
+    if (!nullToAbsent || colorOverrideArgb != null) {
+      map['color_override_argb'] = Variable<int>(colorOverrideArgb);
+    }
+    map['is_default'] = Variable<bool>(isDefault);
+    map['is_selected_for_display'] = Variable<bool>(isSelectedForDisplay);
+    if (!nullToAbsent || sortIndex != null) {
+      map['sort_index'] = Variable<int>(sortIndex);
+    }
+    return map;
+  }
+
+  CalendarsCompanion toCompanion(bool nullToAbsent) {
+    return CalendarsCompanion(
+      id: Value(id),
+      accountId: Value(accountId),
+      providerId: Value(providerId),
+      name: Value(name),
+      colorArgb: Value(colorArgb),
+      colorOverrideArgb: colorOverrideArgb == null && nullToAbsent
+          ? const Value.absent()
+          : Value(colorOverrideArgb),
+      isDefault: Value(isDefault),
+      isSelectedForDisplay: Value(isSelectedForDisplay),
+      sortIndex: sortIndex == null && nullToAbsent
+          ? const Value.absent()
+          : Value(sortIndex),
+    );
+  }
+
+  factory CalendarRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return CalendarRow(
+      id: serializer.fromJson<String>(json['id']),
+      accountId: serializer.fromJson<String>(json['accountId']),
+      providerId: serializer.fromJson<String>(json['providerId']),
+      name: serializer.fromJson<String>(json['name']),
+      colorArgb: serializer.fromJson<int>(json['colorArgb']),
+      colorOverrideArgb: serializer.fromJson<int?>(json['colorOverrideArgb']),
+      isDefault: serializer.fromJson<bool>(json['isDefault']),
+      isSelectedForDisplay: serializer.fromJson<bool>(
+        json['isSelectedForDisplay'],
+      ),
+      sortIndex: serializer.fromJson<int?>(json['sortIndex']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'accountId': serializer.toJson<String>(accountId),
+      'providerId': serializer.toJson<String>(providerId),
+      'name': serializer.toJson<String>(name),
+      'colorArgb': serializer.toJson<int>(colorArgb),
+      'colorOverrideArgb': serializer.toJson<int?>(colorOverrideArgb),
+      'isDefault': serializer.toJson<bool>(isDefault),
+      'isSelectedForDisplay': serializer.toJson<bool>(isSelectedForDisplay),
+      'sortIndex': serializer.toJson<int?>(sortIndex),
+    };
+  }
+
+  CalendarRow copyWith({
+    String? id,
+    String? accountId,
+    String? providerId,
+    String? name,
+    int? colorArgb,
+    Value<int?> colorOverrideArgb = const Value.absent(),
+    bool? isDefault,
+    bool? isSelectedForDisplay,
+    Value<int?> sortIndex = const Value.absent(),
+  }) => CalendarRow(
+    id: id ?? this.id,
+    accountId: accountId ?? this.accountId,
+    providerId: providerId ?? this.providerId,
+    name: name ?? this.name,
+    colorArgb: colorArgb ?? this.colorArgb,
+    colorOverrideArgb: colorOverrideArgb.present
+        ? colorOverrideArgb.value
+        : this.colorOverrideArgb,
+    isDefault: isDefault ?? this.isDefault,
+    isSelectedForDisplay: isSelectedForDisplay ?? this.isSelectedForDisplay,
+    sortIndex: sortIndex.present ? sortIndex.value : this.sortIndex,
+  );
+  CalendarRow copyWithCompanion(CalendarsCompanion data) {
+    return CalendarRow(
+      id: data.id.present ? data.id.value : this.id,
+      accountId: data.accountId.present ? data.accountId.value : this.accountId,
+      providerId: data.providerId.present
+          ? data.providerId.value
+          : this.providerId,
+      name: data.name.present ? data.name.value : this.name,
+      colorArgb: data.colorArgb.present ? data.colorArgb.value : this.colorArgb,
+      colorOverrideArgb: data.colorOverrideArgb.present
+          ? data.colorOverrideArgb.value
+          : this.colorOverrideArgb,
+      isDefault: data.isDefault.present ? data.isDefault.value : this.isDefault,
+      isSelectedForDisplay: data.isSelectedForDisplay.present
+          ? data.isSelectedForDisplay.value
+          : this.isSelectedForDisplay,
+      sortIndex: data.sortIndex.present ? data.sortIndex.value : this.sortIndex,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('CalendarRow(')
+          ..write('id: $id, ')
+          ..write('accountId: $accountId, ')
+          ..write('providerId: $providerId, ')
+          ..write('name: $name, ')
+          ..write('colorArgb: $colorArgb, ')
+          ..write('colorOverrideArgb: $colorOverrideArgb, ')
+          ..write('isDefault: $isDefault, ')
+          ..write('isSelectedForDisplay: $isSelectedForDisplay, ')
+          ..write('sortIndex: $sortIndex')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    accountId,
+    providerId,
+    name,
+    colorArgb,
+    colorOverrideArgb,
+    isDefault,
+    isSelectedForDisplay,
+    sortIndex,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is CalendarRow &&
+          other.id == this.id &&
+          other.accountId == this.accountId &&
+          other.providerId == this.providerId &&
+          other.name == this.name &&
+          other.colorArgb == this.colorArgb &&
+          other.colorOverrideArgb == this.colorOverrideArgb &&
+          other.isDefault == this.isDefault &&
+          other.isSelectedForDisplay == this.isSelectedForDisplay &&
+          other.sortIndex == this.sortIndex);
+}
+
+class CalendarsCompanion extends UpdateCompanion<CalendarRow> {
+  final Value<String> id;
+  final Value<String> accountId;
+  final Value<String> providerId;
+  final Value<String> name;
+  final Value<int> colorArgb;
+  final Value<int?> colorOverrideArgb;
+  final Value<bool> isDefault;
+  final Value<bool> isSelectedForDisplay;
+  final Value<int?> sortIndex;
+  final Value<int> rowid;
+  const CalendarsCompanion({
+    this.id = const Value.absent(),
+    this.accountId = const Value.absent(),
+    this.providerId = const Value.absent(),
+    this.name = const Value.absent(),
+    this.colorArgb = const Value.absent(),
+    this.colorOverrideArgb = const Value.absent(),
+    this.isDefault = const Value.absent(),
+    this.isSelectedForDisplay = const Value.absent(),
+    this.sortIndex = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  CalendarsCompanion.insert({
+    required String id,
+    required String accountId,
+    required String providerId,
+    required String name,
+    required int colorArgb,
+    this.colorOverrideArgb = const Value.absent(),
+    this.isDefault = const Value.absent(),
+    this.isSelectedForDisplay = const Value.absent(),
+    this.sortIndex = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       accountId = Value(accountId),
+       providerId = Value(providerId),
+       name = Value(name),
+       colorArgb = Value(colorArgb);
+  static Insertable<CalendarRow> custom({
+    Expression<String>? id,
+    Expression<String>? accountId,
+    Expression<String>? providerId,
+    Expression<String>? name,
+    Expression<int>? colorArgb,
+    Expression<int>? colorOverrideArgb,
+    Expression<bool>? isDefault,
+    Expression<bool>? isSelectedForDisplay,
+    Expression<int>? sortIndex,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (accountId != null) 'account_id': accountId,
+      if (providerId != null) 'provider_id': providerId,
+      if (name != null) 'name': name,
+      if (colorArgb != null) 'color_argb': colorArgb,
+      if (colorOverrideArgb != null) 'color_override_argb': colorOverrideArgb,
+      if (isDefault != null) 'is_default': isDefault,
+      if (isSelectedForDisplay != null)
+        'is_selected_for_display': isSelectedForDisplay,
+      if (sortIndex != null) 'sort_index': sortIndex,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  CalendarsCompanion copyWith({
+    Value<String>? id,
+    Value<String>? accountId,
+    Value<String>? providerId,
+    Value<String>? name,
+    Value<int>? colorArgb,
+    Value<int?>? colorOverrideArgb,
+    Value<bool>? isDefault,
+    Value<bool>? isSelectedForDisplay,
+    Value<int?>? sortIndex,
+    Value<int>? rowid,
+  }) {
+    return CalendarsCompanion(
+      id: id ?? this.id,
+      accountId: accountId ?? this.accountId,
+      providerId: providerId ?? this.providerId,
+      name: name ?? this.name,
+      colorArgb: colorArgb ?? this.colorArgb,
+      colorOverrideArgb: colorOverrideArgb ?? this.colorOverrideArgb,
+      isDefault: isDefault ?? this.isDefault,
+      isSelectedForDisplay: isSelectedForDisplay ?? this.isSelectedForDisplay,
+      sortIndex: sortIndex ?? this.sortIndex,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (accountId.present) {
+      map['account_id'] = Variable<String>(accountId.value);
+    }
+    if (providerId.present) {
+      map['provider_id'] = Variable<String>(providerId.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (colorArgb.present) {
+      map['color_argb'] = Variable<int>(colorArgb.value);
+    }
+    if (colorOverrideArgb.present) {
+      map['color_override_argb'] = Variable<int>(colorOverrideArgb.value);
+    }
+    if (isDefault.present) {
+      map['is_default'] = Variable<bool>(isDefault.value);
+    }
+    if (isSelectedForDisplay.present) {
+      map['is_selected_for_display'] = Variable<bool>(
+        isSelectedForDisplay.value,
+      );
+    }
+    if (sortIndex.present) {
+      map['sort_index'] = Variable<int>(sortIndex.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('CalendarsCompanion(')
+          ..write('id: $id, ')
+          ..write('accountId: $accountId, ')
+          ..write('providerId: $providerId, ')
+          ..write('name: $name, ')
+          ..write('colorArgb: $colorArgb, ')
+          ..write('colorOverrideArgb: $colorOverrideArgb, ')
+          ..write('isDefault: $isDefault, ')
+          ..write('isSelectedForDisplay: $isSelectedForDisplay, ')
+          ..write('sortIndex: $sortIndex, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $EventsTable extends Events with TableInfo<$EventsTable, EventRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $EventsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _accountIdMeta = const VerificationMeta(
+    'accountId',
+  );
+  @override
+  late final GeneratedColumn<String> accountId = GeneratedColumn<String>(
+    'account_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES accounts (id)',
+    ),
+  );
+  static const VerificationMeta _calendarIdMeta = const VerificationMeta(
+    'calendarId',
+  );
+  @override
+  late final GeneratedColumn<String> calendarId = GeneratedColumn<String>(
+    'calendar_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES calendars (id)',
+    ),
+  );
+  static const VerificationMeta _providerIdMeta = const VerificationMeta(
+    'providerId',
+  );
+  @override
+  late final GeneratedColumn<String> providerId = GeneratedColumn<String>(
+    'provider_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _titleMeta = const VerificationMeta('title');
+  @override
+  late final GeneratedColumn<String> title = GeneratedColumn<String>(
+    'title',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _bodyMeta = const VerificationMeta('body');
+  @override
+  late final GeneratedColumn<String> body = GeneratedColumn<String>(
+    'body',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _startEpochMsMeta = const VerificationMeta(
+    'startEpochMs',
+  );
+  @override
+  late final GeneratedColumn<int> startEpochMs = GeneratedColumn<int>(
+    'start_epoch_ms',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _endEpochMsMeta = const VerificationMeta(
+    'endEpochMs',
+  );
+  @override
+  late final GeneratedColumn<int> endEpochMs = GeneratedColumn<int>(
+    'end_epoch_ms',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _allDayMeta = const VerificationMeta('allDay');
+  @override
+  late final GeneratedColumn<bool> allDay = GeneratedColumn<bool>(
+    'all_day',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("all_day" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _locationMeta = const VerificationMeta(
+    'location',
+  );
+  @override
+  late final GeneratedColumn<String> location = GeneratedColumn<String>(
+    'location',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _rruleMeta = const VerificationMeta('rrule');
+  @override
+  late final GeneratedColumn<String> rrule = GeneratedColumn<String>(
+    'rrule',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _reminderMinutesMeta = const VerificationMeta(
+    'reminderMinutes',
+  );
+  @override
+  late final GeneratedColumn<int> reminderMinutes = GeneratedColumn<int>(
+    'reminder_minutes',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _etagMeta = const VerificationMeta('etag');
+  @override
+  late final GeneratedColumn<String> etag = GeneratedColumn<String>(
+    'etag',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<int> updatedAt = GeneratedColumn<int>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _deletedAtMeta = const VerificationMeta(
+    'deletedAt',
+  );
+  @override
+  late final GeneratedColumn<int> deletedAt = GeneratedColumn<int>(
+    'deleted_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    accountId,
+    calendarId,
+    providerId,
+    title,
+    body,
+    startEpochMs,
+    endEpochMs,
+    allDay,
+    location,
+    rrule,
+    reminderMinutes,
+    etag,
+    updatedAt,
+    deletedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'events';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<EventRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('account_id')) {
+      context.handle(
+        _accountIdMeta,
+        accountId.isAcceptableOrUnknown(data['account_id']!, _accountIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_accountIdMeta);
+    }
+    if (data.containsKey('calendar_id')) {
+      context.handle(
+        _calendarIdMeta,
+        calendarId.isAcceptableOrUnknown(data['calendar_id']!, _calendarIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_calendarIdMeta);
+    }
+    if (data.containsKey('provider_id')) {
+      context.handle(
+        _providerIdMeta,
+        providerId.isAcceptableOrUnknown(data['provider_id']!, _providerIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_providerIdMeta);
+    }
+    if (data.containsKey('title')) {
+      context.handle(
+        _titleMeta,
+        title.isAcceptableOrUnknown(data['title']!, _titleMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_titleMeta);
+    }
+    if (data.containsKey('body')) {
+      context.handle(
+        _bodyMeta,
+        body.isAcceptableOrUnknown(data['body']!, _bodyMeta),
+      );
+    }
+    if (data.containsKey('start_epoch_ms')) {
+      context.handle(
+        _startEpochMsMeta,
+        startEpochMs.isAcceptableOrUnknown(
+          data['start_epoch_ms']!,
+          _startEpochMsMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_startEpochMsMeta);
+    }
+    if (data.containsKey('end_epoch_ms')) {
+      context.handle(
+        _endEpochMsMeta,
+        endEpochMs.isAcceptableOrUnknown(
+          data['end_epoch_ms']!,
+          _endEpochMsMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_endEpochMsMeta);
+    }
+    if (data.containsKey('all_day')) {
+      context.handle(
+        _allDayMeta,
+        allDay.isAcceptableOrUnknown(data['all_day']!, _allDayMeta),
+      );
+    }
+    if (data.containsKey('location')) {
+      context.handle(
+        _locationMeta,
+        location.isAcceptableOrUnknown(data['location']!, _locationMeta),
+      );
+    }
+    if (data.containsKey('rrule')) {
+      context.handle(
+        _rruleMeta,
+        rrule.isAcceptableOrUnknown(data['rrule']!, _rruleMeta),
+      );
+    }
+    if (data.containsKey('reminder_minutes')) {
+      context.handle(
+        _reminderMinutesMeta,
+        reminderMinutes.isAcceptableOrUnknown(
+          data['reminder_minutes']!,
+          _reminderMinutesMeta,
+        ),
+      );
+    }
+    if (data.containsKey('etag')) {
+      context.handle(
+        _etagMeta,
+        etag.isAcceptableOrUnknown(data['etag']!, _etagMeta),
+      );
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_updatedAtMeta);
+    }
+    if (data.containsKey('deleted_at')) {
+      context.handle(
+        _deletedAtMeta,
+        deletedAt.isAcceptableOrUnknown(data['deleted_at']!, _deletedAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  EventRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return EventRow(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      accountId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}account_id'],
+      )!,
+      calendarId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}calendar_id'],
+      )!,
+      providerId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}provider_id'],
+      )!,
+      title: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}title'],
+      )!,
+      body: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}body'],
+      ),
+      startEpochMs: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}start_epoch_ms'],
+      )!,
+      endEpochMs: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}end_epoch_ms'],
+      )!,
+      allDay: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}all_day'],
+      )!,
+      location: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}location'],
+      ),
+      rrule: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}rrule'],
+      ),
+      reminderMinutes: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}reminder_minutes'],
+      ),
+      etag: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}etag'],
+      ),
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}updated_at'],
+      )!,
+      deletedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}deleted_at'],
+      ),
+    );
+  }
+
+  @override
+  $EventsTable createAlias(String alias) {
+    return $EventsTable(attachedDatabase, alias);
+  }
+}
+
+class EventRow extends DataClass implements Insertable<EventRow> {
+  final String id;
+  final String accountId;
+  final String calendarId;
+  final String providerId;
+  final String title;
+  final String? body;
+  final int startEpochMs;
+  final int endEpochMs;
+  final bool allDay;
+  final String? location;
+  final String? rrule;
+  final int? reminderMinutes;
+  final String? etag;
+  final int updatedAt;
+  final int? deletedAt;
+  const EventRow({
+    required this.id,
+    required this.accountId,
+    required this.calendarId,
+    required this.providerId,
+    required this.title,
+    this.body,
+    required this.startEpochMs,
+    required this.endEpochMs,
+    required this.allDay,
+    this.location,
+    this.rrule,
+    this.reminderMinutes,
+    this.etag,
+    required this.updatedAt,
+    this.deletedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['account_id'] = Variable<String>(accountId);
+    map['calendar_id'] = Variable<String>(calendarId);
+    map['provider_id'] = Variable<String>(providerId);
+    map['title'] = Variable<String>(title);
+    if (!nullToAbsent || body != null) {
+      map['body'] = Variable<String>(body);
+    }
+    map['start_epoch_ms'] = Variable<int>(startEpochMs);
+    map['end_epoch_ms'] = Variable<int>(endEpochMs);
+    map['all_day'] = Variable<bool>(allDay);
+    if (!nullToAbsent || location != null) {
+      map['location'] = Variable<String>(location);
+    }
+    if (!nullToAbsent || rrule != null) {
+      map['rrule'] = Variable<String>(rrule);
+    }
+    if (!nullToAbsent || reminderMinutes != null) {
+      map['reminder_minutes'] = Variable<int>(reminderMinutes);
+    }
+    if (!nullToAbsent || etag != null) {
+      map['etag'] = Variable<String>(etag);
+    }
+    map['updated_at'] = Variable<int>(updatedAt);
+    if (!nullToAbsent || deletedAt != null) {
+      map['deleted_at'] = Variable<int>(deletedAt);
+    }
+    return map;
+  }
+
+  EventsCompanion toCompanion(bool nullToAbsent) {
+    return EventsCompanion(
+      id: Value(id),
+      accountId: Value(accountId),
+      calendarId: Value(calendarId),
+      providerId: Value(providerId),
+      title: Value(title),
+      body: body == null && nullToAbsent ? const Value.absent() : Value(body),
+      startEpochMs: Value(startEpochMs),
+      endEpochMs: Value(endEpochMs),
+      allDay: Value(allDay),
+      location: location == null && nullToAbsent
+          ? const Value.absent()
+          : Value(location),
+      rrule: rrule == null && nullToAbsent
+          ? const Value.absent()
+          : Value(rrule),
+      reminderMinutes: reminderMinutes == null && nullToAbsent
+          ? const Value.absent()
+          : Value(reminderMinutes),
+      etag: etag == null && nullToAbsent ? const Value.absent() : Value(etag),
+      updatedAt: Value(updatedAt),
+      deletedAt: deletedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deletedAt),
+    );
+  }
+
+  factory EventRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return EventRow(
+      id: serializer.fromJson<String>(json['id']),
+      accountId: serializer.fromJson<String>(json['accountId']),
+      calendarId: serializer.fromJson<String>(json['calendarId']),
+      providerId: serializer.fromJson<String>(json['providerId']),
+      title: serializer.fromJson<String>(json['title']),
+      body: serializer.fromJson<String?>(json['body']),
+      startEpochMs: serializer.fromJson<int>(json['startEpochMs']),
+      endEpochMs: serializer.fromJson<int>(json['endEpochMs']),
+      allDay: serializer.fromJson<bool>(json['allDay']),
+      location: serializer.fromJson<String?>(json['location']),
+      rrule: serializer.fromJson<String?>(json['rrule']),
+      reminderMinutes: serializer.fromJson<int?>(json['reminderMinutes']),
+      etag: serializer.fromJson<String?>(json['etag']),
+      updatedAt: serializer.fromJson<int>(json['updatedAt']),
+      deletedAt: serializer.fromJson<int?>(json['deletedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'accountId': serializer.toJson<String>(accountId),
+      'calendarId': serializer.toJson<String>(calendarId),
+      'providerId': serializer.toJson<String>(providerId),
+      'title': serializer.toJson<String>(title),
+      'body': serializer.toJson<String?>(body),
+      'startEpochMs': serializer.toJson<int>(startEpochMs),
+      'endEpochMs': serializer.toJson<int>(endEpochMs),
+      'allDay': serializer.toJson<bool>(allDay),
+      'location': serializer.toJson<String?>(location),
+      'rrule': serializer.toJson<String?>(rrule),
+      'reminderMinutes': serializer.toJson<int?>(reminderMinutes),
+      'etag': serializer.toJson<String?>(etag),
+      'updatedAt': serializer.toJson<int>(updatedAt),
+      'deletedAt': serializer.toJson<int?>(deletedAt),
+    };
+  }
+
+  EventRow copyWith({
+    String? id,
+    String? accountId,
+    String? calendarId,
+    String? providerId,
+    String? title,
+    Value<String?> body = const Value.absent(),
+    int? startEpochMs,
+    int? endEpochMs,
+    bool? allDay,
+    Value<String?> location = const Value.absent(),
+    Value<String?> rrule = const Value.absent(),
+    Value<int?> reminderMinutes = const Value.absent(),
+    Value<String?> etag = const Value.absent(),
+    int? updatedAt,
+    Value<int?> deletedAt = const Value.absent(),
+  }) => EventRow(
+    id: id ?? this.id,
+    accountId: accountId ?? this.accountId,
+    calendarId: calendarId ?? this.calendarId,
+    providerId: providerId ?? this.providerId,
+    title: title ?? this.title,
+    body: body.present ? body.value : this.body,
+    startEpochMs: startEpochMs ?? this.startEpochMs,
+    endEpochMs: endEpochMs ?? this.endEpochMs,
+    allDay: allDay ?? this.allDay,
+    location: location.present ? location.value : this.location,
+    rrule: rrule.present ? rrule.value : this.rrule,
+    reminderMinutes: reminderMinutes.present
+        ? reminderMinutes.value
+        : this.reminderMinutes,
+    etag: etag.present ? etag.value : this.etag,
+    updatedAt: updatedAt ?? this.updatedAt,
+    deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
+  );
+  EventRow copyWithCompanion(EventsCompanion data) {
+    return EventRow(
+      id: data.id.present ? data.id.value : this.id,
+      accountId: data.accountId.present ? data.accountId.value : this.accountId,
+      calendarId: data.calendarId.present
+          ? data.calendarId.value
+          : this.calendarId,
+      providerId: data.providerId.present
+          ? data.providerId.value
+          : this.providerId,
+      title: data.title.present ? data.title.value : this.title,
+      body: data.body.present ? data.body.value : this.body,
+      startEpochMs: data.startEpochMs.present
+          ? data.startEpochMs.value
+          : this.startEpochMs,
+      endEpochMs: data.endEpochMs.present
+          ? data.endEpochMs.value
+          : this.endEpochMs,
+      allDay: data.allDay.present ? data.allDay.value : this.allDay,
+      location: data.location.present ? data.location.value : this.location,
+      rrule: data.rrule.present ? data.rrule.value : this.rrule,
+      reminderMinutes: data.reminderMinutes.present
+          ? data.reminderMinutes.value
+          : this.reminderMinutes,
+      etag: data.etag.present ? data.etag.value : this.etag,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('EventRow(')
+          ..write('id: $id, ')
+          ..write('accountId: $accountId, ')
+          ..write('calendarId: $calendarId, ')
+          ..write('providerId: $providerId, ')
+          ..write('title: $title, ')
+          ..write('body: $body, ')
+          ..write('startEpochMs: $startEpochMs, ')
+          ..write('endEpochMs: $endEpochMs, ')
+          ..write('allDay: $allDay, ')
+          ..write('location: $location, ')
+          ..write('rrule: $rrule, ')
+          ..write('reminderMinutes: $reminderMinutes, ')
+          ..write('etag: $etag, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('deletedAt: $deletedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    accountId,
+    calendarId,
+    providerId,
+    title,
+    body,
+    startEpochMs,
+    endEpochMs,
+    allDay,
+    location,
+    rrule,
+    reminderMinutes,
+    etag,
+    updatedAt,
+    deletedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is EventRow &&
+          other.id == this.id &&
+          other.accountId == this.accountId &&
+          other.calendarId == this.calendarId &&
+          other.providerId == this.providerId &&
+          other.title == this.title &&
+          other.body == this.body &&
+          other.startEpochMs == this.startEpochMs &&
+          other.endEpochMs == this.endEpochMs &&
+          other.allDay == this.allDay &&
+          other.location == this.location &&
+          other.rrule == this.rrule &&
+          other.reminderMinutes == this.reminderMinutes &&
+          other.etag == this.etag &&
+          other.updatedAt == this.updatedAt &&
+          other.deletedAt == this.deletedAt);
+}
+
+class EventsCompanion extends UpdateCompanion<EventRow> {
+  final Value<String> id;
+  final Value<String> accountId;
+  final Value<String> calendarId;
+  final Value<String> providerId;
+  final Value<String> title;
+  final Value<String?> body;
+  final Value<int> startEpochMs;
+  final Value<int> endEpochMs;
+  final Value<bool> allDay;
+  final Value<String?> location;
+  final Value<String?> rrule;
+  final Value<int?> reminderMinutes;
+  final Value<String?> etag;
+  final Value<int> updatedAt;
+  final Value<int?> deletedAt;
+  final Value<int> rowid;
+  const EventsCompanion({
+    this.id = const Value.absent(),
+    this.accountId = const Value.absent(),
+    this.calendarId = const Value.absent(),
+    this.providerId = const Value.absent(),
+    this.title = const Value.absent(),
+    this.body = const Value.absent(),
+    this.startEpochMs = const Value.absent(),
+    this.endEpochMs = const Value.absent(),
+    this.allDay = const Value.absent(),
+    this.location = const Value.absent(),
+    this.rrule = const Value.absent(),
+    this.reminderMinutes = const Value.absent(),
+    this.etag = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.deletedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  EventsCompanion.insert({
+    required String id,
+    required String accountId,
+    required String calendarId,
+    required String providerId,
+    required String title,
+    this.body = const Value.absent(),
+    required int startEpochMs,
+    required int endEpochMs,
+    this.allDay = const Value.absent(),
+    this.location = const Value.absent(),
+    this.rrule = const Value.absent(),
+    this.reminderMinutes = const Value.absent(),
+    this.etag = const Value.absent(),
+    required int updatedAt,
+    this.deletedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       accountId = Value(accountId),
+       calendarId = Value(calendarId),
+       providerId = Value(providerId),
+       title = Value(title),
+       startEpochMs = Value(startEpochMs),
+       endEpochMs = Value(endEpochMs),
+       updatedAt = Value(updatedAt);
+  static Insertable<EventRow> custom({
+    Expression<String>? id,
+    Expression<String>? accountId,
+    Expression<String>? calendarId,
+    Expression<String>? providerId,
+    Expression<String>? title,
+    Expression<String>? body,
+    Expression<int>? startEpochMs,
+    Expression<int>? endEpochMs,
+    Expression<bool>? allDay,
+    Expression<String>? location,
+    Expression<String>? rrule,
+    Expression<int>? reminderMinutes,
+    Expression<String>? etag,
+    Expression<int>? updatedAt,
+    Expression<int>? deletedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (accountId != null) 'account_id': accountId,
+      if (calendarId != null) 'calendar_id': calendarId,
+      if (providerId != null) 'provider_id': providerId,
+      if (title != null) 'title': title,
+      if (body != null) 'body': body,
+      if (startEpochMs != null) 'start_epoch_ms': startEpochMs,
+      if (endEpochMs != null) 'end_epoch_ms': endEpochMs,
+      if (allDay != null) 'all_day': allDay,
+      if (location != null) 'location': location,
+      if (rrule != null) 'rrule': rrule,
+      if (reminderMinutes != null) 'reminder_minutes': reminderMinutes,
+      if (etag != null) 'etag': etag,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (deletedAt != null) 'deleted_at': deletedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  EventsCompanion copyWith({
+    Value<String>? id,
+    Value<String>? accountId,
+    Value<String>? calendarId,
+    Value<String>? providerId,
+    Value<String>? title,
+    Value<String?>? body,
+    Value<int>? startEpochMs,
+    Value<int>? endEpochMs,
+    Value<bool>? allDay,
+    Value<String?>? location,
+    Value<String?>? rrule,
+    Value<int?>? reminderMinutes,
+    Value<String?>? etag,
+    Value<int>? updatedAt,
+    Value<int?>? deletedAt,
+    Value<int>? rowid,
+  }) {
+    return EventsCompanion(
+      id: id ?? this.id,
+      accountId: accountId ?? this.accountId,
+      calendarId: calendarId ?? this.calendarId,
+      providerId: providerId ?? this.providerId,
+      title: title ?? this.title,
+      body: body ?? this.body,
+      startEpochMs: startEpochMs ?? this.startEpochMs,
+      endEpochMs: endEpochMs ?? this.endEpochMs,
+      allDay: allDay ?? this.allDay,
+      location: location ?? this.location,
+      rrule: rrule ?? this.rrule,
+      reminderMinutes: reminderMinutes ?? this.reminderMinutes,
+      etag: etag ?? this.etag,
+      updatedAt: updatedAt ?? this.updatedAt,
+      deletedAt: deletedAt ?? this.deletedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (accountId.present) {
+      map['account_id'] = Variable<String>(accountId.value);
+    }
+    if (calendarId.present) {
+      map['calendar_id'] = Variable<String>(calendarId.value);
+    }
+    if (providerId.present) {
+      map['provider_id'] = Variable<String>(providerId.value);
+    }
+    if (title.present) {
+      map['title'] = Variable<String>(title.value);
+    }
+    if (body.present) {
+      map['body'] = Variable<String>(body.value);
+    }
+    if (startEpochMs.present) {
+      map['start_epoch_ms'] = Variable<int>(startEpochMs.value);
+    }
+    if (endEpochMs.present) {
+      map['end_epoch_ms'] = Variable<int>(endEpochMs.value);
+    }
+    if (allDay.present) {
+      map['all_day'] = Variable<bool>(allDay.value);
+    }
+    if (location.present) {
+      map['location'] = Variable<String>(location.value);
+    }
+    if (rrule.present) {
+      map['rrule'] = Variable<String>(rrule.value);
+    }
+    if (reminderMinutes.present) {
+      map['reminder_minutes'] = Variable<int>(reminderMinutes.value);
+    }
+    if (etag.present) {
+      map['etag'] = Variable<String>(etag.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<int>(updatedAt.value);
+    }
+    if (deletedAt.present) {
+      map['deleted_at'] = Variable<int>(deletedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('EventsCompanion(')
+          ..write('id: $id, ')
+          ..write('accountId: $accountId, ')
+          ..write('calendarId: $calendarId, ')
+          ..write('providerId: $providerId, ')
+          ..write('title: $title, ')
+          ..write('body: $body, ')
+          ..write('startEpochMs: $startEpochMs, ')
+          ..write('endEpochMs: $endEpochMs, ')
+          ..write('allDay: $allDay, ')
+          ..write('location: $location, ')
+          ..write('rrule: $rrule, ')
+          ..write('reminderMinutes: $reminderMinutes, ')
+          ..write('etag: $etag, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('deletedAt: $deletedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $EventAttendeesTable extends EventAttendees
+    with TableInfo<$EventAttendeesTable, EventAttendeeRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $EventAttendeesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _eventIdMeta = const VerificationMeta(
+    'eventId',
+  );
+  @override
+  late final GeneratedColumn<String> eventId = GeneratedColumn<String>(
+    'event_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES events (id)',
+    ),
+  );
+  static const VerificationMeta _emailMeta = const VerificationMeta('email');
+  @override
+  late final GeneratedColumn<String> email = GeneratedColumn<String>(
+    'email',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _displayNameMeta = const VerificationMeta(
+    'displayName',
+  );
+  @override
+  late final GeneratedColumn<String> displayName = GeneratedColumn<String>(
+    'display_name',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _responseStatusMeta = const VerificationMeta(
+    'responseStatus',
+  );
+  @override
+  late final GeneratedColumn<String> responseStatus = GeneratedColumn<String>(
+    'response_status',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('none'),
+  );
+  static const VerificationMeta _isOrganizerMeta = const VerificationMeta(
+    'isOrganizer',
+  );
+  @override
+  late final GeneratedColumn<bool> isOrganizer = GeneratedColumn<bool>(
+    'is_organizer',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_organizer" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    eventId,
+    email,
+    displayName,
+    responseStatus,
+    isOrganizer,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'event_attendees';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<EventAttendeeRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('event_id')) {
+      context.handle(
+        _eventIdMeta,
+        eventId.isAcceptableOrUnknown(data['event_id']!, _eventIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_eventIdMeta);
+    }
+    if (data.containsKey('email')) {
+      context.handle(
+        _emailMeta,
+        email.isAcceptableOrUnknown(data['email']!, _emailMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_emailMeta);
+    }
+    if (data.containsKey('display_name')) {
+      context.handle(
+        _displayNameMeta,
+        displayName.isAcceptableOrUnknown(
+          data['display_name']!,
+          _displayNameMeta,
+        ),
+      );
+    }
+    if (data.containsKey('response_status')) {
+      context.handle(
+        _responseStatusMeta,
+        responseStatus.isAcceptableOrUnknown(
+          data['response_status']!,
+          _responseStatusMeta,
+        ),
+      );
+    }
+    if (data.containsKey('is_organizer')) {
+      context.handle(
+        _isOrganizerMeta,
+        isOrganizer.isAcceptableOrUnknown(
+          data['is_organizer']!,
+          _isOrganizerMeta,
+        ),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  EventAttendeeRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return EventAttendeeRow(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      eventId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}event_id'],
+      )!,
+      email: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}email'],
+      )!,
+      displayName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}display_name'],
+      ),
+      responseStatus: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}response_status'],
+      )!,
+      isOrganizer: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_organizer'],
+      )!,
+    );
+  }
+
+  @override
+  $EventAttendeesTable createAlias(String alias) {
+    return $EventAttendeesTable(attachedDatabase, alias);
+  }
+}
+
+class EventAttendeeRow extends DataClass
+    implements Insertable<EventAttendeeRow> {
+  final String id;
+  final String eventId;
+  final String email;
+  final String? displayName;
+  final String responseStatus;
+  final bool isOrganizer;
+  const EventAttendeeRow({
+    required this.id,
+    required this.eventId,
+    required this.email,
+    this.displayName,
+    required this.responseStatus,
+    required this.isOrganizer,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['event_id'] = Variable<String>(eventId);
+    map['email'] = Variable<String>(email);
+    if (!nullToAbsent || displayName != null) {
+      map['display_name'] = Variable<String>(displayName);
+    }
+    map['response_status'] = Variable<String>(responseStatus);
+    map['is_organizer'] = Variable<bool>(isOrganizer);
+    return map;
+  }
+
+  EventAttendeesCompanion toCompanion(bool nullToAbsent) {
+    return EventAttendeesCompanion(
+      id: Value(id),
+      eventId: Value(eventId),
+      email: Value(email),
+      displayName: displayName == null && nullToAbsent
+          ? const Value.absent()
+          : Value(displayName),
+      responseStatus: Value(responseStatus),
+      isOrganizer: Value(isOrganizer),
+    );
+  }
+
+  factory EventAttendeeRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return EventAttendeeRow(
+      id: serializer.fromJson<String>(json['id']),
+      eventId: serializer.fromJson<String>(json['eventId']),
+      email: serializer.fromJson<String>(json['email']),
+      displayName: serializer.fromJson<String?>(json['displayName']),
+      responseStatus: serializer.fromJson<String>(json['responseStatus']),
+      isOrganizer: serializer.fromJson<bool>(json['isOrganizer']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'eventId': serializer.toJson<String>(eventId),
+      'email': serializer.toJson<String>(email),
+      'displayName': serializer.toJson<String?>(displayName),
+      'responseStatus': serializer.toJson<String>(responseStatus),
+      'isOrganizer': serializer.toJson<bool>(isOrganizer),
+    };
+  }
+
+  EventAttendeeRow copyWith({
+    String? id,
+    String? eventId,
+    String? email,
+    Value<String?> displayName = const Value.absent(),
+    String? responseStatus,
+    bool? isOrganizer,
+  }) => EventAttendeeRow(
+    id: id ?? this.id,
+    eventId: eventId ?? this.eventId,
+    email: email ?? this.email,
+    displayName: displayName.present ? displayName.value : this.displayName,
+    responseStatus: responseStatus ?? this.responseStatus,
+    isOrganizer: isOrganizer ?? this.isOrganizer,
+  );
+  EventAttendeeRow copyWithCompanion(EventAttendeesCompanion data) {
+    return EventAttendeeRow(
+      id: data.id.present ? data.id.value : this.id,
+      eventId: data.eventId.present ? data.eventId.value : this.eventId,
+      email: data.email.present ? data.email.value : this.email,
+      displayName: data.displayName.present
+          ? data.displayName.value
+          : this.displayName,
+      responseStatus: data.responseStatus.present
+          ? data.responseStatus.value
+          : this.responseStatus,
+      isOrganizer: data.isOrganizer.present
+          ? data.isOrganizer.value
+          : this.isOrganizer,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('EventAttendeeRow(')
+          ..write('id: $id, ')
+          ..write('eventId: $eventId, ')
+          ..write('email: $email, ')
+          ..write('displayName: $displayName, ')
+          ..write('responseStatus: $responseStatus, ')
+          ..write('isOrganizer: $isOrganizer')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(id, eventId, email, displayName, responseStatus, isOrganizer);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is EventAttendeeRow &&
+          other.id == this.id &&
+          other.eventId == this.eventId &&
+          other.email == this.email &&
+          other.displayName == this.displayName &&
+          other.responseStatus == this.responseStatus &&
+          other.isOrganizer == this.isOrganizer);
+}
+
+class EventAttendeesCompanion extends UpdateCompanion<EventAttendeeRow> {
+  final Value<String> id;
+  final Value<String> eventId;
+  final Value<String> email;
+  final Value<String?> displayName;
+  final Value<String> responseStatus;
+  final Value<bool> isOrganizer;
+  final Value<int> rowid;
+  const EventAttendeesCompanion({
+    this.id = const Value.absent(),
+    this.eventId = const Value.absent(),
+    this.email = const Value.absent(),
+    this.displayName = const Value.absent(),
+    this.responseStatus = const Value.absent(),
+    this.isOrganizer = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  EventAttendeesCompanion.insert({
+    required String id,
+    required String eventId,
+    required String email,
+    this.displayName = const Value.absent(),
+    this.responseStatus = const Value.absent(),
+    this.isOrganizer = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       eventId = Value(eventId),
+       email = Value(email);
+  static Insertable<EventAttendeeRow> custom({
+    Expression<String>? id,
+    Expression<String>? eventId,
+    Expression<String>? email,
+    Expression<String>? displayName,
+    Expression<String>? responseStatus,
+    Expression<bool>? isOrganizer,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (eventId != null) 'event_id': eventId,
+      if (email != null) 'email': email,
+      if (displayName != null) 'display_name': displayName,
+      if (responseStatus != null) 'response_status': responseStatus,
+      if (isOrganizer != null) 'is_organizer': isOrganizer,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  EventAttendeesCompanion copyWith({
+    Value<String>? id,
+    Value<String>? eventId,
+    Value<String>? email,
+    Value<String?>? displayName,
+    Value<String>? responseStatus,
+    Value<bool>? isOrganizer,
+    Value<int>? rowid,
+  }) {
+    return EventAttendeesCompanion(
+      id: id ?? this.id,
+      eventId: eventId ?? this.eventId,
+      email: email ?? this.email,
+      displayName: displayName ?? this.displayName,
+      responseStatus: responseStatus ?? this.responseStatus,
+      isOrganizer: isOrganizer ?? this.isOrganizer,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (eventId.present) {
+      map['event_id'] = Variable<String>(eventId.value);
+    }
+    if (email.present) {
+      map['email'] = Variable<String>(email.value);
+    }
+    if (displayName.present) {
+      map['display_name'] = Variable<String>(displayName.value);
+    }
+    if (responseStatus.present) {
+      map['response_status'] = Variable<String>(responseStatus.value);
+    }
+    if (isOrganizer.present) {
+      map['is_organizer'] = Variable<bool>(isOrganizer.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('EventAttendeesCompanion(')
+          ..write('id: $id, ')
+          ..write('eventId: $eventId, ')
+          ..write('email: $email, ')
+          ..write('displayName: $displayName, ')
+          ..write('responseStatus: $responseStatus, ')
+          ..write('isOrganizer: $isOrganizer, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$SynesisDatabase extends GeneratedDatabase {
   _$SynesisDatabase(QueryExecutor e) : super(e);
   $SynesisDatabaseManager get managers => $SynesisDatabaseManager(this);
@@ -8001,6 +11799,13 @@ abstract class _$SynesisDatabase extends GeneratedDatabase {
     this,
   );
   late final $CustomThemesTable customThemes = $CustomThemesTable(this);
+  late final $ContactListsTable contactLists = $ContactListsTable(this);
+  late final $ContactsTable contacts = $ContactsTable(this);
+  late final $ContactEmailsTable contactEmails = $ContactEmailsTable(this);
+  late final $ContactPhonesTable contactPhones = $ContactPhonesTable(this);
+  late final $CalendarsTable calendars = $CalendarsTable(this);
+  late final $EventsTable events = $EventsTable(this);
+  late final $EventAttendeesTable eventAttendees = $EventAttendeesTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -8021,6 +11826,13 @@ abstract class _$SynesisDatabase extends GeneratedDatabase {
     accountSignatureAssets,
     messageTemplates,
     customThemes,
+    contactLists,
+    contacts,
+    contactEmails,
+    contactPhones,
+    calendars,
+    events,
+    eventAttendees,
   ];
 }
 
@@ -8245,6 +12057,79 @@ final class $$AccountsTableReferences
     final cache = $_typedResult.readTableOrNull(
       _messageTemplatesRefsTable($_db),
     );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$ContactListsTable, List<ContactListRow>>
+  _contactListsRefsTable(_$SynesisDatabase db) => MultiTypedResultKey.fromTable(
+    db.contactLists,
+    aliasName: 'accounts__id__contact_lists__account_id',
+  );
+
+  $$ContactListsTableProcessedTableManager get contactListsRefs {
+    final manager = $$ContactListsTableTableManager(
+      $_db,
+      $_db.contactLists,
+    ).filter((f) => f.accountId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_contactListsRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$ContactsTable, List<ContactRow>>
+  _contactsRefsTable(_$SynesisDatabase db) => MultiTypedResultKey.fromTable(
+    db.contacts,
+    aliasName: 'accounts__id__contacts__account_id',
+  );
+
+  $$ContactsTableProcessedTableManager get contactsRefs {
+    final manager = $$ContactsTableTableManager(
+      $_db,
+      $_db.contacts,
+    ).filter((f) => f.accountId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_contactsRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$CalendarsTable, List<CalendarRow>>
+  _calendarsRefsTable(_$SynesisDatabase db) => MultiTypedResultKey.fromTable(
+    db.calendars,
+    aliasName: 'accounts__id__calendars__account_id',
+  );
+
+  $$CalendarsTableProcessedTableManager get calendarsRefs {
+    final manager = $$CalendarsTableTableManager(
+      $_db,
+      $_db.calendars,
+    ).filter((f) => f.accountId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_calendarsRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$EventsTable, List<EventRow>> _eventsRefsTable(
+    _$SynesisDatabase db,
+  ) => MultiTypedResultKey.fromTable(
+    db.events,
+    aliasName: 'accounts__id__events__account_id',
+  );
+
+  $$EventsTableProcessedTableManager get eventsRefs {
+    final manager = $$EventsTableTableManager(
+      $_db,
+      $_db.events,
+    ).filter((f) => f.accountId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_eventsRefsTable($_db));
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
     );
@@ -8551,6 +12436,106 @@ class $$AccountsTableFilterComposer
           }) => $$MessageTemplatesTableFilterComposer(
             $db: $db,
             $table: $db.messageTemplates,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> contactListsRefs(
+    Expression<bool> Function($$ContactListsTableFilterComposer f) f,
+  ) {
+    final $$ContactListsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.contactLists,
+      getReferencedColumn: (t) => t.accountId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ContactListsTableFilterComposer(
+            $db: $db,
+            $table: $db.contactLists,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> contactsRefs(
+    Expression<bool> Function($$ContactsTableFilterComposer f) f,
+  ) {
+    final $$ContactsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.contacts,
+      getReferencedColumn: (t) => t.accountId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ContactsTableFilterComposer(
+            $db: $db,
+            $table: $db.contacts,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> calendarsRefs(
+    Expression<bool> Function($$CalendarsTableFilterComposer f) f,
+  ) {
+    final $$CalendarsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.calendars,
+      getReferencedColumn: (t) => t.accountId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$CalendarsTableFilterComposer(
+            $db: $db,
+            $table: $db.calendars,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> eventsRefs(
+    Expression<bool> Function($$EventsTableFilterComposer f) f,
+  ) {
+    final $$EventsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.events,
+      getReferencedColumn: (t) => t.accountId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$EventsTableFilterComposer(
+            $db: $db,
+            $table: $db.events,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -8924,6 +12909,106 @@ class $$AccountsTableAnnotationComposer
     );
     return f(composer);
   }
+
+  Expression<T> contactListsRefs<T extends Object>(
+    Expression<T> Function($$ContactListsTableAnnotationComposer a) f,
+  ) {
+    final $$ContactListsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.contactLists,
+      getReferencedColumn: (t) => t.accountId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ContactListsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.contactLists,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<T> contactsRefs<T extends Object>(
+    Expression<T> Function($$ContactsTableAnnotationComposer a) f,
+  ) {
+    final $$ContactsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.contacts,
+      getReferencedColumn: (t) => t.accountId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ContactsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.contacts,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<T> calendarsRefs<T extends Object>(
+    Expression<T> Function($$CalendarsTableAnnotationComposer a) f,
+  ) {
+    final $$CalendarsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.calendars,
+      getReferencedColumn: (t) => t.accountId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$CalendarsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.calendars,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<T> eventsRefs<T extends Object>(
+    Expression<T> Function($$EventsTableAnnotationComposer a) f,
+  ) {
+    final $$EventsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.events,
+      getReferencedColumn: (t) => t.accountId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$EventsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.events,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $$AccountsTableTableManager
@@ -8950,6 +13035,10 @@ class $$AccountsTableTableManager
             bool attachmentBlobsRefs,
             bool accountSignaturesRefs,
             bool messageTemplatesRefs,
+            bool contactListsRefs,
+            bool contactsRefs,
+            bool calendarsRefs,
+            bool eventsRefs,
           })
         > {
   $$AccountsTableTableManager(_$SynesisDatabase db, $AccountsTable table)
@@ -9035,6 +13124,10 @@ class $$AccountsTableTableManager
                 attachmentBlobsRefs = false,
                 accountSignaturesRefs = false,
                 messageTemplatesRefs = false,
+                contactListsRefs = false,
+                contactsRefs = false,
+                calendarsRefs = false,
+                eventsRefs = false,
               }) {
                 return PrefetchHooks(
                   db: db,
@@ -9049,6 +13142,10 @@ class $$AccountsTableTableManager
                     if (attachmentBlobsRefs) db.attachmentBlobs,
                     if (accountSignaturesRefs) db.accountSignatures,
                     if (messageTemplatesRefs) db.messageTemplates,
+                    if (contactListsRefs) db.contactLists,
+                    if (contactsRefs) db.contacts,
+                    if (calendarsRefs) db.calendars,
+                    if (eventsRefs) db.events,
                   ],
                   addJoins: null,
                   getPrefetchedDataCallback: (items) async {
@@ -9255,6 +13352,90 @@ class $$AccountsTableTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (contactListsRefs)
+                        await $_getPrefetchedData<
+                          Account,
+                          $AccountsTable,
+                          ContactListRow
+                        >(
+                          currentTable: table,
+                          referencedTable: $$AccountsTableReferences
+                              ._contactListsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$AccountsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).contactListsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.accountId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (contactsRefs)
+                        await $_getPrefetchedData<
+                          Account,
+                          $AccountsTable,
+                          ContactRow
+                        >(
+                          currentTable: table,
+                          referencedTable: $$AccountsTableReferences
+                              ._contactsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$AccountsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).contactsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.accountId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (calendarsRefs)
+                        await $_getPrefetchedData<
+                          Account,
+                          $AccountsTable,
+                          CalendarRow
+                        >(
+                          currentTable: table,
+                          referencedTable: $$AccountsTableReferences
+                              ._calendarsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$AccountsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).calendarsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.accountId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (eventsRefs)
+                        await $_getPrefetchedData<
+                          Account,
+                          $AccountsTable,
+                          EventRow
+                        >(
+                          currentTable: table,
+                          referencedTable: $$AccountsTableReferences
+                              ._eventsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$AccountsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).eventsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.accountId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                     ];
                   },
                 );
@@ -9286,6 +13467,10 @@ typedef $$AccountsTableProcessedTableManager =
         bool attachmentBlobsRefs,
         bool accountSignaturesRefs,
         bool messageTemplatesRefs,
+        bool contactListsRefs,
+        bool contactsRefs,
+        bool calendarsRefs,
+        bool eventsRefs,
       })
     >;
 typedef $$FoldersTableCreateCompanionBuilder =
@@ -14595,6 +18780,3400 @@ typedef $$CustomThemesTableProcessedTableManager =
       CustomTheme,
       PrefetchHooks Function()
     >;
+typedef $$ContactListsTableCreateCompanionBuilder =
+    ContactListsCompanion Function({
+      required String id,
+      required String accountId,
+      required String providerId,
+      required String name,
+      Value<int?> colorArgb,
+      Value<bool> isDefault,
+      Value<bool> isSelectedForDisplay,
+      Value<int?> sortIndex,
+      Value<int> rowid,
+    });
+typedef $$ContactListsTableUpdateCompanionBuilder =
+    ContactListsCompanion Function({
+      Value<String> id,
+      Value<String> accountId,
+      Value<String> providerId,
+      Value<String> name,
+      Value<int?> colorArgb,
+      Value<bool> isDefault,
+      Value<bool> isSelectedForDisplay,
+      Value<int?> sortIndex,
+      Value<int> rowid,
+    });
+
+final class $$ContactListsTableReferences
+    extends
+        BaseReferences<_$SynesisDatabase, $ContactListsTable, ContactListRow> {
+  $$ContactListsTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static $AccountsTable _accountIdTable(_$SynesisDatabase db) =>
+      db.accounts.createAlias('contact_lists__account_id__accounts__id');
+
+  $$AccountsTableProcessedTableManager get accountId {
+    final $_column = $_itemColumn<String>('account_id')!;
+
+    final manager = $$AccountsTableTableManager(
+      $_db,
+      $_db.accounts,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_accountIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static MultiTypedResultKey<$ContactsTable, List<ContactRow>>
+  _contactsRefsTable(_$SynesisDatabase db) => MultiTypedResultKey.fromTable(
+    db.contacts,
+    aliasName: 'contact_lists__id__contacts__contact_list_id',
+  );
+
+  $$ContactsTableProcessedTableManager get contactsRefs {
+    final manager = $$ContactsTableTableManager(
+      $_db,
+      $_db.contacts,
+    ).filter((f) => f.contactListId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_contactsRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+}
+
+class $$ContactListsTableFilterComposer
+    extends Composer<_$SynesisDatabase, $ContactListsTable> {
+  $$ContactListsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get providerId => $composableBuilder(
+    column: $table.providerId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get colorArgb => $composableBuilder(
+    column: $table.colorArgb,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isDefault => $composableBuilder(
+    column: $table.isDefault,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isSelectedForDisplay => $composableBuilder(
+    column: $table.isSelectedForDisplay,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get sortIndex => $composableBuilder(
+    column: $table.sortIndex,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$AccountsTableFilterComposer get accountId {
+    final $$AccountsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.accountId,
+      referencedTable: $db.accounts,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$AccountsTableFilterComposer(
+            $db: $db,
+            $table: $db.accounts,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  Expression<bool> contactsRefs(
+    Expression<bool> Function($$ContactsTableFilterComposer f) f,
+  ) {
+    final $$ContactsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.contacts,
+      getReferencedColumn: (t) => t.contactListId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ContactsTableFilterComposer(
+            $db: $db,
+            $table: $db.contacts,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$ContactListsTableOrderingComposer
+    extends Composer<_$SynesisDatabase, $ContactListsTable> {
+  $$ContactListsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get providerId => $composableBuilder(
+    column: $table.providerId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get colorArgb => $composableBuilder(
+    column: $table.colorArgb,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isDefault => $composableBuilder(
+    column: $table.isDefault,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isSelectedForDisplay => $composableBuilder(
+    column: $table.isSelectedForDisplay,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get sortIndex => $composableBuilder(
+    column: $table.sortIndex,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$AccountsTableOrderingComposer get accountId {
+    final $$AccountsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.accountId,
+      referencedTable: $db.accounts,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$AccountsTableOrderingComposer(
+            $db: $db,
+            $table: $db.accounts,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$ContactListsTableAnnotationComposer
+    extends Composer<_$SynesisDatabase, $ContactListsTable> {
+  $$ContactListsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get providerId => $composableBuilder(
+    column: $table.providerId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<int> get colorArgb =>
+      $composableBuilder(column: $table.colorArgb, builder: (column) => column);
+
+  GeneratedColumn<bool> get isDefault =>
+      $composableBuilder(column: $table.isDefault, builder: (column) => column);
+
+  GeneratedColumn<bool> get isSelectedForDisplay => $composableBuilder(
+    column: $table.isSelectedForDisplay,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get sortIndex =>
+      $composableBuilder(column: $table.sortIndex, builder: (column) => column);
+
+  $$AccountsTableAnnotationComposer get accountId {
+    final $$AccountsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.accountId,
+      referencedTable: $db.accounts,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$AccountsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.accounts,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  Expression<T> contactsRefs<T extends Object>(
+    Expression<T> Function($$ContactsTableAnnotationComposer a) f,
+  ) {
+    final $$ContactsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.contacts,
+      getReferencedColumn: (t) => t.contactListId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ContactsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.contacts,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$ContactListsTableTableManager
+    extends
+        RootTableManager<
+          _$SynesisDatabase,
+          $ContactListsTable,
+          ContactListRow,
+          $$ContactListsTableFilterComposer,
+          $$ContactListsTableOrderingComposer,
+          $$ContactListsTableAnnotationComposer,
+          $$ContactListsTableCreateCompanionBuilder,
+          $$ContactListsTableUpdateCompanionBuilder,
+          (ContactListRow, $$ContactListsTableReferences),
+          ContactListRow,
+          PrefetchHooks Function({bool accountId, bool contactsRefs})
+        > {
+  $$ContactListsTableTableManager(
+    _$SynesisDatabase db,
+    $ContactListsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$ContactListsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$ContactListsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$ContactListsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> accountId = const Value.absent(),
+                Value<String> providerId = const Value.absent(),
+                Value<String> name = const Value.absent(),
+                Value<int?> colorArgb = const Value.absent(),
+                Value<bool> isDefault = const Value.absent(),
+                Value<bool> isSelectedForDisplay = const Value.absent(),
+                Value<int?> sortIndex = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ContactListsCompanion(
+                id: id,
+                accountId: accountId,
+                providerId: providerId,
+                name: name,
+                colorArgb: colorArgb,
+                isDefault: isDefault,
+                isSelectedForDisplay: isSelectedForDisplay,
+                sortIndex: sortIndex,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String accountId,
+                required String providerId,
+                required String name,
+                Value<int?> colorArgb = const Value.absent(),
+                Value<bool> isDefault = const Value.absent(),
+                Value<bool> isSelectedForDisplay = const Value.absent(),
+                Value<int?> sortIndex = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ContactListsCompanion.insert(
+                id: id,
+                accountId: accountId,
+                providerId: providerId,
+                name: name,
+                colorArgb: colorArgb,
+                isDefault: isDefault,
+                isSelectedForDisplay: isSelectedForDisplay,
+                sortIndex: sortIndex,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$ContactListsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({accountId = false, contactsRefs = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [if (contactsRefs) db.contacts],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (accountId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.accountId,
+                                referencedTable: $$ContactListsTableReferences
+                                    ._accountIdTable(db),
+                                referencedColumn: $$ContactListsTableReferences
+                                    ._accountIdTable(db)
+                                    .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [
+                  if (contactsRefs)
+                    await $_getPrefetchedData<
+                      ContactListRow,
+                      $ContactListsTable,
+                      ContactRow
+                    >(
+                      currentTable: table,
+                      referencedTable: $$ContactListsTableReferences
+                          ._contactsRefsTable(db),
+                      managerFromTypedResult: (p0) =>
+                          $$ContactListsTableReferences(
+                            db,
+                            table,
+                            p0,
+                          ).contactsRefs,
+                      referencedItemsForCurrentItem: (item, referencedItems) =>
+                          referencedItems.where(
+                            (e) => e.contactListId == item.id,
+                          ),
+                      typedResults: items,
+                    ),
+                ];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$ContactListsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$SynesisDatabase,
+      $ContactListsTable,
+      ContactListRow,
+      $$ContactListsTableFilterComposer,
+      $$ContactListsTableOrderingComposer,
+      $$ContactListsTableAnnotationComposer,
+      $$ContactListsTableCreateCompanionBuilder,
+      $$ContactListsTableUpdateCompanionBuilder,
+      (ContactListRow, $$ContactListsTableReferences),
+      ContactListRow,
+      PrefetchHooks Function({bool accountId, bool contactsRefs})
+    >;
+typedef $$ContactsTableCreateCompanionBuilder =
+    ContactsCompanion Function({
+      required String id,
+      required String accountId,
+      required String contactListId,
+      required String providerId,
+      required String displayName,
+      Value<String?> givenName,
+      Value<String?> familyName,
+      Value<String?> company,
+      Value<String?> notes,
+      Value<String?> etag,
+      required int updatedAt,
+      Value<int?> deletedAt,
+      Value<int> rowid,
+    });
+typedef $$ContactsTableUpdateCompanionBuilder =
+    ContactsCompanion Function({
+      Value<String> id,
+      Value<String> accountId,
+      Value<String> contactListId,
+      Value<String> providerId,
+      Value<String> displayName,
+      Value<String?> givenName,
+      Value<String?> familyName,
+      Value<String?> company,
+      Value<String?> notes,
+      Value<String?> etag,
+      Value<int> updatedAt,
+      Value<int?> deletedAt,
+      Value<int> rowid,
+    });
+
+final class $$ContactsTableReferences
+    extends BaseReferences<_$SynesisDatabase, $ContactsTable, ContactRow> {
+  $$ContactsTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static $AccountsTable _accountIdTable(_$SynesisDatabase db) =>
+      db.accounts.createAlias('contacts__account_id__accounts__id');
+
+  $$AccountsTableProcessedTableManager get accountId {
+    final $_column = $_itemColumn<String>('account_id')!;
+
+    final manager = $$AccountsTableTableManager(
+      $_db,
+      $_db.accounts,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_accountIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $ContactListsTable _contactListIdTable(_$SynesisDatabase db) => db
+      .contactLists
+      .createAlias('contacts__contact_list_id__contact_lists__id');
+
+  $$ContactListsTableProcessedTableManager get contactListId {
+    final $_column = $_itemColumn<String>('contact_list_id')!;
+
+    final manager = $$ContactListsTableTableManager(
+      $_db,
+      $_db.contactLists,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_contactListIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static MultiTypedResultKey<$ContactEmailsTable, List<ContactEmailRow>>
+  _contactEmailsRefsTable(_$SynesisDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.contactEmails,
+        aliasName: 'contacts__id__contact_emails__contact_id',
+      );
+
+  $$ContactEmailsTableProcessedTableManager get contactEmailsRefs {
+    final manager = $$ContactEmailsTableTableManager(
+      $_db,
+      $_db.contactEmails,
+    ).filter((f) => f.contactId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_contactEmailsRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$ContactPhonesTable, List<ContactPhoneRow>>
+  _contactPhonesRefsTable(_$SynesisDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.contactPhones,
+        aliasName: 'contacts__id__contact_phones__contact_id',
+      );
+
+  $$ContactPhonesTableProcessedTableManager get contactPhonesRefs {
+    final manager = $$ContactPhonesTableTableManager(
+      $_db,
+      $_db.contactPhones,
+    ).filter((f) => f.contactId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_contactPhonesRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+}
+
+class $$ContactsTableFilterComposer
+    extends Composer<_$SynesisDatabase, $ContactsTable> {
+  $$ContactsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get providerId => $composableBuilder(
+    column: $table.providerId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get displayName => $composableBuilder(
+    column: $table.displayName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get givenName => $composableBuilder(
+    column: $table.givenName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get familyName => $composableBuilder(
+    column: $table.familyName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get company => $composableBuilder(
+    column: $table.company,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get notes => $composableBuilder(
+    column: $table.notes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get etag => $composableBuilder(
+    column: $table.etag,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get deletedAt => $composableBuilder(
+    column: $table.deletedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$AccountsTableFilterComposer get accountId {
+    final $$AccountsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.accountId,
+      referencedTable: $db.accounts,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$AccountsTableFilterComposer(
+            $db: $db,
+            $table: $db.accounts,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$ContactListsTableFilterComposer get contactListId {
+    final $$ContactListsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.contactListId,
+      referencedTable: $db.contactLists,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ContactListsTableFilterComposer(
+            $db: $db,
+            $table: $db.contactLists,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  Expression<bool> contactEmailsRefs(
+    Expression<bool> Function($$ContactEmailsTableFilterComposer f) f,
+  ) {
+    final $$ContactEmailsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.contactEmails,
+      getReferencedColumn: (t) => t.contactId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ContactEmailsTableFilterComposer(
+            $db: $db,
+            $table: $db.contactEmails,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> contactPhonesRefs(
+    Expression<bool> Function($$ContactPhonesTableFilterComposer f) f,
+  ) {
+    final $$ContactPhonesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.contactPhones,
+      getReferencedColumn: (t) => t.contactId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ContactPhonesTableFilterComposer(
+            $db: $db,
+            $table: $db.contactPhones,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$ContactsTableOrderingComposer
+    extends Composer<_$SynesisDatabase, $ContactsTable> {
+  $$ContactsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get providerId => $composableBuilder(
+    column: $table.providerId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get displayName => $composableBuilder(
+    column: $table.displayName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get givenName => $composableBuilder(
+    column: $table.givenName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get familyName => $composableBuilder(
+    column: $table.familyName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get company => $composableBuilder(
+    column: $table.company,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get notes => $composableBuilder(
+    column: $table.notes,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get etag => $composableBuilder(
+    column: $table.etag,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get deletedAt => $composableBuilder(
+    column: $table.deletedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$AccountsTableOrderingComposer get accountId {
+    final $$AccountsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.accountId,
+      referencedTable: $db.accounts,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$AccountsTableOrderingComposer(
+            $db: $db,
+            $table: $db.accounts,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$ContactListsTableOrderingComposer get contactListId {
+    final $$ContactListsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.contactListId,
+      referencedTable: $db.contactLists,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ContactListsTableOrderingComposer(
+            $db: $db,
+            $table: $db.contactLists,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$ContactsTableAnnotationComposer
+    extends Composer<_$SynesisDatabase, $ContactsTable> {
+  $$ContactsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get providerId => $composableBuilder(
+    column: $table.providerId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get displayName => $composableBuilder(
+    column: $table.displayName,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get givenName =>
+      $composableBuilder(column: $table.givenName, builder: (column) => column);
+
+  GeneratedColumn<String> get familyName => $composableBuilder(
+    column: $table.familyName,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get company =>
+      $composableBuilder(column: $table.company, builder: (column) => column);
+
+  GeneratedColumn<String> get notes =>
+      $composableBuilder(column: $table.notes, builder: (column) => column);
+
+  GeneratedColumn<String> get etag =>
+      $composableBuilder(column: $table.etag, builder: (column) => column);
+
+  GeneratedColumn<int> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  GeneratedColumn<int> get deletedAt =>
+      $composableBuilder(column: $table.deletedAt, builder: (column) => column);
+
+  $$AccountsTableAnnotationComposer get accountId {
+    final $$AccountsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.accountId,
+      referencedTable: $db.accounts,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$AccountsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.accounts,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$ContactListsTableAnnotationComposer get contactListId {
+    final $$ContactListsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.contactListId,
+      referencedTable: $db.contactLists,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ContactListsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.contactLists,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  Expression<T> contactEmailsRefs<T extends Object>(
+    Expression<T> Function($$ContactEmailsTableAnnotationComposer a) f,
+  ) {
+    final $$ContactEmailsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.contactEmails,
+      getReferencedColumn: (t) => t.contactId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ContactEmailsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.contactEmails,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<T> contactPhonesRefs<T extends Object>(
+    Expression<T> Function($$ContactPhonesTableAnnotationComposer a) f,
+  ) {
+    final $$ContactPhonesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.contactPhones,
+      getReferencedColumn: (t) => t.contactId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ContactPhonesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.contactPhones,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$ContactsTableTableManager
+    extends
+        RootTableManager<
+          _$SynesisDatabase,
+          $ContactsTable,
+          ContactRow,
+          $$ContactsTableFilterComposer,
+          $$ContactsTableOrderingComposer,
+          $$ContactsTableAnnotationComposer,
+          $$ContactsTableCreateCompanionBuilder,
+          $$ContactsTableUpdateCompanionBuilder,
+          (ContactRow, $$ContactsTableReferences),
+          ContactRow,
+          PrefetchHooks Function({
+            bool accountId,
+            bool contactListId,
+            bool contactEmailsRefs,
+            bool contactPhonesRefs,
+          })
+        > {
+  $$ContactsTableTableManager(_$SynesisDatabase db, $ContactsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$ContactsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$ContactsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$ContactsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> accountId = const Value.absent(),
+                Value<String> contactListId = const Value.absent(),
+                Value<String> providerId = const Value.absent(),
+                Value<String> displayName = const Value.absent(),
+                Value<String?> givenName = const Value.absent(),
+                Value<String?> familyName = const Value.absent(),
+                Value<String?> company = const Value.absent(),
+                Value<String?> notes = const Value.absent(),
+                Value<String?> etag = const Value.absent(),
+                Value<int> updatedAt = const Value.absent(),
+                Value<int?> deletedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ContactsCompanion(
+                id: id,
+                accountId: accountId,
+                contactListId: contactListId,
+                providerId: providerId,
+                displayName: displayName,
+                givenName: givenName,
+                familyName: familyName,
+                company: company,
+                notes: notes,
+                etag: etag,
+                updatedAt: updatedAt,
+                deletedAt: deletedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String accountId,
+                required String contactListId,
+                required String providerId,
+                required String displayName,
+                Value<String?> givenName = const Value.absent(),
+                Value<String?> familyName = const Value.absent(),
+                Value<String?> company = const Value.absent(),
+                Value<String?> notes = const Value.absent(),
+                Value<String?> etag = const Value.absent(),
+                required int updatedAt,
+                Value<int?> deletedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ContactsCompanion.insert(
+                id: id,
+                accountId: accountId,
+                contactListId: contactListId,
+                providerId: providerId,
+                displayName: displayName,
+                givenName: givenName,
+                familyName: familyName,
+                company: company,
+                notes: notes,
+                etag: etag,
+                updatedAt: updatedAt,
+                deletedAt: deletedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$ContactsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback:
+              ({
+                accountId = false,
+                contactListId = false,
+                contactEmailsRefs = false,
+                contactPhonesRefs = false,
+              }) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [
+                    if (contactEmailsRefs) db.contactEmails,
+                    if (contactPhonesRefs) db.contactPhones,
+                  ],
+                  addJoins:
+                      <
+                        T extends TableManagerState<
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic
+                        >
+                      >(state) {
+                        if (accountId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.accountId,
+                                    referencedTable: $$ContactsTableReferences
+                                        ._accountIdTable(db),
+                                    referencedColumn: $$ContactsTableReferences
+                                        ._accountIdTable(db)
+                                        .id,
+                                  )
+                                  as T;
+                        }
+                        if (contactListId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.contactListId,
+                                    referencedTable: $$ContactsTableReferences
+                                        ._contactListIdTable(db),
+                                    referencedColumn: $$ContactsTableReferences
+                                        ._contactListIdTable(db)
+                                        .id,
+                                  )
+                                  as T;
+                        }
+
+                        return state;
+                      },
+                  getPrefetchedDataCallback: (items) async {
+                    return [
+                      if (contactEmailsRefs)
+                        await $_getPrefetchedData<
+                          ContactRow,
+                          $ContactsTable,
+                          ContactEmailRow
+                        >(
+                          currentTable: table,
+                          referencedTable: $$ContactsTableReferences
+                              ._contactEmailsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$ContactsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).contactEmailsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.contactId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (contactPhonesRefs)
+                        await $_getPrefetchedData<
+                          ContactRow,
+                          $ContactsTable,
+                          ContactPhoneRow
+                        >(
+                          currentTable: table,
+                          referencedTable: $$ContactsTableReferences
+                              ._contactPhonesRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$ContactsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).contactPhonesRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.contactId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                    ];
+                  },
+                );
+              },
+        ),
+      );
+}
+
+typedef $$ContactsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$SynesisDatabase,
+      $ContactsTable,
+      ContactRow,
+      $$ContactsTableFilterComposer,
+      $$ContactsTableOrderingComposer,
+      $$ContactsTableAnnotationComposer,
+      $$ContactsTableCreateCompanionBuilder,
+      $$ContactsTableUpdateCompanionBuilder,
+      (ContactRow, $$ContactsTableReferences),
+      ContactRow,
+      PrefetchHooks Function({
+        bool accountId,
+        bool contactListId,
+        bool contactEmailsRefs,
+        bool contactPhonesRefs,
+      })
+    >;
+typedef $$ContactEmailsTableCreateCompanionBuilder =
+    ContactEmailsCompanion Function({
+      required String id,
+      required String contactId,
+      required String address,
+      Value<String> type,
+      Value<bool> isPrimary,
+      Value<int> rowid,
+    });
+typedef $$ContactEmailsTableUpdateCompanionBuilder =
+    ContactEmailsCompanion Function({
+      Value<String> id,
+      Value<String> contactId,
+      Value<String> address,
+      Value<String> type,
+      Value<bool> isPrimary,
+      Value<int> rowid,
+    });
+
+final class $$ContactEmailsTableReferences
+    extends
+        BaseReferences<
+          _$SynesisDatabase,
+          $ContactEmailsTable,
+          ContactEmailRow
+        > {
+  $$ContactEmailsTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $ContactsTable _contactIdTable(_$SynesisDatabase db) =>
+      db.contacts.createAlias('contact_emails__contact_id__contacts__id');
+
+  $$ContactsTableProcessedTableManager get contactId {
+    final $_column = $_itemColumn<String>('contact_id')!;
+
+    final manager = $$ContactsTableTableManager(
+      $_db,
+      $_db.contacts,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_contactIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$ContactEmailsTableFilterComposer
+    extends Composer<_$SynesisDatabase, $ContactEmailsTable> {
+  $$ContactEmailsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get address => $composableBuilder(
+    column: $table.address,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get type => $composableBuilder(
+    column: $table.type,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isPrimary => $composableBuilder(
+    column: $table.isPrimary,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$ContactsTableFilterComposer get contactId {
+    final $$ContactsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.contactId,
+      referencedTable: $db.contacts,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ContactsTableFilterComposer(
+            $db: $db,
+            $table: $db.contacts,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$ContactEmailsTableOrderingComposer
+    extends Composer<_$SynesisDatabase, $ContactEmailsTable> {
+  $$ContactEmailsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get address => $composableBuilder(
+    column: $table.address,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get type => $composableBuilder(
+    column: $table.type,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isPrimary => $composableBuilder(
+    column: $table.isPrimary,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$ContactsTableOrderingComposer get contactId {
+    final $$ContactsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.contactId,
+      referencedTable: $db.contacts,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ContactsTableOrderingComposer(
+            $db: $db,
+            $table: $db.contacts,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$ContactEmailsTableAnnotationComposer
+    extends Composer<_$SynesisDatabase, $ContactEmailsTable> {
+  $$ContactEmailsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get address =>
+      $composableBuilder(column: $table.address, builder: (column) => column);
+
+  GeneratedColumn<String> get type =>
+      $composableBuilder(column: $table.type, builder: (column) => column);
+
+  GeneratedColumn<bool> get isPrimary =>
+      $composableBuilder(column: $table.isPrimary, builder: (column) => column);
+
+  $$ContactsTableAnnotationComposer get contactId {
+    final $$ContactsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.contactId,
+      referencedTable: $db.contacts,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ContactsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.contacts,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$ContactEmailsTableTableManager
+    extends
+        RootTableManager<
+          _$SynesisDatabase,
+          $ContactEmailsTable,
+          ContactEmailRow,
+          $$ContactEmailsTableFilterComposer,
+          $$ContactEmailsTableOrderingComposer,
+          $$ContactEmailsTableAnnotationComposer,
+          $$ContactEmailsTableCreateCompanionBuilder,
+          $$ContactEmailsTableUpdateCompanionBuilder,
+          (ContactEmailRow, $$ContactEmailsTableReferences),
+          ContactEmailRow,
+          PrefetchHooks Function({bool contactId})
+        > {
+  $$ContactEmailsTableTableManager(
+    _$SynesisDatabase db,
+    $ContactEmailsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$ContactEmailsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$ContactEmailsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$ContactEmailsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> contactId = const Value.absent(),
+                Value<String> address = const Value.absent(),
+                Value<String> type = const Value.absent(),
+                Value<bool> isPrimary = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ContactEmailsCompanion(
+                id: id,
+                contactId: contactId,
+                address: address,
+                type: type,
+                isPrimary: isPrimary,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String contactId,
+                required String address,
+                Value<String> type = const Value.absent(),
+                Value<bool> isPrimary = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ContactEmailsCompanion.insert(
+                id: id,
+                contactId: contactId,
+                address: address,
+                type: type,
+                isPrimary: isPrimary,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$ContactEmailsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({contactId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (contactId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.contactId,
+                                referencedTable: $$ContactEmailsTableReferences
+                                    ._contactIdTable(db),
+                                referencedColumn: $$ContactEmailsTableReferences
+                                    ._contactIdTable(db)
+                                    .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$ContactEmailsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$SynesisDatabase,
+      $ContactEmailsTable,
+      ContactEmailRow,
+      $$ContactEmailsTableFilterComposer,
+      $$ContactEmailsTableOrderingComposer,
+      $$ContactEmailsTableAnnotationComposer,
+      $$ContactEmailsTableCreateCompanionBuilder,
+      $$ContactEmailsTableUpdateCompanionBuilder,
+      (ContactEmailRow, $$ContactEmailsTableReferences),
+      ContactEmailRow,
+      PrefetchHooks Function({bool contactId})
+    >;
+typedef $$ContactPhonesTableCreateCompanionBuilder =
+    ContactPhonesCompanion Function({
+      required String id,
+      required String contactId,
+      required String number,
+      Value<String> type,
+      Value<int> rowid,
+    });
+typedef $$ContactPhonesTableUpdateCompanionBuilder =
+    ContactPhonesCompanion Function({
+      Value<String> id,
+      Value<String> contactId,
+      Value<String> number,
+      Value<String> type,
+      Value<int> rowid,
+    });
+
+final class $$ContactPhonesTableReferences
+    extends
+        BaseReferences<
+          _$SynesisDatabase,
+          $ContactPhonesTable,
+          ContactPhoneRow
+        > {
+  $$ContactPhonesTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $ContactsTable _contactIdTable(_$SynesisDatabase db) =>
+      db.contacts.createAlias('contact_phones__contact_id__contacts__id');
+
+  $$ContactsTableProcessedTableManager get contactId {
+    final $_column = $_itemColumn<String>('contact_id')!;
+
+    final manager = $$ContactsTableTableManager(
+      $_db,
+      $_db.contacts,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_contactIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$ContactPhonesTableFilterComposer
+    extends Composer<_$SynesisDatabase, $ContactPhonesTable> {
+  $$ContactPhonesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get number => $composableBuilder(
+    column: $table.number,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get type => $composableBuilder(
+    column: $table.type,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$ContactsTableFilterComposer get contactId {
+    final $$ContactsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.contactId,
+      referencedTable: $db.contacts,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ContactsTableFilterComposer(
+            $db: $db,
+            $table: $db.contacts,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$ContactPhonesTableOrderingComposer
+    extends Composer<_$SynesisDatabase, $ContactPhonesTable> {
+  $$ContactPhonesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get number => $composableBuilder(
+    column: $table.number,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get type => $composableBuilder(
+    column: $table.type,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$ContactsTableOrderingComposer get contactId {
+    final $$ContactsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.contactId,
+      referencedTable: $db.contacts,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ContactsTableOrderingComposer(
+            $db: $db,
+            $table: $db.contacts,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$ContactPhonesTableAnnotationComposer
+    extends Composer<_$SynesisDatabase, $ContactPhonesTable> {
+  $$ContactPhonesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get number =>
+      $composableBuilder(column: $table.number, builder: (column) => column);
+
+  GeneratedColumn<String> get type =>
+      $composableBuilder(column: $table.type, builder: (column) => column);
+
+  $$ContactsTableAnnotationComposer get contactId {
+    final $$ContactsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.contactId,
+      referencedTable: $db.contacts,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ContactsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.contacts,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$ContactPhonesTableTableManager
+    extends
+        RootTableManager<
+          _$SynesisDatabase,
+          $ContactPhonesTable,
+          ContactPhoneRow,
+          $$ContactPhonesTableFilterComposer,
+          $$ContactPhonesTableOrderingComposer,
+          $$ContactPhonesTableAnnotationComposer,
+          $$ContactPhonesTableCreateCompanionBuilder,
+          $$ContactPhonesTableUpdateCompanionBuilder,
+          (ContactPhoneRow, $$ContactPhonesTableReferences),
+          ContactPhoneRow,
+          PrefetchHooks Function({bool contactId})
+        > {
+  $$ContactPhonesTableTableManager(
+    _$SynesisDatabase db,
+    $ContactPhonesTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$ContactPhonesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$ContactPhonesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$ContactPhonesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> contactId = const Value.absent(),
+                Value<String> number = const Value.absent(),
+                Value<String> type = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ContactPhonesCompanion(
+                id: id,
+                contactId: contactId,
+                number: number,
+                type: type,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String contactId,
+                required String number,
+                Value<String> type = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ContactPhonesCompanion.insert(
+                id: id,
+                contactId: contactId,
+                number: number,
+                type: type,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$ContactPhonesTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({contactId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (contactId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.contactId,
+                                referencedTable: $$ContactPhonesTableReferences
+                                    ._contactIdTable(db),
+                                referencedColumn: $$ContactPhonesTableReferences
+                                    ._contactIdTable(db)
+                                    .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$ContactPhonesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$SynesisDatabase,
+      $ContactPhonesTable,
+      ContactPhoneRow,
+      $$ContactPhonesTableFilterComposer,
+      $$ContactPhonesTableOrderingComposer,
+      $$ContactPhonesTableAnnotationComposer,
+      $$ContactPhonesTableCreateCompanionBuilder,
+      $$ContactPhonesTableUpdateCompanionBuilder,
+      (ContactPhoneRow, $$ContactPhonesTableReferences),
+      ContactPhoneRow,
+      PrefetchHooks Function({bool contactId})
+    >;
+typedef $$CalendarsTableCreateCompanionBuilder =
+    CalendarsCompanion Function({
+      required String id,
+      required String accountId,
+      required String providerId,
+      required String name,
+      required int colorArgb,
+      Value<int?> colorOverrideArgb,
+      Value<bool> isDefault,
+      Value<bool> isSelectedForDisplay,
+      Value<int?> sortIndex,
+      Value<int> rowid,
+    });
+typedef $$CalendarsTableUpdateCompanionBuilder =
+    CalendarsCompanion Function({
+      Value<String> id,
+      Value<String> accountId,
+      Value<String> providerId,
+      Value<String> name,
+      Value<int> colorArgb,
+      Value<int?> colorOverrideArgb,
+      Value<bool> isDefault,
+      Value<bool> isSelectedForDisplay,
+      Value<int?> sortIndex,
+      Value<int> rowid,
+    });
+
+final class $$CalendarsTableReferences
+    extends BaseReferences<_$SynesisDatabase, $CalendarsTable, CalendarRow> {
+  $$CalendarsTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static $AccountsTable _accountIdTable(_$SynesisDatabase db) =>
+      db.accounts.createAlias('calendars__account_id__accounts__id');
+
+  $$AccountsTableProcessedTableManager get accountId {
+    final $_column = $_itemColumn<String>('account_id')!;
+
+    final manager = $$AccountsTableTableManager(
+      $_db,
+      $_db.accounts,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_accountIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static MultiTypedResultKey<$EventsTable, List<EventRow>> _eventsRefsTable(
+    _$SynesisDatabase db,
+  ) => MultiTypedResultKey.fromTable(
+    db.events,
+    aliasName: 'calendars__id__events__calendar_id',
+  );
+
+  $$EventsTableProcessedTableManager get eventsRefs {
+    final manager = $$EventsTableTableManager(
+      $_db,
+      $_db.events,
+    ).filter((f) => f.calendarId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_eventsRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+}
+
+class $$CalendarsTableFilterComposer
+    extends Composer<_$SynesisDatabase, $CalendarsTable> {
+  $$CalendarsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get providerId => $composableBuilder(
+    column: $table.providerId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get colorArgb => $composableBuilder(
+    column: $table.colorArgb,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get colorOverrideArgb => $composableBuilder(
+    column: $table.colorOverrideArgb,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isDefault => $composableBuilder(
+    column: $table.isDefault,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isSelectedForDisplay => $composableBuilder(
+    column: $table.isSelectedForDisplay,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get sortIndex => $composableBuilder(
+    column: $table.sortIndex,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$AccountsTableFilterComposer get accountId {
+    final $$AccountsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.accountId,
+      referencedTable: $db.accounts,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$AccountsTableFilterComposer(
+            $db: $db,
+            $table: $db.accounts,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  Expression<bool> eventsRefs(
+    Expression<bool> Function($$EventsTableFilterComposer f) f,
+  ) {
+    final $$EventsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.events,
+      getReferencedColumn: (t) => t.calendarId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$EventsTableFilterComposer(
+            $db: $db,
+            $table: $db.events,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$CalendarsTableOrderingComposer
+    extends Composer<_$SynesisDatabase, $CalendarsTable> {
+  $$CalendarsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get providerId => $composableBuilder(
+    column: $table.providerId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get colorArgb => $composableBuilder(
+    column: $table.colorArgb,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get colorOverrideArgb => $composableBuilder(
+    column: $table.colorOverrideArgb,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isDefault => $composableBuilder(
+    column: $table.isDefault,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isSelectedForDisplay => $composableBuilder(
+    column: $table.isSelectedForDisplay,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get sortIndex => $composableBuilder(
+    column: $table.sortIndex,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$AccountsTableOrderingComposer get accountId {
+    final $$AccountsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.accountId,
+      referencedTable: $db.accounts,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$AccountsTableOrderingComposer(
+            $db: $db,
+            $table: $db.accounts,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$CalendarsTableAnnotationComposer
+    extends Composer<_$SynesisDatabase, $CalendarsTable> {
+  $$CalendarsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get providerId => $composableBuilder(
+    column: $table.providerId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<int> get colorArgb =>
+      $composableBuilder(column: $table.colorArgb, builder: (column) => column);
+
+  GeneratedColumn<int> get colorOverrideArgb => $composableBuilder(
+    column: $table.colorOverrideArgb,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get isDefault =>
+      $composableBuilder(column: $table.isDefault, builder: (column) => column);
+
+  GeneratedColumn<bool> get isSelectedForDisplay => $composableBuilder(
+    column: $table.isSelectedForDisplay,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get sortIndex =>
+      $composableBuilder(column: $table.sortIndex, builder: (column) => column);
+
+  $$AccountsTableAnnotationComposer get accountId {
+    final $$AccountsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.accountId,
+      referencedTable: $db.accounts,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$AccountsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.accounts,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  Expression<T> eventsRefs<T extends Object>(
+    Expression<T> Function($$EventsTableAnnotationComposer a) f,
+  ) {
+    final $$EventsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.events,
+      getReferencedColumn: (t) => t.calendarId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$EventsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.events,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$CalendarsTableTableManager
+    extends
+        RootTableManager<
+          _$SynesisDatabase,
+          $CalendarsTable,
+          CalendarRow,
+          $$CalendarsTableFilterComposer,
+          $$CalendarsTableOrderingComposer,
+          $$CalendarsTableAnnotationComposer,
+          $$CalendarsTableCreateCompanionBuilder,
+          $$CalendarsTableUpdateCompanionBuilder,
+          (CalendarRow, $$CalendarsTableReferences),
+          CalendarRow,
+          PrefetchHooks Function({bool accountId, bool eventsRefs})
+        > {
+  $$CalendarsTableTableManager(_$SynesisDatabase db, $CalendarsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$CalendarsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$CalendarsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$CalendarsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> accountId = const Value.absent(),
+                Value<String> providerId = const Value.absent(),
+                Value<String> name = const Value.absent(),
+                Value<int> colorArgb = const Value.absent(),
+                Value<int?> colorOverrideArgb = const Value.absent(),
+                Value<bool> isDefault = const Value.absent(),
+                Value<bool> isSelectedForDisplay = const Value.absent(),
+                Value<int?> sortIndex = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => CalendarsCompanion(
+                id: id,
+                accountId: accountId,
+                providerId: providerId,
+                name: name,
+                colorArgb: colorArgb,
+                colorOverrideArgb: colorOverrideArgb,
+                isDefault: isDefault,
+                isSelectedForDisplay: isSelectedForDisplay,
+                sortIndex: sortIndex,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String accountId,
+                required String providerId,
+                required String name,
+                required int colorArgb,
+                Value<int?> colorOverrideArgb = const Value.absent(),
+                Value<bool> isDefault = const Value.absent(),
+                Value<bool> isSelectedForDisplay = const Value.absent(),
+                Value<int?> sortIndex = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => CalendarsCompanion.insert(
+                id: id,
+                accountId: accountId,
+                providerId: providerId,
+                name: name,
+                colorArgb: colorArgb,
+                colorOverrideArgb: colorOverrideArgb,
+                isDefault: isDefault,
+                isSelectedForDisplay: isSelectedForDisplay,
+                sortIndex: sortIndex,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$CalendarsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({accountId = false, eventsRefs = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [if (eventsRefs) db.events],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (accountId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.accountId,
+                                referencedTable: $$CalendarsTableReferences
+                                    ._accountIdTable(db),
+                                referencedColumn: $$CalendarsTableReferences
+                                    ._accountIdTable(db)
+                                    .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [
+                  if (eventsRefs)
+                    await $_getPrefetchedData<
+                      CalendarRow,
+                      $CalendarsTable,
+                      EventRow
+                    >(
+                      currentTable: table,
+                      referencedTable: $$CalendarsTableReferences
+                          ._eventsRefsTable(db),
+                      managerFromTypedResult: (p0) =>
+                          $$CalendarsTableReferences(db, table, p0).eventsRefs,
+                      referencedItemsForCurrentItem: (item, referencedItems) =>
+                          referencedItems.where((e) => e.calendarId == item.id),
+                      typedResults: items,
+                    ),
+                ];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$CalendarsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$SynesisDatabase,
+      $CalendarsTable,
+      CalendarRow,
+      $$CalendarsTableFilterComposer,
+      $$CalendarsTableOrderingComposer,
+      $$CalendarsTableAnnotationComposer,
+      $$CalendarsTableCreateCompanionBuilder,
+      $$CalendarsTableUpdateCompanionBuilder,
+      (CalendarRow, $$CalendarsTableReferences),
+      CalendarRow,
+      PrefetchHooks Function({bool accountId, bool eventsRefs})
+    >;
+typedef $$EventsTableCreateCompanionBuilder =
+    EventsCompanion Function({
+      required String id,
+      required String accountId,
+      required String calendarId,
+      required String providerId,
+      required String title,
+      Value<String?> body,
+      required int startEpochMs,
+      required int endEpochMs,
+      Value<bool> allDay,
+      Value<String?> location,
+      Value<String?> rrule,
+      Value<int?> reminderMinutes,
+      Value<String?> etag,
+      required int updatedAt,
+      Value<int?> deletedAt,
+      Value<int> rowid,
+    });
+typedef $$EventsTableUpdateCompanionBuilder =
+    EventsCompanion Function({
+      Value<String> id,
+      Value<String> accountId,
+      Value<String> calendarId,
+      Value<String> providerId,
+      Value<String> title,
+      Value<String?> body,
+      Value<int> startEpochMs,
+      Value<int> endEpochMs,
+      Value<bool> allDay,
+      Value<String?> location,
+      Value<String?> rrule,
+      Value<int?> reminderMinutes,
+      Value<String?> etag,
+      Value<int> updatedAt,
+      Value<int?> deletedAt,
+      Value<int> rowid,
+    });
+
+final class $$EventsTableReferences
+    extends BaseReferences<_$SynesisDatabase, $EventsTable, EventRow> {
+  $$EventsTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static $AccountsTable _accountIdTable(_$SynesisDatabase db) =>
+      db.accounts.createAlias('events__account_id__accounts__id');
+
+  $$AccountsTableProcessedTableManager get accountId {
+    final $_column = $_itemColumn<String>('account_id')!;
+
+    final manager = $$AccountsTableTableManager(
+      $_db,
+      $_db.accounts,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_accountIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $CalendarsTable _calendarIdTable(_$SynesisDatabase db) =>
+      db.calendars.createAlias('events__calendar_id__calendars__id');
+
+  $$CalendarsTableProcessedTableManager get calendarId {
+    final $_column = $_itemColumn<String>('calendar_id')!;
+
+    final manager = $$CalendarsTableTableManager(
+      $_db,
+      $_db.calendars,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_calendarIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static MultiTypedResultKey<$EventAttendeesTable, List<EventAttendeeRow>>
+  _eventAttendeesRefsTable(_$SynesisDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.eventAttendees,
+        aliasName: 'events__id__event_attendees__event_id',
+      );
+
+  $$EventAttendeesTableProcessedTableManager get eventAttendeesRefs {
+    final manager = $$EventAttendeesTableTableManager(
+      $_db,
+      $_db.eventAttendees,
+    ).filter((f) => f.eventId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_eventAttendeesRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+}
+
+class $$EventsTableFilterComposer
+    extends Composer<_$SynesisDatabase, $EventsTable> {
+  $$EventsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get providerId => $composableBuilder(
+    column: $table.providerId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get title => $composableBuilder(
+    column: $table.title,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get body => $composableBuilder(
+    column: $table.body,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get startEpochMs => $composableBuilder(
+    column: $table.startEpochMs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get endEpochMs => $composableBuilder(
+    column: $table.endEpochMs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get allDay => $composableBuilder(
+    column: $table.allDay,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get location => $composableBuilder(
+    column: $table.location,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get rrule => $composableBuilder(
+    column: $table.rrule,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get reminderMinutes => $composableBuilder(
+    column: $table.reminderMinutes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get etag => $composableBuilder(
+    column: $table.etag,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get deletedAt => $composableBuilder(
+    column: $table.deletedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$AccountsTableFilterComposer get accountId {
+    final $$AccountsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.accountId,
+      referencedTable: $db.accounts,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$AccountsTableFilterComposer(
+            $db: $db,
+            $table: $db.accounts,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$CalendarsTableFilterComposer get calendarId {
+    final $$CalendarsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.calendarId,
+      referencedTable: $db.calendars,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$CalendarsTableFilterComposer(
+            $db: $db,
+            $table: $db.calendars,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  Expression<bool> eventAttendeesRefs(
+    Expression<bool> Function($$EventAttendeesTableFilterComposer f) f,
+  ) {
+    final $$EventAttendeesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.eventAttendees,
+      getReferencedColumn: (t) => t.eventId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$EventAttendeesTableFilterComposer(
+            $db: $db,
+            $table: $db.eventAttendees,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$EventsTableOrderingComposer
+    extends Composer<_$SynesisDatabase, $EventsTable> {
+  $$EventsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get providerId => $composableBuilder(
+    column: $table.providerId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get title => $composableBuilder(
+    column: $table.title,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get body => $composableBuilder(
+    column: $table.body,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get startEpochMs => $composableBuilder(
+    column: $table.startEpochMs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get endEpochMs => $composableBuilder(
+    column: $table.endEpochMs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get allDay => $composableBuilder(
+    column: $table.allDay,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get location => $composableBuilder(
+    column: $table.location,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get rrule => $composableBuilder(
+    column: $table.rrule,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get reminderMinutes => $composableBuilder(
+    column: $table.reminderMinutes,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get etag => $composableBuilder(
+    column: $table.etag,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get deletedAt => $composableBuilder(
+    column: $table.deletedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$AccountsTableOrderingComposer get accountId {
+    final $$AccountsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.accountId,
+      referencedTable: $db.accounts,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$AccountsTableOrderingComposer(
+            $db: $db,
+            $table: $db.accounts,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$CalendarsTableOrderingComposer get calendarId {
+    final $$CalendarsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.calendarId,
+      referencedTable: $db.calendars,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$CalendarsTableOrderingComposer(
+            $db: $db,
+            $table: $db.calendars,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$EventsTableAnnotationComposer
+    extends Composer<_$SynesisDatabase, $EventsTable> {
+  $$EventsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get providerId => $composableBuilder(
+    column: $table.providerId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get title =>
+      $composableBuilder(column: $table.title, builder: (column) => column);
+
+  GeneratedColumn<String> get body =>
+      $composableBuilder(column: $table.body, builder: (column) => column);
+
+  GeneratedColumn<int> get startEpochMs => $composableBuilder(
+    column: $table.startEpochMs,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get endEpochMs => $composableBuilder(
+    column: $table.endEpochMs,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get allDay =>
+      $composableBuilder(column: $table.allDay, builder: (column) => column);
+
+  GeneratedColumn<String> get location =>
+      $composableBuilder(column: $table.location, builder: (column) => column);
+
+  GeneratedColumn<String> get rrule =>
+      $composableBuilder(column: $table.rrule, builder: (column) => column);
+
+  GeneratedColumn<int> get reminderMinutes => $composableBuilder(
+    column: $table.reminderMinutes,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get etag =>
+      $composableBuilder(column: $table.etag, builder: (column) => column);
+
+  GeneratedColumn<int> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  GeneratedColumn<int> get deletedAt =>
+      $composableBuilder(column: $table.deletedAt, builder: (column) => column);
+
+  $$AccountsTableAnnotationComposer get accountId {
+    final $$AccountsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.accountId,
+      referencedTable: $db.accounts,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$AccountsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.accounts,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$CalendarsTableAnnotationComposer get calendarId {
+    final $$CalendarsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.calendarId,
+      referencedTable: $db.calendars,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$CalendarsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.calendars,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  Expression<T> eventAttendeesRefs<T extends Object>(
+    Expression<T> Function($$EventAttendeesTableAnnotationComposer a) f,
+  ) {
+    final $$EventAttendeesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.eventAttendees,
+      getReferencedColumn: (t) => t.eventId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$EventAttendeesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.eventAttendees,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$EventsTableTableManager
+    extends
+        RootTableManager<
+          _$SynesisDatabase,
+          $EventsTable,
+          EventRow,
+          $$EventsTableFilterComposer,
+          $$EventsTableOrderingComposer,
+          $$EventsTableAnnotationComposer,
+          $$EventsTableCreateCompanionBuilder,
+          $$EventsTableUpdateCompanionBuilder,
+          (EventRow, $$EventsTableReferences),
+          EventRow,
+          PrefetchHooks Function({
+            bool accountId,
+            bool calendarId,
+            bool eventAttendeesRefs,
+          })
+        > {
+  $$EventsTableTableManager(_$SynesisDatabase db, $EventsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$EventsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$EventsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$EventsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> accountId = const Value.absent(),
+                Value<String> calendarId = const Value.absent(),
+                Value<String> providerId = const Value.absent(),
+                Value<String> title = const Value.absent(),
+                Value<String?> body = const Value.absent(),
+                Value<int> startEpochMs = const Value.absent(),
+                Value<int> endEpochMs = const Value.absent(),
+                Value<bool> allDay = const Value.absent(),
+                Value<String?> location = const Value.absent(),
+                Value<String?> rrule = const Value.absent(),
+                Value<int?> reminderMinutes = const Value.absent(),
+                Value<String?> etag = const Value.absent(),
+                Value<int> updatedAt = const Value.absent(),
+                Value<int?> deletedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => EventsCompanion(
+                id: id,
+                accountId: accountId,
+                calendarId: calendarId,
+                providerId: providerId,
+                title: title,
+                body: body,
+                startEpochMs: startEpochMs,
+                endEpochMs: endEpochMs,
+                allDay: allDay,
+                location: location,
+                rrule: rrule,
+                reminderMinutes: reminderMinutes,
+                etag: etag,
+                updatedAt: updatedAt,
+                deletedAt: deletedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String accountId,
+                required String calendarId,
+                required String providerId,
+                required String title,
+                Value<String?> body = const Value.absent(),
+                required int startEpochMs,
+                required int endEpochMs,
+                Value<bool> allDay = const Value.absent(),
+                Value<String?> location = const Value.absent(),
+                Value<String?> rrule = const Value.absent(),
+                Value<int?> reminderMinutes = const Value.absent(),
+                Value<String?> etag = const Value.absent(),
+                required int updatedAt,
+                Value<int?> deletedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => EventsCompanion.insert(
+                id: id,
+                accountId: accountId,
+                calendarId: calendarId,
+                providerId: providerId,
+                title: title,
+                body: body,
+                startEpochMs: startEpochMs,
+                endEpochMs: endEpochMs,
+                allDay: allDay,
+                location: location,
+                rrule: rrule,
+                reminderMinutes: reminderMinutes,
+                etag: etag,
+                updatedAt: updatedAt,
+                deletedAt: deletedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) =>
+                    (e.readTable(table), $$EventsTableReferences(db, table, e)),
+              )
+              .toList(),
+          prefetchHooksCallback:
+              ({
+                accountId = false,
+                calendarId = false,
+                eventAttendeesRefs = false,
+              }) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [
+                    if (eventAttendeesRefs) db.eventAttendees,
+                  ],
+                  addJoins:
+                      <
+                        T extends TableManagerState<
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic
+                        >
+                      >(state) {
+                        if (accountId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.accountId,
+                                    referencedTable: $$EventsTableReferences
+                                        ._accountIdTable(db),
+                                    referencedColumn: $$EventsTableReferences
+                                        ._accountIdTable(db)
+                                        .id,
+                                  )
+                                  as T;
+                        }
+                        if (calendarId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.calendarId,
+                                    referencedTable: $$EventsTableReferences
+                                        ._calendarIdTable(db),
+                                    referencedColumn: $$EventsTableReferences
+                                        ._calendarIdTable(db)
+                                        .id,
+                                  )
+                                  as T;
+                        }
+
+                        return state;
+                      },
+                  getPrefetchedDataCallback: (items) async {
+                    return [
+                      if (eventAttendeesRefs)
+                        await $_getPrefetchedData<
+                          EventRow,
+                          $EventsTable,
+                          EventAttendeeRow
+                        >(
+                          currentTable: table,
+                          referencedTable: $$EventsTableReferences
+                              ._eventAttendeesRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$EventsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).eventAttendeesRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.eventId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                    ];
+                  },
+                );
+              },
+        ),
+      );
+}
+
+typedef $$EventsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$SynesisDatabase,
+      $EventsTable,
+      EventRow,
+      $$EventsTableFilterComposer,
+      $$EventsTableOrderingComposer,
+      $$EventsTableAnnotationComposer,
+      $$EventsTableCreateCompanionBuilder,
+      $$EventsTableUpdateCompanionBuilder,
+      (EventRow, $$EventsTableReferences),
+      EventRow,
+      PrefetchHooks Function({
+        bool accountId,
+        bool calendarId,
+        bool eventAttendeesRefs,
+      })
+    >;
+typedef $$EventAttendeesTableCreateCompanionBuilder =
+    EventAttendeesCompanion Function({
+      required String id,
+      required String eventId,
+      required String email,
+      Value<String?> displayName,
+      Value<String> responseStatus,
+      Value<bool> isOrganizer,
+      Value<int> rowid,
+    });
+typedef $$EventAttendeesTableUpdateCompanionBuilder =
+    EventAttendeesCompanion Function({
+      Value<String> id,
+      Value<String> eventId,
+      Value<String> email,
+      Value<String?> displayName,
+      Value<String> responseStatus,
+      Value<bool> isOrganizer,
+      Value<int> rowid,
+    });
+
+final class $$EventAttendeesTableReferences
+    extends
+        BaseReferences<
+          _$SynesisDatabase,
+          $EventAttendeesTable,
+          EventAttendeeRow
+        > {
+  $$EventAttendeesTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $EventsTable _eventIdTable(_$SynesisDatabase db) =>
+      db.events.createAlias('event_attendees__event_id__events__id');
+
+  $$EventsTableProcessedTableManager get eventId {
+    final $_column = $_itemColumn<String>('event_id')!;
+
+    final manager = $$EventsTableTableManager(
+      $_db,
+      $_db.events,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_eventIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$EventAttendeesTableFilterComposer
+    extends Composer<_$SynesisDatabase, $EventAttendeesTable> {
+  $$EventAttendeesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get email => $composableBuilder(
+    column: $table.email,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get displayName => $composableBuilder(
+    column: $table.displayName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get responseStatus => $composableBuilder(
+    column: $table.responseStatus,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isOrganizer => $composableBuilder(
+    column: $table.isOrganizer,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$EventsTableFilterComposer get eventId {
+    final $$EventsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.eventId,
+      referencedTable: $db.events,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$EventsTableFilterComposer(
+            $db: $db,
+            $table: $db.events,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$EventAttendeesTableOrderingComposer
+    extends Composer<_$SynesisDatabase, $EventAttendeesTable> {
+  $$EventAttendeesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get email => $composableBuilder(
+    column: $table.email,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get displayName => $composableBuilder(
+    column: $table.displayName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get responseStatus => $composableBuilder(
+    column: $table.responseStatus,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isOrganizer => $composableBuilder(
+    column: $table.isOrganizer,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$EventsTableOrderingComposer get eventId {
+    final $$EventsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.eventId,
+      referencedTable: $db.events,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$EventsTableOrderingComposer(
+            $db: $db,
+            $table: $db.events,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$EventAttendeesTableAnnotationComposer
+    extends Composer<_$SynesisDatabase, $EventAttendeesTable> {
+  $$EventAttendeesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get email =>
+      $composableBuilder(column: $table.email, builder: (column) => column);
+
+  GeneratedColumn<String> get displayName => $composableBuilder(
+    column: $table.displayName,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get responseStatus => $composableBuilder(
+    column: $table.responseStatus,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get isOrganizer => $composableBuilder(
+    column: $table.isOrganizer,
+    builder: (column) => column,
+  );
+
+  $$EventsTableAnnotationComposer get eventId {
+    final $$EventsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.eventId,
+      referencedTable: $db.events,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$EventsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.events,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$EventAttendeesTableTableManager
+    extends
+        RootTableManager<
+          _$SynesisDatabase,
+          $EventAttendeesTable,
+          EventAttendeeRow,
+          $$EventAttendeesTableFilterComposer,
+          $$EventAttendeesTableOrderingComposer,
+          $$EventAttendeesTableAnnotationComposer,
+          $$EventAttendeesTableCreateCompanionBuilder,
+          $$EventAttendeesTableUpdateCompanionBuilder,
+          (EventAttendeeRow, $$EventAttendeesTableReferences),
+          EventAttendeeRow,
+          PrefetchHooks Function({bool eventId})
+        > {
+  $$EventAttendeesTableTableManager(
+    _$SynesisDatabase db,
+    $EventAttendeesTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$EventAttendeesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$EventAttendeesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$EventAttendeesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> eventId = const Value.absent(),
+                Value<String> email = const Value.absent(),
+                Value<String?> displayName = const Value.absent(),
+                Value<String> responseStatus = const Value.absent(),
+                Value<bool> isOrganizer = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => EventAttendeesCompanion(
+                id: id,
+                eventId: eventId,
+                email: email,
+                displayName: displayName,
+                responseStatus: responseStatus,
+                isOrganizer: isOrganizer,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String eventId,
+                required String email,
+                Value<String?> displayName = const Value.absent(),
+                Value<String> responseStatus = const Value.absent(),
+                Value<bool> isOrganizer = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => EventAttendeesCompanion.insert(
+                id: id,
+                eventId: eventId,
+                email: email,
+                displayName: displayName,
+                responseStatus: responseStatus,
+                isOrganizer: isOrganizer,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$EventAttendeesTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({eventId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (eventId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.eventId,
+                                referencedTable: $$EventAttendeesTableReferences
+                                    ._eventIdTable(db),
+                                referencedColumn:
+                                    $$EventAttendeesTableReferences
+                                        ._eventIdTable(db)
+                                        .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$EventAttendeesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$SynesisDatabase,
+      $EventAttendeesTable,
+      EventAttendeeRow,
+      $$EventAttendeesTableFilterComposer,
+      $$EventAttendeesTableOrderingComposer,
+      $$EventAttendeesTableAnnotationComposer,
+      $$EventAttendeesTableCreateCompanionBuilder,
+      $$EventAttendeesTableUpdateCompanionBuilder,
+      (EventAttendeeRow, $$EventAttendeesTableReferences),
+      EventAttendeeRow,
+      PrefetchHooks Function({bool eventId})
+    >;
 
 class $SynesisDatabaseManager {
   final _$SynesisDatabase _db;
@@ -14631,4 +22210,18 @@ class $SynesisDatabaseManager {
       $$MessageTemplatesTableTableManager(_db, _db.messageTemplates);
   $$CustomThemesTableTableManager get customThemes =>
       $$CustomThemesTableTableManager(_db, _db.customThemes);
+  $$ContactListsTableTableManager get contactLists =>
+      $$ContactListsTableTableManager(_db, _db.contactLists);
+  $$ContactsTableTableManager get contacts =>
+      $$ContactsTableTableManager(_db, _db.contacts);
+  $$ContactEmailsTableTableManager get contactEmails =>
+      $$ContactEmailsTableTableManager(_db, _db.contactEmails);
+  $$ContactPhonesTableTableManager get contactPhones =>
+      $$ContactPhonesTableTableManager(_db, _db.contactPhones);
+  $$CalendarsTableTableManager get calendars =>
+      $$CalendarsTableTableManager(_db, _db.calendars);
+  $$EventsTableTableManager get events =>
+      $$EventsTableTableManager(_db, _db.events);
+  $$EventAttendeesTableTableManager get eventAttendees =>
+      $$EventAttendeesTableTableManager(_db, _db.eventAttendees);
 }

@@ -25,7 +25,7 @@ Future<SynesisDatabase> _openMemoryDb() async {
 void main() {
   group('schema v5', () {
     test(
-      'fresh database is schema version 6 with new tables and columns',
+      'fresh database is schema version 7 with new tables and columns',
       () async {
         final SynesisDatabase database = await _openMemoryDb();
         addTearDown(database.close);
@@ -33,7 +33,7 @@ void main() {
         final int userVersion =
             (await database.customSelect('PRAGMA user_version').getSingle())
                 .read<int>('user_version');
-        expect(userVersion, 6);
+        expect(userVersion, 7);
 
         final List<String> tableNames =
             (await database
@@ -55,6 +55,10 @@ void main() {
             'account_signature_assets',
             'message_templates',
             'custom_themes',
+            'contact_lists',
+            'contacts',
+            'calendars',
+            'events',
           ]),
         );
 

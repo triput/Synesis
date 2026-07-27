@@ -1,10 +1,10 @@
 // ==============================================================================
 // File: test/schema_migration_v4_to_v5_test.dart
-// Description: Real file-backed SQLite migration from schema v4 to current (v6).
+// Description: Real file-backed SQLite migration from schema v4 to current (v7).
 // Component: Test
-// Version: 1.0 (Gold Master)
+// Version: 1.1 (Gold Master)
 // Created: 2026-07-16
-// Last Update: 2026-07-18
+// Last Update: 2026-07-27
 // ==============================================================================
 
 import 'dart:io';
@@ -151,7 +151,7 @@ CREATE TABLE widget_snapshots (
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  test('opens v4 file database and migrates to current schema (v6)', () async {
+  test('opens v4 file database and migrates to current schema (v7)', () async {
     final Directory tempDir = await Directory.systemTemp.createTemp(
       'synesis_v4_mig_',
     );
@@ -175,7 +175,7 @@ void main() {
     final int userVersion =
         (await database.customSelect('PRAGMA user_version').getSingle())
             .read<int>('user_version');
-    expect(userVersion, 6);
+    expect(userVersion, 7);
 
     final Set<String> messageColumns =
         (await database.customSelect('PRAGMA table_info(messages)').get())
@@ -224,6 +224,13 @@ void main() {
         'account_signature_assets',
         'message_templates',
         'custom_themes',
+        'contact_lists',
+        'contacts',
+        'contact_emails',
+        'contact_phones',
+        'calendars',
+        'events',
+        'event_attendees',
       ]),
     );
 

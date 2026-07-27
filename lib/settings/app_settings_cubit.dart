@@ -2,9 +2,9 @@
 // File: lib/settings/app_settings_cubit.dart
 // Description: Persisted appearance, Focus, retention, and desktop prefs
 // Component: Bloc / Settings
-// Version: 1.3 (Gold Master)
+// Version: 1.4 (Gold Master)
 // Created: 2026-07-14
-// Last Update: 2026-07-23
+// Last Update: 2026-07-27
 // ==============================================================================
 
 import 'dart:convert';
@@ -147,6 +147,10 @@ class AppSettingsCubit extends Cubit<AppSettingsState> {
           autoMarkAsReadSeconds:
               map['autoMarkAsReadSeconds'] as int? ??
                   kAutoMarkAsReadSecondsDefault,
+          calendarViewMode: CalendarViewMode.values.firstWhere(
+            (CalendarViewMode e) => e.name == map['calendarViewMode'],
+            orElse: () => CalendarViewMode.overlay,
+          ),
         ),
       );
     } catch (_) {
@@ -190,6 +194,7 @@ class AppSettingsCubit extends Cubit<AppSettingsState> {
             .map((SavedMessageFilter filter) => filter.toJson())
             .toList(growable: false),
         'autoMarkAsReadSeconds': state.autoMarkAsReadSeconds,
+        'calendarViewMode': state.calendarViewMode.name,
       }),
     );
   }
@@ -314,6 +319,12 @@ class AppSettingsCubit extends Cubit<AppSettingsState> {
   Future<void> setThreadDisplayMode(ThreadDisplayMode mode) async {
     if (state.threadDisplayMode == mode) return;
     emit(state.copyWith(threadDisplayMode: mode));
+    await _persist();
+  }
+
+  Future<void> setCalendarViewMode(CalendarViewMode mode) async {
+    if (state.calendarViewMode == mode) return;
+    emit(state.copyWith(calendarViewMode: mode));
     await _persist();
   }
 

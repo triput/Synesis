@@ -2,9 +2,9 @@
 // File: lib/sync/sync_engine.dart
 // Description: Sequential durable sync-job processor for local-first mail data.
 // Component: Sync
-// Version: 1.2 (Gold Master)
+// Version: 1.3 (Gold Master)
 // Created: 2026-07-14
-// Last Update: 2026-07-24
+// Last Update: 2026-07-27
 // ==============================================================================
 
 import 'dart:async';
@@ -22,6 +22,7 @@ import 'package:synesis/repository/mail_repository.dart';
 import 'package:synesis/outbox/send_error_messages.dart';
 import 'package:synesis/sync/imap_idle_service.dart';
 import 'package:synesis/sync/network_sync_policy.dart';
+import 'package:synesis/sync/pim_sync_jobs.dart';
 import 'package:synesis/widgets/widget_snapshot_service.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/foundation.dart'
@@ -333,6 +334,20 @@ class SyncEngine {
         return null;
       case trashPurgeJobType:
         await _runTrashPurge();
+        return null;
+      // Wave 1 P0: PIM job types — no-op until Graph/CardDAV adapters (Wave 2+).
+      case PimSyncJobs.contactListsBootstrap:
+      case PimSyncJobs.contactListsIncremental:
+      case PimSyncJobs.contactsBootstrap:
+      case PimSyncJobs.contactsIncremental:
+      case PimSyncJobs.calendarsBootstrap:
+      case PimSyncJobs.calendarsIncremental:
+      case PimSyncJobs.eventsBootstrap:
+      case PimSyncJobs.eventsIncremental:
+      case PimSyncJobs.contactsPush:
+      case PimSyncJobs.contactsCopy:
+      case PimSyncJobs.eventsPush:
+      case PimSyncJobs.eventsCopy:
         return null;
       default:
         throw ArgumentError.value(

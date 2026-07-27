@@ -166,6 +166,35 @@ class DriftAccountFolderStore {
       await (_database.delete(
         _database.focusRules,
       )..where((FocusRules table) => table.accountId.equals(accountId))).go();
+      // PIM (Wave 1): child tables before parents.
+      await _database.customStatement(
+        'DELETE FROM event_attendees WHERE event_id IN '
+        '(SELECT id FROM events WHERE account_id = ?)',
+        <Object>[accountId],
+      );
+      await (_database.delete(
+        _database.events,
+      )..where((Events table) => table.accountId.equals(accountId))).go();
+      await (_database.delete(
+        _database.calendars,
+      )..where((Calendars table) => table.accountId.equals(accountId))).go();
+      await _database.customStatement(
+        'DELETE FROM contact_emails WHERE contact_id IN '
+        '(SELECT id FROM contacts WHERE account_id = ?)',
+        <Object>[accountId],
+      );
+      await _database.customStatement(
+        'DELETE FROM contact_phones WHERE contact_id IN '
+        '(SELECT id FROM contacts WHERE account_id = ?)',
+        <Object>[accountId],
+      );
+      await (_database.delete(
+        _database.contacts,
+      )..where((Contacts table) => table.accountId.equals(accountId))).go();
+      await (_database.delete(
+        _database.contactLists,
+      )..where((ContactLists table) => table.accountId.equals(accountId)))
+          .go();
       // Prefer payload accountId match; also catch id-prefixed snapshot rows.
       await _database.customStatement(
         'DELETE FROM widget_snapshots WHERE '

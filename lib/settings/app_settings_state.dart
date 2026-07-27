@@ -2,9 +2,9 @@
 // File: lib/settings/app_settings_state.dart
 // Description: Immutable appearance and Focus preference snapshot
 // Component: Bloc / Settings
-// Version: 1.3 (Gold Master)
+// Version: 1.4 (Gold Master)
 // Created: 2026-07-14
-// Last Update: 2026-07-23
+// Last Update: 2026-07-27
 // ==============================================================================
 
 import 'package:equatable/equatable.dart';
@@ -31,6 +31,15 @@ enum ThreadDisplayMode {
 
   /// One row per message (classic flat inbox).
   flat,
+}
+
+/// How multi-selected calendars are laid out (Wave 1 P0; UI in Wave 5+).
+enum CalendarViewMode {
+  /// Events from selected calendars drawn on one shared timeline.
+  overlay,
+
+  /// Selected calendars shown in parallel columns / lanes.
+  sideBySide,
 }
 
 /// Minimum allowed [AppSettingsState.uiFontSizeScale] (UI-P18).
@@ -102,6 +111,7 @@ class AppSettingsState extends Equatable {
     this.uiTextColorArgb,
     this.savedFilters = const <SavedMessageFilter>[],
     this.autoMarkAsReadSeconds = kAutoMarkAsReadSecondsDefault,
+    this.calendarViewMode = CalendarViewMode.overlay,
   });
 
   final ThemeId themeId;
@@ -193,6 +203,9 @@ class AppSettingsState extends Equatable {
   /// [kAutoMarkAsReadSecondsMax]. `0` disables auto-mark-as-read entirely.
   final int autoMarkAsReadSeconds;
 
+  /// Multi-calendar layout preference (Wave 1 P0; consumed by Wave 5+ UI).
+  final CalendarViewMode calendarViewMode;
+
   /// True when auto-mark-as-read is enabled (non-zero dwell).
   bool get autoMarkAsReadEnabled => autoMarkAsReadSeconds > 0;
 
@@ -251,6 +264,7 @@ class AppSettingsState extends Equatable {
     bool clearUiTextColorArgb = false,
     List<SavedMessageFilter>? savedFilters,
     int? autoMarkAsReadSeconds,
+    CalendarViewMode? calendarViewMode,
   }) {
     return AppSettingsState(
       themeId: themeId ?? this.themeId,
@@ -298,6 +312,7 @@ class AppSettingsState extends Equatable {
       savedFilters: savedFilters ?? this.savedFilters,
       autoMarkAsReadSeconds: (autoMarkAsReadSeconds ?? this.autoMarkAsReadSeconds)
           .clamp(kAutoMarkAsReadSecondsMin, kAutoMarkAsReadSecondsMax),
+      calendarViewMode: calendarViewMode ?? this.calendarViewMode,
     );
   }
 
@@ -333,5 +348,6 @@ class AppSettingsState extends Equatable {
         uiTextColorArgb,
         savedFilters,
         autoMarkAsReadSeconds,
+        calendarViewMode,
       ];
 }

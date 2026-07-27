@@ -194,6 +194,7 @@ class SettingsExportService {
       'uiFontSizeScale': s.uiFontSizeScale,
       'uiTextColorArgb': s.uiTextColorArgb,
       'autoMarkAsReadSeconds': s.autoMarkAsReadSeconds,
+      'calendarViewMode': s.calendarViewMode.name,
     };
   }
 
@@ -292,6 +293,10 @@ class SettingsExportService {
       autoMarkAsReadSeconds:
           map['autoMarkAsReadSeconds'] as int? ??
               kAutoMarkAsReadSecondsDefault,
+      calendarViewMode: CalendarViewMode.values.firstWhere(
+        (CalendarViewMode e) => e.name == map['calendarViewMode'],
+        orElse: () => CalendarViewMode.overlay,
+      ),
     );
   }
 

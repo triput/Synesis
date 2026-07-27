@@ -2,9 +2,9 @@
 // File: lib/repository/database.dart
 // Description: Drift schema and application-support SQLite connection.
 // Component: Data
-// Version: 1.1 (Gold Master)
+// Version: 1.2 (Gold Master)
 // Created: 2026-07-14
-// Last Update: 2026-07-18
+// Last Update: 2026-07-27
 // ==============================================================================
 
 import 'dart:io';
@@ -293,6 +293,146 @@ class CustomThemes extends Table {
   Set<Column<Object>> get primaryKey => <Column<Object>>{id};
 }
 
+/// Address book / contact list (multi-list per account).
+///
+/// Display: [isSelectedForDisplay] defaults true so first sync shows all lists
+/// until the user narrows the People picker (Wave 5+).
+@DataClassName('ContactListRow')
+class ContactLists extends Table {
+  @override
+  String get tableName => 'contact_lists';
+
+  TextColumn get id => text()();
+  TextColumn get accountId => text().references(Accounts, #id)();
+  TextColumn get providerId => text()();
+  TextColumn get name => text()();
+  IntColumn get colorArgb => integer().nullable()();
+  BoolColumn get isDefault => boolean().withDefault(const Constant(false))();
+  BoolColumn get isSelectedForDisplay =>
+      boolean().withDefault(const Constant(true))();
+  IntColumn get sortIndex => integer().nullable()();
+
+  @override
+  Set<Column<Object>> get primaryKey => <Column<Object>>{id};
+}
+
+@DataClassName('ContactRow')
+class Contacts extends Table {
+  @override
+  String get tableName => 'contacts';
+
+  TextColumn get id => text()();
+  TextColumn get accountId => text().references(Accounts, #id)();
+  TextColumn get contactListId => text().references(ContactLists, #id)();
+  TextColumn get providerId => text()();
+  TextColumn get displayName => text()();
+  TextColumn get givenName => text().nullable()();
+  TextColumn get familyName => text().nullable()();
+  TextColumn get company => text().nullable()();
+  TextColumn get notes => text().nullable()();
+  TextColumn get etag => text().nullable()();
+  IntColumn get updatedAt => integer()();
+  IntColumn get deletedAt => integer().nullable()();
+
+  @override
+  Set<Column<Object>> get primaryKey => <Column<Object>>{id};
+}
+
+@DataClassName('ContactEmailRow')
+class ContactEmails extends Table {
+  @override
+  String get tableName => 'contact_emails';
+
+  TextColumn get id => text()();
+  TextColumn get contactId => text().references(Contacts, #id)();
+  TextColumn get address => text()();
+  TextColumn get type => text().withDefault(const Constant('other'))();
+  BoolColumn get isPrimary => boolean().withDefault(const Constant(false))();
+
+  @override
+  Set<Column<Object>> get primaryKey => <Column<Object>>{id};
+}
+
+@DataClassName('ContactPhoneRow')
+class ContactPhones extends Table {
+  @override
+  String get tableName => 'contact_phones';
+
+  TextColumn get id => text()();
+  TextColumn get contactId => text().references(Contacts, #id)();
+  TextColumn get number => text()();
+  TextColumn get type => text().withDefault(const Constant('other'))();
+
+  @override
+  Set<Column<Object>> get primaryKey => <Column<Object>>{id};
+}
+
+/// Calendar collection (multi-calendar per account).
+///
+/// Display: [isSelectedForDisplay] defaults true so first sync shows all
+/// calendars until the user toggles (Wave 5+ calendar chrome).
+@DataClassName('CalendarRow')
+class Calendars extends Table {
+  @override
+  String get tableName => 'calendars';
+
+  TextColumn get id => text()();
+  TextColumn get accountId => text().references(Accounts, #id)();
+  TextColumn get providerId => text()();
+  TextColumn get name => text()();
+  IntColumn get colorArgb => integer()();
+  IntColumn get colorOverrideArgb => integer().nullable()();
+  BoolColumn get isDefault => boolean().withDefault(const Constant(false))();
+  BoolColumn get isSelectedForDisplay =>
+      boolean().withDefault(const Constant(true))();
+  IntColumn get sortIndex => integer().nullable()();
+
+  @override
+  Set<Column<Object>> get primaryKey => <Column<Object>>{id};
+}
+
+@DataClassName('EventRow')
+class Events extends Table {
+  @override
+  String get tableName => 'events';
+
+  TextColumn get id => text()();
+  TextColumn get accountId => text().references(Accounts, #id)();
+  TextColumn get calendarId => text().references(Calendars, #id)();
+  TextColumn get providerId => text()();
+  TextColumn get title => text()();
+  TextColumn get body => text().nullable()();
+  IntColumn get startEpochMs => integer()();
+  IntColumn get endEpochMs => integer()();
+  BoolColumn get allDay => boolean().withDefault(const Constant(false))();
+  TextColumn get location => text().nullable()();
+  TextColumn get rrule => text().nullable()();
+  IntColumn get reminderMinutes => integer().nullable()();
+  TextColumn get etag => text().nullable()();
+  IntColumn get updatedAt => integer()();
+  IntColumn get deletedAt => integer().nullable()();
+
+  @override
+  Set<Column<Object>> get primaryKey => <Column<Object>>{id};
+}
+
+@DataClassName('EventAttendeeRow')
+class EventAttendees extends Table {
+  @override
+  String get tableName => 'event_attendees';
+
+  TextColumn get id => text()();
+  TextColumn get eventId => text().references(Events, #id)();
+  TextColumn get email => text()();
+  TextColumn get displayName => text().nullable()();
+  TextColumn get responseStatus =>
+      text().withDefault(const Constant('none'))();
+  BoolColumn get isOrganizer => boolean().withDefault(const Constant(false))();
+
+  @override
+  Set<Column<Object>> get primaryKey => <Column<Object>>{id};
+}
+
 @DriftDatabase(
   tables: <Type>[
     Accounts,
@@ -310,6 +450,13 @@ class CustomThemes extends Table {
     AccountSignatureAssets,
     MessageTemplates,
     CustomThemes,
+    ContactLists,
+    Contacts,
+    ContactEmails,
+    ContactPhones,
+    Calendars,
+    Events,
+    EventAttendees,
   ],
 )
 class SynesisDatabase extends _$SynesisDatabase {
@@ -318,7 +465,7 @@ class SynesisDatabase extends _$SynesisDatabase {
   factory SynesisDatabase.open() => SynesisDatabase(_openConnection());
 
   @override
-  int get schemaVersion => 6;
+  int get schemaVersion => 7;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -345,6 +492,7 @@ class SynesisDatabase extends _$SynesisDatabase {
         "(new.id, new.subject, new.from_name || ' ' || new.from_address, "
         "COALESCE(new.body, new.snippet)); END",
       );
+      await _createContactFts(this);
       await customStatement(
         'CREATE INDEX messages_account_when ON messages(account_id, when_epoch_ms DESC)',
       );
@@ -364,6 +512,7 @@ class SynesisDatabase extends _$SynesisDatabase {
       await customStatement(
         'CREATE INDEX messages_account_starred ON messages(account_id, starred)',
       );
+      await _createPimIndexes(this);
       await customStatement(
         "INSERT INTO sync_profiles ("
         "id, name, retention_days, folder_scope_json, body_policy, "
@@ -438,7 +587,79 @@ class SynesisDatabase extends _$SynesisDatabase {
         await migrator.addColumn(messages, messages.toRecipients);
         await migrator.addColumn(messages, messages.ccRecipients);
       }
+      if (from < 7) {
+        await migrator.createTable(contactLists);
+        await migrator.createTable(contacts);
+        await migrator.createTable(contactEmails);
+        await migrator.createTable(contactPhones);
+        await migrator.createTable(calendars);
+        await migrator.createTable(events);
+        await migrator.createTable(eventAttendees);
+        await _createContactFts(this);
+        await _createPimIndexes(this);
+      }
     },
+  );
+}
+
+Future<void> _createContactFts(GeneratedDatabase db) async {
+  await db.customStatement(
+    'CREATE VIRTUAL TABLE IF NOT EXISTS contact_fts USING fts5('
+    'contact_id UNINDEXED, display_name, company, notes)',
+  );
+  await db.customStatement(
+    "CREATE TRIGGER IF NOT EXISTS contacts_fts_insert AFTER INSERT ON contacts "
+    'BEGIN '
+    'INSERT INTO contact_fts(contact_id, display_name, company, notes) VALUES '
+    "(new.id, new.display_name, COALESCE(new.company, ''), "
+    "COALESCE(new.notes, '')); END",
+  );
+  await db.customStatement(
+    'CREATE TRIGGER IF NOT EXISTS contacts_fts_delete AFTER DELETE ON contacts '
+    'BEGIN '
+    'DELETE FROM contact_fts WHERE contact_id = old.id; END',
+  );
+  await db.customStatement(
+    "CREATE TRIGGER IF NOT EXISTS contacts_fts_update AFTER UPDATE ON contacts "
+    'BEGIN '
+    'DELETE FROM contact_fts WHERE contact_id = old.id; '
+    'INSERT INTO contact_fts(contact_id, display_name, company, notes) VALUES '
+    "(new.id, new.display_name, COALESCE(new.company, ''), "
+    "COALESCE(new.notes, '')); END",
+  );
+}
+
+Future<void> _createPimIndexes(GeneratedDatabase db) async {
+  await db.customStatement(
+    'CREATE INDEX IF NOT EXISTS contact_lists_account ON '
+    'contact_lists(account_id)',
+  );
+  await db.customStatement(
+    'CREATE INDEX IF NOT EXISTS contacts_account_list ON '
+    'contacts(account_id, contact_list_id)',
+  );
+  await db.customStatement(
+    'CREATE INDEX IF NOT EXISTS contact_emails_contact ON '
+    'contact_emails(contact_id)',
+  );
+  await db.customStatement(
+    'CREATE INDEX IF NOT EXISTS contact_phones_contact ON '
+    'contact_phones(contact_id)',
+  );
+  await db.customStatement(
+    'CREATE INDEX IF NOT EXISTS calendars_account ON calendars(account_id)',
+  );
+  await db.customStatement(
+    'CREATE INDEX IF NOT EXISTS events_calendar_start ON '
+    'events(calendar_id, start_epoch_ms)',
+  );
+  await db.customStatement(
+    'CREATE INDEX IF NOT EXISTS events_account_start ON '
+    'events(account_id, start_epoch_ms)',
+  );
+  await db.customStatement(
+    'CREATE INDEX IF NOT EXISTS event_attendees_event ON '
+    'event_attendees(event_id)',
   );
 }
 
