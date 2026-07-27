@@ -10,36 +10,7 @@
 
 ## Open
 
-> **Changelog (2026-07-27):** Android dogfood folder/drawer polish complete — account chips, folder-picker sheet, title-bar **Show folders** → sheet. DEF-049 Graph reply-header send failure fixed. DEF-050 logged — list right-click mark read (solo vs thread).
-
-### DEF-049 — Graph reply send fails: In-Reply-To not allowed on internetMessageHeaders
-
-| Field | Value |
-| --- | --- |
-| Priority | **Pri-1** |
-| Status | **Fixed** (2026-07-27) |
-| Area | `lib/protocol/graph_mail_provider.dart` (`_buildOutgoingMessage`), `lib/outbox/send_error_messages.dart` |
-| Platforms | Microsoft Graph (Exchange / M365); replies with `inReplyTo` / `references` set |
-| Logged | 2026-07-27 |
-
-**Summary**
-Compose Reply for a Graph account failed with `Send failed: The internet message header name 'In-Reply-To' should start with 'x-' or 'X-'. Check account SMTP settings and try again.` Subject `Re: …`; threading fields present. (Operator initially suspected IMAP/SMTP; the exception text is Graph `InvalidInternetMessageHeader`.)
-
-**Root cause**
-`GraphMailProvider._buildOutgoingMessage` put RFC `In-Reply-To` and `References` into Graph `internetMessageHeaders`. That collection only accepts **custom** headers whose names start with `x-` / `X-`. Standard headers are rejected client-side by Graph before send. IMAP/SMTP path (`buildMultipartMessage`) writing those headers as raw MIME is fine and unrelated. DEF-047 / DEF-048 were SMTP recipient/sender mapping issues — different failure mode.
-
-**Resolution**
-1. Map reply threading to MAPI extended properties (`String 0x1042` In-Reply-To, `String 0x1039` References) via `singleValueExtendedProperties`; do not set standard names on `internetMessageHeaders`.
-2. `actionableSendError`: bucket Graph header-rejection phrases so the UI does not blame "SMTP settings".
-3. Regression tests: Graph sendMail payload shape; error-copy mapping.
-
-**Verification**
-`flutter test test/graph_mail_provider_upload_session_test.dart test/send_error_messages_test.dart` — 14/14 pass.
-
-**Follow-up**
-Ideal long-term: Graph `createReply` / `createReplyAll` when a Graph message id is available (Outlook conversationId threading). Extended properties preserve RFC headers for other clients.
-
----
+> Android dogfood folder/drawer polish (2026-07-27): account chips, folder-picker sheet, title-bar **Show folders** → sheet.
 
 ### DEF-050 — Right-click mark read on message list (solo vs thread)
 
@@ -383,6 +354,35 @@ Enhancement for the next UI pass — not a defect. Pill outbox affordance stays;
 ---
 
 ## Closed
+
+### DEF-049 — Graph reply send fails: In-Reply-To not allowed on internetMessageHeaders
+
+| Field | Value |
+| --- | --- |
+| Priority | **Pri-1** |
+| Status | **Closed** (2026-07-27) |
+| Area | `lib/protocol/graph_mail_provider.dart` (`_buildOutgoingMessage`), `lib/outbox/send_error_messages.dart` |
+| Platforms | Microsoft Graph (Exchange / M365); replies with `inReplyTo` / `references` set |
+| Logged | 2026-07-27 |
+
+**Summary**  
+Compose Reply for a Graph account failed with `Send failed: The internet message header name 'In-Reply-To' should start with 'x-' or 'X-'. Check account SMTP settings and try again.` Subject `Re: …`; threading fields present. (Operator initially suspected IMAP/SMTP; the exception text is Graph `InvalidInternetMessageHeader`.)
+
+**Root cause**  
+`GraphMailProvider._buildOutgoingMessage` put RFC `In-Reply-To` and `References` into Graph `internetMessageHeaders`. That collection only accepts **custom** headers whose names start with `x-` / `X-`. Standard headers are rejected client-side by Graph before send. IMAP/SMTP path (`buildMultipartMessage`) writing those headers as raw MIME is fine and unrelated. DEF-047 / DEF-048 were SMTP recipient/sender mapping issues — different failure mode.
+
+**Resolution**  
+1. Map reply threading to MAPI extended properties (`String 0x1042` In-Reply-To, `String 0x1039` References) via `singleValueExtendedProperties`; do not set standard names on `internetMessageHeaders`.  
+2. `actionableSendError`: bucket Graph header-rejection phrases so the UI does not blame "SMTP settings".  
+3. Regression tests: Graph sendMail payload shape; error-copy mapping.
+
+**Verification**  
+`flutter test test/graph_mail_provider_upload_session_test.dart test/send_error_messages_test.dart` — 14/14 pass. **Operator verified fixed 2026-07-27** (Graph reply send succeeds in dogfood).
+
+**Follow-up**  
+Ideal long-term: Graph `createReply` / `createReplyAll` when a Graph message id is available (Outlook conversationId threading). Extended properties preserve RFC headers for other clients.
+
+---
 
 ### DEF-041 — Message list star/expand chrome steals horizontal space (phone)
 

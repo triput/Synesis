@@ -2,7 +2,7 @@
 
 | Field | Value |
 | --- | --- |
-| Status | **In progress** — **Wave 0** (account identity) kicked off 2026-07-27 |
+| Status | **In progress** — **Wave 0 complete** (2026-07-27); **Wave H** (dependency hygiene) **in progress / next**; V2.0a PIM held until H exits |
 | Headline | Contacts & calendar (TD-A) — not a new phone OS |
 | Prerequisite | V1 exit signed off; **V1.5 complete** ([V1_5_PLAN.md](V1_5_PLAN.md)) |
 | Watch | **P3 → V2.1** (not V2.0 critical path) |
@@ -38,18 +38,36 @@ Local store is provider-agnostic (`contacts` / `events` + sync cursors), same ph
 
 ## 3. Wave 0 — Account identity (A+B hybrid) [pre-PIM gate]
 
-**Status:** In progress (2026-07-27 kickoff). Must land before PIM P0 schema work consumes account UI seams.
+**Status:** **Complete** (2026-07-27). Gate cleared — proceed to Wave H, then V2.0a PIM P0.
 
 | Item | Scope | Notes |
 | --- | --- | --- |
-| **Auto-seed display name (B)** | On add account | Derive friendly display name from email address when none supplied |
-| **User-editable display name (A)** | Edit account + rail | User can override seeded name; **accent color** picker unchanged |
-| **Rail truncation fix** | Account rail / sidebar | End forced single-letter truncation — show readable label (ellipsis only when space-constrained) |
+| **Auto-seed display name (B)** | On add account | Derive friendly display name from email address when none supplied — **landed** |
+| **User-editable display name (A)** | Edit account + rail | User can override seeded name; **accent color** picker unchanged — **landed** |
+| **Rail truncation fix** | Account rail / sidebar | End forced single-letter truncation — show readable label (ellipsis only when space-constrained) — **landed** (includes rail overflow fix) |
 | **Avatar / monogram hover cards (C)** | Deferred | **V-Next / late polish** — not Wave 0 critical path |
 
-**Exit (Wave 0):** New accounts get a sensible default name; existing accounts editable; rail shows multi-character labels; no regression to accent colors or account cap.
+**Exit (Wave 0):** ✅ New accounts get a sensible default name; existing accounts editable; rail shows multi-character labels (no forced single-letter truncation; overflow layout fixed); no regression to accent colors or account cap.
 
-## 4. Implementation order (accepted — option A)
+## 4. Wave H — Dependency hygiene [pre-V2.0a gate]
+
+**Status:** **In progress** (2026-07-27). **Hold Wave 1 / V2.0a PIM P0** until Wave H exits (or a documented quick-scan pass — not requested for V2.0).
+
+Per-version hygiene after V1.5 freeze: toolchain + pub debt + native/plugin skew + docs SDK pins. Checklist: [WAVE_H_DEPENDENCY_HYGIENE.md](WAVE_H_DEPENDENCY_HYGIENE.md).
+
+**Sequence:** Wave 0 → **Wave H** → V2.0a (P0–P2).
+
+| Batch | Scope | Notes |
+| --- | --- | --- |
+| **H1 — SDK pin verify** | Flutter/Dart SDK, `environment.sdk`, README/docs pins | Confirm `flutter doctor`; align SPEC/ROADMAP/README SDK strings with repo |
+| **H2 — Soft upgrades** | Patch/minor `pub get` resolution | Low-risk bumps; no intentional majors in this batch |
+| **H3 — Pub majors** | `pub outdated` major candidates | Drift/build_runner/bloc_test/etc.; land with regression pass |
+| **H4 — Native / KGP / sqlite3mc** | Android Gradle/KGP, plugin native debt, `sqlite3mc` hook, Drift codegen skew | Verify TC-3 cipher hook still builds; run `build_runner` if drift_dev moves; Windows/Android smoke |
+| **H5 — Verify exit** | Full test + build matrix | `flutter test`; Windows + Android debug builds; inventory/docs touch if test count shifts |
+
+**Exit (Wave H):** SDK pins verified and documented; soft + major pub upgrades applied or explicitly deferred with rationale; native/KGP/sqlite3mc path green; Drift codegen matches sources; `flutter test` green; Windows + Android debug builds succeed. Only then open V2.0a P0 (local PIM schema).
+
+## 5. Implementation order (accepted — option A)
 
 ```text
 P0  Local PIM schema + sync job types
@@ -67,17 +85,18 @@ P6  Calendar module UI (month/week, CRUD) wired to local store
 
 **Why CardDAV before CalDAV:** Compose picker + people graph; meeting bridge can use `.ics` + Graph before CalDAV is perfect.
 
-## 5. Wave sketch (product)
+## 6. Wave sketch (product)
 
 | Wave | Scope |
 | --- | --- |
-| **Wave 0** | Account identity (A+B hybrid) — display names, rail labels; pre-PIM gate |
-| **V2.0a** | P0–P2 — schema, Graph PIM sync, meeting-mail bridge |
+| **Wave 0** | Account identity (A+B hybrid) — display names, rail labels — **complete** |
+| **Wave H** | Dependency hygiene — SDK pins, pub soft/majors, native/KGP/sqlite3mc — **in progress** |
+| **V2.0a** | P0–P2 — schema, Graph PIM sync, meeting-mail bridge — **held until Wave H exits** |
 | **V2.0b** | P3–P4 — CardDAV/CalDAV (Runbox dogfood) |
 | **V2.0c** | P5–P6 — picker + Calendar module UI (deep CRUD) |
 | **V2.1** | Watch companion (P3); CalDAV depth / free-busy; Contacts polish |
 
-## 6. Exit criteria (V2.0)
+## 7. Exit criteria (V2.0)
 
 - [ ] Contact picker in compose fed by local FTS (Graph and/or CardDAV sources)
 - [ ] CardDAV sync works against **Runbox** dogfood account
@@ -88,7 +107,7 @@ P6  Calendar module UI (month/week, CRUD) wired to local store
 - [ ] Mail remains default launch surface; Calendar/People reachable via module switcher
 - [ ] Docs + E2E matrix rows for PIM; regression on V1/V1.5 mail paths
 
-## 7. Explicitly out of V2.0
+## 8. Explicitly out of V2.0
 
 | Item | Disposition |
 | --- | --- |
@@ -100,7 +119,7 @@ P6  Calendar module UI (month/week, CRUD) wired to local store
 | Rooms/resources, shared calendar ACLs, Teams deep links | Later calendar depth |
 | Avatar / monogram hover cards (Option C) | V-Next / late polish |
 
-## 8. Forward-compat (from V1 / during V1.5)
+## 9. Forward-compat (from V1 / during V1.5)
 
 Do not expand V1.5 scope — only avoid painting corners:
 
@@ -109,10 +128,11 @@ Do not expand V1.5 scope — only avoid painting corners:
 - Compose recipients swappable from “recent headers” → contact FTS
 - Widget snapshot path reusable later for Watch (V2.1)
 
-## 9. Relationship to other docs
+## 10. Relationship to other docs
 
 | Doc | Role |
 | --- | --- |
+| [WAVE_H_DEPENDENCY_HYGIENE.md](WAVE_H_DEPENDENCY_HYGIENE.md) | Wave H checklist (batches H1–H5, exit gate) |
 | [TIER_D_PLAN.md](TIER_D_PLAN.md) §4 TD-A | Horizon detail; dispositions updated to point here |
 | [V1_5_PLAN.md](V1_5_PLAN.md) | Immediate post-V1 ship before this plan executes |
 | [ROADMAP.md](ROADMAP.md) | Living index |
@@ -120,4 +140,4 @@ Do not expand V1.5 scope — only avoid painting corners:
 
 ---
 
-*Wave 0 kicked off 2026-07-27 (account identity). Open per-wave checklists at start of V2.0a after Wave 0 exit.*
+*Wave 0 complete 2026-07-27 (account identity + rail overflow fix). Wave H (dependency hygiene) in progress — V2.0a PIM P0 opens after Wave H exit.*
