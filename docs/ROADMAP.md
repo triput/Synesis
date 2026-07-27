@@ -84,7 +84,7 @@ Horizon backlog with promotion framework (V1.1 → V2 → enterprise). **V1.5 co
 
 ### V2 operator waves (2026-07-27)
 
-**Status:** **Wave 1 complete** (2026-07-27, `00ebdef`); **Wave 2 next** (Tesla — Graph contacts + calendars). Full plan: [V2_PLAN.md](V2_PLAN.md). Wave 1 checklist: [V2_0A_P0_CHECKLIST.md](V2_0A_P0_CHECKLIST.md).
+**Status:** **Wave 1 complete** (2026-07-27, `00ebdef`); Renee QA GO — [V2_0A_P0_QA.md](V2_0A_P0_QA.md); **Wave 2 next** (Tesla — Graph contacts + calendars). Full plan: [V2_PLAN.md](V2_PLAN.md). Wave 1 checklist: [V2_0A_P0_CHECKLIST.md](V2_0A_P0_CHECKLIST.md).
 
 V2.0a / V2.0b / V2.0c remain **release buckets**; operator execution follows this sequence:
 

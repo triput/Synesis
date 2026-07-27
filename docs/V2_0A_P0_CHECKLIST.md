@@ -1,14 +1,14 @@
 # Wave 1 — V2.0a P0 Checklist (local PIM schema)
 
-> **Status:** **Complete** (2026-07-27) — exit gate passed; implementation `00ebdef` (516 tests). **Wave 2 unblocked** — Tesla (Graph contacts + calendars). Parent plan: [V2_PLAN.md](V2_PLAN.md) §5–§7.
+> **Status:** **Complete** (2026-07-27) — implementation `00ebdef` (516 tests); **Renee QA GO** ([V2_0A_P0_QA.md](V2_0A_P0_QA.md)). **Wave 2 unblocked** — Tesla (Graph contacts + calendars). Parent plan: [V2_PLAN.md](V2_PLAN.md) §5–§7.
 
 Wave 1 scope is **P0 only** — expanded local PIM schema foundations for multi-contact-list and multi-calendar collections, sync job type hooks, and thin read stores. No Graph/CardDAV adapters, no Calendar/People UI, no cross-account DnD copy (Wave 6).
 
 ## Sequence
 
 ```text
-Wave 0 ✅ → Wave H ✅ → Wave 1 (P0) ✅ → ★ Wave 2: Graph PIM (P1) ← next
-                         → Wave 2: Graph PIM (P1)
+Wave 0 ✅ → Wave H ✅ → Wave 1 (P0) ✅
+                         → ★ Wave 2: Graph PIM (P1) ← next
                          → Wave 3: meeting-mail bridge (P2)
                          → Wave 4: CardDAV/CalDAV (P3–P4)
                          → Wave 5: picker + Calendar UI (P5–P6)
@@ -81,6 +81,7 @@ Do **not** enqueue from account-add in P0 unless trivial; leave to Wave 2 (Graph
 - [x] [V2_PLAN.md](V2_PLAN.md) — Wave 1 complete; Wave 2 handoff (Tesla — Graph contacts + calendars)
 - [x] [ROADMAP.md](ROADMAP.md) — Wave 1 complete; Wave 2 next
 - [x] This checklist — exit gate closed 2026-07-27
+- [x] [V2_0A_P0_QA.md](V2_0A_P0_QA.md) — Renee migration/edge QA; Wave 2 handoff constraints
 
 ## Out of Wave 1
 
@@ -100,6 +101,7 @@ Do **not** enqueue from account-add in P0 unless trivial; leave to Wave 2 (Graph
 - [x] Focused + full `flutter test` green (516 tests, 2026-07-27); analyze 0 errors
 - [x] Docs updated; Wave 1 committed on `v2.0` (`00ebdef`); Wave 1 docs close on `v2.0`
 - [x] Explicit handoff: Wave 2 Tesla (Graph PIM) + Jules CardDAV discovery spike unblocked; Wave 5 owns overlay/side-by-side UI; Wave 6 owns DnD copy
+- [x] Renee QA GO with documented residuals ([V2_0A_P0_QA.md](V2_0A_P0_QA.md)) — display-pref preserve + provider identity for Wave 2
 
 ## Team routing
 

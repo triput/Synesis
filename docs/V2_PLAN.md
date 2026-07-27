@@ -122,7 +122,7 @@ P6  Calendar module UI (month/week, CRUD) wired to local store
 
 ## 7. Wave 1 — V2.0a P0 (expanded schema foundations)
 
-**Status:** **Complete** (2026-07-27, `00ebdef`, 516 tests). Checklist: [V2_0A_P0_CHECKLIST.md](V2_0A_P0_CHECKLIST.md). **Handoff:** Wave 2 — Tesla (Graph contacts + calendars); Jules CardDAV discovery spike may run in parallel.
+**Status:** **Complete** (2026-07-27, `00ebdef`, 516 tests). Checklist: [V2_0A_P0_CHECKLIST.md](V2_0A_P0_CHECKLIST.md). **Renee QA:** [V2_0A_P0_QA.md](V2_0A_P0_QA.md) — **GO** exit + Wave 2 handoff (preserve display prefs; stable provider identity). **Handoff:** Wave 2 — Tesla (Graph contacts + calendars); Jules CardDAV discovery spike may run in parallel.
 
 | Item | Scope | Notes |
 | --- | --- | --- |
@@ -194,6 +194,7 @@ Do not expand V1.5 scope — only avoid painting corners:
 | Doc | Role |
 | --- | --- |
 | [V2_0A_P0_CHECKLIST.md](V2_0A_P0_CHECKLIST.md) | Wave 1 / V2.0a P0 exit criteria |
+| [V2_0A_P0_QA.md](V2_0A_P0_QA.md) | Wave 1 Renee QA — GO + Wave 2 handoff constraints |
 | [WAVE_H_DEPENDENCY_HYGIENE.md](WAVE_H_DEPENDENCY_HYGIENE.md) | Wave H checklist (batches H1–H5, exit gate) |
 | [TIER_D_PLAN.md](TIER_D_PLAN.md) §4 TD-A | Horizon detail; dispositions updated to point here |
 | [V1_5_PLAN.md](V1_5_PLAN.md) | Immediate post-V1 ship before this plan executes |
