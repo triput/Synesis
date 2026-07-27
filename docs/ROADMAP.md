@@ -11,7 +11,7 @@
 | Exit checklist | [V1_EXIT_CHECKLIST.md](V1_EXIT_CHECKLIST.md) — **signed off** |
 | Product | Synesis |
 | Platforms (v1) | Windows, Android |
-| Last updated | 2026-07-27 (V1.5 closed — polish + `flutter test` 499) |
+| Last updated | 2026-07-27 (V2 Wave 1 / V2.0a P0 in progress) |
 
 This roadmap tracks implementation milestones. Requirements live in the SPEC; this file tracks status and exit criteria.
 
@@ -69,18 +69,37 @@ flutter test
 
 ## Post-v1 & Tier D ([plan](TIER_D_PLAN.md))
 
-Horizon backlog with promotion framework (V1.1 → V2 → enterprise). **V1.5 complete 2026-07-27** — see [V1_5_PLAN.md](V1_5_PLAN.md) §5. **V2 Wave 0 complete** (account identity); **Wave H (dependency hygiene) complete** — V2.0a PIM **unblocked** — see [V2_PLAN.md](V2_PLAN.md) §3–§4.
+Horizon backlog with promotion framework (V1.1 → V2 → enterprise). **V1.5 complete 2026-07-27** — see [V1_5_PLAN.md](V1_5_PLAN.md) §5. **V2 Wave 0 complete**; **Wave H complete**; **Wave 1 / V2.0a P0 in progress** (2026-07-27) — see [V2_PLAN.md](V2_PLAN.md) §5–§7 and [V2_0A_P0_CHECKLIST.md](V2_0A_P0_CHECKLIST.md).
 
 ### Locked Tier D decisions
 
 | # | Decision |
 | --- | --- |
 | 1 | **First post-V1 ship = V1.5** (full D6 ex-V1.1+V1.2 + dogfood UI; no shared mailbox) — *2026-07-22; supersedes “V1.1 = D6 only”* — [V1_5_PLAN.md](V1_5_PLAN.md) |
-| 2 | **V2 headline = PIM** — Outlook-style modules; CardDAV/CalDAV day-one (Runbox); Graph-first order — [V2_PLAN.md](V2_PLAN.md). **Wave 0 complete**; **Wave H complete** — V2.0a PIM **unblocked** |
+| 2 | **V2 headline = PIM** — Outlook-style modules; CardDAV/CalDAV day-one (Runbox); Graph-first order — [V2_PLAN.md](V2_PLAN.md). **Wave 0 complete**; **Wave H complete**; **Wave 1 / V2.0a P0 in progress** (2026-07-27) |
 | 3 | **Enterprise crypto / shared mail / AI draft·summarize** — **Maybe/Someday** (not V2.0 critical path; AI paired with enterprise crypto if either is opted in) |
 | 4 | **PST import** after V1.5 unless migration is acquisition channel |
 | 5 | **Galaxy Watch** — **P3 / V2.1** (not V2.0 critical path) |
 | 6 | **D6-3 Graph large attach** — **must-ship in V1.5** (operator hits cap often) |
+
+### V2 operator waves (2026-07-27)
+
+**Status:** **Wave 1 / V2.0a P0 in progress.** Full plan: [V2_PLAN.md](V2_PLAN.md). Wave 1 checklist: [V2_0A_P0_CHECKLIST.md](V2_0A_P0_CHECKLIST.md).
+
+V2.0a / V2.0b / V2.0c remain **release buckets**; operator execution follows this sequence:
+
+| Wave | Scope | Status | Maps to |
+| --- | --- | --- | --- |
+| **Wave 0** | Account identity (display names, rail labels) | **Complete** (2026-07-27) | Pre-PIM gate |
+| **Wave H** | Dependency hygiene (SDK, pub, native/KGP) | **Complete** (2026-07-27) | Pre-V2.0a gate |
+| **Wave 1** | P0 — expanded schema (multi-list contacts, multi-calendar, FTS, sync job no-ops) | **In progress** (2026-07-27) | **V2.0a P0** |
+| **Wave 2** | P1 — Graph contacts + calendars (multi-list/cal sync) | Planned | V2.0a P1 |
+| **Wave 3** | P2 — meeting-mail bridge (ICS, accept/decline) | Planned | V2.0a P2 |
+| **Wave 4** | P3–P4 — CardDAV/CalDAV (Runbox) | Planned | V2.0b |
+| **Wave 5** | P5–P6 — compose picker + Calendar UI (multi-select overlay / side-by-side) | Planned | V2.0c |
+| **Wave 6** | Cross-account DnD copy (events + contacts) | Planned | Post-V2.0c |
+
+**Locked PIM product requirements (operator):** multi-calendar and multi-contact-list across accounts; select 1+ to display; Outlook-like calendar overlay / side-by-side (Wave 5 UI); cross-account copy via DnD (**Wave 6**).
 
 ### Confirmed post-V1 (from V1 + Tier D → V1.5)
 
@@ -291,11 +310,11 @@ Competitive gap closure per [COMPETITIVE_ANALYSIS.md](COMPETITIVE_ANALYSIS.md). 
 | Track | Examples | Default |
 | --- | --- | --- |
 | **V1.5 (D6 + dogfood UI)** | Multi-window+, image whitelist, large Graph attachments, PDF, snooze, trackers, toast actions, UI-P28–P30/P21 | **Complete** (2026-07-27) — [V1_5_PLAN.md](V1_5_PLAN.md) |
-| **V2.0 (TD-A)** | **Wave 0:** account identity — **complete** (2026-07-27). **Wave H:** dependency hygiene — **complete** (2026-07-27). Then contacts, calendar, CardDAV/CalDAV (Runbox), meeting-mail | Major version — [V2_PLAN.md](V2_PLAN.md) |
+| **V2.0 (TD-A)** | **Wave 0:** account identity — **complete**. **Wave H:** dependency hygiene — **complete**. **Wave 1:** P0 schema — **in progress** (2026-07-27). Then Graph PIM, meeting-mail, CardDAV/CalDAV, picker + Calendar UI | Major version — [V2_PLAN.md](V2_PLAN.md) |
 | **V2.1** | Galaxy Watch (P3), PIM polish | After V2.0 |
 | **Defer** | Enterprise crypto/shared mail, AI draft/summarize, Maybe/Someday (§16) | Unplanned radar |
 
-**Locked:** V1.5 adjacency · V2.0 = PIM (+ CardDAV/CalDAV) · **Wave 0 complete · Wave H complete (V2.0a open)** · Watch = V2.1 P3 · Enterprise + AI = Maybe/Someday · D6-3 must-ship.
+**Locked:** V1.5 adjacency · V2.0 = PIM (+ CardDAV/CalDAV) · **Wave 0 complete · Wave H complete · Wave 1 in progress** · Watch = V2.1 P3 · Enterprise + AI = Maybe/Someday · D6-3 must-ship.
 
 ## Planned backlog (post-foundation)
 
@@ -320,7 +339,7 @@ Feature work captured for scheduling. Requirements baseline in [SPEC.md](SPEC.md
 | **Pri-2** | **Android focus track** (**Post-V1**) | **Not a V1 blocker** (battery is the headline concern, still scheduled post-ship). Battery life (sync / IDLE / push / wakelocks / Doze), visual/UX density vs Windows, leftover widget / deep-link polish. Device + AVD matrix spreadsheet-backed (extends the Pri-3 smoke matrix above). Distinct from Final-wave branding wire-up and FW-5 E2E smoke. |
 | **Pri-3** | **Project health dashboard** (**Adjacent tooling** / Post-V1) | **Not a product feature — reusable meta tooling.** Docs-only idea for now; spin up after V1 while operator dogfoods. Surfaces wave/todo progress, test-inventory CSV signals, future perf-suite metrics, and related health. Reusable beyond Synesis. Stub: **[POST_V1_HEALTH_DASHBOARD.md](POST_V1_HEALTH_DASHBOARD.md)**. Not a V1 or Final-wave deliverable. |
 
-**Suggested sequencing:** account edit/remove (Pri-1, landed) → header details (Pri-3, landed) → junk filter (Pri-2, landed W1) → per-account retention (Pri-2, landed W3) → desktop reading-pane layout (Pri-2, landed W5) → **attachments + signatures (Pri-1/Pri-2, landed W4)** → **W7 hardening (landed)** → **Final wave** (branding + filter system + FW-1…FW-6). Encryption at rest shipped in W7; Android emulator QA continues into Final-wave E2E. **V1.5 complete (2026-07-27).** **V2 Wave 0 complete**; **Wave H (dependency hygiene) complete** — V2.0a unblocked — see [V2_PLAN.md](V2_PLAN.md) and [WAVE_H_DEPENDENCY_HYGIENE.md](WAVE_H_DEPENDENCY_HYGIENE.md). **Post-V1:** performance test suite + Android focus track (Pri-2). **Adjacent tooling (Pri-3):** project health dashboard — [POST_V1_HEALTH_DASHBOARD.md](POST_V1_HEALTH_DASHBOARD.md).
+**Suggested sequencing:** account edit/remove (Pri-1, landed) → header details (Pri-3, landed) → junk filter (Pri-2, landed W1) → per-account retention (Pri-2, landed W3) → desktop reading-pane layout (Pri-2, landed W5) → **attachments + signatures (Pri-1/Pri-2, landed W4)** → **W7 hardening (landed)** → **Final wave** (branding + filter system + FW-1…FW-6). Encryption at rest shipped in W7; Android emulator QA continues into Final-wave E2E. **V1.5 complete (2026-07-27).** **V2 Wave 1 / V2.0a P0 in progress** — see [V2_PLAN.md](V2_PLAN.md), [V2_0A_P0_CHECKLIST.md](V2_0A_P0_CHECKLIST.md), and [WAVE_H_DEPENDENCY_HYGIENE.md](WAVE_H_DEPENDENCY_HYGIENE.md). **Post-V1:** performance test suite + Android focus track (Pri-2). **Adjacent tooling (Pri-3):** project health dashboard — [POST_V1_HEALTH_DASHBOARD.md](POST_V1_HEALTH_DASHBOARD.md).
 
 ## Final wave (V1 exit / release readiness)
 
