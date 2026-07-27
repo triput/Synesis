@@ -3,6 +3,7 @@
 | Field | Value |
 | --- | --- |
 | Reviewed | 2026-07-27 |
+| Commits | `7cbfdaa` (+ docs SHA pin follow-up if any) |
 | Checklist | [V2_WAVE3_CHECKLIST.md](V2_WAVE3_CHECKLIST.md) |
 | Prior gate | [V2_WAVE2_QA.md](V2_WAVE2_QA.md) |
 | Tests | **551** passed (`flutter test`) |

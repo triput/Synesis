@@ -1,6 +1,6 @@
 # Wave 3 — V2.0a P2 Checklist (meeting-mail bridge)
 
-> **Status:** **Complete** (2026-07-27, 551 tests) — Tesla (OAuth/ICS/Graph RSVP/service); Jules (reading-pane + attachments UI); Renee QA **GO** — [V2_WAVE3_QA.md](V2_WAVE3_QA.md). Parent plan: [V2_PLAN.md](V2_PLAN.md). Wave 2 exit: [V2_WAVE2_CHECKLIST.md](V2_WAVE2_CHECKLIST.md).
+> **Status:** **Complete** (2026-07-27, `7cbfdaa`, 551 tests) — Tesla (OAuth/ICS/Graph RSVP/service); Jules (reading-pane + attachments UI); Renee QA **GO** — [V2_WAVE3_QA.md](V2_WAVE3_QA.md). Parent plan: [V2_PLAN.md](V2_PLAN.md). Wave 2 exit: [V2_WAVE2_CHECKLIST.md](V2_WAVE2_CHECKLIST.md).
 
 Wave 3 delivers the **meeting-mail bridge MVP**: recognize meeting invitations in mail, resolve ICS → local event drafts (`ics:{uid}`), RSVP via Microsoft Graph when an event id is known, and Add to calendar for `.ics` / `text/calendar` attachments. Mail-first UI; Calendar chrome deferred.
 

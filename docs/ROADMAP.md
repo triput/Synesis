@@ -84,7 +84,7 @@ Horizon backlog with promotion framework (V1.1 → V2 → enterprise). **V1.5 co
 
 ### V2 operator waves (2026-07-27)
 
-**Status:** **Wave 3 complete** (2026-07-27, 551 tests); Renee QA **GO** — [V2_WAVE3_QA.md](V2_WAVE3_QA.md). **Wave 4 next** (CardDAV/CalDAV). Wave 2 complete (2026-07-27, `b526e70`); [V2_WAVE2_QA.md](V2_WAVE2_QA.md). Wave 1 complete (2026-07-27, `00ebdef`); [V2_0A_P0_QA.md](V2_0A_P0_QA.md). Full plan: [V2_PLAN.md](V2_PLAN.md). Wave 3 checklist: [V2_WAVE3_CHECKLIST.md](V2_WAVE3_CHECKLIST.md). Wave 2 checklist: [V2_WAVE2_CHECKLIST.md](V2_WAVE2_CHECKLIST.md). Wave 1 checklist: [V2_0A_P0_CHECKLIST.md](V2_0A_P0_CHECKLIST.md).
+**Status:** **Wave 3 complete** (2026-07-27, `7cbfdaa`, 551 tests); Renee QA **GO** — [V2_WAVE3_QA.md](V2_WAVE3_QA.md). **Wave 4 next** (CardDAV/CalDAV). Wave 2 complete (2026-07-27, `b526e70`); [V2_WAVE2_QA.md](V2_WAVE2_QA.md). Wave 1 complete (2026-07-27, `00ebdef`); [V2_0A_P0_QA.md](V2_0A_P0_QA.md). Full plan: [V2_PLAN.md](V2_PLAN.md). Wave 3 checklist: [V2_WAVE3_CHECKLIST.md](V2_WAVE3_CHECKLIST.md). Wave 2 checklist: [V2_WAVE2_CHECKLIST.md](V2_WAVE2_CHECKLIST.md). Wave 1 checklist: [V2_0A_P0_CHECKLIST.md](V2_0A_P0_CHECKLIST.md).
 
 V2.0a / V2.0b / V2.0c remain **release buckets**; operator execution follows this sequence:
 
@@ -94,7 +94,7 @@ V2.0a / V2.0b / V2.0c remain **release buckets**; operator execution follows thi
 | **Wave H** | Dependency hygiene (SDK, pub, native/KGP) | **Complete** (2026-07-27) | Pre-V2.0a gate |
 | **Wave 1** | P0 — expanded schema (multi-list contacts, multi-calendar, FTS, sync job no-ops) | **Complete** (2026-07-27, `00ebdef`) | **V2.0a P0** |
 | **Wave 2** | P1 — Graph contacts + calendars (multi-list/cal sync) | **Complete** (2026-07-27, `b526e70`) | V2.0a P1 |
-| **Wave 3** | P2 — meeting-mail bridge (ICS, RSVP, local `.ics` drafts) | **Complete** (2026-07-27, 551 tests) | V2.0a P2 |
+| **Wave 3** | P2 — meeting-mail bridge (ICS, RSVP, local `.ics` drafts) | **Complete** (2026-07-27, `7cbfdaa`, 551 tests) | V2.0a P2 |
 | **Wave 4** | P3–P4 — CardDAV/CalDAV (Runbox) | **Next** | V2.0b |
 | **Wave 5** | P5–P6 — compose picker + Calendar UI (multi-select overlay / side-by-side) | Planned | V2.0c |
 | **Wave 6** | Cross-account DnD copy (events + contacts) | Planned | Post-V2.0c |
