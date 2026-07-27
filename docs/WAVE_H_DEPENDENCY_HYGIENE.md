@@ -66,44 +66,75 @@ Reviewed 2026-07-27 (Renee). Commits: `e5b4ee8` (plan/docs), `3d80af7` (soft upg
 
 **DEF-037 note:** `flutter_local_notifications_windows` **3.1.1** now defines `_SILENCE_EXPERIMENTAL_COROUTINE_DEPRECATION_WARNINGS` in its own CMakeLists. Repo `windows/CMakeLists.txt` keep-alive remains harmless insurance; reopen DEF-037 only if STL1011 returns on Windows debug.
 
+### Batch 2 QA verdict (Renee, 2026-07-27) — commit `fa86d7e`
+
+| Check | Result |
+| --- | --- |
+| Diff vs H5 matrix | **PASS** — landed majors + named fln adapter match matrix; deferrals (`xml`/`pdf`/`printing`/`file_picker`/`drift_dev` 2.34.5) have written rationale. |
+| `android_notification_adapter.dart` | **PASS** — `initialize(settings:)` / `show(id:, title:, body:, notificationDetails:)` only call site; channel + permission APIs unchanged. |
+| Dart API consumers | **PASS** — `AppLinks` still `uriLinkStream` / `getInitialLink`; `NetworkSyncPolicy` empty-list-as-online + `ConnectivityResult` enum usage intact; `google_fonts` theme factory unchanged. |
+| DEF-037 | **Watch kept** — silence define retained in repo CMakeLists; fln Windows transitive **3.1.1**. |
+| Jules analyze / focused tests | **Accepted as reported** — analyze 0 errors; ~100 focused green. Does **not** substitute H5-T1 full suite or H5-M\*. |
+| New transitive | `flutter_local_notifications_web` **1.0.0** pulled in — no Synesis web target; ignore unless someone enables web. |
+
+**Batch 2 code gate:** Conditional **GO** for Batch 3/4 (H4 native / remaining deferrals) **only after** the soft pre-Batch-3 hold below. H3 checklist box stays open until relevant H5-T\*/H5-M\* land.
+
+**Soft hold before Batch 3/4 (not Wave H final NO-GO, but do not stack native work blind):**
+
+1. **H5-M8 (or equivalent)** — Android Gradle configure / `flutter build apk --debug` once with Batch 2 plugins (`app_links` 7 + fln 22 + pinned `file_picker` 11.0.2 + `builtInKotlin=false`). Analyze does not prove AGP/KGP.
+2. **Windows debug compile** — confirm no STL1011 / DEF-037 reopen with `flutter_local_notifications_windows` 3.1.1 (even though runtime toast is still `local_notifier`).
+
+**Hard NO-GO for Wave H / V2.0a (unchanged):** H5-T1 red, Android fln/KGP compile fail, Windows STL1011 or OAuth hang, connectivity empty/`none` crash, sqlite3mc hook fail, or majors without deferral rationale.
+
+**Missing tests (not Batch 3 blockers; waive or close at H5):**
+
+| Gap | Severity | Gate |
+| --- | --- | --- |
+| No `AppLinksOAuthRedirectCapture` unit test (H5-T4 covers loopback only) | Pri-3 | **H5-M2 mandatory** on Android (+ Windows loopback still covered by existing tests) |
+| No thin mock test for `AndroidNotificationAdapter` ↔ fln named APIs | Pri-3 | Nice-to-have; Android build + H5-M1 cover risk |
+| No automated `google_fonts` 8 guard | Pri-3 | **H5-M4** theme smoke |
+| H5-T1 full suite not yet recorded post-Batch 2 | Required for H5 | Run before Wave H GO; refresh inventory only if count shifts |
+| H5-T7 / H5-M7 | H4/H5 | Deferred with Drift/sqlite3mc batch — not Batch 2 scope |
+
 ### Compile / API must-fix before smoke
 
 | Package | Gate | Detail |
 | --- | --- | --- |
 | `flutter_local_notifications` **20+** | **Fixed in Batch 2** | Named `settings:` / `id:` / `notificationDetails:` in `android_notification_adapter.dart`. Windows runtime still uses `local_notifier`; transitive Windows plugin + DEF-037 silence flag remain. |
-| `app_links` **7** | Analyze + deep-link smoke | Dart API stays compatible with v6 setups; Android native moves toward AGP 9 — re-verify Gradle configure with `android.builtInKotlin=false`. |
-| `connectivity_plus` **7** | Unit + offline smoke | `ConnectivityResult` enum usage in `NetworkSyncPolicy` — re-run `test/network_sync_policy_test.dart`. |
-| `google_fonts` **8** | Theme smoke | Cold start + Settings/Appearance; no network-font hang / fallback crash. |
+| `app_links` **7** | Analyze + deep-link smoke | Dart API stays compatible with v6 setups; Android native moves toward AGP 9 — re-verify Gradle configure with `android.builtInKotlin=false` (**pre-Batch-3 soft hold**). |
+| `connectivity_plus` **7** | Unit + offline smoke | `ConnectivityResult` enum usage in `NetworkSyncPolicy` — Jules: focused green; still need H5-M3. |
+| `google_fonts` **8** | Theme smoke | Cold start + Settings/Appearance; no network-font hang / fallback crash (**H5-M4**). |
 | `xml` / `pdf` | Deferred OK | Documented above; keep `test/imap_autoconfig_test.dart` green on `xml` ^6. |
 | `drift_dev` / Drift codegen | H4 | Not bumped this batch; no `build_runner` regen required. |
 
 ### Automated suite (required)
 
-| ID | Command / scope | Pass criteria |
-| --- | --- | --- |
-| H5-T1 | `flutter test` (full) | Green; note count delta for inventory refresh |
-| H5-T2 | Focused: `notification_service_test`, `sync_engine_new_mail_notify_test`, `app_settings_cubit_test` (notifications group) | Green (logic layer; does not prove OS toast) |
-| H5-T3 | `network_sync_policy_test`, `sync_engine_push_wake_test` | Green after connectivity_plus 7 |
-| H5-T4 | `oauth_redirect_capture_test`, `oauth_config_resolver_test`, `oauth_identity_manager_test` | Green (loopback path) |
-| H5-T5 | `imap_autoconfig_test` | Green (direct `package:xml` consumer) |
-| H5-T6 | `html_email_fallback_test` | Green (DEF-030 classification unchanged) |
-| H5-T7 | Encryption / Drift: `db_encryption_migrator_test`, `schema_v5_test`, `drift_mail_repository_test` (and peers from W7 spike list) | Green with `sqlite3mc` hook |
+| ID | Command / scope | Pass criteria | Batch 2 status |
+| --- | --- | --- | --- |
+| H5-T1 | `flutter test` (full) | Green; note count delta for inventory refresh | **Open** — not claimed |
+| H5-T2 | Focused: `notification_service_test`, `sync_engine_new_mail_notify_test`, `app_settings_cubit_test` (notifications group) | Green (logic layer; does not prove OS toast) | **Jules: green** (focused set) |
+| H5-T3 | `network_sync_policy_test`, `sync_engine_push_wake_test` | Green after connectivity_plus 7 | **Jules: green** (focused set) |
+| H5-T4 | `oauth_redirect_capture_test`, `oauth_config_resolver_test`, `oauth_identity_manager_test` | Green (loopback path) | **Jules: green**; AppLinks path still untested |
+| H5-T5 | `imap_autoconfig_test` | Green (direct `package:xml` consumer) | **Jules: green** (focused set) |
+| H5-T6 | `html_email_fallback_test` | Green (DEF-030 classification unchanged) | **Jules: green** (focused set) |
+| H5-T7 | Encryption / Drift: `db_encryption_migrator_test`, `schema_v5_test`, `drift_mail_repository_test` (and peers from W7 spike list) | Green with `sqlite3mc` hook | **Open** — H4/H5 |
+
 
 ### Manual / platform smoke (required for H5)
 
-| ID | Area | Windows | Android | Pass criteria |
-| --- | --- | --- | --- | --- |
-| H5-M1 | Notifications | Background → new unread → **local_notifier** toast; foreground suppress | Grant Post notifications; channel `synesis_new_mail`; background toast; tap resumes | Re-smoke W6 global-off / quiet-hours / starred-only lightly if adapter init changed |
-| H5-M2 | OAuth deep links | Graph + Google add-account (loopback and/or `synesis://` as configured) | Google reverse-client / app link redirect | Completes with code; no hang on `getInitialLink` / stream |
-| H5-M3 | Connectivity offline | Airplane / disconnect → sync policy stops poll kicks; reconnect resumes | Same | No crash on empty/`none` results (historical DEF around empty connectivity) |
-| H5-M4 | Fonts | App theme renders; no blank TextTheme | Same | `google_fonts` 8 loads or fails soft |
-| H5-M5 | HTML WebView | HTML body + focus return to Flutter chrome | Android `webview_flutter` HTML body | No new hard error; widget fallback still OK |
-| H5-M6 | Autoconfig XML | — | — | Add-account ISPDB / well-known path still parses (or unit suite suffices if offline) |
-| H5-M7 | sqlite3mc | Debug run; optional encrypt-on settings path | Debug run | Hook resolves; unencrypted default unaffected ([W7_SQLCIPHER_SPIKE.md](W7_SQLCIPHER_SPIKE.md) TC-3) |
-| H5-M8 | KGP residual | — | `flutter build apk --debug` (or `flutter run`) | Configure succeeds with `builtInKotlin=false` + file_picker KGP force-apply; no FilePickerPlugin symbol errors |
-| H5-M9 | Dogfood APK | — | Install APK built **with** production dart-defines / shipped public clients as used for daily dogfood | Cold start, account list, sync, open mail, notification permission path |
+| ID | Area | Windows | Android | Pass criteria | Batch 2 status |
+| --- | --- | --- | --- | --- | --- |
+| H5-M1 | Notifications | Background → new unread → **local_notifier** toast; foreground suppress | Grant Post notifications; channel `synesis_new_mail`; background toast; tap resumes | Re-smoke W6 global-off / quiet-hours / starred-only lightly if adapter init changed | **Open** |
+| H5-M2 | OAuth deep links | Graph + Google add-account (loopback and/or `synesis://` as configured) | Google reverse-client / app link redirect | Completes with code; no hang on `getInitialLink` / stream | **Open** (mandatory — no AppLinks unit test) |
+| H5-M3 | Connectivity offline | Airplane / disconnect → sync policy stops poll kicks; reconnect resumes | Same | No crash on empty/`none` results (historical DEF around empty connectivity) | **Open** |
+| H5-M4 | Fonts | App theme renders; no blank TextTheme | Same | `google_fonts` 8 loads or fails soft | **Open** |
+| H5-M5 | HTML WebView | HTML body + focus return to Flutter chrome | Android `webview_flutter` HTML body | No new hard error; widget fallback still OK | **Open** (also covers H2 webview 1.1.1) |
+| H5-M6 | Autoconfig XML | — | — | Add-account ISPDB / well-known path still parses (or unit suite suffices if offline) | Unit suite may suffice |
+| H5-M7 | sqlite3mc | Debug run; optional encrypt-on settings path | Debug run | Hook resolves; unencrypted default unaffected ([W7_SQLCIPHER_SPIKE.md](W7_SQLCIPHER_SPIKE.md) TC-3) | **Open** — H4 |
+| H5-M8 | KGP residual | — | `flutter build apk --debug` (or `flutter run`) | Configure succeeds with `builtInKotlin=false` + file_picker KGP force-apply; no FilePickerPlugin symbol errors | **Soft hold before Batch 3/4** |
+| H5-M9 | Dogfood APK | — | Install APK built **with** production dart-defines / shipped public clients as used for daily dogfood | Cold start, account list, sync, open mail, notification permission path | **Open** — H5 close |
 
-### Test gaps / DEFs (do not block H2; address or waive at H3/H5)
+### Test gaps / DEFs (address or waive at H5; do not block Batch 3 after soft hold)
 
 | Gap | Severity | Action |
 | --- | --- | --- |
@@ -132,6 +163,8 @@ Reviewed 2026-07-27 (Renee). Commits: `e5b4ee8` (plan/docs), `3d80af7` (soft upg
 - Connectivity major breaks offline gating or throws on empty results.
 - `flutter test` red, or sqlite3mc hook fails to resolve on either desktop target.
 - Majors landed without written deferral for skipped candidates.
+
+**Batch sequencing:** Soft-hold Batch 3/4 until H5-M8 (Android configure/debug APK) and a Windows debug compile after Batch 2 plugins — see Batch 2 QA verdict. Missing AppLinks/Android-adapter unit tests are **not** NO-GO if H5-M1/M2/M8 run.
 
 ## References
 
