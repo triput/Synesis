@@ -4,7 +4,7 @@
 // Component: Protocol / Integration
 // Version: 1.1 (Gold Master)
 // Created: 2026-07-14
-// Last Update: 2026-07-23
+// Last Update: 2026-07-27
 // ==============================================================================
 
 import 'dart:async';
@@ -29,6 +29,15 @@ const int kGraphInlineAttachmentMaxBytes = 3 * 1024 * 1024;
 /// session. Microsoft recommends chunk sizes that are a multiple of 320 KiB;
 /// this is 10 * 320 KiB (~3.125 MiB) to balance request count vs. memory use.
 const int kGraphUploadChunkSizeBytes = 320 * 1024 * 10;
+
+/// MAPI `PR_IN_REPLY_TO_ID` — RFC `In-Reply-To` via Graph extended properties.
+///
+/// Graph `internetMessageHeaders` only accepts custom `x-`/`X-` names
+/// (DEF-049); standard reply headers must use these MAPI tags instead.
+const String kGraphInReplyToExtendedPropertyId = 'String 0x1042';
+
+/// MAPI `PR_INTERNET_REFERENCES` — RFC `References` via Graph extended properties.
+const String kGraphReferencesExtendedPropertyId = 'String 0x1039';
 
 /// Thrown when Graph rejects the bearer token and interactive re-auth is needed.
 class GraphAuthException implements Exception {
@@ -421,8 +430,9 @@ class GraphMailProvider extends MailProvider {
   }
 
   /// Builds the Graph `message` JSON object (subject, body, recipients,
-  /// threading headers) shared by both the inline and upload-session send
-  /// paths. Attachments are attached separately by each path.
+  /// reply threading via MAPI extended properties) shared by both the inline
+  /// and upload-session send paths. Attachments are attached separately by
+  /// each path.
   Map<String, Object> _buildOutgoingMessage(
     OutgoingEnvelope envelope, {
     required List<String> toClean,
@@ -447,23 +457,26 @@ class GraphMailProvider extends MailProvider {
     if (bccClean.isNotEmpty) {
       message['bccRecipients'] = _graphRecipients(bccClean);
     }
-    final List<Map<String, Object>> headers = <Map<String, Object>>[];
+    // DEF-049: Graph rejects standard RFC headers on internetMessageHeaders
+    // ("…should start with 'x-' or 'X-'"). Map In-Reply-To / References to
+    // the documented MAPI extended properties instead.
+    final List<Map<String, Object>> extended = <Map<String, Object>>[];
     final String? inReplyTo = envelope.inReplyTo?.trim();
     if (inReplyTo != null && inReplyTo.isNotEmpty) {
-      headers.add(<String, Object>{
-        'name': 'In-Reply-To',
+      extended.add(<String, Object>{
+        'id': kGraphInReplyToExtendedPropertyId,
         'value': inReplyTo,
       });
     }
     final String? references = envelope.references?.trim();
     if (references != null && references.isNotEmpty) {
-      headers.add(<String, Object>{
-        'name': 'References',
+      extended.add(<String, Object>{
+        'id': kGraphReferencesExtendedPropertyId,
         'value': references,
       });
     }
-    if (headers.isNotEmpty) {
-      message['internetMessageHeaders'] = headers;
+    if (extended.isNotEmpty) {
+      message['singleValueExtendedProperties'] = extended;
     }
     return message;
   }

@@ -4,7 +4,7 @@
 // Component: Test
 // Version: 1.1 (Gold Master)
 // Created: 2026-07-17
-// Last Update: 2026-07-24
+// Last Update: 2026-07-27
 // ==============================================================================
 
 import 'package:synesis/outbox/send_error_messages.dart';
@@ -96,6 +96,18 @@ void main() {
       );
       expect(message, contains('no SMTP recipients after build'));
       expect(message, isNot(contains('Check To/Cc')));
+      expect(message, contains('Server said:'));
+    });
+
+    // DEF-049: Graph InvalidInternetMessageHeader for In-Reply-To.
+    test('maps Graph internet-message-header rejection away from SMTP copy',
+        () {
+      final String message = actionableSendError(
+        "ProtocolException: The internet message header name 'In-Reply-To' "
+        "should start with 'x-' or 'X-'.",
+      );
+      expect(message, contains('Microsoft Graph rejected a reply header'));
+      expect(message, isNot(contains('SMTP settings')));
       expect(message, contains('Server said:'));
     });
   });

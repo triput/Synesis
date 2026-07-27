@@ -4,7 +4,7 @@
 // Component: Outbox
 // Version: 1.1 (Gold Master)
 // Created: 2026-07-17
-// Last Update: 2026-07-24
+// Last Update: 2026-07-27
 // ==============================================================================
 
 /// Turns a raw send/outbox error into short, actionable guidance for the UI.
@@ -118,6 +118,19 @@ String actionableSendError(Object? error, {String? accountHint}) {
   ])) {
     return 'Send failed: the message had no SMTP recipients after build. '
         'Close Compose and try Send again.${_withDetail(detail)}';
+  }
+
+  // DEF-049: Graph InvalidInternetMessageHeader when In-Reply-To/References
+  // were stuffed into internetMessageHeaders (only x-/X- customs allowed).
+  if (_matchesAny(lower, const <String>[
+    'invalidinternetmessageheader',
+    'internet message header',
+    "should start with 'x-'",
+    'should start with "x-"',
+  ])) {
+    return 'Send failed: Microsoft Graph rejected a reply header. '
+        'Close Compose and try Send again, or send as a new message.'
+        '${_withDetail(detail)}';
   }
 
   if (_matchesAny(lower, const <String>[

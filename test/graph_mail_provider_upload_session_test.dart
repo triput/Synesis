@@ -5,7 +5,7 @@
 // Component: Test
 // Version: 1.0 (Gold Master)
 // Created: 2026-07-23
-// Last Update: 2026-07-23
+// Last Update: 2026-07-27
 // ==============================================================================
 
 import 'dart:convert';
@@ -95,6 +95,52 @@ void main() {
 
       expect(requestedMethods, <String>['POST']);
       expect(requestedPaths, <String>['/v1.0/me/sendMail']);
+    },
+  );
+
+  // DEF-049: Graph internetMessageHeaders only allows x-/X- customs.
+  test(
+    'reply headers use MAPI extended properties, not internetMessageHeaders',
+    () async {
+      Map<String, Object?>? capturedMessage;
+
+      final http.Client client = MockClient((http.Request request) async {
+        expect(request.url.path, '/v1.0/me/sendMail');
+        final Map<String, Object?> body =
+            jsonDecode(request.body) as Map<String, Object?>;
+        capturedMessage = body['message'] as Map<String, Object?>;
+        return http.Response('', 202);
+      });
+
+      final GraphMailProvider provider = GraphMailProvider(
+        () async => 'token',
+        client: client,
+      );
+      addTearDown(provider.dispose);
+
+      await provider.sendEnvelope(
+        const OutgoingEnvelope(
+          from: 'me@byte.io',
+          to: <String>['you@byte.io'],
+          subject: 'Re: Thread',
+          textBody: 'Thanks',
+          inReplyTo: '<parent@mail.example>',
+          references: '<root@mail.example> <parent@mail.example>',
+        ),
+      );
+
+      expect(capturedMessage, isNotNull);
+      expect(capturedMessage!.containsKey('internetMessageHeaders'), isFalse);
+      final List<Object?> extended =
+          capturedMessage!['singleValueExtendedProperties'] as List<Object?>;
+      expect(extended, hasLength(2));
+      final Map<String, Object?> inReply =
+          extended[0]! as Map<String, Object?>;
+      final Map<String, Object?> refs = extended[1]! as Map<String, Object?>;
+      expect(inReply['id'], kGraphInReplyToExtendedPropertyId);
+      expect(inReply['value'], '<parent@mail.example>');
+      expect(refs['id'], kGraphReferencesExtendedPropertyId);
+      expect(refs['value'], '<root@mail.example> <parent@mail.example>');
     },
   );
 
