@@ -483,7 +483,7 @@ class _MailWorkspaceState extends State<MailWorkspace> {
                         child: Row(
                           children: [
                             if (!portraitMobile)
-                              _AccountRail(
+                              AccountRail(
                                 accounts: mailbox.accounts,
                                 unified: mailbox.unified,
                                 accountId: mailbox.accountId,
@@ -1230,8 +1230,13 @@ class _Pill extends StatelessWidget {
   }
 }
 
-class _AccountRail extends StatelessWidget {
-  const _AccountRail({
+/// Narrow desktop account rail: Unified header, scrollable accounts, footer chrome.
+///
+/// Accounts scroll inside [Expanded] so monogram+label tiles cannot force a
+/// RenderFlex overflow when the shell height is short.
+class AccountRail extends StatelessWidget {
+  const AccountRail({
+    super.key,
     required this.accounts,
     required this.unified,
     required this.accountId,
@@ -1260,7 +1265,7 @@ class _AccountRail extends StatelessWidget {
       ),
       padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 6),
       child: Column(
-        children: [
+        children: <Widget>[
           _RailButton(
             selected: unified,
             onTap: onSelectUnified,
@@ -1270,7 +1275,7 @@ class _AccountRail extends StatelessWidget {
               decoration: const BoxDecoration(
                 borderRadius: BorderRadius.all(Radius.circular(9)),
                 gradient: SweepGradient(
-                  colors: [
+                  colors: <Color>[
                     Color(0xFF2DD4BF),
                     Color(0xFFA78BFA),
                     Color(0xFF60A5FA),
@@ -1281,60 +1286,70 @@ class _AccountRail extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 8),
-          for (final account in accounts) ...[
-            Tooltip(
-              message: AccountDisplay.secondaryLabel(account),
-              waitDuration: const Duration(milliseconds: 400),
-              child: _RailButton(
-                selected: !unified && accountId == account.id,
-                onTap: () => onSelectAccount(account.id),
-                width: 76,
-                height: 48,
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: <Widget>[
-                    Container(
-                      width: 28,
-                      height: 28,
-                      alignment: Alignment.center,
-                      decoration: BoxDecoration(
-                        color: Color.alphaBlend(
-                          account.accent.withValues(alpha: 0.35),
-                          t.ink,
+          Expanded(
+            child: ListView.separated(
+              padding: EdgeInsets.zero,
+              itemCount: accounts.length,
+              separatorBuilder: (BuildContext context, int index) {
+                return const SizedBox(height: 8);
+              },
+              itemBuilder: (BuildContext context, int index) {
+                final MailAccount account = accounts[index];
+                return Tooltip(
+                  message: AccountDisplay.secondaryLabel(account),
+                  waitDuration: const Duration(milliseconds: 400),
+                  child: _RailButton(
+                    selected: !unified && accountId == account.id,
+                    onTap: () => onSelectAccount(account.id),
+                    width: 76,
+                    height: 48,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: <Widget>[
+                        Container(
+                          width: 28,
+                          height: 28,
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(
+                            color: Color.alphaBlend(
+                              account.accent.withValues(alpha: 0.35),
+                              t.ink,
+                            ),
+                            borderRadius: BorderRadius.circular(9),
+                          ),
+                          child: Text(
+                            AccountDisplay.monogram(account),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
                         ),
-                        borderRadius: BorderRadius.circular(9),
-                      ),
-                      child: Text(
-                        AccountDisplay.monogram(account),
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 11,
-                          fontWeight: FontWeight.w700,
+                        const SizedBox(height: 2),
+                        SizedBox(
+                          width: 68,
+                          child: Text(
+                            AccountDisplay.primaryLabel(account),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              color: t.muted,
+                              fontSize: 10,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
                         ),
-                      ),
+                      ],
                     ),
-                    const SizedBox(height: 2),
-                    SizedBox(
-                      width: 68,
-                      child: Text(
-                        AccountDisplay.primaryLabel(account),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          color: t.muted,
-                          fontSize: 10,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+                  ),
+                );
+              },
             ),
-            const SizedBox(height: 8),
-          ],
-          const Spacer(),
+          ),
+          const SizedBox(height: 8),
           Material(
             color: Colors.transparent,
             child: InkWell(
@@ -1364,7 +1379,7 @@ class _AccountRail extends StatelessWidget {
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(12),
-                  gradient: LinearGradient(colors: [t.teal, t.indigo]),
+                  gradient: LinearGradient(colors: <Color>[t.teal, t.indigo]),
                 ),
                 child: const Text(
                   '+',
