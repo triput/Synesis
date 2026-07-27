@@ -144,6 +144,30 @@ DEF-022, DEF-023, DEF-045, DEF-047, DEF-048, DEF-049 (Graph-only).
 
 ---
 
+### DEF-054 — Resizable mail panes on Windows (drag vertical splitters)
+
+| Field | Value |
+| --- | --- |
+| Priority | **Pri-3** |
+| Status | Open (enhancement) |
+| Area | `lib/ui/shell/mail_workspace.dart` (account rail), `lib/ui/shell/mail_split_layout.dart` (folder sidebar / list / reading), `lib/ui/theme/density.dart` (`sidebarWidth`, `listWidth`) |
+| Platforms | Windows desktop (primary); consider macOS/Linux parity after Windows dogfood |
+| Logged | 2026-07-27 |
+
+**Summary**  
+Operator wants Outlook-style **draggable vertical splitters** between the desktop mail panes so horizontal widths can be adjusted on demand: account rail | folder sidebar | message list | reading pane (reading-pane-right layout). Good-to-have polish — makes daily use more comfortable; not a showstopper.
+
+**Expected**  
+Drag handles between adjacent panes resize them within sensible min/max bounds; widths persist across sessions (e.g. `AppSettings` or layout prefs); Visual Focus and reading-pane top/bottom modes remain coherent; no overflow regressions on narrow windows.
+
+**Actual**  
+W5 desktop shell uses fixed widths: account rail ~88px, folder sidebar and list widths from density tokens (`SizedBox` / `sidebarWidth` / `listWidth` in `MailSplitLayout`). No user-resizable splitters.
+
+**Notes**  
+Enhancement backlog — not urgent, not blocking daily use or Wave 2 PIM. Related: [W5_WINDOWS_CHECKLIST](W5_WINDOWS_CHECKLIST.md) (fixed four-pane layout landed); [UI enhancement sweep](ROADMAP.md#ui-enhancement-sweep-planui_enhancement_sweepmd).
+
+---
+
 ### DEF-011 — IMAP edit ignores host/port/user changes without a new password
 
 | Field | Value |

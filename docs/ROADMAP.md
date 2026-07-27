@@ -242,6 +242,7 @@ Visual polish & mailbox interaction backlog — **active; add items in [§7 Back
 | **Pri-2** | Signature images (HTML) | **Landed** (W4) | **W4** | [UI-P20](UI_ENHANCEMENT_SWEEP.md) |
 | **Pri-2** | [DEF-034](DEFECTS.md) / UI-P27 auto-mark read (5s default ON) | **Closed** (W7) | **W7** (V1 scope; **not W5 blocker**) |
 | **Pri-2.5** | [DEF-050](DEFECTS.md) list right-click mark read (solo vs thread prompt) | Open | V2 |
+| **Pri-3** | [DEF-054](DEFECTS.md) resizable mail panes on Windows (drag vertical splitters) | Open | V2 |
 
 Full inventory + backlog template: **[UI_ENHANCEMENT_SWEEP.md](UI_ENHANCEMENT_SWEEP.md)**.
 
