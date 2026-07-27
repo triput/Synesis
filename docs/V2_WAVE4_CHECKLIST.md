@@ -1,6 +1,6 @@
 # Wave 4 — V2.0b Checklist (CardDAV / CalDAV)
 
-> **Status:** **Complete** (2026-07-27, SHA `pending`) — CardDAV/CalDAV adapter and account DAV configuration landed. Renee QA **GO** — [V2_WAVE4_QA.md](V2_WAVE4_QA.md). Parent plan: [V2_PLAN.md](V2_PLAN.md). Spike: [CARDDAV_DISCOVERY_SPIKE.md](CARDDAV_DISCOVERY_SPIKE.md). **Next:** Wave 5 (picker + Calendar UI).
+> **Status:** **Complete** (2026-07-27, `f2bd29b`) — CardDAV/CalDAV adapter and account DAV configuration landed. Renee QA **GO** — [V2_WAVE4_QA.md](V2_WAVE4_QA.md). Parent plan: [V2_PLAN.md](V2_PLAN.md). Spike: [CARDDAV_DISCOVERY_SPIKE.md](CARDDAV_DISCOVERY_SPIKE.md). **Next:** Wave 5 (picker + Calendar UI).
 
 Wave 4 delivers **P3–P4**: CardDAV address-book sync + CalDAV calendar sync into the Wave 1 local PIM schema for IMAP/Other accounts (Runbox dogfood). Graph accounts remain on `GraphPimProvider`. No Calendar/People chrome (Wave 5), no DnD copy (Wave 6), no push/PROPPATCH writes.
 
