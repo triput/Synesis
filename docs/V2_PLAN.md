@@ -95,6 +95,8 @@ Checklist: [V2_0A_P0_CHECKLIST.md](V2_0A_P0_CHECKLIST.md) (Wave 1 exit).
 | --- | --- | --- |
 | Resizable Windows mail panes (drag splitters) | [DEF-054](DEFECTS.md) | Outlook-style rail / sidebar / list / reading widths |
 | Right-click **Mark read** on list rows (solo vs thread) | [DEF-050](DEFECTS.md) | Pri-2.5 enhancement; context menu + thread disambiguation |
+| Include Sent items in conversation threads | [DEF-055](DEFECTS.md) | Pri-2; operator reply context / “did I respond?” triage |
+| Thread/list sort: oldest first vs newest first | [DEF-056](DEFECTS.md) | Pri-2; user-selectable list sort direction |
 | Hamburger → folders-only sheet (swipe keeps full drawer) | [DEF-046](DEFECTS.md) | Android phone nav polish |
 | Account dialog overflow sweep | [DEF-039](DEFECTS.md), [DEF-040](DEFECTS.md) | Remove / Edit Account yellow-black stripes on narrow widths |
 | Configurable home-screen list widget | [DEF-044](DEFECTS.md) | Tap-through to message from widget rows |

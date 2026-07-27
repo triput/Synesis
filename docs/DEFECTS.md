@@ -12,7 +12,7 @@
 
 > Android dogfood folder/drawer polish (2026-07-27): account chips, folder-picker sheet, title-bar **Show folders** → sheet.
 >
-> **V2 Wave 7 / Trish extras parking lot** (2026-07-27): enhancement-shaped Pri-3 UI backlog parked for **Wave 7 — Final polish / Trish extras** — last if time permits; not V2.0 critical path. See [V2_PLAN.md](V2_PLAN.md) § Wave 7.
+> **V2 Wave 7 / Trish extras parking lot** (2026-07-27): operator enhancement backlog (Pri-2 / Pri-2.5 / Pri-3) parked for **Wave 7 — Final polish / Trish extras** — last if time permits; not V2.0 critical path. See [V2_PLAN.md](V2_PLAN.md) § Wave 7.
 
 ### DEF-050 — Right-click mark read on message list (solo vs thread)
 
@@ -169,6 +169,56 @@ W5 desktop shell uses fixed widths: account rail ~88px, folder sidebar and list 
 
 **Notes**  
 Enhancement backlog — not urgent, not blocking daily use or Wave 2 PIM. **Target wave: Wave 7 / Trish extras** (Outlook-style splitters when Trish has bandwidth). Related: [W5_WINDOWS_CHECKLIST](W5_WINDOWS_CHECKLIST.md) (fixed four-pane layout landed); [UI enhancement sweep](ROADMAP.md#ui-enhancement-sweep-planui_enhancement_sweepmd).
+
+---
+
+### DEF-055 — Show sent items in conversation threads
+
+| Field | Value |
+| --- | --- |
+| Priority | **Pri-2** |
+| Status | Open (enhancement) |
+| Target wave | **Wave 7 / Trish extras** |
+| Area | `lib/mailbox/message_list_projector.dart`, `lib/ui/mailbox/mailbox_cubit.dart`, `lib/ui/mailbox/mailbox_state.dart`, folder/message query paths |
+| Platforms | All |
+| Logged | 2026-07-27 |
+
+**Summary**  
+Operator loses track of which conversations they’ve responded to and where their replies sit in the thread. Wants an option to **include Sent items** in conversation threading / thread view so outbound replies appear in context with the rest of the conversation.
+
+**Expected**  
+User-toggle (e.g. settings or folder/view option) merges Sent-folder messages into thread groups when they share the same thread key; expanded thread rows show operator replies in chronological order alongside received mail; Sent-only browsing still works when the toggle is off.
+
+**Actual**  
+Thread projection groups messages from the active folder/query only. Sent replies typically live under Sent and are not surfaced inside Inbox/other-folder thread rows, so conversation context is incomplete for “did I reply?” triage.
+
+**Notes**  
+Enhancement backlog — important for daily mail triage but not blocking Wave 2 PIM. **Target wave: Wave 7 / Trish extras.** Related: [DEF-042](#def-042--expandcollapse-chevron-and-1-badge-on-single-message-threads) (thread chrome); `ThreadDisplayMode` / `MessageListProjector`.
+
+---
+
+### DEF-056 — Thread/list sort: oldest first vs newest first
+
+| Field | Value |
+| --- | --- |
+| Priority | **Pri-2** |
+| Status | Open (enhancement) |
+| Target wave | **Wave 7 / Trish extras** |
+| Area | `lib/mailbox/message_list_projector.dart` (`_compareNewestFirst`), `lib/query/message_query.dart`, `lib/ui/settings/` (list sort preference), `lib/ui/shell/message_list_pane.dart` |
+| Platforms | All |
+| Logged | 2026-07-27 |
+
+**Summary**  
+Operator wants a **sort direction control** for message lists and threaded conversation views: **Show oldest first** or **Show newest first** (user-selectable).
+
+**Expected**  
+Setting or per-view toggle persists preference; flat and threaded list sections honor the chosen order (including within expanded thread children); date section headers remain coherent for both directions.
+
+**Actual**  
+List projection and query paths sort **newest-first** only (`_compareNewestFirst` in `MessageListProjector`; `message_query.dart` newest-first sort). No user-facing oldest-first option.
+
+**Notes**  
+Enhancement backlog — improves triage workflows (bottom-up vs top-down reading) but not urgent. **Target wave: Wave 7 / Trish extras.** Related: [DEF-055](#def-055--show-sent-items-in-conversation-threads) (thread view completeness).
 
 ---
 

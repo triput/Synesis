@@ -98,7 +98,7 @@ V2.0a / V2.0b / V2.0c remain **release buckets**; operator execution follows thi
 | **Wave 4** | P3–P4 — CardDAV/CalDAV (Runbox) | Planned | V2.0b |
 | **Wave 5** | P5–P6 — compose picker + Calendar UI (multi-select overlay / side-by-side) | Planned | V2.0c |
 | **Wave 6** | Cross-account DnD copy (events + contacts) | Planned | Post-V2.0c |
-| **Wave 7** | **Final polish / Trish extras** — UI niceties if time permits ([DEF-054](DEFECTS.md), [DEF-050](DEFECTS.md), [DEF-046](DEFECTS.md), overflow sweep, widget wishlist) | Planned | Not V2.0 critical path |
+| **Wave 7** | **Final polish / Trish extras** — UI niceties if time permits ([DEF-054](DEFECTS.md), [DEF-050](DEFECTS.md), [DEF-055](DEFECTS.md), [DEF-056](DEFECTS.md), [DEF-046](DEFECTS.md), overflow sweep, widget wishlist) | Planned | Not V2.0 critical path |
 
 **Locked PIM product requirements (operator):** multi-calendar and multi-contact-list across accounts; select 1+ to display; Outlook-like calendar overlay / side-by-side (Wave 5 UI); cross-account copy via DnD (**Wave 6**).
 
@@ -243,6 +243,8 @@ Visual polish & mailbox interaction backlog — **active; add items in [§7 Back
 | **Pri-2** | Signature images (HTML) | **Landed** (W4) | **W4** | [UI-P20](UI_ENHANCEMENT_SWEEP.md) |
 | **Pri-2** | [DEF-034](DEFECTS.md) / UI-P27 auto-mark read (5s default ON) | **Closed** (W7) | **W7** (V1 scope; **not W5 blocker**) |
 | **Pri-2.5** | [DEF-050](DEFECTS.md) list right-click mark read (solo vs thread prompt) | Open | **Wave 7 / Trish extras** |
+| **Pri-2** | [DEF-055](DEFECTS.md) include Sent items in conversation threads | Open (enhancement) | **Wave 7 / Trish extras** |
+| **Pri-2** | [DEF-056](DEFECTS.md) thread/list sort oldest first vs newest first | Open (enhancement) | **Wave 7 / Trish extras** |
 | **Pri-3** | [DEF-054](DEFECTS.md) resizable mail panes on Windows (drag vertical splitters) | Open | **Wave 7 / Trish extras** |
 | **Pri-3** | [DEF-046](DEFECTS.md) hamburger → folders-only sheet (swipe keeps full drawer) | Open (enhancement) | **Wave 7 / Trish extras** |
 | **Pri-3** | [DEF-039](DEFECTS.md) / [DEF-040](DEFECTS.md) account dialog overflow sweep | Open | **Wave 7 / Trish extras** |
