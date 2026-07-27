@@ -88,11 +88,15 @@ Register a **public client** (no client secret) in Microsoft Entra ID so Synesis
 3. **API permissions → Microsoft Graph → Delegated**
    - `Mail.ReadWrite`
    - `Mail.Send`
+   - `Contacts.Read` *(Wave 2 PIM — required for contact sync)*
+   - `Calendars.Read` *(Wave 2 PIM — required for calendar sync)*
    - `offline_access`
    - `openid`
    - `profile`
    - `User.Read`
    - Grant admin consent if your tenant requires it
+
+   **Re-consent:** Existing Graph accounts signed in before Wave 2 only hold mail scopes. After upgrading to a Wave 2+ build, users must **sign in again** (Edit account → re-auth) so the consent screen includes Contacts and Calendars.
 
 4. **Copy the Application (client) ID** and run with dart-defines (never commit the ID into source if you treat the registration as private; public-client IDs are not secrets, but keep tenant policy in mind):
 

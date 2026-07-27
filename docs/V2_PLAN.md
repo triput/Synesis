@@ -2,7 +2,7 @@
 
 | Field | Value |
 | --- | --- |
-| Status | **In progress** — **Wave 2 / V2.0a P1** next (Tesla — Graph contacts + calendars); Wave 0 ✅; Wave H ✅; **Wave 1 / P0 ✅** (2026-07-27, `00ebdef`, 516 tests) |
+| Status | **In progress** — **Wave 2 / V2.0a P1** (Tesla — Graph contacts + calendars); Wave 0 ✅; Wave H ✅; **Wave 1 / P0 ✅** (2026-07-27, `00ebdef`, 516 tests). **Re-consent:** existing Graph accounts must sign in again for `Contacts.Read` + `Calendars.Read` |
 | Headline | Contacts & calendar (TD-A) — not a new phone OS |
 | Prerequisite | V1 exit signed off; **V1.5 complete** ([V1_5_PLAN.md](V1_5_PLAN.md)) |
 | Watch | **P3 → V2.1** (not V2.0 critical path) |
@@ -57,7 +57,7 @@ Local store is provider-agnostic (`contacts` / `events` + sync cursors), same ph
 
 Per-version hygiene after V1.5 freeze: toolchain + pub debt + native/plugin skew + docs SDK pins. Checklist: [WAVE_H_DEPENDENCY_HYGIENE.md](WAVE_H_DEPENDENCY_HYGIENE.md).
 
-**Sequence:** Wave 0 → **Wave H ✅** → **Wave 1 (P0) ✅** → **Wave 2 (P1) ← next** → Waves 3–6 → **Wave 7** (if time permits).
+**Sequence:** Wave 0 → **Wave H ✅** → **Wave 1 (P0) ✅** → **Wave 2 (P1) ← in progress** → Waves 3–6 → **Wave 7** (if time permits).
 
 | Batch | Scope | Notes |
 | --- | --- | --- |
@@ -71,21 +71,21 @@ Per-version hygiene after V1.5 freeze: toolchain + pub debt + native/plugin skew
 
 ## 5. Operator waves (working sequence)
 
-**Status:** **Wave 1 complete** (2026-07-27, `00ebdef`); **Wave 2 next** (Tesla — Graph contacts + calendars). V2.0a / V2.0b / V2.0c below remain **release buckets** for ship grouping; operator execution follows this table.
+**Status:** **Wave 1 complete** (2026-07-27, `00ebdef`); **Wave 2 in progress** (Tesla — Graph contacts + calendars). V2.0a / V2.0b / V2.0c below remain **release buckets** for ship grouping; operator execution follows this table.
 
 | Wave | Scope | Owner(s) | Maps to |
 | --- | --- | --- | --- |
 | **Wave 0** | Account identity (display names, rail labels) | Jules / Andi | Pre-PIM gate |
 | **Wave H** | Dependency hygiene (SDK, pub, native/KGP) | Steve + team | Pre-V2.0a gate |
 | **Wave 1** | **P0 — expanded schema foundations** (multi-list contacts, multi-calendar, FTS, sync job no-ops) | Jules + Tesla | **V2.0a P0** ✅ **Complete** (2026-07-27) |
-| **Wave 2** | P1 — Graph contacts + calendars (multi-list/cal sync) | Tesla | **V2.0a P1** ← **next** |
+| **Wave 2** | P1 — Graph contacts + calendars (multi-list/cal sync) | Tesla | **V2.0a P1** ← **in progress** |
 | **Wave 3** | P2 — meeting-mail bridge (ICS, accept/decline) | Tesla + Jules | V2.0a P2 |
 | **Wave 4** | P3–P4 — CardDAV/CalDAV (Runbox; multi address-book / calendar discovery) | Jules | V2.0b |
 | **Wave 5** | P5–P6 — compose contact picker (FTS across selected lists) + Calendar module UI (multi-select overlay / side-by-side) | Jules | V2.0c |
 | **Wave 6** | Cross-account / cross-list **DnD copy** for events + contacts (local copy + push) | Jules + Tesla | Post-V2.0c polish |
 | **Wave 7** | **Final polish / Trish extras** — UI niceties & enhancement backlog if time permits (resizable panes, list context menus, mobile nav polish, overflow sweeps, widget wishlist). **Not V2.0 critical path.** | Jules / Andi | Scope-creep parking lot |
 
-Checklist: [V2_0A_P0_CHECKLIST.md](V2_0A_P0_CHECKLIST.md) (Wave 1 exit).
+Checklists: [V2_0A_P0_CHECKLIST.md](V2_0A_P0_CHECKLIST.md) (Wave 1 exit); [V2_WAVE2_CHECKLIST.md](V2_WAVE2_CHECKLIST.md) (Wave 2 exit — in progress).
 
 ### Wave 7 — Final polish / Trish extras (parking lot)
 
@@ -131,7 +131,7 @@ P5  Compose contact picker (FTS, all sources)
 P6  Calendar module UI (month/week, CRUD) wired to local store
 ```
 
-**Parallelism:** After P0, Tesla continues P1/P2 while Jules runs CardDAV **discovery spike** (well-known / Runbox) so P3 is not fake “day-one.”
+**Parallelism:** After P0, Tesla continues P1/P2 while Jules runs CardDAV **discovery spike** (well-known / Runbox) so P3 is not fake “day-one.” Spike doc: [CARDDAV_DISCOVERY_SPIKE.md](CARDDAV_DISCOVERY_SPIKE.md).
 
 **Why Graph before CardDAV:** Fastest dual-surface dogfood on existing tokens; CardDAV then proves the registry isn’t Graph-shaped.
 
@@ -151,7 +151,24 @@ P6  Calendar module UI (month/week, CRUD) wired to local store
 
 **Exit (Wave 1):** ✅ See [V2_0A_P0_CHECKLIST.md](V2_0A_P0_CHECKLIST.md). **Wave 2 (Graph PIM) and CardDAV discovery spike unblocked.**
 
-## 8. Release buckets (ship grouping)
+## 8. Wave 2 — V2.0a P1 (Graph contacts + calendars)
+
+**Status:** **In progress** (2026-07-27 kickoff). Checklist: [V2_WAVE2_CHECKLIST.md](V2_WAVE2_CHECKLIST.md). **Renee handoff:** [V2_0A_P0_QA.md](V2_0A_P0_QA.md) — preserve display prefs; stable provider identity. **Parallel:** Jules CardDAV discovery spike may run alongside Tesla.
+
+| Item | Scope | Notes |
+| --- | --- | --- |
+| **OAuth scopes** | `Contacts.Read`, `Calendars.Read` | Add to Graph consent; **re-consent required** for existing accounts |
+| **Contact lists bootstrap/incremental** | Graph `/me/contactFolders` → `contact_lists` | Multi-list; per-list cursor keys (`pim:contact_list:{id}`, `pim:contacts:{listId}`) |
+| **Contacts bootstrap/incremental** | Graph contacts per folder → `contacts` + emails/phones + FTS | Preserve local display prefs on upsert |
+| **Calendars bootstrap/incremental** | Graph `/me/calendars` → `calendars` | Multi-calendar; per-calendar cursor keys (`pim:calendar:{id}`, `pim:events:{calId}`) |
+| **Events bootstrap/incremental** | Graph events per calendar → `events` (+ attendees stub) | Preserve local display prefs on upsert |
+| **Stable provider identity** | Deterministic local ids / providerId mapping | Avoid duplicate rows per remote object ([V2_0A_P0_QA.md](V2_0A_P0_QA.md) §Wave 2 constraints) |
+| **Account-add enqueue** | Bootstrap jobs on Graph account add / re-auth | Incremental on sync cycle; no push/copy yet |
+| **Mail regression** | Graph mail sync unchanged | Full test suite green; no Calendar/People UI |
+
+**Exit (Wave 2):** See [V2_WAVE2_CHECKLIST.md](V2_WAVE2_CHECKLIST.md). **Wave 3 (meeting-mail bridge) unblocked on exit.**
+
+## 9. Release buckets (ship grouping)
 
 Operator waves 1–7 map into these buckets for release narrative:
 
@@ -169,9 +186,9 @@ Operator waves 1–7 map into these buckets for release narrative:
 | **Wave 0** | Account identity (A+B hybrid) — display names, rail labels | **Complete** (2026-07-27) |
 | **Wave H** | Dependency hygiene — SDK pins, pub soft/majors, native/KGP/sqlite3mc | **Complete** (2026-07-27) |
 | **Wave 1** | P0 — expanded local PIM schema + sync job no-ops | **Complete** (2026-07-27, `00ebdef`) |
-| **Wave 2** | P1 — Graph contacts + calendars (multi-list/cal sync) | **Next** — Tesla |
+| **Wave 2** | P1 — Graph contacts + calendars (multi-list/cal sync) | **In progress** — Tesla |
 
-## 9. Exit criteria (V2.0)
+## 10. Exit criteria (V2.0)
 
 - [ ] Contact picker in compose fed by local FTS (Graph and/or CardDAV sources)
 - [ ] CardDAV sync works against **Runbox** dogfood account
@@ -185,7 +202,7 @@ Operator waves 1–7 map into these buckets for release narrative:
 - [ ] Cross-account event + contact copy (DnD desktop / menu mobile) — Wave 6
 - [ ] Docs + E2E matrix rows for PIM; regression on V1/V1.5 mail paths
 
-## 10. Explicitly out of V2.0
+## 11. Explicitly out of V2.0
 
 | Item | Disposition |
 | --- | --- |
@@ -199,27 +216,29 @@ Operator waves 1–7 map into these buckets for release narrative:
 | Cross-account DnD copy (events + contacts) | **Wave 6** — after provider sync + Calendar/People UI |
 | UI niceties / operator enhancement backlog | **Wave 7 / Trish extras** — not V2.0 critical path |
 
-## 11. Forward-compat (from V1 / during V1.5)
+## 12. Forward-compat (from V1 / during V1.5)
 
 Do not expand V1.5 scope — only avoid painting corners:
 
-- OAuth scope room for Contacts + Calendars (Graph)
+- OAuth scope room for Contacts + Calendars (Graph) — **Wave 2 adds `Contacts.Read` + `Calendars.Read`; re-consent required**
 - Provider registry seam for CardDAV/CalDAV adapters
 - Compose recipients swappable from “recent headers” → contact FTS
 - Widget snapshot path reusable later for Watch (V2.1)
 
-## 12. Relationship to other docs
+## 13. Relationship to other docs
 
 | Doc | Role |
 | --- | --- |
 | [V2_0A_P0_CHECKLIST.md](V2_0A_P0_CHECKLIST.md) | Wave 1 / V2.0a P0 exit criteria |
 | [V2_0A_P0_QA.md](V2_0A_P0_QA.md) | Wave 1 Renee QA — GO + Wave 2 handoff constraints |
+| [V2_WAVE2_CHECKLIST.md](V2_WAVE2_CHECKLIST.md) | Wave 2 / V2.0a P1 exit criteria (in progress) |
 | [WAVE_H_DEPENDENCY_HYGIENE.md](WAVE_H_DEPENDENCY_HYGIENE.md) | Wave H checklist (batches H1–H5, exit gate) |
 | [TIER_D_PLAN.md](TIER_D_PLAN.md) §4 TD-A | Horizon detail; dispositions updated to point here |
 | [V1_5_PLAN.md](V1_5_PLAN.md) | Immediate post-V1 ship before this plan executes |
 | [ROADMAP.md](ROADMAP.md) | Living index |
+| [CARDDAV_DISCOVERY_SPIKE.md](CARDDAV_DISCOVERY_SPIKE.md) | Wave 2 parallel — RFC 6764 + Runbox (`https://dav.runbox.com/`) discovery design |
 | [SPEC.md](SPEC.md) §12.1 | Normative “planned contacts & calendar” |
 
 ---
 
-*Wave 0 complete 2026-07-27. Wave H complete 2026-07-27. **Wave 1 / V2.0a P0 complete** 2026-07-27 (`00ebdef`, 516 tests) — expanded multi-list / multi-calendar schema foundations. **Wave 2 (Graph PIM) next** — Tesla. **Wave 7 / Trish extras** parked for final polish if time permits.*
+*Wave 0 complete 2026-07-27. Wave H complete 2026-07-27. **Wave 1 / V2.0a P0 complete** 2026-07-27 (`00ebdef`, 516 tests). **Wave 2 (Graph PIM) in progress** — Tesla; re-consent for `Contacts.Read` + `Calendars.Read`. **Wave 7 / Trish extras** parked for final polish if time permits.*
