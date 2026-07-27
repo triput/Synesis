@@ -222,6 +222,41 @@ Enhancement backlog — improves triage workflows (bottom-up vs top-down reading
 
 ---
 
+### DEF-057 — Windows Settings AXTree console spam (“Nodes left pending by the update”)
+
+| Field | Value |
+| --- | --- |
+| Priority | **Pri-3** |
+| Status | Open (tracking) |
+| Area | `lib/ui/settings/` (NavigationRail section swaps, Dropdown/overlays); Flutter Windows `accessibility_bridge` / Chromium AXTree |
+| Platforms | Windows (debug builds) |
+| Logged | 2026-07-27 |
+| Found by | Trish (dogfood); Renee (triage) |
+
+**Summary**  
+Known Flutter Windows engine noise while browsing Settings: repeated `accessibility_bridge` errors when semantics subtrees reparent during NavigationRail section body replacement and Dropdown/overlay attach-detach. UI remains functional; not a Synesis Semantics misuse.
+
+**Symptom**  
+While browsing Settings on Windows debug, console repeats:
+
+`[ERROR:flutter/shell/platform/common/accessibility_bridge.cc(114)] Failed to update ui::AXTree, error: Nodes left pending by the update: …`
+
+(and same at line 65). DevTools VM service URLs in the same console are normal debug noise — not part of this defect.
+
+**Root cause hypothesis**  
+Flutter Windows `accessibility_bridge` / Chromium AXTree cannot atomically reparent semantics nodes during large Settings subtree swaps (NavigationRail section body replacement) and Dropdown/overlay attach-detach. Upstream family: [flutter#98099](https://github.com/flutter/flutter/issues/98099), [flutter#182444](https://github.com/flutter/flutter/issues/182444), [flutter#175041](https://github.com/flutter/flutter/issues/175041).
+
+**App assessment**  
+Not Synesis Semantics misuse — Settings uses ordinary Material; only intentional Semantics is color swatch in `account_color_picker`. No safe app fix; do not `ExcludeSemantics` the shell.
+
+**Disposition**  
+Track only. Ignore console spam unless Narrator/UIA clients actually break (then escalate). Recheck after Flutter engine upgrades.
+
+**Repro**  
+Windows debug → open Settings → click rail sections rapidly and/or open dropdowns/sheets.
+
+---
+
 ### DEF-011 — IMAP edit ignores host/port/user changes without a new password
 
 | Field | Value |
