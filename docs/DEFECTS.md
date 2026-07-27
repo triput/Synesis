@@ -10,7 +10,7 @@
 
 ## Open
 
-> **Changelog (2026-07-27):** Android dogfood folder/drawer polish complete — account chips, folder-picker sheet, title-bar **Show folders** → sheet. DEF-049 Graph reply-header send failure fixed.
+> **Changelog (2026-07-27):** Android dogfood folder/drawer polish complete — account chips, folder-picker sheet, title-bar **Show folders** → sheet. DEF-049 Graph reply-header send failure fixed. DEF-050 logged — list right-click mark read (solo vs thread).
 
 ### DEF-049 — Graph reply send fails: In-Reply-To not allowed on internetMessageHeaders
 
@@ -38,6 +38,30 @@ Compose Reply for a Graph account failed with `Send failed: The internet message
 
 **Follow-up**
 Ideal long-term: Graph `createReply` / `createReplyAll` when a Graph message id is available (Outlook conversationId threading). Extended properties preserve RFC headers for other clients.
+
+---
+
+### DEF-050 — Right-click mark read on message list (solo vs thread)
+
+| Field | Value |
+| --- | --- |
+| Priority | **Pri-2.5** |
+| Status | Open (enhancement) |
+| Area | `lib/ui/shell/message_list_pane.dart` (`_MessageRow`, `_ThreadRow`), `MailboxCubit.setUnreadBulk` |
+| Platforms | All (desktop right-click; phone long-press) |
+| Logged | 2026-07-27 |
+
+**Summary**  
+Operator wants a context-menu **Mark read** action on message rows in the list/inbox screen. **Solo message:** mark that message read immediately. **Conversation thread** (2+ messages in the row): prompt **“This message or entire thread?”** and apply read state to the chosen scope.
+
+**Expected**  
+Per-row context menu (right-click / long-press) with Mark read; thread rows disambiguate message-only vs whole-thread via a short confirmation; reuse existing local + provider Seen paths (`setUnreadBulk`).
+
+**Actual**  
+Message rows expose mark read/unread only via multi-select bulk toolbar and keyboard shortcuts. Folder tree already has mark-all-read context menus (`folder_sidebar.dart`); list rows do not.
+
+**Notes**  
+Enhancement backlog — not urgent, not blocking daily use. Related: [DEF-007](#def-007--sync-header-refresh-can-overwrite-local-readunread), [DEF-009](#def-009--rapid-concurrent-mark-readunread-has-no-in-flight-guard); closed [DEF-034](#def-034--no-auto-mark-as-read-after-viewing-a-message) (auto-mark on read dwell).
 
 ---
 
