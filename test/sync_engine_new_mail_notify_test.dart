@@ -126,6 +126,9 @@ class _NotifyRepo implements MailRepository {
   }
 
   @override
+  Future<List<MailAccount>> listAccounts() async => const <MailAccount>[];
+
+  @override
   Future<List<MailMessage>> upsertMessages(
     List<MailMessage> messages, {
     required String folderId,

@@ -4,13 +4,14 @@
 // Component: Sync / Integration
 // Version: 1.1 (Gold Master)
 // Created: 2026-07-14
-// Last Update: 2026-07-23
+// Last Update: 2026-07-27
 // ==============================================================================
 
 import 'package:synesis/auth/oauth_identity_manager.dart';
 import 'package:synesis/auth/secure_credential_store.dart';
 import 'package:synesis/domain/models.dart';
 import 'package:synesis/protocol/graph_mail_provider.dart';
+import 'package:synesis/protocol/graph_pim_provider.dart';
 import 'package:synesis/protocol/imap_smtp_mail_provider.dart';
 import 'package:synesis/protocol/mail_provider.dart';
 import 'package:synesis/repository/mail_repository.dart';
@@ -152,6 +153,33 @@ class ProviderRegistry {
     }
 
     return null;
+  }
+
+  /// Resolves a [GraphPimProvider] for Microsoft Graph accounts; otherwise null.
+  Future<GraphPimProvider?> resolvePim(String accountId) async {
+    final MailAccount? account = await _accountFor(accountId);
+    if (account == null) {
+      return null;
+    }
+    if (account.providerType != 'graph' &&
+        account.providerType != 'microsoft') {
+      return null;
+    }
+    final String? reference = account.credentialsRef?.trim();
+    if (reference == null || reference.isEmpty) {
+      return null;
+    }
+    final String credentialsRef = reference;
+    return GraphPimProvider(
+      () => _identityManager.getValidAccessToken(credentialsRef),
+      client: _httpClient,
+      onUnauthorized: () async {
+        await _identityManager.getValidAccessToken(
+          credentialsRef,
+          forceRefresh: true,
+        );
+      },
+    );
   }
 
   Future<MailAccount?> _accountFor(String accountId) async {

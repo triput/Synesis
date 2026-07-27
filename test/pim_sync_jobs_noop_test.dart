@@ -1,8 +1,8 @@
 // ==============================================================================
 // File: test/pim_sync_jobs_noop_test.dart
-// Description: PIM sync job types dispatch as successful no-ops in SyncEngine.
+// Description: PIM sync job types dispatch successfully in SyncEngine (push/copy no-op; bootstrap/incremental no-op without Graph PIM wiring).
 // Component: Test
-// Version: 1.0 (Gold Master)
+// Version: 1.1 (Gold Master)
 // Created: 2026-07-27
 // Last Update: 2026-07-27
 // ==============================================================================
@@ -108,7 +108,8 @@ void main() {
     expect(PimSyncJobs.eventsCursorKey('cal-1'), 'pim:events:cal-1');
   });
 
-  test('all registered PIM job types complete successfully as no-ops', () async {
+  test('all registered PIM job types complete successfully without PIM wiring',
+      () async {
     final _NoopRepo repo = _NoopRepo();
     final SyncEngine engine = SyncEngine(
       repository: repo,

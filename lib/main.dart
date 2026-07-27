@@ -4,7 +4,7 @@
 // Component: UI
 // Version: 1.3 (Gold Master)
 // Created: 2026-07-14
-// Last Update: 2026-07-23
+// Last Update: 2026-07-27
 // ==============================================================================
 
 import 'dart:async';
@@ -27,6 +27,7 @@ import 'package:synesis/notifications/notification_platform.dart';
 import 'package:synesis/notifications/notification_service.dart';
 import 'package:synesis/notifications/windows_notification_adapter.dart';
 import 'package:synesis/repository/database.dart';
+import 'package:synesis/repository/drift/drift_pim_store.dart';
 import 'package:synesis/repository/drift_mail_repository.dart';
 import 'package:synesis/settings/app_settings_cubit.dart';
 import 'package:synesis/sync/provider_registry.dart';
@@ -137,9 +138,19 @@ Future<void> main(List<String> args) async {
   // are assigned.
   late final NotificationService notificationService;
 
+  final DriftPimStore pimStore = DriftPimStore(
+    database,
+    notify: () {
+      // PIM writes notify via repository change stream when wired through
+      // shared DB; SyncEngine does not require UI fans-out here.
+    },
+  );
+
   final SyncEngine syncEngine = SyncEngine(
     repository: repository,
     resolveProvider: providerRegistry.resolve,
+    pimStore: pimStore,
+    resolvePim: providerRegistry.resolvePim,
     trashRetentionDays: () => settingsCubit.state.trashRetentionDays,
     deviceRetentionDays: () => settingsCubit.state.retentionDays,
     pushOnCellular: () => settingsCubit.state.pushOnCellular,

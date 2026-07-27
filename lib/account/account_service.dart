@@ -4,7 +4,7 @@
 // Component: Account / Integration
 // Version: 1.0 (Gold Master)
 // Created: 2026-07-14
-// Last Update: 2026-07-23
+// Last Update: 2026-07-27
 // ==============================================================================
 
 import 'package:synesis/auth/oauth_identity_manager.dart';
@@ -12,6 +12,7 @@ import 'package:synesis/auth/secure_credential_store.dart';
 import 'package:synesis/diagnostics/diagnostics_service.dart';
 import 'package:synesis/domain/models.dart';
 import 'package:synesis/repository/mail_repository.dart';
+import 'package:synesis/sync/pim_sync_jobs.dart';
 import 'package:synesis/widgets/widget_snapshot_service.dart';
 import 'package:flutter/material.dart';
 
@@ -66,6 +67,7 @@ class AccountService {
       accountId: id,
       type: 'bootstrap',
     );
+    await _enqueueGraphPimBootstrap(id);
     return account;
   }
 
@@ -316,7 +318,20 @@ class AccountService {
         accountId: account.id,
         type: 'bootstrap',
       );
+      await _enqueueGraphPimBootstrap(account.id);
     }
+  }
+
+  /// Enqueues Graph contact-list + calendar bootstrap jobs (Wave 2 PIM).
+  Future<void> _enqueueGraphPimBootstrap(String accountId) async {
+    await _repository.enqueueSyncJob(
+      accountId: accountId,
+      type: PimSyncJobs.contactListsBootstrap,
+    );
+    await _repository.enqueueSyncJob(
+      accountId: accountId,
+      type: PimSyncJobs.calendarsBootstrap,
+    );
   }
 
   /// Replaces IMAP/SMTP secrets for an existing account without changing [credentialsRef].

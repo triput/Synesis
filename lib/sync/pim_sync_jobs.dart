@@ -9,9 +9,8 @@
 
 /// String job types for contacts / calendars sync.
 ///
-/// Bootstrap and incremental types are registered as **no-op** handlers in
-/// [SyncEngine] for Wave 1 (P0). Real Graph/CardDAV adapters land in later
-/// waves.
+/// Bootstrap and incremental types are handled by [SyncEngine] for Graph
+/// accounts (Wave 2). Push/copy remain no-ops until CRUD / Wave 6.
 ///
 /// **Naming scheme:** `{collection}_{action}` where action is
 /// `bootstrap` | `incremental` | `push` | `copy`.

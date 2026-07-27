@@ -2,7 +2,7 @@
 // File: lib/sync/sync_engine.dart
 // Description: Sequential durable sync-job processor for local-first mail data.
 // Component: Sync
-// Version: 1.3 (Gold Master)
+// Version: 1.4 (Gold Master)
 // Created: 2026-07-14
 // Last Update: 2026-07-27
 // ==============================================================================
@@ -12,12 +12,16 @@ import 'dart:convert';
 
 import 'package:synesis/compose/outgoing_message_builder.dart';
 import 'package:synesis/domain/models.dart';
+import 'package:synesis/domain/pim.dart';
+import 'package:synesis/domain/pim_ids.dart';
 import 'package:synesis/domain/sync_profile.dart';
 import 'package:synesis/focus/focus.dart';
 import 'package:synesis/mime/outgoing_envelope.dart';
 import 'package:synesis/protocol/graph_mail_provider.dart';
+import 'package:synesis/protocol/graph_pim_provider.dart';
 import 'package:synesis/protocol/mail_provider.dart';
 import 'package:synesis/protocol/thread_id.dart';
+import 'package:synesis/repository/drift/drift_pim_store.dart';
 import 'package:synesis/repository/mail_repository.dart';
 import 'package:synesis/outbox/send_error_messages.dart';
 import 'package:synesis/sync/imap_idle_service.dart';
@@ -29,6 +33,9 @@ import 'package:flutter/foundation.dart'
     show TargetPlatform, defaultTargetPlatform, kIsWeb;
 
 typedef ProviderResolver = Future<MailProvider?> Function(String accountId);
+
+/// Resolves a Graph PIM adapter for Microsoft accounts (null for IMAP).
+typedef GraphPimResolver = Future<GraphPimProvider?> Function(String accountId);
 
 /// Invoked when newly inserted unread inbox messages arrive (non-bootstrap sync).
 typedef NewUnreadMailHandler = Future<void> Function(List<MailMessage> messages);
@@ -49,6 +56,8 @@ class SyncEngine {
   SyncEngine({
     required MailRepository repository,
     required ProviderResolver resolveProvider,
+    DriftPimStore? pimStore,
+    GraphPimResolver? resolvePim,
     TrashRetentionDaysReader? trashRetentionDays,
     DeviceRetentionDaysReader? deviceRetentionDays,
     PushOnCellularReader? pushOnCellular,
@@ -58,6 +67,8 @@ class SyncEngine {
     NewUnreadMailHandler? onNewUnread,
   }) : _repository = repository,
        _resolveProvider = resolveProvider,
+       _pimStore = pimStore,
+       _resolvePim = resolvePim,
        _trashRetentionDays = trashRetentionDays ?? (() => 30),
        _deviceRetentionDays = deviceRetentionDays ?? (() => 180),
        _pushOnCellular = pushOnCellular ?? (() => false),
@@ -80,6 +91,8 @@ class SyncEngine {
 
   final MailRepository _repository;
   final ProviderResolver _resolveProvider;
+  final DriftPimStore? _pimStore;
+  final GraphPimResolver? _resolvePim;
   final TrashRetentionDaysReader _trashRetentionDays;
   final DeviceRetentionDaysReader _deviceRetentionDays;
   final PushOnCellularReader _pushOnCellular;
@@ -210,6 +223,37 @@ class SyncEngine {
 
   Future<void> enqueueIncremental(String accountId) async {
     await _repository.enqueueSyncJob(accountId: accountId, type: 'incremental');
+    await enqueuePimIncremental(accountId);
+  }
+
+  /// Enqueues Graph PIM collection incremental jobs (no-op for non-Graph).
+  Future<void> enqueuePimIncremental(String accountId) async {
+    if (!await _isGraphAccount(accountId)) {
+      return;
+    }
+    await _repository.enqueueSyncJob(
+      accountId: accountId,
+      type: PimSyncJobs.contactListsIncremental,
+    );
+    await _repository.enqueueSyncJob(
+      accountId: accountId,
+      type: PimSyncJobs.calendarsIncremental,
+    );
+  }
+
+  /// Enqueues Graph PIM bootstrap jobs after account add / re-auth.
+  Future<void> enqueuePimBootstrap(String accountId) async {
+    if (!await _isGraphAccount(accountId)) {
+      return;
+    }
+    await _repository.enqueueSyncJob(
+      accountId: accountId,
+      type: PimSyncJobs.contactListsBootstrap,
+    );
+    await _repository.enqueueSyncJob(
+      accountId: accountId,
+      type: PimSyncJobs.calendarsBootstrap,
+    );
   }
 
   /// Near-push wake: enqueues an incremental sync for [accountId].
@@ -335,19 +379,35 @@ class SyncEngine {
       case trashPurgeJobType:
         await _runTrashPurge();
         return null;
-      // Wave 1 P0: PIM job types — no-op until Graph/CardDAV adapters (Wave 2+).
       case PimSyncJobs.contactListsBootstrap:
+        await _syncContactLists(job, bootstrap: true);
+        return null;
       case PimSyncJobs.contactListsIncremental:
+        await _syncContactLists(job, bootstrap: false);
+        return null;
       case PimSyncJobs.contactsBootstrap:
+        await _syncContacts(job, bootstrap: true);
+        return null;
       case PimSyncJobs.contactsIncremental:
+        await _syncContacts(job, bootstrap: false);
+        return null;
       case PimSyncJobs.calendarsBootstrap:
+        await _syncCalendars(job, bootstrap: true);
+        return null;
       case PimSyncJobs.calendarsIncremental:
+        await _syncCalendars(job, bootstrap: false);
+        return null;
       case PimSyncJobs.eventsBootstrap:
+        await _syncEvents(job, bootstrap: true);
+        return null;
       case PimSyncJobs.eventsIncremental:
+        await _syncEvents(job, bootstrap: false);
+        return null;
       case PimSyncJobs.contactsPush:
       case PimSyncJobs.contactsCopy:
       case PimSyncJobs.eventsPush:
       case PimSyncJobs.eventsCopy:
+        // Reserved until CRUD / Wave 6 DnD copy.
         return null;
       default:
         throw ArgumentError.value(
@@ -355,6 +415,371 @@ class SyncEngine {
           'job.type',
           'Unsupported sync job type.',
         );
+    }
+  }
+
+  Future<bool> _isGraphAccount(String accountId) async {
+    try {
+      for (final MailAccount account in await _repository.listAccounts()) {
+        if (account.id == accountId) {
+          return account.providerType == 'graph' ||
+              account.providerType == 'microsoft';
+        }
+      }
+    } on Object {
+      // Test doubles / transient store errors — treat as non-Graph.
+      return false;
+    }
+    return false;
+  }
+
+  Future<GraphPimProvider?> _pimProvider(String accountId) async {
+    final GraphPimResolver? resolve = _resolvePim;
+    if (resolve == null) {
+      return null;
+    }
+    return resolve(accountId);
+  }
+
+  Future<void> _syncContactLists(SyncJob job, {required bool bootstrap}) async {
+    final DriftPimStore? store = _pimStore;
+    final GraphPimProvider? provider = await _pimProvider(job.accountId);
+    if (store == null || provider == null) {
+      return;
+    }
+    try {
+      final List<GraphContactFolder> folders =
+          await provider.listContactFolders();
+      final List<ContactList> lists = provider.mapContactFolders(
+        folders,
+        accountId: job.accountId,
+      );
+      await store.upsertContactLists(lists);
+
+      // Re-read so contactListId matches store identity (provider-id lookup).
+      final List<ContactList> stored = await store.listContactLists(
+        accountId: job.accountId,
+      );
+
+      // Metadata cursor: timestamp marker (folders lack a stable delta API).
+      final String metaKey = PimSyncJobs.contactListCursorKey(job.accountId);
+      await _repository.setCursor(
+        job.accountId,
+        job.accountId,
+        metaKey,
+        DateTime.now().toUtc().toIso8601String(),
+      );
+
+      for (final ContactList list in stored) {
+        await _repository.enqueueSyncJob(
+          accountId: job.accountId,
+          type: bootstrap
+              ? PimSyncJobs.contactsBootstrap
+              : PimSyncJobs.contactsIncremental,
+          payloadJson: jsonEncode(<String, String>{
+            'contactListId': list.id,
+            'providerId': list.providerId,
+          }),
+        );
+      }
+    } finally {
+      await provider.dispose();
+    }
+  }
+
+  Future<void> _syncContacts(SyncJob job, {required bool bootstrap}) async {
+    final DriftPimStore? store = _pimStore;
+    final GraphPimProvider? provider = await _pimProvider(job.accountId);
+    if (store == null || provider == null) {
+      return;
+    }
+    final Map<String, Object?> payload = _decodePayload(job.payloadJson);
+    final String? contactListId = payload['contactListId'] as String?;
+    final String? providerId = payload['providerId'] as String?;
+    if (contactListId == null ||
+        contactListId.isEmpty ||
+        providerId == null ||
+        providerId.isEmpty) {
+      return;
+    }
+    try {
+      final String cursorKey = PimSyncJobs.contactsCursorKey(contactListId);
+      final String? existing = bootstrap
+          ? null
+          : await _repository.getCursor(
+              job.accountId,
+              contactListId,
+              cursorKey,
+            );
+      final String? deltaLink =
+          (existing == null || existing.isEmpty) ? null : existing;
+
+      GraphPimDeltaResult<GraphContactBundle> result;
+      try {
+        result = await provider.syncContacts(
+          accountId: job.accountId,
+          contactListId: contactListId,
+          folderProviderId: providerId,
+          deltaLink: deltaLink,
+        );
+      } on ProtocolException catch (error) {
+        if (error.statusCode == 410) {
+          await _repository.setCursor(
+            job.accountId,
+            contactListId,
+            cursorKey,
+            '',
+          );
+          result = await provider.syncContacts(
+            accountId: job.accountId,
+            contactListId: contactListId,
+            folderProviderId: providerId,
+          );
+        } else {
+          rethrow;
+        }
+      }
+
+      if (result.changed.isNotEmpty) {
+        await store.upsertContacts(
+          result.changed
+              .map((GraphContactBundle bundle) => bundle.contact)
+              .toList(growable: false),
+        );
+        final List<ContactEmail> emails = <ContactEmail>[];
+        final List<ContactPhone> phones = <ContactPhone>[];
+        for (final GraphContactBundle bundle in result.changed) {
+          emails.addAll(bundle.emails);
+          phones.addAll(bundle.phones);
+        }
+        await store.upsertContactEmails(emails);
+        await store.upsertContactPhones(phones);
+      }
+
+      if (result.removedProviderIds.isNotEmpty) {
+        final int now = DateTime.now().millisecondsSinceEpoch;
+        final List<Contact> softDeleted = <Contact>[];
+        for (final String removedId in result.removedProviderIds) {
+          final Contact? existingContact = await store.findContactByProviderId(
+            accountId: job.accountId,
+            providerId: removedId,
+          );
+          if (existingContact == null) {
+            softDeleted.add(
+              Contact(
+                id: PimIds.stableLocalId(job.accountId, removedId),
+                accountId: job.accountId,
+                contactListId: contactListId,
+                providerId: removedId,
+                displayName: '',
+                updatedAt: now,
+                deletedAt: now,
+              ),
+            );
+          } else {
+            softDeleted.add(
+              Contact(
+                id: existingContact.id,
+                accountId: existingContact.accountId,
+                contactListId: existingContact.contactListId,
+                providerId: existingContact.providerId,
+                displayName: existingContact.displayName,
+                givenName: existingContact.givenName,
+                familyName: existingContact.familyName,
+                company: existingContact.company,
+                notes: existingContact.notes,
+                etag: existingContact.etag,
+                updatedAt: now,
+                deletedAt: now,
+              ),
+            );
+          }
+        }
+        await store.upsertContacts(softDeleted);
+      }
+
+      final String? link = result.deltaLink;
+      if (link != null && link.isNotEmpty) {
+        await _repository.setCursor(
+          job.accountId,
+          contactListId,
+          cursorKey,
+          link,
+        );
+      }
+    } finally {
+      await provider.dispose();
+    }
+  }
+
+  Future<void> _syncCalendars(SyncJob job, {required bool bootstrap}) async {
+    final DriftPimStore? store = _pimStore;
+    final GraphPimProvider? provider = await _pimProvider(job.accountId);
+    if (store == null || provider == null) {
+      return;
+    }
+    try {
+      final List<GraphCalendarInfo> remote = await provider.listCalendars();
+      final List<Calendar> calendars = provider.mapCalendars(
+        remote,
+        accountId: job.accountId,
+      );
+      await store.upsertCalendars(calendars);
+
+      final List<Calendar> stored = await store.listCalendars(
+        accountId: job.accountId,
+      );
+
+      final String metaKey = PimSyncJobs.calendarCursorKey(job.accountId);
+      await _repository.setCursor(
+        job.accountId,
+        job.accountId,
+        metaKey,
+        DateTime.now().toUtc().toIso8601String(),
+      );
+
+      for (final Calendar calendar in stored) {
+        await _repository.enqueueSyncJob(
+          accountId: job.accountId,
+          type: bootstrap
+              ? PimSyncJobs.eventsBootstrap
+              : PimSyncJobs.eventsIncremental,
+          payloadJson: jsonEncode(<String, String>{
+            'calendarId': calendar.id,
+            'providerId': calendar.providerId,
+          }),
+        );
+      }
+    } finally {
+      await provider.dispose();
+    }
+  }
+
+  Future<void> _syncEvents(SyncJob job, {required bool bootstrap}) async {
+    final DriftPimStore? store = _pimStore;
+    final GraphPimProvider? provider = await _pimProvider(job.accountId);
+    if (store == null || provider == null) {
+      return;
+    }
+    final Map<String, Object?> payload = _decodePayload(job.payloadJson);
+    final String? calendarId = payload['calendarId'] as String?;
+    final String? providerId = payload['providerId'] as String?;
+    if (calendarId == null ||
+        calendarId.isEmpty ||
+        providerId == null ||
+        providerId.isEmpty) {
+      return;
+    }
+    try {
+      final String cursorKey = PimSyncJobs.eventsCursorKey(calendarId);
+      final String? existing = bootstrap
+          ? null
+          : await _repository.getCursor(
+              job.accountId,
+              calendarId,
+              cursorKey,
+            );
+      final String? deltaLink =
+          (existing == null || existing.isEmpty) ? null : existing;
+
+      GraphPimDeltaResult<GraphEventBundle> result;
+      try {
+        result = await provider.syncEvents(
+          accountId: job.accountId,
+          calendarId: calendarId,
+          calendarProviderId: providerId,
+          deltaLink: deltaLink,
+        );
+      } on ProtocolException catch (error) {
+        if (error.statusCode == 410) {
+          await _repository.setCursor(
+            job.accountId,
+            calendarId,
+            cursorKey,
+            '',
+          );
+          result = await provider.syncEvents(
+            accountId: job.accountId,
+            calendarId: calendarId,
+            calendarProviderId: providerId,
+          );
+        } else {
+          rethrow;
+        }
+      }
+
+      if (result.changed.isNotEmpty) {
+        await store.upsertEvents(
+          result.changed
+              .map((GraphEventBundle bundle) => bundle.event)
+              .toList(growable: false),
+        );
+        final List<EventAttendee> attendees = <EventAttendee>[];
+        for (final GraphEventBundle bundle in result.changed) {
+          attendees.addAll(bundle.attendees);
+        }
+        await store.upsertEventAttendees(attendees);
+      }
+
+      if (result.removedProviderIds.isNotEmpty) {
+        final int now = DateTime.now().millisecondsSinceEpoch;
+        final List<CalendarEvent> softDeleted = <CalendarEvent>[];
+        for (final String removedId in result.removedProviderIds) {
+          final CalendarEvent? existingEvent =
+              await store.findEventByProviderId(
+            accountId: job.accountId,
+            providerId: removedId,
+          );
+          if (existingEvent == null) {
+            softDeleted.add(
+              CalendarEvent(
+                id: PimIds.stableLocalId(job.accountId, removedId),
+                accountId: job.accountId,
+                calendarId: calendarId,
+                providerId: removedId,
+                title: '',
+                startEpochMs: now,
+                endEpochMs: now,
+                updatedAt: now,
+                deletedAt: now,
+              ),
+            );
+          } else {
+            softDeleted.add(
+              CalendarEvent(
+                id: existingEvent.id,
+                accountId: existingEvent.accountId,
+                calendarId: existingEvent.calendarId,
+                providerId: existingEvent.providerId,
+                title: existingEvent.title,
+                body: existingEvent.body,
+                startEpochMs: existingEvent.startEpochMs,
+                endEpochMs: existingEvent.endEpochMs,
+                allDay: existingEvent.allDay,
+                location: existingEvent.location,
+                rrule: existingEvent.rrule,
+                reminderMinutes: existingEvent.reminderMinutes,
+                etag: existingEvent.etag,
+                updatedAt: now,
+                deletedAt: now,
+              ),
+            );
+          }
+        }
+        await store.upsertEvents(softDeleted);
+      }
+
+      final String? link = result.deltaLink;
+      if (link != null && link.isNotEmpty) {
+        await _repository.setCursor(
+          job.accountId,
+          calendarId,
+          cursorKey,
+          link,
+        );
+      }
+    } finally {
+      await provider.dispose();
     }
   }
 
