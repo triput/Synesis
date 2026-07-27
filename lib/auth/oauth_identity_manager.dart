@@ -4,7 +4,7 @@
 // Component: Auth / Integration
 // Version: 1.0 (Gold Master)
 // Created: 2026-07-14
-// Last Update: 2026-07-23
+// Last Update: 2026-07-27
 // ==============================================================================
 
 import 'dart:convert';
@@ -38,6 +38,12 @@ class GraphAuthConfig {
   static const String desktopRedirectUri = 'http://127.0.0.1:8765/callback';
   static const String androidRedirectUri = 'synesis://auth';
 
+  /// Delegated Graph scopes for mail + read-only PIM (contacts / calendars).
+  ///
+  /// **Re-consent:** existing Microsoft Graph accounts signed in before
+  /// `Contacts.Read` / `Calendars.Read` were added must sign in again so the
+  /// refresh token is issued with the expanded scope set. Mail-only tokens
+  /// cannot call People or Calendar APIs until the user re-consents.
   static const List<String> scopes = <String>[
     'openid',
     'profile',
@@ -45,6 +51,8 @@ class GraphAuthConfig {
     'User.Read',
     'Mail.ReadWrite',
     'Mail.Send',
+    'Contacts.Read',
+    'Calendars.Read',
   ];
 
   final String clientId;

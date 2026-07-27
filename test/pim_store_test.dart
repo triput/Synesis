@@ -1,6 +1,6 @@
 // ==============================================================================
 // File: test/pim_store_test.dart
-// Description: Empty and multi-collection fixtures for DriftPimStore read paths.
+// Description: Empty, multi-collection, and preserve-on-upsert fixtures for DriftPimStore.
 // Component: Test
 // Version: 1.0 (Gold Master)
 // Created: 2026-07-27
@@ -12,6 +12,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:synesis/domain/models.dart';
 import 'package:synesis/domain/pim.dart';
+import 'package:synesis/domain/pim_ids.dart';
 import 'package:synesis/repository/database.dart';
 import 'package:synesis/repository/drift/drift_pim_store.dart';
 import 'package:synesis/repository/drift_mail_repository.dart';
@@ -36,8 +37,28 @@ Future<void> _seedAccount(SynesisDatabase database, String accountId) async {
   );
 }
 
+String _id(String accountId, String providerId) =>
+    DriftPimStore.stableLocalId(accountId, providerId);
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+
+  group('PimIds.stableLocalId', () {
+    test('is deterministic for accountId + providerId', () {
+      expect(
+        PimIds.stableLocalId('work', 'default'),
+        PimIds.stableLocalId('work', 'default'),
+      );
+      expect(
+        PimIds.stableLocalId('work', 'default'),
+        isNot(PimIds.stableLocalId('personal', 'default')),
+      );
+      expect(
+        DriftPimStore.stableLocalId('a', 'b'),
+        PimIds.stableLocalId('a', 'b'),
+      );
+    });
+  });
 
   group('DriftPimStore empty queries', () {
     test('list helpers return empty on fresh schema', () async {
@@ -66,9 +87,22 @@ void main() {
       await _seedAccount(database, 'work');
       await _seedAccount(database, 'personal');
 
-      await store.upsertContactLists(const <ContactList>[
+      final String listWorkDefault = _id('work', 'default');
+      final String listWorkHidden = _id('work', 'archive');
+      final String listPersonal = _id('personal', 'default');
+      final String calWork = _id('work', 'primary');
+      final String calWorkHolidays = _id('work', 'holidays');
+      final String calPersonal = _id('personal', 'primary');
+      final String c1 = _id('work', 'p1');
+      final String c2 = _id('work', 'p2');
+      final String c3 = _id('personal', 'p3');
+      final String e1 = _id('work', 'ev1');
+      final String e2 = _id('work', 'ev2');
+      final String e3 = _id('personal', 'ev3');
+
+      await store.upsertContactLists(<ContactList>[
         ContactList(
-          id: 'list-work-default',
+          id: listWorkDefault,
           accountId: 'work',
           providerId: 'default',
           name: 'Contacts',
@@ -77,7 +111,7 @@ void main() {
           sortIndex: 0,
         ),
         ContactList(
-          id: 'list-work-hidden',
+          id: listWorkHidden,
           accountId: 'work',
           providerId: 'archive',
           name: 'Archive',
@@ -85,7 +119,7 @@ void main() {
           sortIndex: 1,
         ),
         ContactList(
-          id: 'list-personal',
+          id: listPersonal,
           accountId: 'personal',
           providerId: 'default',
           name: 'Personal',
@@ -96,36 +130,36 @@ void main() {
         ),
       ]);
 
-      await store.upsertContacts(const <Contact>[
+      await store.upsertContacts(<Contact>[
         Contact(
-          id: 'c1',
+          id: c1,
           accountId: 'work',
-          contactListId: 'list-work-default',
+          contactListId: listWorkDefault,
           providerId: 'p1',
           displayName: 'Alice',
           updatedAt: 1,
         ),
         Contact(
-          id: 'c2',
+          id: c2,
           accountId: 'work',
-          contactListId: 'list-work-hidden',
+          contactListId: listWorkHidden,
           providerId: 'p2',
           displayName: 'Bob',
           updatedAt: 2,
         ),
         Contact(
-          id: 'c3',
+          id: c3,
           accountId: 'personal',
-          contactListId: 'list-personal',
+          contactListId: listPersonal,
           providerId: 'p3',
           displayName: 'Carol',
           updatedAt: 3,
         ),
       ]);
 
-      await store.upsertCalendars(const <Calendar>[
+      await store.upsertCalendars(<Calendar>[
         Calendar(
-          id: 'cal-work',
+          id: calWork,
           accountId: 'work',
           providerId: 'primary',
           name: 'Work',
@@ -135,7 +169,7 @@ void main() {
           sortIndex: 0,
         ),
         Calendar(
-          id: 'cal-work-holidays',
+          id: calWorkHolidays,
           accountId: 'work',
           providerId: 'holidays',
           name: 'Holidays',
@@ -144,7 +178,7 @@ void main() {
           sortIndex: 1,
         ),
         Calendar(
-          id: 'cal-personal',
+          id: calPersonal,
           accountId: 'personal',
           providerId: 'primary',
           name: 'Personal',
@@ -156,11 +190,11 @@ void main() {
         ),
       ]);
 
-      await store.upsertEvents(const <CalendarEvent>[
+      await store.upsertEvents(<CalendarEvent>[
         CalendarEvent(
-          id: 'e1',
+          id: e1,
           accountId: 'work',
-          calendarId: 'cal-work',
+          calendarId: calWork,
           providerId: 'ev1',
           title: 'Standup',
           startEpochMs: 1000,
@@ -168,9 +202,9 @@ void main() {
           updatedAt: 1,
         ),
         CalendarEvent(
-          id: 'e2',
+          id: e2,
           accountId: 'work',
-          calendarId: 'cal-work-holidays',
+          calendarId: calWorkHolidays,
           providerId: 'ev2',
           title: 'Holiday',
           startEpochMs: 3000,
@@ -179,9 +213,9 @@ void main() {
           updatedAt: 2,
         ),
         CalendarEvent(
-          id: 'e3',
+          id: e3,
           accountId: 'personal',
-          calendarId: 'cal-personal',
+          calendarId: calPersonal,
           providerId: 'ev3',
           title: 'Dentist',
           startEpochMs: 5000,
@@ -194,27 +228,27 @@ void main() {
           await store.listSelectedContactLists();
       expect(
         selectedLists.map((ContactList list) => list.id).toSet(),
-        <String>{'list-work-default', 'list-personal'},
+        <String>{listWorkDefault, listPersonal},
       );
 
       final List<Contact> selectedContacts =
           await store.listContactsForSelectedLists();
       expect(
         selectedContacts.map((Contact contact) => contact.id).toSet(),
-        <String>{'c1', 'c3'},
+        <String>{c1, c3},
       );
 
       final List<Calendar> selectedCals = await store.listSelectedCalendars();
       expect(
         selectedCals.map((Calendar calendar) => calendar.id).toSet(),
-        <String>{'cal-work', 'cal-personal'},
+        <String>{calWork, calPersonal},
       );
 
       final List<CalendarEvent> selectedEvents =
           await store.listEventsForSelectedCalendars();
       expect(
         selectedEvents.map((CalendarEvent event) => event.id).toSet(),
-        <String>{'e1', 'e3'},
+        <String>{e1, e3},
       );
 
       final Map<String, List<Calendar>> grouped =
@@ -225,6 +259,161 @@ void main() {
 
       expect(await store.listContactLists(accountId: 'work'), hasLength(2));
       expect(await store.listCalendars(accountId: 'personal'), hasLength(1));
+    });
+  });
+
+  group('DriftPimStore preserve-on-upsert', () {
+    test('contact list display prefs survive provider refresh', () async {
+      final (SynesisDatabase database, DriftPimStore store) =
+          await _openPimStore();
+      addTearDown(database.close);
+      await _seedAccount(database, 'work');
+
+      await store.upsertContactLists(const <ContactList>[
+        ContactList(
+          id: 'ignored-on-insert',
+          accountId: 'work',
+          providerId: 'default',
+          name: 'Contacts',
+          isDefault: true,
+          isSelectedForDisplay: false,
+          sortIndex: 7,
+          colorArgb: 0xFF111111,
+        ),
+      ]);
+
+      final ContactList? inserted = await store.findContactListByProviderId(
+        accountId: 'work',
+        providerId: 'default',
+      );
+      expect(inserted, isNotNull);
+      expect(inserted!.id, _id('work', 'default'));
+      expect(inserted.isSelectedForDisplay, isFalse);
+      expect(inserted.sortIndex, 7);
+
+      // Provider refresh with different display defaults + renamed list.
+      await store.upsertContactLists(const <ContactList>[
+        ContactList(
+          id: 'different-caller-id',
+          accountId: 'work',
+          providerId: 'default',
+          name: 'All Contacts',
+          isDefault: true,
+          isSelectedForDisplay: true,
+          sortIndex: 0,
+          colorArgb: 0xFF222222,
+        ),
+      ]);
+
+      final List<ContactList> lists = await store.listContactLists(
+        accountId: 'work',
+      );
+      expect(lists, hasLength(1));
+      expect(lists.single.id, _id('work', 'default'));
+      expect(lists.single.name, 'All Contacts');
+      expect(lists.single.colorArgb, 0xFF222222);
+      expect(lists.single.isSelectedForDisplay, isFalse);
+      expect(lists.single.sortIndex, 7);
+    });
+
+    test('calendar display prefs survive provider refresh', () async {
+      final (SynesisDatabase database, DriftPimStore store) =
+          await _openPimStore();
+      addTearDown(database.close);
+      await _seedAccount(database, 'work');
+
+      await store.upsertCalendars(const <Calendar>[
+        Calendar(
+          id: 'ignored-on-insert',
+          accountId: 'work',
+          providerId: 'primary',
+          name: 'Calendar',
+          colorArgb: 0xFF112233,
+          colorOverrideArgb: 0xFF00FF00,
+          isDefault: true,
+          isSelectedForDisplay: false,
+          sortIndex: 3,
+        ),
+      ]);
+
+      final Calendar? inserted = await store.findCalendarByProviderId(
+        accountId: 'work',
+        providerId: 'primary',
+      );
+      expect(inserted, isNotNull);
+      expect(inserted!.id, _id('work', 'primary'));
+      expect(inserted.colorOverrideArgb, 0xFF00FF00);
+      expect(inserted.isSelectedForDisplay, isFalse);
+      expect(inserted.sortIndex, 3);
+
+      await store.upsertCalendars(const <Calendar>[
+        Calendar(
+          id: 'different-caller-id',
+          accountId: 'work',
+          providerId: 'primary',
+          name: 'Work Calendar',
+          colorArgb: 0xFF445566,
+          colorOverrideArgb: 0xFFFF0000,
+          isDefault: true,
+          isSelectedForDisplay: true,
+          sortIndex: 0,
+        ),
+      ]);
+
+      final List<Calendar> calendars = await store.listCalendars(
+        accountId: 'work',
+      );
+      expect(calendars, hasLength(1));
+      expect(calendars.single.id, _id('work', 'primary'));
+      expect(calendars.single.name, 'Work Calendar');
+      expect(calendars.single.colorArgb, 0xFF445566);
+      expect(calendars.single.colorOverrideArgb, 0xFF00FF00);
+      expect(calendars.single.isSelectedForDisplay, isFalse);
+      expect(calendars.single.sortIndex, 3);
+    });
+
+    test('contact upsert by providerId avoids duplicate rows', () async {
+      final (SynesisDatabase database, DriftPimStore store) =
+          await _openPimStore();
+      addTearDown(database.close);
+      await _seedAccount(database, 'work');
+
+      final String listId = _id('work', 'default');
+      await store.upsertContactLists(<ContactList>[
+        ContactList(
+          id: listId,
+          accountId: 'work',
+          providerId: 'default',
+          name: 'Contacts',
+          isDefault: true,
+        ),
+      ]);
+
+      await store.upsertContacts(<Contact>[
+        Contact(
+          id: 'caller-a',
+          accountId: 'work',
+          contactListId: listId,
+          providerId: 'p1',
+          displayName: 'Alice',
+          updatedAt: 1,
+        ),
+      ]);
+      await store.upsertContacts(<Contact>[
+        Contact(
+          id: 'caller-b',
+          accountId: 'work',
+          contactListId: listId,
+          providerId: 'p1',
+          displayName: 'Alice Updated',
+          updatedAt: 2,
+        ),
+      ]);
+
+      final List<Contact> contacts = await store.listContacts(accountId: 'work');
+      expect(contacts, hasLength(1));
+      expect(contacts.single.id, _id('work', 'p1'));
+      expect(contacts.single.displayName, 'Alice Updated');
     });
   });
 }

@@ -9,9 +9,15 @@
 
 import 'package:drift/drift.dart';
 import 'package:synesis/domain/pim.dart';
+import 'package:synesis/domain/pim_ids.dart';
 import 'package:synesis/repository/database.dart';
 
 /// Thin PIM persistence facade (Wave 1 P0 — no provider adapters).
+///
+/// Collection upserts ([upsertContactLists] / [upsertCalendars]) preserve local
+/// display preferences on conflict so provider refreshes do not clobber user
+/// toggles (Wave 2 / V2.0a P0 QA). New rows use [PimIds.stableLocalId] after a
+/// lookup by `(accountId, providerId)` to avoid duplicate local rows.
 class DriftPimStore {
   DriftPimStore(
     this._database, {
@@ -20,6 +26,13 @@ class DriftPimStore {
 
   final SynesisDatabase _database;
   final void Function() _notify;
+
+  /// Deterministic local primary key for a provider-scoped PIM row.
+  ///
+  /// Prefer this (or [PimIds.stableLocalId]) when constructing domain models
+  /// before insert; upserts also apply it for new rows.
+  static String stableLocalId(String accountId, String providerId) =>
+      PimIds.stableLocalId(accountId, providerId);
 
   // ---------------------------------------------------------------------------
   // Contact lists
@@ -50,24 +63,63 @@ class DriftPimStore {
         .toList(growable: false);
   }
 
+  /// Looks up a contact list by account + remote provider id.
+  Future<ContactList?> findContactListByProviderId({
+    required String accountId,
+    required String providerId,
+  }) async {
+    final ContactListRow? row = await _findContactListRow(
+      accountId: accountId,
+      providerId: providerId,
+    );
+    return row == null ? null : _contactListFromRow(row);
+  }
+
+  /// Upserts contact lists by `(accountId, providerId)`.
+  ///
+  /// On conflict, updates server metadata (`name`, `colorArgb`, `isDefault`)
+  /// but leaves [ContactList.isSelectedForDisplay] and [ContactList.sortIndex]
+  /// unchanged. New rows insert with [stableLocalId] and the provided display
+  /// defaults.
   Future<void> upsertContactLists(List<ContactList> lists) async {
     if (lists.isEmpty) {
       return;
     }
     await _database.transaction(() async {
       for (final ContactList list in lists) {
-        await _database.into(_database.contactLists).insertOnConflictUpdate(
-              ContactListsCompanion.insert(
-                id: list.id,
-                accountId: list.accountId,
-                providerId: list.providerId,
-                name: list.name,
-                colorArgb: Value<int?>(list.colorArgb),
-                isDefault: Value<bool>(list.isDefault),
-                isSelectedForDisplay: Value<bool>(list.isSelectedForDisplay),
-                sortIndex: Value<int?>(list.sortIndex),
-              ),
-            );
+        final ContactListRow? existing = await _findContactListRow(
+          accountId: list.accountId,
+          providerId: list.providerId,
+        );
+        if (existing != null) {
+          await (_database.update(_database.contactLists)..where(
+                (ContactLists table) => table.id.equals(existing.id),
+              ))
+              .write(
+            ContactListsCompanion(
+              name: Value<String>(list.name),
+              colorArgb: Value<int?>(list.colorArgb),
+              isDefault: Value<bool>(list.isDefault),
+              // Preserve local display prefs on provider refresh.
+              isSelectedForDisplay: const Value.absent(),
+              sortIndex: const Value.absent(),
+            ),
+          );
+        } else {
+          final String id = stableLocalId(list.accountId, list.providerId);
+          await _database.into(_database.contactLists).insert(
+                ContactListsCompanion.insert(
+                  id: id,
+                  accountId: list.accountId,
+                  providerId: list.providerId,
+                  name: list.name,
+                  colorArgb: Value<int?>(list.colorArgb),
+                  isDefault: Value<bool>(list.isDefault),
+                  isSelectedForDisplay: Value<bool>(list.isSelectedForDisplay),
+                  sortIndex: Value<int?>(list.sortIndex),
+                ),
+              );
+        }
       }
     });
     _notify();
@@ -121,15 +173,34 @@ class DriftPimStore {
         .toList(growable: false);
   }
 
+  /// Looks up a contact by account + remote provider id.
+  Future<Contact?> findContactByProviderId({
+    required String accountId,
+    required String providerId,
+  }) async {
+    final ContactRow? row = await _findContactRow(
+      accountId: accountId,
+      providerId: providerId,
+    );
+    return row == null ? null : _contactFromRow(row);
+  }
+
+  /// Upserts contacts by `(accountId, providerId)`. New rows use [stableLocalId].
   Future<void> upsertContacts(List<Contact> contacts) async {
     if (contacts.isEmpty) {
       return;
     }
     await _database.transaction(() async {
       for (final Contact contact in contacts) {
+        final ContactRow? existing = await _findContactRow(
+          accountId: contact.accountId,
+          providerId: contact.providerId,
+        );
+        final String id = existing?.id ??
+            stableLocalId(contact.accountId, contact.providerId);
         await _database.into(_database.contacts).insertOnConflictUpdate(
               ContactsCompanion.insert(
-                id: contact.id,
+                id: id,
                 accountId: contact.accountId,
                 contactListId: contact.contactListId,
                 providerId: contact.providerId,
@@ -242,27 +313,68 @@ class DriftPimStore {
     return grouped;
   }
 
+  /// Looks up a calendar by account + remote provider id.
+  Future<Calendar?> findCalendarByProviderId({
+    required String accountId,
+    required String providerId,
+  }) async {
+    final CalendarRow? row = await _findCalendarRow(
+      accountId: accountId,
+      providerId: providerId,
+    );
+    return row == null ? null : _calendarFromRow(row);
+  }
+
+  /// Upserts calendars by `(accountId, providerId)`.
+  ///
+  /// On conflict, updates server metadata (`name`, `colorArgb`, `isDefault`)
+  /// but leaves [Calendar.isSelectedForDisplay], [Calendar.sortIndex], and
+  /// [Calendar.colorOverrideArgb] unchanged. New rows insert with
+  /// [stableLocalId] and the provided display defaults.
   Future<void> upsertCalendars(List<Calendar> calendars) async {
     if (calendars.isEmpty) {
       return;
     }
     await _database.transaction(() async {
       for (final Calendar calendar in calendars) {
-        await _database.into(_database.calendars).insertOnConflictUpdate(
-              CalendarsCompanion.insert(
-                id: calendar.id,
-                accountId: calendar.accountId,
-                providerId: calendar.providerId,
-                name: calendar.name,
-                colorArgb: calendar.colorArgb,
-                colorOverrideArgb: Value<int?>(calendar.colorOverrideArgb),
-                isDefault: Value<bool>(calendar.isDefault),
-                isSelectedForDisplay: Value<bool>(
-                  calendar.isSelectedForDisplay,
+        final CalendarRow? existing = await _findCalendarRow(
+          accountId: calendar.accountId,
+          providerId: calendar.providerId,
+        );
+        if (existing != null) {
+          await (_database.update(_database.calendars)..where(
+                (Calendars table) => table.id.equals(existing.id),
+              ))
+              .write(
+            CalendarsCompanion(
+              name: Value<String>(calendar.name),
+              colorArgb: Value<int>(calendar.colorArgb),
+              isDefault: Value<bool>(calendar.isDefault),
+              // Preserve local display prefs on provider refresh.
+              colorOverrideArgb: const Value.absent(),
+              isSelectedForDisplay: const Value.absent(),
+              sortIndex: const Value.absent(),
+            ),
+          );
+        } else {
+          final String id =
+              stableLocalId(calendar.accountId, calendar.providerId);
+          await _database.into(_database.calendars).insert(
+                CalendarsCompanion.insert(
+                  id: id,
+                  accountId: calendar.accountId,
+                  providerId: calendar.providerId,
+                  name: calendar.name,
+                  colorArgb: calendar.colorArgb,
+                  colorOverrideArgb: Value<int?>(calendar.colorOverrideArgb),
+                  isDefault: Value<bool>(calendar.isDefault),
+                  isSelectedForDisplay: Value<bool>(
+                    calendar.isSelectedForDisplay,
+                  ),
+                  sortIndex: Value<int?>(calendar.sortIndex),
                 ),
-                sortIndex: Value<int?>(calendar.sortIndex),
-              ),
-            );
+              );
+        }
       }
     });
     _notify();
@@ -316,15 +428,34 @@ class DriftPimStore {
         .toList(growable: false);
   }
 
+  /// Looks up an event by account + remote provider id.
+  Future<CalendarEvent?> findEventByProviderId({
+    required String accountId,
+    required String providerId,
+  }) async {
+    final EventRow? row = await _findEventRow(
+      accountId: accountId,
+      providerId: providerId,
+    );
+    return row == null ? null : _eventFromRow(row);
+  }
+
+  /// Upserts events by `(accountId, providerId)`. New rows use [stableLocalId].
   Future<void> upsertEvents(List<CalendarEvent> events) async {
     if (events.isEmpty) {
       return;
     }
     await _database.transaction(() async {
       for (final CalendarEvent event in events) {
+        final EventRow? existing = await _findEventRow(
+          accountId: event.accountId,
+          providerId: event.providerId,
+        );
+        final String id = existing?.id ??
+            stableLocalId(event.accountId, event.providerId);
         await _database.into(_database.events).insertOnConflictUpdate(
               EventsCompanion.insert(
-                id: event.id,
+                id: id,
                 accountId: event.accountId,
                 calendarId: event.calendarId,
                 providerId: event.providerId,
@@ -407,6 +538,62 @@ class DriftPimStore {
       )..where((ContactLists table) => table.accountId.equals(accountId)))
           .go();
     });
+  }
+
+  Future<ContactListRow?> _findContactListRow({
+    required String accountId,
+    required String providerId,
+  }) {
+    return (_database.select(_database.contactLists)
+          ..where(
+            (ContactLists table) =>
+                table.accountId.equals(accountId) &
+                table.providerId.equals(providerId),
+          )
+          ..limit(1))
+        .getSingleOrNull();
+  }
+
+  Future<ContactRow?> _findContactRow({
+    required String accountId,
+    required String providerId,
+  }) {
+    return (_database.select(_database.contacts)
+          ..where(
+            (Contacts table) =>
+                table.accountId.equals(accountId) &
+                table.providerId.equals(providerId),
+          )
+          ..limit(1))
+        .getSingleOrNull();
+  }
+
+  Future<CalendarRow?> _findCalendarRow({
+    required String accountId,
+    required String providerId,
+  }) {
+    return (_database.select(_database.calendars)
+          ..where(
+            (Calendars table) =>
+                table.accountId.equals(accountId) &
+                table.providerId.equals(providerId),
+          )
+          ..limit(1))
+        .getSingleOrNull();
+  }
+
+  Future<EventRow?> _findEventRow({
+    required String accountId,
+    required String providerId,
+  }) {
+    return (_database.select(_database.events)
+          ..where(
+            (Events table) =>
+                table.accountId.equals(accountId) &
+                table.providerId.equals(providerId),
+          )
+          ..limit(1))
+        .getSingleOrNull();
   }
 
   static ContactList _contactListFromRow(ContactListRow row) => ContactList(

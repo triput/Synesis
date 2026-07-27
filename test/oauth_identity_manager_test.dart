@@ -77,6 +77,13 @@ void main() {
       expect(config.tenant, 'common');
       expect(config.isConfigured, isTrue);
     });
+
+    test('includes mail and read-only PIM scopes', () {
+      expect(GraphAuthConfig.scopes, contains('Mail.ReadWrite'));
+      expect(GraphAuthConfig.scopes, contains('Mail.Send'));
+      expect(GraphAuthConfig.scopes, contains('Contacts.Read'));
+      expect(GraphAuthConfig.scopes, contains('Calendars.Read'));
+    });
   });
 
   group('GoogleAuthConfig', () {
@@ -323,6 +330,14 @@ void main() {
       expect(
         launched.first.queryParameters['scope'],
         contains('Mail.ReadWrite'),
+      );
+      expect(
+        launched.first.queryParameters['scope'],
+        contains('Contacts.Read'),
+      );
+      expect(
+        launched.first.queryParameters['scope'],
+        contains('Calendars.Read'),
       );
     });
 
