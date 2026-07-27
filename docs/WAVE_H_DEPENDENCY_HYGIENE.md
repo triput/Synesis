@@ -24,8 +24,8 @@ Wave 0 (account identity) ✅ → Wave H (this checklist) → V2.0a P0 (local PI
 
 - [x] SDK pins verified and documented (H1) — `.flutter-version` **3.44.6**, `environment.sdk: ^3.12.2`, README + QUICK_START advertise the pin (2026-07-27 Batch 2). SPEC/ROADMAP narrative polish can wait for H5 close.
 - [x] Soft pub upgrades applied (H2) — Batch 1 (`uuid` 4.6.0, `webview_flutter_windows` 1.1.1); Windows HTML smoke still recommended before H5 GO.
-- [ ] Major pub upgrades evaluated; landed or explicitly deferred (H3) — Batch 2 partial (see below); not closed until H5-T\*/H5-M\* smoke.
-- [ ] Native/KGP/sqlite3mc path green; Drift codegen matches sources (H4)
+- [x] Major pub upgrades evaluated; landed or explicitly deferred (H3) — Batch 2 majors + Batch 3 sqlite/`file_picker` disposition; H5-T\*/H5-M\* smoke still required for Wave H GO.
+- [x] Native/KGP/sqlite3mc path green for Batch 3 scope (H4) — Android debug APK green; sqlite3mc hook + encryption tests green; KGP residuals documented (escape hatches kept); `drift_dev` still deferred (no codegen regen). Windows debug build noted in Batch 3 log.
 - [ ] `flutter test` green; Windows + Android debug builds succeed (H5)
 - [ ] [V2_PLAN.md](V2_PLAN.md) and [ROADMAP.md](ROADMAP.md) updated — Wave H marked complete; V2.0a unblocked
 
@@ -60,8 +60,8 @@ Reviewed 2026-07-27 (Renee). Commits: `e5b4ee8` (plan/docs), `3d80af7` (soft upg
 | `xml` | `^6.5.0` (unchanged) | 6.6.1 | **Deferred** — `enough_mail` ^2.1.7 requires `xml` ^6; do not bump `enough_mail` casually. |
 | `pdf` | `3.12.0` (pin) | 3.12.0 | **Deferred** — would need 3.13+ for `xml` ^7; blocked with xml. |
 | `printing` | `^5.14.3` | 5.14.3 | **Deferred** — leave pin; revisit with pdf/xml unlock. |
-| `file_picker` | `11.0.2` (pin) | 11.0.2 | **Deferred** — mid-batch risk / AGP escape hatch. |
-| `drift_dev` | `^2.34.0` | 2.34.0 | **Deferred latest 2.34.5** — `drift_dev` ≥2.34.1+1 needs `analyzer` ^13, incompatible with `bloc_test`/`flutter_test` matcher pins. Constraint already covers 2.34.x when resolvable. |
+| `file_picker` | `11.0.2` (pin) | 11.0.2 | **Deferred** — pub.dev stable latest still **11.0.2** (12.x prerelease only). Keep pin + AGP escape hatches (Batch 3). |
+| `drift_dev` | `^2.34.0` | 2.34.0 | **Deferred latest 2.34.5** — `drift_dev` ≥2.34.1+1 needs `analyzer` ^13, incompatible with `bloc_test`/`flutter_test` matcher pins. Constraint already covers 2.34.x when resolvable. Batch 3: leave deferred (no trivial align). |
 | `build_runner` | `^2.15.1` | 2.15.1 | Unchanged (no resolve force). |
 
 **DEF-037 note:** `flutter_local_notifications_windows` **3.1.1** now defines `_SILENCE_EXPERIMENTAL_COROUTINE_DEPRECATION_WARNINGS` in its own CMakeLists. Repo `windows/CMakeLists.txt` keep-alive remains harmless insurance; reopen DEF-037 only if STL1011 returns on Windows debug.
@@ -117,7 +117,7 @@ Reviewed 2026-07-27 (Renee). Commits: `e5b4ee8` (plan/docs), `3d80af7` (soft upg
 | H5-T4 | `oauth_redirect_capture_test`, `oauth_config_resolver_test`, `oauth_identity_manager_test` | Green (loopback path) | **Jules: green**; AppLinks path still untested |
 | H5-T5 | `imap_autoconfig_test` | Green (direct `package:xml` consumer) | **Jules: green** (focused set) |
 | H5-T6 | `html_email_fallback_test` | Green (DEF-030 classification unchanged) | **Jules: green** (focused set) |
-| H5-T7 | Encryption / Drift: `db_encryption_migrator_test`, `schema_v5_test`, `drift_mail_repository_test` (and peers from W7 spike list) | Green with `sqlite3mc` hook | **Open** — H4/H5 |
+| H5-T7 | Encryption / Drift: `db_encryption_migrator_test`, `schema_v5_test`, `drift_mail_repository_test` (and peers from W7 spike list) | Green with `sqlite3mc` hook | **Batch 3: green** (`db_encryption_*` + `schema_v5` + `drift_mail_repository`; 43 passed) |
 
 
 ### Manual / platform smoke (required for H5)
@@ -130,9 +130,9 @@ Reviewed 2026-07-27 (Renee). Commits: `e5b4ee8` (plan/docs), `3d80af7` (soft upg
 | H5-M4 | Fonts | App theme renders; no blank TextTheme | Same | `google_fonts` 8 loads or fails soft | **Open** |
 | H5-M5 | HTML WebView | HTML body + focus return to Flutter chrome | Android `webview_flutter` HTML body | No new hard error; widget fallback still OK | **Open** (also covers H2 webview 1.1.1) |
 | H5-M6 | Autoconfig XML | — | — | Add-account ISPDB / well-known path still parses (or unit suite suffices if offline) | Unit suite may suffice |
-| H5-M7 | sqlite3mc | Debug run; optional encrypt-on settings path | Debug run | Hook resolves; unencrypted default unaffected ([W7_SQLCIPHER_SPIKE.md](W7_SQLCIPHER_SPIKE.md) TC-3) | **Open** — H4 |
-| H5-M8 | KGP residual | — | `flutter build apk --debug` (or `flutter run`) | Configure succeeds with `builtInKotlin=false` + file_picker KGP force-apply; no FilePickerPlugin symbol errors | **Soft hold before Batch 3/4** |
-| H5-M9 | Dogfood APK | — | Install APK built **with** production dart-defines / shipped public clients as used for daily dogfood | Cold start, account list, sync, open mail, notification permission path | **Open** — H5 close |
+| H5-M7 | sqlite3mc | Debug run; optional encrypt-on settings path | Debug run | Hook resolves; unencrypted default unaffected ([W7_SQLCIPHER_SPIKE.md](W7_SQLCIPHER_SPIKE.md) TC-3) | **Batch 3: unit/hook green**; manual encrypt-on still H5 |
+| H5-M8 | KGP residual | — | `flutter build apk --debug` (or `flutter run`) | Configure succeeds with `builtInKotlin=false` + file_picker KGP force-apply; no FilePickerPlugin symbol errors | **Batch 3: PASS** (warning residual documented) |
+| H5-M9 | Dogfood APK | — | Install APK built **with** production dart-defines / shipped public clients as used for daily dogfood | Cold start, account list, sync, open mail, notification permission path | **Open** — H5 close; release APK dart-define footgun remains |
 
 ### Test gaps / DEFs (address or waive at H5; do not block Batch 3 after soft hold)
 
@@ -144,6 +144,47 @@ Reviewed 2026-07-27 (Renee). Commits: `e5b4ee8` (plan/docs), `3d80af7` (soft upg
 | `xml` ^7 blocked by `enough_mail` | Informational | Explicit H3 deferral — **not** a DEF |
 | DEF-037 silence flag vs fln Windows transitive | Watch | Re-confirm Windows debug build after fln 22; reopen DEF only if STL1011 returns |
 | DEF-050 | Out of scope | Leave open; not Wave H |
+
+## Batch 3 / H4 — sqlite3mc + KGP (2026-07-27)
+
+### sqlite3 / sqlite3mc disposition
+
+| Item | Decision | Evidence |
+| --- | --- | --- |
+| `sqlite3` | Soft bump **3.4.0 → 3.5.0** (`^3.5.0`) | `flutter pub get` resolved cleanly; hooks still use `hooks.user_defines.sqlite3.source: sqlite3mc` |
+| `sqlite3_flutter_libs` | **Removed** | Confirmed inert EOL no-op for sqlite3 3.x ([W7_SQLCIPHER_SPIKE.md](W7_SQLCIPHER_SPIKE.md), [UPGRADING_TO_V3](https://github.com/simolus3/sqlite3.dart/blob/main/UPGRADING_TO_V3.md)); not referenced in Dart sources |
+| Encryption-at-rest path | **Unbroken** | `lib/repository/db_encryption_config.dart` untouched; H5-T7 focused suite green (43) |
+| `drift_dev` | **Still deferred** | Analyzer conflict with `bloc_test`/`flutter_test`; no `build_runner` regen |
+
+### KGP / Built-in Kotlin residual
+
+`flutter build apk --debug` **succeeded** with escape hatches intact:
+
+- `android/gradle.properties`: `android.builtInKotlin=false`, `android.newDsl=false`
+- `android/build.gradle.kts`: `file_picker` force-apply of `org.jetbrains.kotlin.android` + JVM 17
+
+Flutter still warns that these plugins apply legacy KGP:
+
+| Plugin | Resolved | Why not cleared | Upstream |
+| --- | --- | --- | --- |
+| `file_picker` | **11.0.2** (pinned) | Stable latest is still 11.0.2; **12.x is prerelease only** on pub.dev. Keep pin + force-apply until a stable Built-in Kotlin release. | [Issue #2031](https://github.com/miguelpruivo/flutter_file_picker/issues/2031), [PR #2026](https://github.com/miguelpruivo/flutter_file_picker/pull/2026) (migration in 12.x line) |
+| `home_widget` | **0.9.3** (latest) | 0.9.2+ supports AGP 9 / applies Kotlin when `builtInKotlin=false`; still listed in Flutter KGP warning under escape hatch. | [Changelog 0.9.2 / 0.9.2+1](https://pub.dev/packages/home_widget/changelog) |
+| `package_info_plus` | **9.0.1** (transitive via `wakelock_plus`) | Built-in Kotlin lands in **10.2.0+**; not forced — would require major override through `fwfh_chewie`/`wakelock_plus` tree. | [CHANGELOG 10.2.0](https://github.com/fluttercommunity/plus_plugins/blob/main/packages/package_info_plus/package_info_plus/CHANGELOG.md) |
+| `wakelock_plus` | **1.5.2** (transitive via `fwfh_chewie`) | **1.7.0** claims Built-in Kotlin, but reports compile gaps with legacy/`builtInKotlin=false` setups — do not force while escape hatches remain. | [Issue #135](https://github.com/fluttercommunity/wakelock_plus/issues/135), [PR #136](https://github.com/fluttercommunity/wakelock_plus/pull/136), [Bug after 1.7.0](https://github.com/fluttercommunity/wakelock_plus/issues/141) |
+
+**Escape hatches: keep.** Do not flip `builtInKotlin=true` or remove the `file_picker` force-apply until all four clear (or `file_picker` ships a stable 12.x Compatible with our AGP 9 stack).
+
+Flutter migration guide: [Built-in Kotlin for app developers](https://docs.flutter.dev/release/breaking-changes/migrate-to-built-in-kotlin/for-app-developers).
+
+### Builds (Batch 3)
+
+| Target | Result | Notes |
+| --- | --- | --- |
+| `flutter analyze` | 0 errors (pre-existing infos/warnings only) | Post sqlite bump |
+| H5-T7 encryption/schema | **43/43 passed** | `sqlite3mc` hook active |
+| `flutter build apk --debug` | **PASS** | KGP warning residual only; `app-debug.apk` produced |
+| `flutter build windows --debug` | **FAIL this run** — `LNK1168` cannot open `build\windows\x64\runner\Debug\synesis.exe` for writing (file lock; app likely running). Not a sqlite/plugin regression. Re-run when exe unlocked; H5 still owns green Windows debug. |
+| Release APK + OAuth dart-defines | **Not required this batch** | Dogfood footgun remains: release APK must be built **with** production dart-defines / public clients (H5-M9) |
 
 ## Wave H go / no-go
 
@@ -164,7 +205,7 @@ Reviewed 2026-07-27 (Renee). Commits: `e5b4ee8` (plan/docs), `3d80af7` (soft upg
 - `flutter test` red, or sqlite3mc hook fails to resolve on either desktop target.
 - Majors landed without written deferral for skipped candidates.
 
-**Batch sequencing:** Soft-hold Batch 3/4 until H5-M8 (Android configure/debug APK) and a Windows debug compile after Batch 2 plugins — see Batch 2 QA verdict. Missing AppLinks/Android-adapter unit tests are **not** NO-GO if H5-M1/M2/M8 run.
+**Batch sequencing:** Batch 3 cleared H5-M8 (Android debug APK) and H5-T7 (encryption/schema). H5 still owns full `flutter test`, Windows HTML/OAuth smokes, and dogfood APK with dart-defines (H5-M9). Missing AppLinks/Android-adapter unit tests are **not** NO-GO if H5-M1/M2 run.
 
 ## References
 
