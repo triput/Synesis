@@ -31,6 +31,8 @@ See [docs/SPEC.md](docs/SPEC.md) for the technical specification and [mockups](m
 
 ## Run
 
+**Prerequisites:** Flutter **3.44.6** / Dart **3.12.2** (see `.flutter-version` and `environment.sdk` in `pubspec.yaml`).
+
 ```bash
 flutter pub get
 flutter run -d windows

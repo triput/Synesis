@@ -2,9 +2,9 @@
 // File: lib/notifications/android_notification_adapter.dart
 // Description: Android local notifications adapter for new-mail toasts
 // Component: Notifications
-// Version: 1.1 (Gold Master)
+// Version: 1.2 (Gold Master)
 // Created: 2026-07-17
-// Last Update: 2026-07-23
+// Last Update: 2026-07-27
 // ==============================================================================
 
 import 'package:synesis/notifications/notification_platform.dart';
@@ -33,8 +33,9 @@ class AndroidNotificationAdapter implements NotificationPlatform {
     }
     const AndroidInitializationSettings androidSettings =
         AndroidInitializationSettings(smallIcon);
+    // flutter_local_notifications ≥20: initialize/show use named params.
     await _plugin.initialize(
-      const InitializationSettings(android: androidSettings),
+      settings: const InitializationSettings(android: androidSettings),
     );
     final AndroidFlutterLocalNotificationsPlugin? android =
         _plugin.resolvePlatformSpecificImplementation<
@@ -73,10 +74,10 @@ class AndroidNotificationAdapter implements NotificationPlatform {
       icon: smallIcon,
     );
     await _plugin.show(
-      coalesceNotificationId,
-      title,
-      body,
-      const NotificationDetails(android: androidDetails),
+      id: coalesceNotificationId,
+      title: title,
+      body: body,
+      notificationDetails: const NotificationDetails(android: androidDetails),
     );
   }
 }

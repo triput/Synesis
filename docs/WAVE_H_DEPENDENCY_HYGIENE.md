@@ -22,9 +22,9 @@ Wave 0 (account identity) ✅ → Wave H (this checklist) → V2.0a P0 (local PI
 
 ## Wave H exit criteria
 
-- [ ] SDK pins verified and documented (H1)
-- [ ] Soft pub upgrades applied (H2)
-- [ ] Major pub upgrades evaluated; landed or explicitly deferred (H3)
+- [x] SDK pins verified and documented (H1) — `.flutter-version` **3.44.6**, `environment.sdk: ^3.12.2`, README + QUICK_START advertise the pin (2026-07-27 Batch 2). SPEC/ROADMAP narrative polish can wait for H5 close.
+- [x] Soft pub upgrades applied (H2) — Batch 1 (`uuid` 4.6.0, `webview_flutter_windows` 1.1.1); Windows HTML smoke still recommended before H5 GO.
+- [ ] Major pub upgrades evaluated; landed or explicitly deferred (H3) — Batch 2 partial (see below); not closed until H5-T\*/H5-M\* smoke.
 - [ ] Native/KGP/sqlite3mc path green; Drift codegen matches sources (H4)
 - [ ] `flutter test` green; Windows + Android debug builds succeed (H5)
 - [ ] [V2_PLAN.md](V2_PLAN.md) and [ROADMAP.md](ROADMAP.md) updated — Wave H marked complete; V2.0a unblocked
@@ -40,29 +40,42 @@ Reviewed 2026-07-27 (Renee). Commits: `e5b4ee8` (plan/docs), `3d80af7` (soft upg
 
 | Item | Risk | Notes |
 | --- | --- | --- |
-| Flutter pin `.flutter-version` **3.44.6** | Low | Aligns with `webview_flutter_windows` 1.x floor (Dart 3.12+ / Flutter 3.44+). **Gap:** README / SPEC do not yet advertise the pin — finish under H1 before Wave H exit. |
+| Flutter pin `.flutter-version` **3.44.6** | Low | Aligns with `webview_flutter_windows` 1.x floor (Dart 3.12+ / Flutter 3.44+). **H1 docs:** README + QUICK_START advertise the pin (Batch 2). |
 | `uuid` 4.5.3 → **4.6.0** | Low | Patch within `^4`; no API surface change expected. Covered indirectly by any ID-generating unit tests. |
 | `webview_flutter_windows` 1.0.0 → **1.1.1** | **Medium (Windows HTML)** | Minor within 1.x; 1.1.x adds native focus handoff. Smoke: open HTML message in reading pane, click into body then back to list/search `TextField`, confirm no gray title bar / dead shortcuts (DEF-030 fallback still triggers on `webview_creation_failed`). OAuth on Windows uses loopback/`app_links`, **not** this WebView — OAuth panes are low-risk from this bump. |
 | DEF-049 Graph In-Reply-To | Closed | Unit tests + **operator verified** Graph reply send. No further Wave H gate. |
 | Rail overflow (`b739f52`) | Closed | Widget test present; Wave 0 exit. |
 | DEF-050 mark-read context menu | Out of scope | Enhancement backlog — does **not** block Wave H. |
 
-**H2 soft-upgrade verdict:** Acceptable to proceed to H3 majors. Do not treat H2 as fully exited until H1 docs pin strings match `.flutter-version` and a Windows HTML reading-pane smoke passes after the webview bump.
+**H2 soft-upgrade verdict:** Soft upgrades landed. Treat H2 exit as complete for checklist purposes; still run Windows HTML reading-pane smoke (H5-M5) before Wave H GO.
 
-## Batch 2 / 3 — validation matrix (H3 majors + H4 native)
+## Batch 2 / H3 — pub majors (2026-07-27)
 
-Jules in-flight majors (working tree as of review): `flutter_local_notifications` 19→22, `app_links` 6→7, `connectivity_plus` 6→7, `google_fonts` 6→8; `xml` ^7 / `pdf` unpin **deferred** (`enough_mail` ^2.1.7 pins `xml` ^6). `drift_dev` align + KGP/sqlite3mc remain H3/H4.
+| Package | Constraint | Resolved | Status |
+| --- | --- | --- | --- |
+| `flutter_local_notifications` | `^22.0.0` | **22.2.0** | Landed. Named `initialize`/`show` fixed in `android_notification_adapter.dart`. |
+| `app_links` | `^7.0.0` | **7.2.1** | Landed. Dart API compatible (`uriLinkStream` / `getInitialLink`). |
+| `connectivity_plus` | `^7.0.0` | **7.3.1** | Landed. Dart `ConnectivityResult` usage unchanged. |
+| `google_fonts` | `^8.0.0` | **8.2.0** | Landed. |
+| `xml` | `^6.5.0` (unchanged) | 6.6.1 | **Deferred** — `enough_mail` ^2.1.7 requires `xml` ^6; do not bump `enough_mail` casually. |
+| `pdf` | `3.12.0` (pin) | 3.12.0 | **Deferred** — would need 3.13+ for `xml` ^7; blocked with xml. |
+| `printing` | `^5.14.3` | 5.14.3 | **Deferred** — leave pin; revisit with pdf/xml unlock. |
+| `file_picker` | `11.0.2` (pin) | 11.0.2 | **Deferred** — mid-batch risk / AGP escape hatch. |
+| `drift_dev` | `^2.34.0` | 2.34.0 | **Deferred latest 2.34.5** — `drift_dev` ≥2.34.1+1 needs `analyzer` ^13, incompatible with `bloc_test`/`flutter_test` matcher pins. Constraint already covers 2.34.x when resolvable. |
+| `build_runner` | `^2.15.1` | 2.15.1 | Unchanged (no resolve force). |
+
+**DEF-037 note:** `flutter_local_notifications_windows` **3.1.1** now defines `_SILENCE_EXPERIMENTAL_COROUTINE_DEPRECATION_WARNINGS` in its own CMakeLists. Repo `windows/CMakeLists.txt` keep-alive remains harmless insurance; reopen DEF-037 only if STL1011 returns on Windows debug.
 
 ### Compile / API must-fix before smoke
 
 | Package | Gate | Detail |
 | --- | --- | --- |
-| `flutter_local_notifications` **20+** | **Blocker if unfixed** | `show()` / `initialize()` positional args → **named**. `lib/notifications/android_notification_adapter.dart` still calls positional `show(id, title, body, details)` — must migrate before Android analyze/build. Windows runtime still uses `local_notifier` (DEF-037); confirm Windows still builds with transitive `flutter_local_notifications_windows` + existing `_SILENCE_EXPERIMENTAL_COROUTINE_DEPRECATION_WARNINGS`. |
-| `app_links` **7** | Analyze + deep-link smoke | Dart API (`uriLinkStream` / `getInitialLink`) stays compatible with v6 setups; Android native moves toward AGP 9 — re-verify Gradle configure with `android.builtInKotlin=false`. |
+| `flutter_local_notifications` **20+** | **Fixed in Batch 2** | Named `settings:` / `id:` / `notificationDetails:` in `android_notification_adapter.dart`. Windows runtime still uses `local_notifier`; transitive Windows plugin + DEF-037 silence flag remain. |
+| `app_links` **7** | Analyze + deep-link smoke | Dart API stays compatible with v6 setups; Android native moves toward AGP 9 — re-verify Gradle configure with `android.builtInKotlin=false`. |
 | `connectivity_plus` **7** | Unit + offline smoke | `ConnectivityResult` enum usage in `NetworkSyncPolicy` — re-run `test/network_sync_policy_test.dart`. |
 | `google_fonts` **8** | Theme smoke | Cold start + Settings/Appearance; no network-font hang / fallback crash. |
-| `xml` / `pdf` | Deferred OK | Document deferral rationale at H3 exit; keep `test/imap_autoconfig_test.dart` green on `xml` ^6. |
-| `drift_dev` / Drift codegen | H4 | If bumped: `build_runner` + schema/repo tests; no drift/source skew. |
+| `xml` / `pdf` | Deferred OK | Documented above; keep `test/imap_autoconfig_test.dart` green on `xml` ^6. |
+| `drift_dev` / Drift codegen | H4 | Not bumped this batch; no `build_runner` regen required. |
 
 ### Automated suite (required)
 
@@ -95,8 +108,8 @@ Jules in-flight majors (working tree as of review): `flutter_local_notifications
 | Gap | Severity | Action |
 | --- | --- | --- |
 | No unit test for `AppLinksOAuthRedirectCapture` (only loopback covered) | Pri-3 test debt | Prefer fake-`AppLinks` unit test after API settles; until then H5-M2 is mandatory |
-| No compile/unit guard on `AndroidNotificationAdapter` ↔ fln `show`/`initialize` signatures | Pri-2 hygiene | Jules must fix named args; optional thin test with mocked plugin later |
-| H1 docs omit Flutter **3.44.6** pin in README/SPEC | Pri-3 docs | Close under H1 before Wave H exit checkbox |
+| No compile/unit guard on `AndroidNotificationAdapter` ↔ fln `show`/`initialize` signatures | Pri-3 residual | Named-arg migration landed Batch 2; optional thin mock test still nice-to-have |
+| H1 docs omit Flutter **3.44.6** pin in README/SPEC | Closed (Batch 2) | README + QUICK_START advertise pin; SPEC polish optional at H5 |
 | `xml` ^7 blocked by `enough_mail` | Informational | Explicit H3 deferral — **not** a DEF |
 | DEF-037 silence flag vs fln Windows transitive | Watch | Re-confirm Windows debug build after fln 22; reopen DEF only if STL1011 returns |
 | DEF-050 | Out of scope | Leave open; not Wave H |

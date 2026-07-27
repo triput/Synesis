@@ -10,6 +10,8 @@ Get from install to reading mail in a few minutes. For full feature detail see [
 
 ## 1. Install & run
 
+**Prerequisites:** Flutter **3.44.6** / Dart **3.12.2** (repo pin: `.flutter-version`; `pubspec.yaml` `environment.sdk: ^3.12.2`).
+
 ```bash
 flutter pub get
 flutter run -d windows
