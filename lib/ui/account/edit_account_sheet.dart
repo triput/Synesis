@@ -4,7 +4,7 @@
 // Component: UI
 // Version: 1.0 (Gold Master)
 // Created: 2026-07-14
-// Last Update: 2026-07-16
+// Last Update: 2026-07-27
 // ==============================================================================
 
 import 'package:flutter/foundation.dart';
@@ -308,8 +308,9 @@ class _EditAccountFormState extends State<_EditAccountForm> {
           TextField(
             controller: _label,
             decoration: const InputDecoration(
-              labelText: 'Short label',
-              hintText: 'Letter shown on the account rail',
+              labelText: 'Display name',
+              hintText: 'Personal name for this account',
+              helperText: 'Address stays unchanged below the rail / chips',
             ),
           ),
           const SizedBox(height: 8),

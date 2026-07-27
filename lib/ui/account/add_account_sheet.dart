@@ -4,13 +4,14 @@
 // Component: UI
 // Version: 1.0 (Gold Master)
 // Created: 2026-07-14
-// Last Update: 2026-07-23
+// Last Update: 2026-07-27
 // ==============================================================================
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:uuid/uuid.dart';
+import 'package:synesis/account/account_display.dart';
 import 'package:synesis/account/account_service.dart';
 import 'package:synesis/account/imap_autoconfig.dart';
 import 'package:synesis/auth/oauth_identity_manager.dart';
@@ -100,17 +101,13 @@ class _AddAccountFormState extends State<_AddAccountForm>
   }
 
   String _labelFromAddress(String address) {
-    final String local = address.split('@').first.trim();
-    if (local.isEmpty) {
-      return 'A';
-    }
-    return local.substring(0, 1).toUpperCase();
+    return AccountDisplay.seedFromAddress(address);
   }
 
   String _railLabel([String? addressOverride]) {
     final String custom = _display.text.trim();
     if (custom.isNotEmpty) {
-      return custom.substring(0, 1).toUpperCase();
+      return custom;
     }
     return _labelFromAddress(addressOverride ?? _address.text.trim());
   }
@@ -458,8 +455,9 @@ class _AddAccountFormState extends State<_AddAccountForm>
           TextField(
             controller: _display,
             decoration: const InputDecoration(
-              labelText: 'Short label (optional)',
-              hintText: 'Letter shown on the account rail',
+              labelText: 'Display name (optional)',
+              hintText: 'Seeded from email if left blank',
+              helperText: 'Shown on the account rail and drawer chips',
             ),
           ),
           const SizedBox(height: 8),

@@ -2,13 +2,13 @@
 
 | Field | Value |
 | --- | --- |
-| Status | **Scoped / locked** (2026-07-22) — implementation after V1.5 |
+| Status | **In progress** — **Wave 0** (account identity) kicked off 2026-07-27 |
 | Headline | Contacts & calendar (TD-A) — not a new phone OS |
-| Prerequisite | V1 exit signed off; **V1.5** adjacency preferred complete ([V1_5_PLAN.md](V1_5_PLAN.md)) |
+| Prerequisite | V1 exit signed off; **V1.5 complete** ([V1_5_PLAN.md](V1_5_PLAN.md)) |
 | Watch | **P3 → V2.1** (not V2.0 critical path) |
-| Enterprise crypto / shared mail | **Maybe/Someday** — not critical path unless demand appears |
+| Enterprise crypto / shared mail / AI draft·summarize | **Maybe/Someday** — not V2.0 critical path unless demand appears |
 | Owners | Steve (orchestrate) · Tesla (Graph PIM / sync) · Jules (CardDAV spike + UI modules) · Renee (QA) · Page (docs) |
-| Last updated | 2026-07-22 |
+| Last updated | 2026-07-27 |
 
 ## 1. Locked product decisions (2026-07-22)
 
@@ -23,7 +23,7 @@
 | 7 | **Parallel tracks OK** — Tesla Graph PIM ∥ Jules CardDAV discovery spike after local schema (P0) |
 | 8 | **V2.0a** includes meeting-mail bridge (accept/decline/tentative + `.ics` → event draft) |
 | 9 | Galaxy Watch = **P3 / V2.1** |
-| 10 | Enterprise SKU (PGP/S/MIME, shared mailbox) = **Maybe/Someday** until eval/paying need |
+| 10 | Enterprise SKU (PGP/S/MIME, shared mailbox) + **AI draft/summarize** = **Maybe/Someday** until eval/paying need; if one is opted in later, treat the other as a paired companion |
 | 11 | CardDAV/CalDAV dogfood host = **Runbox** (`https://dav.runbox.com/` — app password if 2FA) |
 
 ## 2. Account → PIM binding
@@ -36,7 +36,20 @@
 
 Local store is provider-agnostic (`contacts` / `events` + sync cursors), same philosophy as mail.
 
-## 3. Implementation order (accepted — option A)
+## 3. Wave 0 — Account identity (A+B hybrid) [pre-PIM gate]
+
+**Status:** In progress (2026-07-27 kickoff). Must land before PIM P0 schema work consumes account UI seams.
+
+| Item | Scope | Notes |
+| --- | --- | --- |
+| **Auto-seed display name (B)** | On add account | Derive friendly display name from email address when none supplied |
+| **User-editable display name (A)** | Edit account + rail | User can override seeded name; **accent color** picker unchanged |
+| **Rail truncation fix** | Account rail / sidebar | End forced single-letter truncation — show readable label (ellipsis only when space-constrained) |
+| **Avatar / monogram hover cards (C)** | Deferred | **V-Next / late polish** — not Wave 0 critical path |
+
+**Exit (Wave 0):** New accounts get a sensible default name; existing accounts editable; rail shows multi-character labels; no regression to accent colors or account cap.
+
+## 4. Implementation order (accepted — option A)
 
 ```text
 P0  Local PIM schema + sync job types
@@ -54,16 +67,17 @@ P6  Calendar module UI (month/week, CRUD) wired to local store
 
 **Why CardDAV before CalDAV:** Compose picker + people graph; meeting bridge can use `.ics` + Graph before CalDAV is perfect.
 
-## 4. Wave sketch (product)
+## 5. Wave sketch (product)
 
 | Wave | Scope |
 | --- | --- |
+| **Wave 0** | Account identity (A+B hybrid) — display names, rail labels; pre-PIM gate |
 | **V2.0a** | P0–P2 — schema, Graph PIM sync, meeting-mail bridge |
 | **V2.0b** | P3–P4 — CardDAV/CalDAV (Runbox dogfood) |
 | **V2.0c** | P5–P6 — picker + Calendar module UI (deep CRUD) |
 | **V2.1** | Watch companion (P3); CalDAV depth / free-busy; Contacts polish |
 
-## 5. Exit criteria (V2.0)
+## 6. Exit criteria (V2.0)
 
 - [ ] Contact picker in compose fed by local FTS (Graph and/or CardDAV sources)
 - [ ] CardDAV sync works against **Runbox** dogfood account
@@ -74,18 +88,19 @@ P6  Calendar module UI (month/week, CRUD) wired to local store
 - [ ] Mail remains default launch surface; Calendar/People reachable via module switcher
 - [ ] Docs + E2E matrix rows for PIM; regression on V1/V1.5 mail paths
 
-## 6. Explicitly out of V2.0
+## 7. Explicitly out of V2.0
 
 | Item | Disposition |
 | --- | --- |
 | Galaxy Watch companion | **V2.1** (P3) |
 | iOS / macOS / Linux | V2+ / demand |
 | OpenPGP / S/MIME / shared mailboxes | Maybe/Someday (enterprise) |
+| AI draft / summarize | Maybe/Someday — paired companion to enterprise crypto if either is opted in |
 | PST import | After V1.5; not V2 headline |
 | Rooms/resources, shared calendar ACLs, Teams deep links | Later calendar depth |
-| Cloud AI drafting | Non-goal |
+| Avatar / monogram hover cards (Option C) | V-Next / late polish |
 
-## 7. Forward-compat (from V1 / during V1.5)
+## 8. Forward-compat (from V1 / during V1.5)
 
 Do not expand V1.5 scope — only avoid painting corners:
 
@@ -94,7 +109,7 @@ Do not expand V1.5 scope — only avoid painting corners:
 - Compose recipients swappable from “recent headers” → contact FTS
 - Widget snapshot path reusable later for Watch (V2.1)
 
-## 8. Relationship to other docs
+## 9. Relationship to other docs
 
 | Doc | Role |
 | --- | --- |
@@ -105,4 +120,4 @@ Do not expand V1.5 scope — only avoid painting corners:
 
 ---
 
-*Kickoff: after V1.5 exit (or explicit parallel if Steve schedules overlap). Open per-wave checklists at start of V2.0a.*
+*Wave 0 kicked off 2026-07-27 (account identity). Open per-wave checklists at start of V2.0a after Wave 0 exit.*

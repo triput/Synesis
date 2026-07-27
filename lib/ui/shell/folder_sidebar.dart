@@ -10,6 +10,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:synesis/account/account_display.dart';
 import 'package:synesis/domain/models.dart';
 import 'package:synesis/settings/app_settings_state.dart';
 import 'package:synesis/theme/app_theme.dart';
@@ -794,77 +795,73 @@ class _AccountChip extends StatelessWidget {
   final VoidCallback onTap;
 
   String get _label {
-    final String label = account.label.trim();
-    if (label.isNotEmpty && label.length <= 18) {
-      return label;
+    final String primary = AccountDisplay.primaryLabel(account);
+    if (primary.length <= 18) {
+      return primary;
     }
-    final String address = account.address;
-    if (address.length <= 18) {
-      return address;
-    }
-    final int at = address.indexOf('@');
-    if (at > 0 && at <= 14) {
-      return '${address.substring(0, at)}…';
-    }
-    return '${address.substring(0, 16)}…';
+    return '${primary.substring(0, 16)}…';
   }
 
   @override
   Widget build(BuildContext context) {
     final t = tokensOf(context);
-    return Material(
-      color: selected
-          ? t.teal.withValues(alpha: 0.14)
-          : t.line.withValues(alpha: 0.35),
-      borderRadius: BorderRadius.circular(20),
-      child: InkWell(
-        onTap: onTap,
+    return Tooltip(
+      message: AccountDisplay.secondaryLabel(account),
+      waitDuration: const Duration(milliseconds: 400),
+      child: Material(
+        color: selected
+            ? t.teal.withValues(alpha: 0.14)
+            : t.line.withValues(alpha: 0.35),
         borderRadius: BorderRadius.circular(20),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(
-              color: selected ? t.teal : Colors.transparent,
-              width: 1.5,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(20),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: selected ? t.teal : Colors.transparent,
+                width: 1.5,
+              ),
             ),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              Container(
-                width: 8,
-                height: 8,
-                decoration: BoxDecoration(
-                  color: account.accent,
-                  shape: BoxShape.circle,
-                ),
-              ),
-              const SizedBox(width: 6),
-              ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 120),
-                child: Text(
-                  _label,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: selected ? t.text : t.muted,
-                    fontSize: 12,
-                    fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                Container(
+                  width: 8,
+                  height: 8,
+                  decoration: BoxDecoration(
+                    color: account.accent,
+                    shape: BoxShape.circle,
                   ),
                 ),
-              ),
-              if (unread > 0) ...[
                 const SizedBox(width: 6),
-                Text(
-                  '$unread',
-                  style: TextStyle(
-                    color: t.teal,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w700,
+                ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 120),
+                  child: Text(
+                    _label,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: selected ? t.text : t.muted,
+                      fontSize: 12,
+                      fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
+                    ),
                   ),
                 ),
+                if (unread > 0) ...[
+                  const SizedBox(width: 6),
+                  Text(
+                    '$unread',
+                    style: TextStyle(
+                      color: t.teal,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
               ],
-            ],
+            ),
           ),
         ),
       ),

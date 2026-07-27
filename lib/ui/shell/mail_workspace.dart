@@ -12,6 +12,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:synesis/account/account_display.dart';
 import 'package:synesis/desktop/message_file_service.dart';
 import 'package:synesis/domain/address_match_scope.dart';
 import 'package:synesis/domain/models.dart';
@@ -1252,12 +1253,12 @@ class _AccountRail extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = tokensOf(context);
     return Container(
-      width: 56,
+      width: 88,
       decoration: BoxDecoration(
         color: t.panel,
         border: Border(right: BorderSide(color: t.line)),
       ),
-      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 6),
       child: Column(
         children: [
           _RailButton(
@@ -1281,27 +1282,53 @@ class _AccountRail extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           for (final account in accounts) ...[
-            _RailButton(
-              selected: !unified && accountId == account.id,
-              onTap: () => onSelectAccount(account.id),
-              child: Container(
-                width: 28,
-                height: 28,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: Color.alphaBlend(
-                    account.accent.withValues(alpha: 0.35),
-                    t.ink,
-                  ),
-                  borderRadius: BorderRadius.circular(9),
-                ),
-                child: Text(
-                  account.label,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                  ),
+            Tooltip(
+              message: AccountDisplay.secondaryLabel(account),
+              waitDuration: const Duration(milliseconds: 400),
+              child: _RailButton(
+                selected: !unified && accountId == account.id,
+                onTap: () => onSelectAccount(account.id),
+                width: 76,
+                height: 48,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: <Widget>[
+                    Container(
+                      width: 28,
+                      height: 28,
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        color: Color.alphaBlend(
+                          account.accent.withValues(alpha: 0.35),
+                          t.ink,
+                        ),
+                        borderRadius: BorderRadius.circular(9),
+                      ),
+                      child: Text(
+                        AccountDisplay.monogram(account),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    SizedBox(
+                      width: 68,
+                      child: Text(
+                        AccountDisplay.primaryLabel(account),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: t.muted,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -1357,11 +1384,15 @@ class _RailButton extends StatelessWidget {
     required this.selected,
     required this.onTap,
     required this.child,
+    this.width = 40,
+    this.height = 40,
   });
 
   final bool selected;
   final VoidCallback onTap;
   final Widget child;
+  final double width;
+  final double height;
 
   @override
   Widget build(BuildContext context) {
@@ -1372,7 +1403,11 @@ class _RailButton extends StatelessWidget {
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(12),
-        child: SizedBox(width: 40, height: 40, child: Center(child: child)),
+        child: SizedBox(
+          width: width,
+          height: height,
+          child: Center(child: child),
+        ),
       ),
     );
   }

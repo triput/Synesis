@@ -4,11 +4,12 @@
 // Component: UI
 // Version: 1.1 (Gold Master)
 // Created: 2026-07-14
-// Last Update: 2026-07-23
+// Last Update: 2026-07-27
 // ==============================================================================
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:synesis/account/account_display.dart';
 import 'package:synesis/domain/models.dart';
 import 'package:synesis/theme/app_theme.dart';
 import 'package:synesis/theme/density.dart';
@@ -121,10 +122,11 @@ class ManageAccountsSheetBody extends StatelessWidget {
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
-                        account.label,
+                        AccountDisplay.monogram(account),
                         style: const TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.w600,
+                          fontSize: 12,
                         ),
                       ),
                     ),
@@ -134,13 +136,18 @@ class ManageAccountsSheetBody extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            account.address,
+                            AccountDisplay.primaryLabel(account),
                             style: const TextStyle(fontWeight: FontWeight.w600),
                           ),
                           const SizedBox(height: 2),
                           Text(
-                            _providerLabel(account),
+                            AccountDisplay.secondaryLabel(account),
                             style: TextStyle(color: t.muted, fontSize: 12),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            _providerLabel(account),
+                            style: TextStyle(color: t.muted, fontSize: 11),
                           ),
                         ],
                       ),

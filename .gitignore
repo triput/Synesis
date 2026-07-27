@@ -89,3 +89,7 @@ dart_defines.json
 
 # Ignore the docs directory (contains detailed specifications and non-public info)
 internal.docs/
+
+# Local unsanitized copies before scrubbing secrets for git/push — never commit.
+.secrets-backup/
+*.local.bak
