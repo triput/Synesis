@@ -15,6 +15,7 @@ import 'package:synesis/account/account_display.dart';
 import 'package:synesis/account/account_service.dart';
 import 'package:synesis/account/imap_autoconfig.dart';
 import 'package:synesis/auth/oauth_identity_manager.dart';
+import 'package:synesis/protocol/dav/dav_discovery.dart';
 import 'package:synesis/sync/sync_engine.dart';
 import 'package:synesis/theme/app_theme.dart';
 import 'package:synesis/ui/mailbox/mailbox_cubit.dart';
@@ -58,6 +59,7 @@ class _AddAccountFormState extends State<_AddAccountForm>
   final TextEditingController _imapPort = TextEditingController(text: '993');
   final TextEditingController _imapUser = TextEditingController();
   final TextEditingController _imapPassword = TextEditingController();
+  final TextEditingController _davBaseUrl = TextEditingController();
   final TextEditingController _smtpHost = TextEditingController();
   final TextEditingController _smtpPort = TextEditingController(text: '465');
   Color _accent = AccountColorPicker.curatedSwatches.first;
@@ -95,6 +97,7 @@ class _AddAccountFormState extends State<_AddAccountForm>
     _imapPort.dispose();
     _imapUser.dispose();
     _imapPassword.dispose();
+    _davBaseUrl.dispose();
     _smtpHost.dispose();
     _smtpPort.dispose();
     super.dispose();
@@ -343,6 +346,9 @@ class _AddAccountFormState extends State<_AddAccountForm>
     return imapHost;
   }
 
+  bool get _isRunboxImap =>
+      DavDiscovery.isRunboxHint(_resolvedImapAddress(), _imapHost.text);
+
   Future<void> _submitImap() async {
     final String address = _resolvedImapAddress();
     final String host = _imapHost.text.trim();
@@ -390,6 +396,9 @@ class _AddAccountFormState extends State<_AddAccountForm>
         password: password,
         smtpHost: smtpHost,
         smtpPort: int.tryParse(_smtpPort.text.trim()) ?? 465,
+        davBaseUrl: _davBaseUrl.text.trim().isEmpty
+            ? null
+            : _davBaseUrl.text.trim(),
       );
       await syncEngine.kick();
       await mailbox.refresh();
@@ -643,6 +652,8 @@ class _AddAccountFormState extends State<_AddAccountForm>
                       onChanged: (v) {
                         if (_smtpHost.text.isEmpty) {
                           setState(() => _smtpHost.text = v);
+                        } else {
+                          setState(() {});
                         }
                       },
                     ),
@@ -666,6 +677,22 @@ class _AddAccountFormState extends State<_AddAccountForm>
                         labelText: 'Password / app password',
                       ),
                       obscureText: true,
+                    ),
+                    TextField(
+                      controller: _davBaseUrl,
+                      decoration: InputDecoration(
+                        labelText: 'CardDAV / CalDAV URL (optional)',
+                        hintText: _isRunboxImap
+                            ? DavDiscovery.runboxDavUrl
+                            : 'https://dav.example.com/',
+                        helperText: _isRunboxImap
+                            ? 'Runbox detected — leave blank to use '
+                                '${DavDiscovery.runboxDavUrl}. Use an app '
+                                'password if 2FA is enabled.'
+                            : 'Shared endpoint for contacts and calendars. '
+                                'Use an app password if 2FA is enabled.',
+                      ),
+                      keyboardType: TextInputType.url,
                     ),
                     TextField(
                       controller: _smtpHost,

@@ -11,6 +11,7 @@ import 'package:synesis/auth/oauth_identity_manager.dart';
 import 'package:synesis/auth/secure_credential_store.dart';
 import 'package:synesis/diagnostics/diagnostics_service.dart';
 import 'package:synesis/domain/models.dart';
+import 'package:synesis/protocol/dav/dav_discovery.dart';
 import 'package:synesis/repository/mail_repository.dart';
 import 'package:synesis/sync/pim_sync_jobs.dart';
 import 'package:synesis/widgets/widget_snapshot_service.dart';
@@ -83,6 +84,7 @@ class AccountService {
     required String smtpHost,
     required int smtpPort,
     String? credentialsRef,
+    String? davBaseUrl,
     bool focusEnabled = true,
   }) async {
     if (port < 1 || port > 65535 || smtpPort < 1 || smtpPort > 65535) {
@@ -98,7 +100,12 @@ class AccountService {
       focusEnabled: focusEnabled,
       credentialsRef: ref,
     );
-    await Future.wait(<Future<void>>[
+    final String? resolvedDavBaseUrl = _davBaseUrl(
+      davBaseUrl,
+      address: address,
+      imapHost: host,
+    );
+    final List<Future<void>> writes = <Future<void>>[
       _credentials.writeSecret(
         credentialsRef: ref,
         name: 'imap.host',
@@ -129,7 +136,17 @@ class AccountService {
         name: 'smtp.port',
         value: smtpPort.toString(),
       ),
-    ]);
+    ];
+    if (resolvedDavBaseUrl != null) {
+      writes.add(
+        _credentials.writeSecret(
+          credentialsRef: ref,
+          name: 'dav.baseUrl',
+          value: resolvedDavBaseUrl,
+        ),
+      );
+    }
+    await Future.wait(writes);
     await _repository.upsertAccount(
       account,
       providerType: 'imap',
@@ -139,6 +156,9 @@ class AccountService {
       accountId: id,
       type: 'bootstrap',
     );
+    if (resolvedDavBaseUrl != null) {
+      await _enqueueDavPimBootstrap(id);
+    }
     return account;
   }
 
@@ -232,10 +252,7 @@ class AccountService {
         role: 'inbox',
       ),
     ]);
-    await _repository.enqueueSyncJob(
-      accountId: id,
-      type: 'bootstrap',
-    );
+    await _repository.enqueueSyncJob(accountId: id, type: 'bootstrap');
     return account;
   }
 
@@ -334,19 +351,24 @@ class AccountService {
     );
   }
 
-  /// Replaces IMAP/SMTP secrets for an existing account without changing [credentialsRef].
+  /// Replaces supplied IMAP/SMTP/DAV secrets without changing [credentialsRef].
   Future<void> updateImapCredentials({
     required MailAccount account,
-    required String password,
+    String? password,
     String? host,
     int? port,
     String? user,
     String? smtpHost,
     int? smtpPort,
+    String? davBaseUrl,
     bool enqueueBootstrap = true,
   }) async {
-    if (password.isEmpty) {
-      throw ArgumentError.value(password, 'password', 'Password must not be empty.');
+    if (password != null && password.trim().isEmpty) {
+      throw ArgumentError.value(
+        password,
+        'password',
+        'Password must not be empty.',
+      );
     }
     if (port != null && (port < 1 || port > 65535)) {
       throw ArgumentError.value(port, 'port', 'IMAP port must be between 1 and 65535.');
@@ -359,18 +381,21 @@ class AccountService {
       );
     }
     final String ref = account.credentialsRef ?? 'imap:${account.id}';
-    final List<Future<void>> writes = <Future<void>>[
-      _credentials.writeSecret(
-        credentialsRef: ref,
-        name: 'imap.password',
-        value: password,
-      ),
-      _credentials.writeSecret(
-        credentialsRef: ref,
-        name: 'imap.auth',
-        value: 'password',
-      ),
-    ];
+    final List<Future<void>> writes = <Future<void>>[];
+    if (password != null) {
+      writes.addAll(<Future<void>>[
+        _credentials.writeSecret(
+          credentialsRef: ref,
+          name: 'imap.password',
+          value: password,
+        ),
+        _credentials.writeSecret(
+          credentialsRef: ref,
+          name: 'imap.auth',
+          value: 'password',
+        ),
+      ]);
+    }
     if (host != null && host.trim().isNotEmpty) {
       writes.add(
         _credentials.writeSecret(
@@ -416,13 +441,36 @@ class AccountService {
         ),
       );
     }
+    final String? resolvedDavBaseUrl = _davBaseUrl(
+      davBaseUrl,
+      address: account.address,
+      imapHost: host,
+    );
+    if (resolvedDavBaseUrl != null) {
+      writes.add(
+        _credentials.writeSecret(
+          credentialsRef: ref,
+          name: 'dav.baseUrl',
+          value: resolvedDavBaseUrl,
+        ),
+      );
+    }
     await Future.wait(writes);
     if (enqueueBootstrap) {
       await _repository.enqueueSyncJob(
         accountId: account.id,
         type: 'bootstrap',
       );
+      if (await isDavPimEnabled(account)) {
+        await _enqueueDavPimBootstrap(account.id);
+      }
     }
+  }
+
+  /// Returns the configured shared CardDAV/CalDAV base URL, if one exists.
+  Future<String?> readDavBaseUrl(MailAccount account) {
+    final String ref = account.credentialsRef ?? 'imap:${account.id}';
+    return _credentials.readSecret(credentialsRef: ref, name: 'dav.baseUrl');
   }
 
   /// Wipes local mailbox data and deletes secure credentials for an account.
@@ -458,4 +506,52 @@ class AccountService {
 
   static String removeConfirmationFor(String accountId) =>
       DiagnosticsService.confirmationFor(accountId);
+
+  /// Whether an IMAP Basic-auth account is eligible for DAV PIM sync.
+  Future<bool> isDavPimEnabled(MailAccount account) async {
+    if (account.providerType != 'imap' ||
+        (account.credentialsRef ?? '').startsWith('google:')) {
+      return false;
+    }
+    final String ref = account.credentialsRef ?? 'imap:${account.id}';
+    final String? auth = await _credentials.readSecret(
+      credentialsRef: ref,
+      name: 'imap.auth',
+    );
+    if ((auth ?? 'password').trim().toLowerCase() == 'xoauth2') {
+      return false;
+    }
+    final String? dav = await _credentials.readSecret(
+      credentialsRef: ref,
+      name: 'dav.baseUrl',
+    );
+    final String? host = await _credentials.readSecret(
+      credentialsRef: ref,
+      name: 'imap.host',
+    );
+    return dav != null || DavDiscovery.isRunboxHint(account.address, host);
+  }
+
+  Future<void> _enqueueDavPimBootstrap(String accountId) async {
+    await _repository.enqueueSyncJob(
+      accountId: accountId,
+      type: PimSyncJobs.contactListsBootstrap,
+    );
+    await _repository.enqueueSyncJob(
+      accountId: accountId,
+      type: PimSyncJobs.calendarsBootstrap,
+    );
+  }
+
+  static String? _davBaseUrl(
+    String? value, {
+    required String address,
+    required String? imapHost,
+  }) {
+    final String? normalized = DavDiscovery.normalizeBaseUrl(value);
+    return normalized ??
+        (DavDiscovery.isRunboxHint(address, imapHost)
+            ? DavDiscovery.runboxDavUrl
+            : null);
+  }
 }

@@ -12,6 +12,8 @@ import 'package:synesis/auth/secure_credential_store.dart';
 import 'package:synesis/domain/models.dart';
 import 'package:synesis/protocol/graph_mail_provider.dart';
 import 'package:synesis/protocol/graph_pim_provider.dart';
+import 'package:synesis/protocol/dav/dav_discovery.dart';
+import 'package:synesis/protocol/dav_pim_provider.dart';
 import 'package:synesis/protocol/imap_smtp_mail_provider.dart';
 import 'package:synesis/protocol/mail_provider.dart';
 import 'package:synesis/repository/mail_repository.dart';
@@ -113,8 +115,7 @@ class ProviderRegistry {
       }
 
       final bool useXoauth2 =
-          isGoogleRef ||
-          (authModeRaw ?? '').trim().toLowerCase() == 'xoauth2';
+          isGoogleRef || (authModeRaw ?? '').trim().toLowerCase() == 'xoauth2';
 
       if (host == null ||
           user == null ||
@@ -161,15 +162,60 @@ class ProviderRegistry {
     if (account == null) {
       return null;
     }
-    if (account.providerType != 'graph' &&
-        account.providerType != 'microsoft') {
-      return null;
-    }
     final String? reference = account.credentialsRef?.trim();
     if (reference == null || reference.isEmpty) {
       return null;
     }
     final String credentialsRef = reference;
+    if (account.providerType == 'imap') {
+      final String? auth = await _credentialStore.readSecret(
+        credentialsRef: credentialsRef,
+        name: 'imap.auth',
+      );
+      if ((auth ?? 'password').trim().toLowerCase() == 'xoauth2' ||
+          credentialsRef.startsWith('google:')) {
+        return null;
+      }
+      final String? password = await _credentialStore.readSecret(
+        credentialsRef: credentialsRef,
+        name: 'imap.password',
+      );
+      final String? host = await _credentialStore.readSecret(
+        credentialsRef: credentialsRef,
+        name: 'imap.host',
+      );
+      final String? shared = await _credentialStore.readSecret(
+        credentialsRef: credentialsRef,
+        name: 'dav.baseUrl',
+      );
+      final String? carddav = await _credentialStore.readSecret(
+        credentialsRef: credentialsRef,
+        name: 'carddav.baseUrl',
+      );
+      final String? caldav = await _credentialStore.readSecret(
+        credentialsRef: credentialsRef,
+        name: 'caldav.baseUrl',
+      );
+      final String? baseUrl = shared ?? carddav ?? caldav;
+      if (password == null ||
+          (baseUrl == null &&
+              !DavDiscovery.isRunboxHint(account.address, host))) {
+        return null;
+      }
+      return DavPimProvider(
+        emailAddress: account.address,
+        password: password,
+        baseUrl: baseUrl ?? DavDiscovery.runboxDavUrl,
+        carddavBaseUrl: carddav,
+        caldavBaseUrl: caldav,
+        imapHost: host,
+        client: _httpClient,
+      );
+    }
+    if (account.providerType != 'graph' &&
+        account.providerType != 'microsoft') {
+      return null;
+    }
     return GraphPimProvider(
       () => _identityManager.getValidAccessToken(credentialsRef),
       client: _httpClient,

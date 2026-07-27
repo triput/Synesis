@@ -10,7 +10,8 @@ Wave 3 delivers the **meeting-mail bridge MVP**: recognize meeting invitations i
 Wave 0 ✅ → Wave H ✅ → Wave 1 (P0) ✅
                          → Wave 2: Graph PIM (P1) ✅
                          → Wave 3: meeting-mail bridge (P2) ✅
-                         → ★ Wave 4: CardDAV/CalDAV (P3–P4) ← next
+                         → Wave 4: CardDAV/CalDAV (P3–P4) ✅
+                         → ★ Wave 5: picker + Calendar UI (P5–P6) ← next
                          → Wave 5: picker + Calendar UI (P5–P6)
                          → Wave 6: cross-account DnD copy
 ```

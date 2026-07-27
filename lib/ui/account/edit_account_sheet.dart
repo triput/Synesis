@@ -14,6 +14,7 @@ import 'package:synesis/account/account_service.dart';
 import 'package:synesis/auth/oauth_identity_manager.dart';
 import 'package:synesis/domain/models.dart';
 import 'package:synesis/domain/sync_profile.dart';
+import 'package:synesis/protocol/dav/dav_discovery.dart';
 import 'package:synesis/repository/mail_repository.dart';
 import 'package:synesis/sync/sync_engine.dart';
 import 'package:synesis/theme/app_theme.dart';
@@ -63,6 +64,7 @@ class _EditAccountFormState extends State<_EditAccountForm> {
   final TextEditingController _imapPort = TextEditingController(text: '993');
   final TextEditingController _imapUser = TextEditingController();
   final TextEditingController _imapPassword = TextEditingController();
+  final TextEditingController _davBaseUrl = TextEditingController();
   final TextEditingController _smtpHost = TextEditingController();
   final TextEditingController _smtpPort = TextEditingController(text: '465');
   final TextEditingController _retentionOverride = TextEditingController();
@@ -72,6 +74,7 @@ class _EditAccountFormState extends State<_EditAccountForm> {
   List<SyncProfile> _profiles = const <SyncProfile>[];
   String? _syncProfileId;
   bool _useProfileRetention = true;
+  String? _initialDavBaseUrl;
 
   bool get _isGraph =>
       widget.account.providerType == 'graph' ||
@@ -95,6 +98,7 @@ class _EditAccountFormState extends State<_EditAccountForm> {
       _retentionOverride.text = '$overrideDays';
     }
     _loadProfiles();
+    _loadDavBaseUrl();
   }
 
   Future<void> _loadProfiles() async {
@@ -116,6 +120,24 @@ class _EditAccountFormState extends State<_EditAccountForm> {
     });
   }
 
+  Future<void> _loadDavBaseUrl() async {
+    try {
+      final String? davBaseUrl = await context
+          .read<AccountService>()
+          .readDavBaseUrl(widget.account);
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _initialDavBaseUrl = davBaseUrl;
+        _davBaseUrl.text = davBaseUrl ?? '';
+      });
+    } catch (_) {
+      // Credential-store access is unavailable on some platforms. The field
+      // remains empty and can still be configured with a new endpoint.
+    }
+  }
+
   @override
   void dispose() {
     _label.dispose();
@@ -124,6 +146,7 @@ class _EditAccountFormState extends State<_EditAccountForm> {
     _imapPort.dispose();
     _imapUser.dispose();
     _imapPassword.dispose();
+    _davBaseUrl.dispose();
     _smtpHost.dispose();
     _smtpPort.dispose();
     _retentionOverride.dispose();
@@ -233,26 +256,34 @@ class _EditAccountFormState extends State<_EditAccountForm> {
         }
       } else {
         final String password = _imapPassword.text;
-        if (password.isNotEmpty) {
-          final String? host = _imapHost.text.trim().isEmpty
+        final String davBaseUrl = _davBaseUrl.text.trim();
+        final bool davChanged = davBaseUrl != (_initialDavBaseUrl ?? '');
+        if (password.isNotEmpty || (davChanged && davBaseUrl.isNotEmpty)) {
+          final String? host = password.isEmpty || _imapHost.text.trim().isEmpty
               ? null
               : _imapHost.text.trim();
-          final int? port = int.tryParse(_imapPort.text.trim());
-          final String? user = _imapUser.text.trim().isEmpty
+          final int? port = password.isEmpty
+              ? null
+              : int.tryParse(_imapPort.text.trim());
+          final String? user = password.isEmpty || _imapUser.text.trim().isEmpty
               ? null
               : _imapUser.text.trim();
-          final String? smtpHost = _smtpHost.text.trim().isEmpty
+          final String? smtpHost =
+              password.isEmpty || _smtpHost.text.trim().isEmpty
               ? null
               : _smtpHost.text.trim();
-          final int? smtpPort = int.tryParse(_smtpPort.text.trim());
+          final int? smtpPort = password.isEmpty
+              ? null
+              : int.tryParse(_smtpPort.text.trim());
           await service.updateImapCredentials(
             account: current,
-            password: password,
+            password: password.isEmpty ? null : password,
             host: host,
             port: port,
             user: user,
             smtpHost: smtpHost,
             smtpPort: smtpPort,
+            davBaseUrl: davChanged ? davBaseUrl : null,
           );
           credentialsUpdated = true;
         }
@@ -456,6 +487,10 @@ class _EditAccountFormState extends State<_EditAccountForm> {
   }
 
   List<Widget> _imapFields() {
+    final bool isRunbox = DavDiscovery.isRunboxHint(
+      widget.account.address,
+      _imapHost.text,
+    );
     return <Widget>[
       TextField(
         controller: _imapHost,
@@ -482,6 +517,22 @@ class _EditAccountFormState extends State<_EditAccountForm> {
           helperText: 'Leave blank to keep the current password',
         ),
         obscureText: true,
+      ),
+      TextField(
+        controller: _davBaseUrl,
+        decoration: InputDecoration(
+          labelText: 'CardDAV / CalDAV URL (optional)',
+          hintText: isRunbox
+              ? DavDiscovery.runboxDavUrl
+              : 'https://dav.example.com/',
+          helperText: isRunbox
+              ? 'Runbox detected — leave blank to use '
+                  '${DavDiscovery.runboxDavUrl}. Use an app password if 2FA '
+                  'is enabled.'
+              : 'Shared endpoint for contacts and calendars. Use an app '
+                  'password if 2FA is enabled.',
+        ),
+        keyboardType: TextInputType.url,
       ),
       TextField(
         controller: _smtpHost,

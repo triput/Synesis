@@ -19,6 +19,7 @@ import 'package:synesis/focus/focus.dart';
 import 'package:synesis/mime/outgoing_envelope.dart';
 import 'package:synesis/protocol/graph_mail_provider.dart';
 import 'package:synesis/protocol/graph_pim_provider.dart';
+import 'package:synesis/protocol/dav_pim_provider.dart';
 import 'package:synesis/protocol/mail_provider.dart';
 import 'package:synesis/protocol/thread_id.dart';
 import 'package:synesis/repository/drift/drift_pim_store.dart';
@@ -38,7 +39,8 @@ typedef ProviderResolver = Future<MailProvider?> Function(String accountId);
 typedef GraphPimResolver = Future<GraphPimProvider?> Function(String accountId);
 
 /// Invoked when newly inserted unread inbox messages arrive (non-bootstrap sync).
-typedef NewUnreadMailHandler = Future<void> Function(List<MailMessage> messages);
+typedef NewUnreadMailHandler =
+    Future<void> Function(List<MailMessage> messages);
 
 /// Reads device trash auto-purge retention in days (default 30).
 typedef TrashRetentionDaysReader = int Function();
@@ -72,10 +74,11 @@ class SyncEngine {
        _trashRetentionDays = trashRetentionDays ?? (() => 30),
        _deviceRetentionDays = deviceRetentionDays ?? (() => 180),
        _pushOnCellular = pushOnCellular ?? (() => false),
-       _readConnectivity = readConnectivity ??
+       _readConnectivity =
+           readConnectivity ??
            (() => (connectivity ?? Connectivity()).checkConnectivity()),
-       _networkPolicy = networkPolicy ??
-           NetworkSyncPolicy(isDesktop: _detectDesktop()),
+       _networkPolicy =
+           networkPolicy ?? NetworkSyncPolicy(isDesktop: _detectDesktop()),
        _connectivity = connectivity,
        _onNewUnread = onNewUnread {
     _idleService = ImapIdleService(
@@ -137,11 +140,11 @@ class SyncEngine {
     }
     _networkWatcherStarted = true;
     final Connectivity connectivity = _connectivity ?? Connectivity();
-    _connectivitySub = connectivity.onConnectivityChanged.listen(
-      (List<ConnectivityResult> results) {
-        unawaited(_onConnectivityChanged(results));
-      },
-    );
+    _connectivitySub = connectivity.onConnectivityChanged.listen((
+      List<ConnectivityResult> results,
+    ) {
+      unawaited(_onConnectivityChanged(results));
+    });
     unawaited(_bootstrapIdleWatches());
   }
 
@@ -181,10 +184,7 @@ class SyncEngine {
 
   Future<bool> _mayPush() async {
     final List<ConnectivityResult> results = await _safeConnectivity();
-    return _networkPolicy.allowPush(
-      results,
-      pushOnCellular: _pushOnCellular(),
-    );
+    return _networkPolicy.allowPush(results, pushOnCellular: _pushOnCellular());
   }
 
   /// Connectivity plugins can throw in unit tests / unsupported hosts.
@@ -226,9 +226,9 @@ class SyncEngine {
     await enqueuePimIncremental(accountId);
   }
 
-  /// Enqueues Graph PIM collection incremental jobs (no-op for non-Graph).
+  /// Enqueues PIM collection incremental jobs for Graph or DAV accounts.
   Future<void> enqueuePimIncremental(String accountId) async {
-    if (!await _isGraphAccount(accountId)) {
+    if (!await _isPimAccount(accountId)) {
       return;
     }
     await _repository.enqueueSyncJob(
@@ -241,9 +241,9 @@ class SyncEngine {
     );
   }
 
-  /// Enqueues Graph PIM bootstrap jobs after account add / re-auth.
+  /// Enqueues PIM bootstrap jobs after account add / credential refresh.
   Future<void> enqueuePimBootstrap(String accountId) async {
-    if (!await _isGraphAccount(accountId)) {
+    if (!await _isPimAccount(accountId)) {
       return;
     }
     await _repository.enqueueSyncJob(
@@ -433,6 +433,13 @@ class SyncEngine {
     return false;
   }
 
+  Future<bool> _isPimAccount(String accountId) async {
+    if (await _isGraphAccount(accountId)) {
+      return true;
+    }
+    return await _pimProvider(accountId) != null;
+  }
+
   Future<GraphPimProvider?> _pimProvider(String accountId) async {
     final GraphPimResolver? resolve = _resolvePim;
     if (resolve == null) {
@@ -448,8 +455,8 @@ class SyncEngine {
       return;
     }
     try {
-      final List<GraphContactFolder> folders =
-          await provider.listContactFolders();
+      final List<GraphContactFolder> folders = await provider
+          .listContactFolders();
       final List<ContactList> lists = provider.mapContactFolders(
         folders,
         accountId: job.accountId,
@@ -511,8 +518,9 @@ class SyncEngine {
               contactListId,
               cursorKey,
             );
-      final String? deltaLink =
-          (existing == null || existing.isEmpty) ? null : existing;
+      final String? deltaLink = (existing == null || existing.isEmpty)
+          ? null
+          : existing;
 
       GraphPimDeltaResult<GraphContactBundle> result;
       try {
@@ -554,6 +562,39 @@ class SyncEngine {
         }
         await store.upsertContactEmails(emails);
         await store.upsertContactPhones(phones);
+      }
+
+      if (provider is DavPimProvider) {
+        final Set<String> remoteIds = result.changed
+            .map((GraphContactBundle bundle) => bundle.contact.providerId)
+            .toSet();
+        final int now = DateTime.now().millisecondsSinceEpoch;
+        final List<Contact> missing =
+            (await store.listContacts(
+                  accountId: job.accountId,
+                  contactListId: contactListId,
+                ))
+                .where(
+                  (Contact contact) => !remoteIds.contains(contact.providerId),
+                )
+                .map(
+                  (Contact contact) => Contact(
+                    id: contact.id,
+                    accountId: contact.accountId,
+                    contactListId: contact.contactListId,
+                    providerId: contact.providerId,
+                    displayName: contact.displayName,
+                    givenName: contact.givenName,
+                    familyName: contact.familyName,
+                    company: contact.company,
+                    notes: contact.notes,
+                    etag: contact.etag,
+                    updatedAt: now,
+                    deletedAt: now,
+                  ),
+                )
+                .toList(growable: false);
+        await store.upsertContacts(missing);
       }
 
       if (result.removedProviderIds.isNotEmpty) {
@@ -674,13 +715,10 @@ class SyncEngine {
       final String cursorKey = PimSyncJobs.eventsCursorKey(calendarId);
       final String? existing = bootstrap
           ? null
-          : await _repository.getCursor(
-              job.accountId,
-              calendarId,
-              cursorKey,
-            );
-      final String? deltaLink =
-          (existing == null || existing.isEmpty) ? null : existing;
+          : await _repository.getCursor(job.accountId, calendarId, cursorKey);
+      final String? deltaLink = (existing == null || existing.isEmpty)
+          ? null
+          : existing;
 
       GraphPimDeltaResult<GraphEventBundle> result;
       try {
@@ -692,12 +730,7 @@ class SyncEngine {
         );
       } on ProtocolException catch (error) {
         if (error.statusCode == 410) {
-          await _repository.setCursor(
-            job.accountId,
-            calendarId,
-            cursorKey,
-            '',
-          );
+          await _repository.setCursor(job.accountId, calendarId, cursorKey, '');
           result = await provider.syncEvents(
             accountId: job.accountId,
             calendarId: calendarId,
@@ -721,15 +754,52 @@ class SyncEngine {
         await store.upsertEventAttendees(attendees);
       }
 
+      if (provider is DavPimProvider) {
+        final Set<String> remoteIds = result.changed
+            .map((GraphEventBundle bundle) => bundle.event.providerId)
+            .toSet();
+        final int now = DateTime.now().millisecondsSinceEpoch;
+        final List<CalendarEvent> missing =
+            (await store.listEvents(
+                  accountId: job.accountId,
+                  calendarId: calendarId,
+                ))
+                .where(
+                  (CalendarEvent event) =>
+                      !remoteIds.contains(event.providerId),
+                )
+                .map(
+                  (CalendarEvent event) => CalendarEvent(
+                    id: event.id,
+                    accountId: event.accountId,
+                    calendarId: event.calendarId,
+                    providerId: event.providerId,
+                    title: event.title,
+                    body: event.body,
+                    startEpochMs: event.startEpochMs,
+                    endEpochMs: event.endEpochMs,
+                    allDay: event.allDay,
+                    location: event.location,
+                    rrule: event.rrule,
+                    reminderMinutes: event.reminderMinutes,
+                    etag: event.etag,
+                    updatedAt: now,
+                    deletedAt: now,
+                  ),
+                )
+                .toList(growable: false);
+        await store.upsertEvents(missing);
+      }
+
       if (result.removedProviderIds.isNotEmpty) {
         final int now = DateTime.now().millisecondsSinceEpoch;
         final List<CalendarEvent> softDeleted = <CalendarEvent>[];
         for (final String removedId in result.removedProviderIds) {
-          final CalendarEvent? existingEvent =
-              await store.findEventByProviderId(
-            accountId: job.accountId,
-            providerId: removedId,
-          );
+          final CalendarEvent? existingEvent = await store
+              .findEventByProviderId(
+                accountId: job.accountId,
+                providerId: removedId,
+              );
           if (existingEvent == null) {
             softDeleted.add(
               CalendarEvent(
@@ -771,12 +841,7 @@ class SyncEngine {
 
       final String? link = result.deltaLink;
       if (link != null && link.isNotEmpty) {
-        await _repository.setCursor(
-          job.accountId,
-          calendarId,
-          cursorKey,
-          link,
-        );
+        await _repository.setCursor(job.accountId, calendarId, cursorKey, link);
       }
     } finally {
       await provider.dispose();
@@ -923,10 +988,7 @@ class SyncEngine {
     });
   }
 
-  Future<String?> _syncInbox(
-    SyncJob job, {
-    required bool notifyNewMail,
-  }) async {
+  Future<String?> _syncInbox(SyncJob job, {required bool notifyNewMail}) async {
     final ResolvedSyncPolicy policy = await _resolvePolicy(job.accountId);
     final String folderId = MailFolder.inboxId(job.accountId);
     if (!policy.allowsFolder(
@@ -1071,8 +1133,9 @@ class SyncEngine {
       folderId,
       GraphMailProvider.graphDeltaCursorKey,
     );
-    final String? deltaLink =
-        (existing == null || existing.isEmpty) ? null : existing;
+    final String? deltaLink = (existing == null || existing.isEmpty)
+        ? null
+        : existing;
     try {
       final GraphDeltaResult delta = await provider.listDelta(
         remoteId,
@@ -1250,7 +1313,7 @@ class SyncEngine {
         failureCount == 1
             ? 'Outbox send failed: ${firstError ?? 'unknown error'}'
             : 'Outbox send failed for $failureCount messages: '
-                '${firstError ?? 'unknown error'}',
+                  '${firstError ?? 'unknown error'}',
       );
     }
   }
@@ -1404,16 +1467,14 @@ class SyncEngine {
   Future<void> _reclassifyLocalFocus() async {
     try {
       await _loadFocusOverrides();
-      await _repository.reclassifyFocusBuckets(
-        (MailMessage message) {
-          return _scoreFocus(
-            accountId: message.accountId,
-            fromAddress: message.fromAddress,
-            subject: message.subject,
-            headers: focusHeadersFromRaw(message.rawHeaders),
-          );
-        },
-      );
+      await _repository.reclassifyFocusBuckets((MailMessage message) {
+        return _scoreFocus(
+          accountId: message.accountId,
+          fromAddress: message.fromAddress,
+          subject: message.subject,
+          headers: focusHeadersFromRaw(message.rawHeaders),
+        );
+      });
     } on Object {
       // Best-effort; sync jobs still proceed.
     }

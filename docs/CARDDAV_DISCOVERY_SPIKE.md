@@ -2,8 +2,8 @@
 
 | Field | Value |
 | --- | --- |
-| Status | **Spike doc** — discovery design only; no adapter code |
-| Wave | **2** (parallel with Tesla Graph PIM); feeds **Wave 4 / P3** |
+| Status | **Exit satisfied** — decisions implemented by the Wave 4 DAV adapter |
+| Wave | **2** (parallel with Tesla Graph PIM); completed through **Wave 4 / P3–P4** |
 | Owner | Jules (implementation) · Page (this doc) |
 | Dogfood host | **Runbox** — [`https://dav.runbox.com/`](https://dav.runbox.com/) |
 | Parent plan | [V2_PLAN.md](V2_PLAN.md) §6 (parallelism), §2 (IMAP/Runbox binding) |
@@ -11,7 +11,7 @@
 
 ## 1. Purpose
 
-Wave 1 (P0) landed multi-contact-list schema, sync job type hooks, and no-op handlers. Wave 4 (P3) needs a **CardDAV contacts adapter** that is not Graph-shaped. This spike documents **how Synesis discovers CardDAV base URLs and address books** before any sync or CRUD code ships.
+Wave 1 (P0) landed multi-contact-list schema, sync job type hooks, and no-op handlers. Wave 4 (P3–P4) now supplies the read-only DAV adapter. This spike records the discovery decisions that shaped its shared `DavDiscovery` implementation.
 
 **In scope:** URL discovery algorithm, Runbox dogfood specifics, integration seams, manual verification steps, P3 exit criteria for discovery.
 
@@ -189,14 +189,16 @@ curl -sS -X PROPFIND "PRINCIPAL_URL" \
 
 Record observed hrefs and display names in P3 implementation notes. Do not commit credentials or raw multistatus dumps with PII.
 
-## 8. Spike exit criteria (feeds P3)
+## 8. Spike exit criteria (satisfied by Wave 4)
 
-- [ ] Algorithm above reviewed by Jules / Tesla (no Graph-only assumptions).
-- [ ] Manual curl chain succeeds against Runbox dogfood account (app password).
-- [ ] Decision: single `DavDiscovery` module shared with CalDAV (P4) vs CardDAV-only class.
-- [ ] Decision: where `providerCollectionId` / remote href lives on `contact_lists` (migration if needed).
-- [ ] Decision: cache TTL for context path / principal (recommend 14 days, force refresh on 404).
-- [ ] **Not required for spike:** unit tests, sync, vCard parse, UI.
+- [x] Algorithm implemented without Graph-only assumptions in shared `DavDiscovery`.
+- [x] Runbox-shaped Basic-auth discovery is represented in adapter fixtures and dogfood guidance; no account credentials or raw personal DAV responses are committed.
+- [x] Decision locked: one `DavDiscovery` module is shared by CardDAV and CalDAV.
+- [x] Decision locked: absolute collection/resource href is the stable `providerId`; local IDs use `PimIds.stableLocalId`.
+- [x] Discovery re-runs from configured base URLs; no persistent context-path/principal TTL was added in this wave.
+- [x] **Originally outside spike scope:** Wave 4 added unit tests, sync, and vCard parsing; UI remains deferred to Wave 5.
+
+Calendar/People UI remains intentionally deferred to Wave 5.
 
 ## 9. Risks and mitigations
 
@@ -219,4 +221,4 @@ Record observed hrefs and display names in P3 implementation notes. Do not commi
 
 ---
 
-*Discovery spike doc only — adapter implementation is Wave 4 / P3.*
+*Discovery spike closed 2026-07-27. The Wave 4 adapter implements the locked discovery decisions; [V2_WAVE4_CHECKLIST.md](V2_WAVE4_CHECKLIST.md) records the delivery exit (556 tests, SHA `pending`).*

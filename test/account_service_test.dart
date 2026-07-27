@@ -498,5 +498,41 @@ void main() {
       expect(store.secrets['google:g1']?['imap.auth'], 'password');
       expect(repo.bootstrapAccountIds, <String>['g1']);
     });
+
+    test('updates a DAV endpoint without rewriting the password', () async {
+      final _FakeRepository repo = _FakeRepository(<MailAccount>[
+        const MailAccount(
+          id: 'imap-1',
+          label: 'IMAP',
+          address: 'user@example.com',
+          accent: Color(0xFF2563EB),
+          providerType: 'imap',
+          credentialsRef: 'imap:imap-1',
+        ),
+      ]);
+      final _FakeCredentialStore store = _FakeCredentialStore();
+      store.secrets['imap:imap-1'] = <String, String>{
+        'imap.password': 'existing-password',
+      };
+      final AccountService service = AccountService(
+        repo,
+        store,
+        _FakeIdentityManager(store),
+      );
+
+      await service.updateImapCredentials(
+        account: repo.accounts.first,
+        davBaseUrl: 'https://dav.example.com',
+      );
+
+      expect(
+        store.secrets['imap:imap-1']?['dav.baseUrl'],
+        'https://dav.example.com/',
+      );
+      expect(
+        store.secrets['imap:imap-1']?['imap.password'],
+        'existing-password',
+      );
+    });
   });
 }
