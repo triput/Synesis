@@ -2,9 +2,9 @@
 // File: lib/notifications/notification_service.dart
 // Description: Filters new unread mail and shows OS notifications when allowed
 // Component: Notifications
-// Version: 1.0 (Gold Master)
+// Version: 1.1 (Gold Master)
 // Created: 2026-07-17
-// Last Update: 2026-07-17
+// Last Update: 2026-07-23
 // ==============================================================================
 
 import 'package:synesis/domain/models.dart';
@@ -65,6 +65,8 @@ class NotificationService {
     bool Function()? isAppForeground,
     DateTime Function()? clock,
     Set<String>? initialNotifiedIds,
+    this.onArchiveMessage,
+    this.onDeleteMessage,
   }) : _settings = settings,
        _platform = platform,
        _isAppForeground = isAppForeground ?? (() => false),
@@ -78,6 +80,16 @@ class NotificationService {
   final bool Function() _isAppForeground;
   final DateTime Function() _clock;
   final Set<String> _notifiedIds;
+
+  /// D6-8: wired by callers (typically `main.dart`) to a message-id-targeted
+  /// archive helper. Only used for single-message toasts; `null` disables
+  /// toast actions entirely.
+  final void Function(String messageId)? onArchiveMessage;
+
+  /// D6-8: wired by callers (typically `main.dart`) to a message-id-targeted
+  /// delete helper. Only used for single-message toasts; `null` disables
+  /// toast actions entirely.
+  final void Function(String messageId)? onDeleteMessage;
 
   Future<void> initialize() => _platform.initialize();
 
@@ -118,8 +130,30 @@ class NotificationService {
       _rememberNotified(message.id);
     }
 
-    final ({String title, String body}) aggregate = _aggregate(eligible);
-    await _platform.showNewMail(title: aggregate.title, body: aggregate.body);
+    final ({String title, String body, String? messageId}) aggregate =
+        _aggregate(eligible);
+    await _platform.showNewMail(
+      title: aggregate.title,
+      body: aggregate.body,
+      messageId: aggregate.messageId,
+      actions: _actionsFor(aggregate.messageId),
+    );
+  }
+
+  /// Builds toast actions for a single-message notification (D6-8).
+  ///
+  /// Returns `null` for aggregated multi-message toasts (no [messageId]) or
+  /// when no archive/delete callbacks were configured.
+  NewMailToastActions? _actionsFor(String? messageId) {
+    if (messageId == null) {
+      return null;
+    }
+    final void Function(String messageId)? archive = onArchiveMessage;
+    final void Function(String messageId)? delete = onDeleteMessage;
+    if (archive == null || delete == null) {
+      return null;
+    }
+    return NewMailToastActions(onArchive: archive, onDelete: delete);
   }
 
   bool _isInQuietHours(DateTime now) {
@@ -139,7 +173,9 @@ class NotificationService {
     return minutes >= start || minutes < end;
   }
 
-  ({String title, String body}) _aggregate(List<MailMessage> messages) {
+  ({String title, String body, String? messageId}) _aggregate(
+    List<MailMessage> messages,
+  ) {
     if (messages.length == 1) {
       final MailMessage message = messages.first;
       final String from = message.fromName.trim().isEmpty
@@ -148,7 +184,7 @@ class NotificationService {
       final String subject = message.subject.trim().isEmpty
           ? '(no subject)'
           : message.subject.trim();
-      return (title: from, body: subject);
+      return (title: from, body: subject, messageId: message.id);
     }
     final MailMessage first = messages.first;
     final String snippet = first.subject.trim().isEmpty
@@ -157,6 +193,7 @@ class NotificationService {
     return (
       title: '${messages.length} new messages',
       body: snippet,
+      messageId: null,
     );
   }
 

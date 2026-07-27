@@ -1,10 +1,10 @@
 // ==============================================================================
 // File: lib/ui/account/templates_sheet.dart
-// Description: CRUD UI for canned response templates (TB-13).
+// Description: CRUD UI for canned response templates (TB-13, D6-4 tokens).
 // Component: UI
-// Version: 1.0 (Gold Master)
+// Version: 1.1 (Gold Master)
 // Created: 2026-07-17
-// Last Update: 2026-07-17
+// Last Update: 2026-07-23
 // ==============================================================================
 
 import 'package:synesis/compose/account_signature.dart';
@@ -102,6 +102,19 @@ class _TemplatesBodyState extends State<_TemplatesBody> {
                   minLines: 3,
                   maxLines: 8,
                   decoration: const InputDecoration(labelText: 'Body (HTML/text)'),
+                ),
+                const SizedBox(height: 8),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    'D6-4: use {{name}}, {{first_name}}, {{email}}, '
+                    '{{from_name}}, {{from_email}}, {{subject}}, {{date}} — '
+                    'expanded from the first To recipient when inserted.',
+                    style: TextStyle(
+                      color: tokensOf(context).muted,
+                      fontSize: 11,
+                    ),
+                  ),
                 ),
               ],
             ),

@@ -6,12 +6,12 @@
 
 | Field | Value |
 | --- | --- |
-| Status | Active — foundation implemented |
+| Status | **V1 complete** — exit signed off 2026-07-22; **V1.5 complete** (2026-07-27) |
 | Spec | [SPEC.md](SPEC.md) v1.4 |
-| Exit checklist | [V1_EXIT_CHECKLIST.md](V1_EXIT_CHECKLIST.md) |
+| Exit checklist | [V1_EXIT_CHECKLIST.md](V1_EXIT_CHECKLIST.md) — **signed off** |
 | Product | Synesis |
 | Platforms (v1) | Windows, Android |
-| Last updated | 2026-07-18 (W4/W7 operator validation complete; Final wave Phase F landed) |
+| Last updated | 2026-07-27 (V1.5 closed — polish + `flutter test` 499) |
 
 This roadmap tracks implementation milestones. Requirements live in the SPEC; this file tracks status and exit criteria.
 
@@ -69,35 +69,41 @@ flutter test
 
 ## Post-v1 & Tier D ([plan](TIER_D_PLAN.md))
 
-Horizon backlog with promotion framework (V1.1 → V2 → enterprise). **Planning complete — decisions locked.**
+Horizon backlog with promotion framework (V1.1 → V2 → enterprise). **V1.5 adjacency bundle code-complete 2026-07-27** — full `flutter test` + manual E2E regression pending before exit sign-off. See [V1_5_PLAN.md](V1_5_PLAN.md) §5.
 
-### Locked Tier D decisions (2026-07-16)
+### Locked Tier D decisions
 
 | # | Decision |
 | --- | --- |
-| 1 | **V1.1 = D6 only** (no shared mailbox in first post-V1 bundle) |
-| 2 | **V2 headline = PIM** (contacts & calendar) |
-| 3 | **Enterprise SKU** — separate track (crypto + shared mail + S/MIME) |
-| 4 | **PST import** after V1.1 unless migration is acquisition channel |
-| 5 | **Galaxy Watch** — lightweight V2 companion (triage, not full client) |
+| 1 | **First post-V1 ship = V1.5** (full D6 ex-V1.1+V1.2 + dogfood UI; no shared mailbox) — *2026-07-22; supersedes “V1.1 = D6 only”* — [V1_5_PLAN.md](V1_5_PLAN.md) |
+| 2 | **V2 headline = PIM** — Outlook-style modules; CardDAV/CalDAV day-one (Runbox); Graph-first order — [V2_PLAN.md](V2_PLAN.md) |
+| 3 | **Enterprise crypto / shared mail** — **Maybe/Someday** (not critical path) |
+| 4 | **PST import** after V1.5 unless migration is acquisition channel |
+| 5 | **Galaxy Watch** — **P3 / V2.1** (not V2.0 critical path) |
+| 6 | **D6-3 Graph large attach** — **must-ship in V1.5** (operator hits cap often) |
 
-### Confirmed post-V1 (from V1 + Tier D)
+### Confirmed post-V1 (from V1 + Tier D → V1.5)
 
-- Unlimited multi-window desktop (V1: single detached window only) → **V1.1 candidate**
-- Per-account remote image block + domain whitelist (V1: global toggle) → **V1.1 candidate**
-- Auto-mark read dwell / disable settings (V1: fixed 5s, default ON — [UI-P28](UI_ENHANCEMENT_SWEEP.md)) → **V1.1 candidate**
+- Unlimited multi-window desktop → **V1.5**
+- Per-account remote image block + domain whitelist → **V1.5**
+- Graph large attachment upload session → **V1.5 (must)**
+- Auto-mark read dwell / disable + pause in-view (UI-P28/P30) → **V1.5**
+- One-click clear filters (UI-P29), settings IA (UI-P21) → **V1.5**
+- Template vars, server snooze, PDF export, tracker blocking, toast actions → **V1.5** (ex-V1.2)
+
+Full scope: **[V1_5_PLAN.md](V1_5_PLAN.md)**.
 
 ### Tier D themes (default disposition)
 
 | Theme | Examples | Target |
 | --- | --- | --- |
-| **D6 V1.1 adjacency** | Multi-window+, image whitelist, Graph large attachments, PDF export | V1.1 triage after W7 |
-| **D1 PIM** | Contacts, calendar, meeting invites | V2 |
-| **D2 Crypto** | OpenPGP, S/MIME | Enterprise |
-| **D3 Legacy** | PST/MSG import, POP3, shared mailboxes, EAS | Selective / V1.2+ |
+| **D6 V1.5 adjacency** | Multi-window+, image whitelist, Graph large attach, PDF, snooze, trackers, toast actions | **V1.5** ([plan](V1_5_PLAN.md)) |
+| **D1 PIM** | Contacts, calendar, meeting invites | **V2.0** ([V2_PLAN.md](V2_PLAN.md)) |
+| **D2 Crypto** | OpenPGP, S/MIME | Maybe/Someday |
+| **D3 Legacy** | PST/MSG import, POP3, shared mailboxes, EAS | Selective / after V1.5 |
 | **D4 Collab & AI** | Cloud AI (non-goal), on-device ML Focus, team inboxes | Low / V2+ |
-| **D5 Platforms** | iOS, macOS, Linux after PIM; **Galaxy Watch V2** | Platform roadmap |
-| **D7 Power depth** | JMAP, server rules, unsubscribe helper, Graph webhooks, editable keyboard shortcuts | Cherry-pick |
+| **D5 Platforms** | iOS, macOS, Linux after PIM; **Galaxy Watch V2.1 (P3)** | Platform roadmap |
+| **D7 Power depth** | JMAP, server rules, unsubscribe helper, Graph webhooks, editable keyboard shortcuts | Cherry-pick after V1.5 |
 
 ### Maybe / Someday ([TIER_D_PLAN.md §16](TIER_D_PLAN.md#16-maybe--someday-unplanned-backlog))
 
@@ -176,7 +182,7 @@ Full item catalog: [TIER_D_PLAN.md](TIER_D_PLAN.md).
 - **Ctrl+F find in message** — `findInMessageRequested` → `ReadingPane` find bar; plain + HTML match navigation
 - **Print / save EML / open in new window** — reading-pane overflow actions wired (`message_print_service`, `message_file_service`, detached window controller)
 - **Open EML** — title-bar file picker + launch-with-`.eml`-arg → `eml_preview_sheet`
-- **Detached message window** — `WindowsDetachedMessageWindowController` + overflow **Open in new window** (V1 single-window retarget)
+- **Detached message window** — `WindowsDetachedMessageWindowController` + overflow **Open in new window** (V1 single-window retarget; **superseded by V1.5 Wave D / D6-1** — unlimited concurrent detached windows, see [V1_5_PLAN.md](V1_5_PLAN.md))
 - **Manual checklist** — [W5_WINDOWS_CHECKLIST.md](W5_WINDOWS_CHECKLIST.md) passed (operator); Windows `.eml` Explorer ProgId **deferred** (packaging follow-up)
 
 **W6 landed (2026-07-17):**
@@ -283,12 +289,12 @@ Competitive gap closure per [COMPETITIVE_ANALYSIS.md](COMPETITIVE_ANALYSIS.md). 
 
 | Track | Examples | Default |
 | --- | --- | --- |
-| **V1.1 (D6)** | Multi-window+, image whitelist, large Graph attachments | First post-V1 bundle |
-| **V2 (TD-A/E)** | Contacts, calendar, iOS | Major version |
-| **Enterprise (TD-B/C)** | PGP/S/MIME, shared mailboxes, PST | Separate track |
-| **Defer** | Maybe/Someday (§16), cloud AI, newsletter, mail merge | Unplanned radar |
+| **V1.5 (D6 + dogfood UI)** | Multi-window+, image whitelist, large Graph attachments, PDF, snooze, trackers, toast actions, UI-P28–P30/P21 | **Complete** (2026-07-27) — [V1_5_PLAN.md](V1_5_PLAN.md) |
+| **V2.0 (TD-A)** | Contacts, calendar, CardDAV/CalDAV (Runbox), meeting-mail | Major version — [V2_PLAN.md](V2_PLAN.md) |
+| **V2.1** | Galaxy Watch (P3), PIM polish | After V2.0 |
+| **Defer** | Enterprise crypto/shared mail, Maybe/Someday (§16), cloud AI | Unplanned radar |
 
-**Locked:** V1.1 = D6 only · V2 = PIM · Enterprise SKU yes · Galaxy Watch V2 lightweight.
+**Locked:** V1.5 adjacency · V2.0 = PIM (+ CardDAV/CalDAV) · Watch = V2.1 P3 · Enterprise = Maybe/Someday · D6-3 must-ship.
 
 ## Planned backlog (post-foundation)
 
@@ -307,26 +313,26 @@ Feature work captured for scheduling. Requirements baseline in [SPEC.md](SPEC.md
 | **Pri-1** | **Optional encryption at rest (desktop DB)** | **Landed (2026-07-18, W7 spike → ship).** Locked: opt-in ([§11 open question #4](SPEC.md#111-assumptions-baked-into-this-draft)). Ships as **SQLite3MultipleCiphers** via `sqlite3` package hooks (`sqlcipher_flutter_libs` confirmed obsolete/no-op for our 3.x `sqlite3` — not needed); `DbEncryptionConfig` (prefs flag + `flutter_secure_storage` passphrase) + `DbEncryptionMigrator` (in-place `VACUUM INTO`/`rekey`, backup + integrity check + rollback) + "Encryption" settings sheet with irreversible-loss warning. Restart required to apply (no live DB hot-swap in V1 — documented boundary, not a gap). See [W7_SQLCIPHER_SPIKE.md](W7_SQLCIPHER_SPIKE.md). **Explicitly post-v1:** PGP/S/MIME message encryption ([Post-v1](#post-v1-not-scheduled)). TLS for IMAP/SMTP/Graph is baseline, not this item. |
 | **Pri-2** | **App icon & branding assets** | **Landed / wired (Final wave Phase A, 2026-07-18).** Locked: stealth lowercase `synesis` wordmark (Option B) + **Data Envelope v2** icon + **minimal Android splash** (obsidian + centered v2; first-frame dismiss; **no Windows splash**). Windows `.ico`, Android adaptive + notification mono, in-app title-bar wordmark — see **[branding/README.md](branding/README.md)** + **[FINAL_WAVE_PLAN.md](FINAL_WAVE_PLAN.md)**. |
 | **Pri-3** | **Android emulator & device QA matrix** | **Not started.** Establish repeatable manual + CI smoke path on Android AVD alongside Windows. See [Android testing notes](#android-emulator-testing) below. V1 smoke only — deeper battery / UX track is **Post-V1** (below). |
-| **Pri-1** | **Hold / pause auto-mark for in-view message** (**Post-V1**) | **Not a V1 blocker** (marginally annoying dogfood). With Unread filter on, 5s auto-mark drops the open message from the list and closes the pane. Option to disable auto-mark for the current in-view email (and/or keep selection). **[UI-P30](UI_ENHANCEMENT_SWEEP.md)**; ties [UI-P28](UI_ENHANCEMENT_SWEEP.md). |
-| **Pri-2** | **One-click clear active filters** (**Post-V1**) | **Not a V1 blocker.** Dogfood gap after Final-wave Phase B — chip × / toolbar Clear that resets ephemeral `userFilter` in one click (does not delete saved presets). **[UI-P29](UI_ENHANCEMENT_SWEEP.md)**. |
+| **Pri-1** | **Hold / pause auto-mark for in-view message** | **Landed (V1.5 Wave A, 2026-07-22).** **[UI-P30](UI_ENHANCEMENT_SWEEP.md)** + **[UI-P28](UI_ENHANCEMENT_SWEEP.md)** auto-mark settings. |
+| **Pri-2** | **One-click clear active filters** | **Landed (V1.5 Wave A, 2026-07-22).** **[UI-P29](UI_ENHANCEMENT_SWEEP.md)** — chip × / toolbar Clear resets ephemeral `userFilter`. |
 | **Pri-2** | **Performance test suite** (**Post-V1**) | **Not a V1 blocker.** Spreadsheet-cataloged like automated tests — columns: `perf_id`, area, platform, scenario, metric, budget, harness, status. Harness: microbench + timeline on fixture DBs first; friend-and-family traces later. Mirror [TEST_INVENTORY.md](TEST_INVENTORY.md) pattern; generate script later (same shape as `tool/generate_test_inventory.py`). |
 | **Pri-2** | **Android focus track** (**Post-V1**) | **Not a V1 blocker** (battery is the headline concern, still scheduled post-ship). Battery life (sync / IDLE / push / wakelocks / Doze), visual/UX density vs Windows, leftover widget / deep-link polish. Device + AVD matrix spreadsheet-backed (extends the Pri-3 smoke matrix above). Distinct from Final-wave branding wire-up and FW-5 E2E smoke. |
 | **Pri-3** | **Project health dashboard** (**Adjacent tooling** / Post-V1) | **Not a product feature — reusable meta tooling.** Docs-only idea for now; spin up after V1 while operator dogfoods. Surfaces wave/todo progress, test-inventory CSV signals, future perf-suite metrics, and related health. Reusable beyond Synesis. Stub: **[POST_V1_HEALTH_DASHBOARD.md](POST_V1_HEALTH_DASHBOARD.md)**. Not a V1 or Final-wave deliverable. |
 
-**Suggested sequencing:** account edit/remove (Pri-1, landed) → header details (Pri-3, landed) → junk filter (Pri-2, landed W1) → per-account retention (Pri-2, landed W3) → desktop reading-pane layout (Pri-2, landed W5) → **attachments + signatures (Pri-1/Pri-2, landed W4)** → **W7 hardening (landed)** → **Final wave** (branding + filter system + FW-1…FW-6). Encryption at rest shipped in W7; Android emulator QA continues into Final-wave E2E. **Post-V1:** one-click filter clear ([UI-P29](UI_ENHANCEMENT_SWEEP.md)) + performance test suite + Android focus track (Pri-2). **Adjacent tooling (Pri-3):** project health dashboard — [POST_V1_HEALTH_DASHBOARD.md](POST_V1_HEALTH_DASHBOARD.md).
+**Suggested sequencing:** account edit/remove (Pri-1, landed) → header details (Pri-3, landed) → junk filter (Pri-2, landed W1) → per-account retention (Pri-2, landed W3) → desktop reading-pane layout (Pri-2, landed W5) → **attachments + signatures (Pri-1/Pri-2, landed W4)** → **W7 hardening (landed)** → **Final wave** (branding + filter system + FW-1…FW-6). Encryption at rest shipped in W7; Android emulator QA continues into Final-wave E2E. **V1.5 (2026-07-27):** UI-P28–P30/P21–P23 + D6 adjacency landed — exit pending QA. **Post-V1:** performance test suite + Android focus track (Pri-2). **Adjacent tooling (Pri-3):** project health dashboard — [POST_V1_HEALTH_DASHBOARD.md](POST_V1_HEALTH_DASHBOARD.md).
 
 ## Final wave (V1 exit / release readiness)
 
-**Status:** **In progress** — Phases A–F **landed** (2026-07-18); Phase G FW-5 finalize + V1 exit **open**. Plan: **[FINAL_WAVE_PLAN.md](FINAL_WAVE_PLAN.md)**.
+**Status:** **Complete** — Phases A–G **landed**; V1 exit **signed off 2026-07-22**. Plan: **[FINAL_WAVE_PLAN.md](FINAL_WAVE_PLAN.md)**.
 
-This is the last gate before v1 ship. Track exit criteria in **[V1_EXIT_CHECKLIST.md](V1_EXIT_CHECKLIST.md)**. Classic FW-1…FW-6 remain release-readiness work; the Final wave **also absorbs**:
+This is the last gate before v1 ship. Track exit criteria in **[V1_EXIT_CHECKLIST.md](V1_EXIT_CHECKLIST.md)** (**signed off**). Classic FW-1…FW-6 remain release-readiness work; the Final wave **also absorbed**:
 
 - **Pri-1 cross-cutting message filter system** (Phase B — extend `MessageViewFilter` / saved presets; see plan §4)
 - **Pri-2 branding wire-up** (Phase A — wordmark B, Data Envelope v2, minimal Android splash; skip Windows splash)
 
 FW-1 still forbids *ad-hoc* new features; filters and branding are **named Final-wave phases**, not sneaked into the refactor pass.
 
-**Operator status (2026-07-18):** W4 + W7 operator validation **complete** — Phase F **landed**. Checkbox tick-off in checklist files and FW-5 live-mail E2E rows remain operator-owned.
+**Operator status (2026-07-22):** W4 + W7 checklists **signed off**; FW-5 matrix **finalized Pass**; V1 exit **signed off**.
 
 ### Position relative to remaining backlog
 
@@ -338,7 +344,7 @@ FW-1 still forbids *ad-hoc* new features; filters and branding are **named Final
 | Attachments, signatures, layout, encryption | Attach/sig **landed W4**; layout **landed W5**; encryption **landed W7** | Operator validation complete; checkbox tick-off pending |
 | **App icon & branding** (Pri-2) | **Landed / wired** (Phase A, 2026-07-18) | [branding/README.md](branding/README.md) + E2E branding smoke rows |
 
-**Critical path to v1:** ~~W2~~ **W2 landed** → ~~W3~~ **W3 landed** → ~~W5~~ **W5 landed** → ~~W6~~ **W6 landed** → ~~W4~~ **W4 landed** → ~~W7~~ **W7 landed** → **Final wave** ([FINAL_WAVE_PLAN.md](FINAL_WAVE_PLAN.md): Phase G FW-5 + V1 exit) → [V1 exit checklist](V1_EXIT_CHECKLIST.md) sign-off.
+**Critical path to v1:** ~~W2~~ **W2 landed** → ~~W3~~ **W3 landed** → ~~W5~~ **W5 landed** → ~~W6~~ **W6 landed** → ~~W4~~ **W4 landed** → ~~W7~~ **W7 landed** → ~~Final wave~~ **Final wave complete** ([FINAL_WAVE_PLAN.md](FINAL_WAVE_PLAN.md)) → ~~[V1 exit checklist](V1_EXIT_CHECKLIST.md)~~ **signed off 2026-07-22**.
 
 ### Suggested order within the wave
 
@@ -361,7 +367,7 @@ Full phased kickoff (branding → filters → FW-* → checklist payback): **[FI
 
 **Automated inventory (landed):** [`V1_AUTOMATED_TEST_INVENTORY.csv`](V1_AUTOMATED_TEST_INVENTORY.csv) + [TEST_INVENTORY.md](TEST_INVENTORY.md) — unit/widget/bloc catalog; `evaluation_status=Cataloged` ≠ runtime Pass.
 
-**Manual E2E matrix (living draft):** [`V1_MANUAL_E2E_MATRIX.csv`](V1_MANUAL_E2E_MATRIX.csv) — **not finalized**; includes filter + branding smoke rows; live-mail rows operator-owned (Phase G). Import into Excel or Google Sheets for operator runs. Keep separate from the automated inventory.
+**Manual E2E matrix (finalized):** [`V1_MANUAL_E2E_MATRIX.csv`](V1_MANUAL_E2E_MATRIX.csv) — all rows Pass (operator sign-off 2026-07-22). Includes filter + branding + live-mail rows. Keep separate from the automated inventory.
 
 **Coverage areas (as applicable to then-current product):**
 

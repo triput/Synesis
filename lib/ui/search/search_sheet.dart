@@ -2,9 +2,9 @@
 // File: lib/ui/search/search_sheet.dart
 // Description: Local FTS search and remote-bridge trigger UI
 // Component: UI
-// Version: 1.1 (Gold Master)
+// Version: 1.2 (Gold Master)
 // Created: 2026-07-14
-// Last Update: 2026-07-18
+// Last Update: 2026-07-23
 // ==============================================================================
 
 import 'package:flutter/material.dart';
@@ -13,6 +13,7 @@ import 'package:synesis/domain/models.dart';
 import 'package:synesis/repository/mail_repository.dart';
 import 'package:synesis/theme/app_theme.dart';
 import 'package:synesis/theme/density.dart';
+import 'package:synesis/theme/theme_tokens.dart';
 import 'package:synesis/ui/common/empty_state.dart';
 import 'package:synesis/ui/mailbox/mailbox_cubit.dart';
 import 'package:synesis/sync/sync_engine.dart';
@@ -35,22 +36,26 @@ Future<void> showSearchSheet(
           top: 8,
           bottom: MediaQuery.viewInsetsOf(context).bottom + 24,
         ),
-        child: _SearchSheetBody(preferRemote: preferRemote),
+        child: SearchSheetBody(preferRemote: preferRemote),
       );
     },
   );
 }
 
-class _SearchSheetBody extends StatefulWidget {
-  const _SearchSheetBody({required this.preferRemote});
+/// Local FTS + remote-bridge search body (UI-P22: results show [MailMessage.whenLabel]).
+///
+/// Public so it can be embedded or exercised directly in widget tests without
+/// going through [showSearchSheet]'s modal route.
+class SearchSheetBody extends StatefulWidget {
+  const SearchSheetBody({super.key, this.preferRemote = false});
 
   final bool preferRemote;
 
   @override
-  State<_SearchSheetBody> createState() => _SearchSheetBodyState();
+  State<SearchSheetBody> createState() => _SearchSheetBodyState();
 }
 
-class _SearchSheetBodyState extends State<_SearchSheetBody> {
+class _SearchSheetBodyState extends State<SearchSheetBody> {
   late final TextEditingController _controller = TextEditingController();
   List<MailMessage> _results = <MailMessage>[];
   int _searchGeneration = 0;
@@ -143,9 +148,22 @@ class _SearchSheetBodyState extends State<_SearchSheetBody> {
                     itemCount: _results.length,
                     itemBuilder: (BuildContext context, int index) {
                       final MailMessage msg = _results[index];
+                      final ThemeTokens t = tokensOf(context);
                       return ListTile(
-                        title: Text(msg.subject),
-                        subtitle: Text('${msg.fromName} · ${msg.snippet}'),
+                        title: Text(
+                          msg.subject,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        subtitle: Text(
+                          '${msg.fromName} · ${msg.snippet}',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        trailing: Text(
+                          msg.whenLabel,
+                          style: TextStyle(color: t.muted, fontSize: 12),
+                        ),
                         onTap: () {
                           context.read<MailboxCubit>().selectMessage(msg.id);
                           Navigator.pop(context);

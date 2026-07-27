@@ -4,7 +4,7 @@
 // Component: Repository / Data
 // Version: 1.0 (Gold Master)
 // Created: 2026-07-17
-// Last Update: 2026-07-17
+// Last Update: 2026-07-24
 // ==============================================================================
 
 import 'dart:convert';
@@ -146,16 +146,27 @@ class DriftSyncJobStore {
       return <SyncJob>[];
     }
     final List<SyncJob> claimed = await _database.transaction(() async {
-      final List<Job> rows =
+      final List<Job> pending =
           await (_database.select(_database.jobs)
                 ..where((Jobs table) => table.status.equals('pending'))
                 ..orderBy(<OrderingTerm Function(Jobs)>[
                   (Jobs table) => OrderingTerm.asc(table.updatedAt),
-                ])
-                ..limit(limit))
+                ]))
               .get();
+      // Prefer user-visible outbound work over long folder syncs so Compose
+      // Send is not stuck behind incremental IMAP for the whole kick.
+      final List<Job> rows = List<Job>.from(pending);
+      rows.sort((Job a, Job b) {
+        final int pa = _jobClaimPriority(a.type);
+        final int pb = _jobClaimPriority(b.type);
+        if (pa != pb) {
+          return pa.compareTo(pb);
+        }
+        return a.updatedAt.compareTo(b.updatedAt);
+      });
+      final List<Job> take = rows.take(limit).toList(growable: false);
       final int now = DateTime.now().millisecondsSinceEpoch;
-      for (final Job row in rows) {
+      for (final Job row in take) {
         await (_database.update(
           _database.jobs,
         )..where((Jobs table) => table.id.equals(row.id))).write(
@@ -165,7 +176,7 @@ class DriftSyncJobStore {
           ),
         );
       }
-      return rows
+      return take
           .map(
             (Job row) => syncJobFromRow(
               row.copyWith(status: 'running', updatedAt: now),
@@ -177,6 +188,17 @@ class DriftSyncJobStore {
       _notify();
     }
     return claimed;
+  }
+
+  /// Lower number = claimed sooner within a kick batch.
+  static int _jobClaimPriority(String type) {
+    switch (type) {
+      case 'send_outbox':
+      case 'push_message_action':
+        return 0;
+      default:
+        return 1;
+    }
   }
 
   Future<void> completeJob(

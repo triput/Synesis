@@ -83,14 +83,31 @@ void main() {
         resolver.resolveGoogle().clientId,
         OAuthPublicClients.googleClientId,
       );
+      expect(
+        resolver.resolveGoogle().androidClientId,
+        OAuthPublicClients.googleAndroidClientId,
+      );
     }
+  });
+
+  test('resolves Android Google client ID from env', () {
+    final OAuthConfigResolver resolver = OAuthConfigResolver(
+      environment: const <String, String>{
+        'SYNESIS_GOOGLE_CLIENT_ID': 'desktop-google',
+        'SYNESIS_GOOGLE_ANDROID_CLIENT_ID': 'android-google',
+      },
+      localFiles: const <File>[],
+    );
+    expect(resolver.resolveGoogle().clientId, 'desktop-google');
+    expect(resolver.resolveGoogle().androidClientId, 'android-google');
   });
 
   test('local file overrides shipped public clients', () {
     final File local = File('${tempDir.path}/oauth_local.json')
       ..writeAsStringSync(
         '{"SYNESIS_GRAPH_CLIENT_ID":"override-graph",'
-        '"SYNESIS_GOOGLE_CLIENT_ID":"override-google"}',
+        '"SYNESIS_GOOGLE_CLIENT_ID":"override-google",'
+        '"SYNESIS_GOOGLE_ANDROID_CLIENT_ID":"override-android"}',
       );
     final OAuthConfigResolver resolver = OAuthConfigResolver(
       environment: const <String, String>{},
@@ -98,5 +115,6 @@ void main() {
     );
     expect(resolver.resolveGraph().clientId, 'override-graph');
     expect(resolver.resolveGoogle().clientId, 'override-google');
+    expect(resolver.resolveGoogle().androidClientId, 'override-android');
   });
 }

@@ -2,9 +2,9 @@
 // File: lib/settings/app_settings_cubit.dart
 // Description: Persisted appearance, Focus, retention, and desktop prefs
 // Component: Bloc / Settings
-// Version: 1.1 (Gold Master)
+// Version: 1.3 (Gold Master)
 // Created: 2026-07-14
-// Last Update: 2026-07-18
+// Last Update: 2026-07-23
 // ==============================================================================
 
 import 'dart:convert';
@@ -45,6 +45,27 @@ class AppSettingsCubit extends Cubit<AppSettingsState> {
       if (rawNotifications is Map) {
         rawNotifications.forEach((Object? k, Object? v) {
           notificationsMap[k.toString()] = v == true;
+        });
+      }
+      final Map<String, bool> accountBlockRemoteImagesMap = <String, bool>{};
+      final Object? rawAccountBlockRemoteImages =
+          map['accountBlockRemoteImages'];
+      if (rawAccountBlockRemoteImages is Map) {
+        rawAccountBlockRemoteImages.forEach((Object? k, Object? v) {
+          accountBlockRemoteImagesMap[k.toString()] = v == true;
+        });
+      }
+      final Map<String, List<String>> accountImageAllowlistDomainsMap =
+          <String, List<String>>{};
+      final Object? rawAccountImageAllowlistDomains =
+          map['accountImageAllowlistDomains'];
+      if (rawAccountImageAllowlistDomains is Map) {
+        rawAccountImageAllowlistDomains.forEach((Object? k, Object? v) {
+          if (v is List) {
+            accountImageAllowlistDomainsMap[k.toString()] = v
+                .map((Object? e) => e.toString())
+                .toList(growable: false);
+          }
         });
       }
       final List<SavedMessageFilter> savedFilters = <SavedMessageFilter>[];
@@ -100,6 +121,9 @@ class AppSettingsCubit extends Cubit<AppSettingsState> {
             orElse: () => SwipeListAction.delete,
           ),
           blockRemoteImages: map['blockRemoteImages'] as bool? ?? true,
+          accountBlockRemoteImages: accountBlockRemoteImagesMap,
+          accountImageAllowlistDomains: accountImageAllowlistDomainsMap,
+          blockTrackers: map['blockTrackers'] as bool? ?? true,
           pushOnCellular: map['pushOnCellular'] as bool? ?? false,
           readingPanePosition: ReadingPanePosition.values.firstWhere(
             (ReadingPanePosition e) => e.name == map['readingPanePosition'],
@@ -120,6 +144,9 @@ class AppSettingsCubit extends Cubit<AppSettingsState> {
               (map['uiFontSizeScale'] as num?)?.toDouble() ?? 1.0,
           uiTextColorArgb: map['uiTextColorArgb'] as int?,
           savedFilters: savedFilters,
+          autoMarkAsReadSeconds:
+              map['autoMarkAsReadSeconds'] as int? ??
+                  kAutoMarkAsReadSecondsDefault,
         ),
       );
     } catch (_) {
@@ -143,6 +170,9 @@ class AppSettingsCubit extends Cubit<AppSettingsState> {
         'swipeRightAction': state.swipeRightAction.name,
         'swipeLeftAction': state.swipeLeftAction.name,
         'blockRemoteImages': state.blockRemoteImages,
+        'accountBlockRemoteImages': state.accountBlockRemoteImages,
+        'accountImageAllowlistDomains': state.accountImageAllowlistDomains,
+        'blockTrackers': state.blockTrackers,
         'pushOnCellular': state.pushOnCellular,
         'readingPanePosition': state.readingPanePosition.name,
         'visualFocusEnabled': state.visualFocusEnabled,
@@ -159,6 +189,7 @@ class AppSettingsCubit extends Cubit<AppSettingsState> {
         'savedFilters': state.savedFilters
             .map((SavedMessageFilter filter) => filter.toJson())
             .toList(growable: false),
+        'autoMarkAsReadSeconds': state.autoMarkAsReadSeconds,
       }),
     );
   }
@@ -304,6 +335,61 @@ class AppSettingsCubit extends Cubit<AppSettingsState> {
     await _persist();
   }
 
+  /// Sets a per-account remote-image-block override for [accountId] (D6-2).
+  /// Pass [enabled] equal to the current global [AppSettingsState.blockRemoteImages]
+  /// value if the intent is simply "inherit global" — callers that want an
+  /// explicit inherit should use [clearAccountBlockRemoteImages] instead.
+  Future<void> setAccountBlockRemoteImages(
+    String accountId,
+    bool enabled,
+  ) async {
+    if (state.accountBlockRemoteImages[accountId] == enabled) return;
+    final Map<String, bool> next =
+        Map<String, bool>.from(state.accountBlockRemoteImages)
+          ..[accountId] = enabled;
+    emit(state.copyWith(accountBlockRemoteImages: next));
+    await _persist();
+  }
+
+  /// Removes the per-account override so [accountId] inherits the global
+  /// [AppSettingsState.blockRemoteImages] value again (D6-2).
+  Future<void> clearAccountBlockRemoteImages(String accountId) async {
+    if (!state.accountBlockRemoteImages.containsKey(accountId)) return;
+    final Map<String, bool> next =
+        Map<String, bool>.from(state.accountBlockRemoteImages)
+          ..remove(accountId);
+    emit(state.copyWith(accountBlockRemoteImages: next));
+    await _persist();
+  }
+
+  /// Replaces the image-host allowlist for [accountId] (D6-2). Domains are
+  /// trimmed, lower-cased, and de-duplicated; an empty [domains] list removes
+  /// the map entry entirely.
+  Future<void> setAccountImageAllowlistDomains(
+    String accountId,
+    List<String> domains,
+  ) async {
+    final List<String> cleaned = <String>{
+      for (final String domain in domains)
+        if (domain.trim().isNotEmpty) domain.trim().toLowerCase(),
+    }.toList(growable: false);
+    final Map<String, List<String>> next =
+        Map<String, List<String>>.from(state.accountImageAllowlistDomains);
+    if (cleaned.isEmpty) {
+      next.remove(accountId);
+    } else {
+      next[accountId] = cleaned;
+    }
+    emit(state.copyWith(accountImageAllowlistDomains: next));
+    await _persist();
+  }
+
+  Future<void> setBlockTrackers(bool enabled) async {
+    if (state.blockTrackers == enabled) return;
+    emit(state.copyWith(blockTrackers: enabled));
+    await _persist();
+  }
+
   Future<void> setPushOnCellular(bool enabled) async {
     if (state.pushOnCellular == enabled) return;
     emit(state.copyWith(pushOnCellular: enabled));
@@ -428,6 +514,19 @@ class AppSettingsCubit extends Cubit<AppSettingsState> {
             .toList(growable: false),
       ),
     );
+    await _persist();
+  }
+
+  /// Sets the auto-mark-as-read dwell in seconds (UI-P28), clamped to
+  /// [kAutoMarkAsReadSecondsMin]–[kAutoMarkAsReadSecondsMax]. `0` disables
+  /// auto-mark-as-read entirely.
+  Future<void> setAutoMarkAsReadSeconds(int seconds) async {
+    final int clamped = seconds.clamp(
+      kAutoMarkAsReadSecondsMin,
+      kAutoMarkAsReadSecondsMax,
+    );
+    if (state.autoMarkAsReadSeconds == clamped) return;
+    emit(state.copyWith(autoMarkAsReadSeconds: clamped));
     await _persist();
   }
 

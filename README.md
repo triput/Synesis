@@ -25,7 +25,9 @@ See [docs/SPEC.md](docs/SPEC.md) for the technical specification and [mockups](m
 | [TEST_INVENTORY.md](docs/TEST_INVENTORY.md) | Automated test catalog |
 | [V1_TIER_INTEGRATION.md](docs/V1_TIER_INTEGRATION.md) | Wave integration plan |
 | [ROADMAP.md](docs/ROADMAP.md) | Milestones and exit gates |
-| [FINAL_WAVE_PLAN.md](docs/FINAL_WAVE_PLAN.md) | V1 exit / release readiness (in progress) |
+| [FINAL_WAVE_PLAN.md](docs/FINAL_WAVE_PLAN.md) | V1 exit / release readiness (**complete** — signed off 2026-07-22) |
+| [V1_5_PLAN.md](docs/V1_5_PLAN.md) | Post-V1 adjacency bundle (**scoped / locked** 2026-07-22) |
+| [V2_PLAN.md](docs/V2_PLAN.md) | V2.0 PIM headline (**scoped / locked** 2026-07-22) |
 
 ## Run
 
@@ -113,10 +115,11 @@ Register OAuth clients in Google Cloud Console so Synesis can run authorization 
    - **Desktop app** (Windows):
      - Authorized redirect URI: `http://127.0.0.1:8766/callback`
      - Copy the Client ID (and Client Secret if Google issues one for Desktop)
-   - **Android** (optional, for device builds):
-     - Package name and SHA-1 from your debug/release keystore
-     - Redirect / custom scheme used by Synesis: `synesis://google-auth`
-     - Ensure the Android intent filter for `synesis` / `google-auth` is present (shipped in `AndroidManifest.xml`)
+   - **Android** (required for phone Google sign-in):
+     - Package name: `net.livebytes.synesis` + SHA-1 from your debug/release keystore
+     - Redirect URI (automatic for Android clients):  
+       `com.googleusercontent.apps.<CLIENT_ID_PREFIX>:/oauth2redirect`
+     - Ship / override with `SYNESIS_GOOGLE_ANDROID_CLIENT_ID` (Desktop ID alone is not enough on Android)
 
 3. **Run with dart-defines**
 
@@ -187,9 +190,9 @@ flutter run -d windows \
 | Push / near-push | Graph delta + cursor; IMAP IDLE; network policy via `connectivity_plus`; `pushOnCellular` default off |
 | Remote images | Block by default; per-message “Load images”; toggle in Appearance |
 
-**Final wave (in progress, 2026-07-18):** Phases A–F **landed** (branding, saved list filters, FW-1…FW-6 docs cluster, W4/W7 operator validation). Phase G (FW-5 E2E finalize) + V1 exit **open**. See [FINAL_WAVE_PLAN.md](docs/FINAL_WAVE_PLAN.md) and [USER_GUIDE.md](docs/USER_GUIDE.md).
+**Final wave (complete, 2026-07-22):** Phases A–G **landed**; FW-5 matrix Pass; [V1_EXIT_CHECKLIST.md](docs/V1_EXIT_CHECKLIST.md) **signed off**. See [FINAL_WAVE_PLAN.md](docs/FINAL_WAVE_PLAN.md) and [USER_GUIDE.md](docs/USER_GUIDE.md).
 
-**Next:** Final wave Phase G (FW-5 E2E finalize) → [V1_EXIT_CHECKLIST.md](docs/V1_EXIT_CHECKLIST.md) sign-off. W4/W7 checkbox tick-off in checklist files remains operator-owned.
+**Next:** **V1.5** ([V1_5_PLAN.md](docs/V1_5_PLAN.md)), then **V2.0 PIM** ([V2_PLAN.md](docs/V2_PLAN.md)). See [ROADMAP.md](docs/ROADMAP.md).
 
 - Flutter project scaffolded for Android + Windows
 - Module placeholders matching SPEC architecture (`account`, `auth`, `sync`, `repository`, …)

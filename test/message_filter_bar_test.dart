@@ -47,14 +47,14 @@ void main() {
     await tester.tap(find.text('Unread'));
     await tester.pumpAndSettle();
     expect(filter?.unread, isTrue);
-    expect(find.text('Clear'), findsOneWidget);
+    expect(find.text('Clear filters'), findsOneWidget);
 
     await tester.tap(find.text('Starred'));
     await tester.pumpAndSettle();
     expect(filter?.starred, isTrue);
     expect(filter?.unread, isTrue);
 
-    await tester.tap(find.text('Clear'));
+    await tester.tap(find.text('Clear filters'));
     await tester.pumpAndSettle();
     expect(filter, isNull);
     expect(clearCount, 1);
@@ -117,7 +117,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(filter?.recipientContains, 'carol@');
-    expect(find.text('Clear'), findsOneWidget);
+    expect(find.text('Clear filters'), findsOneWidget);
   });
 
   testWidgets('shows Saved chip when callbacks provided', (

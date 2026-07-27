@@ -4,7 +4,7 @@
 // Component: UI
 // Version: 1.0 (Gold Master)
 // Created: 2026-07-17
-// Last Update: 2026-07-17
+// Last Update: 2026-07-23
 // ==============================================================================
 
 import 'package:flutter/material.dart';
@@ -20,12 +20,14 @@ abstract final class MailSplitLayoutKeys {
   static const Key visualFocus = Key('mail_split_visual_focus');
 }
 
-/// True for phone-class portrait: keep the legacy horizontal list|reading split
+/// True for phone-class / narrow widths: keep the mobile list|reading split
 /// and ignore [ReadingPanePosition] top/bottom preferences.
+///
+/// Uses **width** (not [Orientation]): with `adjustResize`, the soft keyboard
+/// can shrink height below width so Flutter reports landscape mid-edit, which
+/// would flip back to a fixed desktop [listWidth] and paint RIGHT OVERFLOW.
 bool isPortraitMobileLayout(BuildContext context) {
-  final Size size = MediaQuery.sizeOf(context);
-  final Orientation orientation = MediaQuery.orientationOf(context);
-  return orientation == Orientation.portrait && size.shortestSide < 600;
+  return MediaQuery.sizeOf(context).width < 600;
 }
 
 /// Single layout builder for mailbox list + reading panes.
@@ -93,6 +95,20 @@ class MailSplitLayout extends StatelessWidget {
 
     switch (effective) {
       case ReadingPanePosition.right:
+        // Phone portrait: never pin a desktop listWidth beside reading —
+        // that overflows the remaining width after the account rail
+        // (yellow/black "RIGHT OVERFLOWED BY N PIXELS"). List fills the
+        // row; reading is shown full-bleed via [visualFocusActive] when a
+        // message is open.
+        if (forceHorizontalSplit) {
+          return Row(
+            key: MailSplitLayoutKeys.horizontalSplit,
+            children: <Widget>[
+              if (sidebarSlot != null) sidebarSlot,
+              Expanded(child: listSlot),
+            ],
+          );
+        }
         return Row(
           key: MailSplitLayoutKeys.horizontalSplit,
           children: <Widget>[

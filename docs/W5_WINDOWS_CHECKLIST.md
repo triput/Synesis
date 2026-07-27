@@ -119,7 +119,7 @@ Windows **file type association** and Explorer double-click require an installer
 **Code:** `WindowsDetachedMessageWindowController` + `DetachedMessageApp`; reading-pane overflow **Open in new window**. Secondary engines cannot host WebView2 Graphics Capture; HTML falls back to `flutter_widget_from_html` ([DEF-029](DEFECTS.md)).
 
 - [x] Reading pane → **Open in new window** opens **one** secondary window with the current message.
-- [x] Selecting another message and invoking again **retargets** the same window (V1 single-window policy).
+- [x] Selecting another message and invoking again **retargets** the same window (V1 single-window policy). **Superseded in V1.5 Wave D (D6-1):** each message now opens its own window; retargeting a *different* message's window no longer happens — see [V1_5_PLAN.md](V1_5_PLAN.md).
 - [x] Detached window shows subject and a **readable HTML layout** (widget viewer if WebView unavailable), and closes independently of main shell.
 
 

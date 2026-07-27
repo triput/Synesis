@@ -2,9 +2,9 @@
 // File: lib/ui/compose/compose_sheet.dart
 // Description: Unified ComposeDraft sheet — BCC, attach, signature, schedule, drafts.
 // Component: UI
-// Version: 2.0 (Gold Master)
+// Version: 2.1 (Gold Master)
 // Created: 2026-07-14
-// Last Update: 2026-07-17
+// Last Update: 2026-07-24
 // ==============================================================================
 
 import 'dart:async';
@@ -12,6 +12,7 @@ import 'dart:convert';
 
 import 'package:synesis/compose/account_signature.dart';
 import 'package:synesis/compose/outgoing_message_builder.dart';
+import 'package:synesis/compose/template_placeholders.dart';
 import 'package:synesis/domain/models.dart';
 import 'package:synesis/domain/sync_profile.dart';
 import 'package:synesis/outbox/send_error_messages.dart';
@@ -277,6 +278,12 @@ class _ComposeSheetBodyState extends State<_ComposeSheetBody> {
           setState(() => _outboxDraftId = id);
         }
       } else {
+        // Never demote an in-flight send back to draft (autosave race with Send).
+        final OutboxItem? current = await _findOutbox(repo, _outboxDraftId!);
+        final String? state = current?.state;
+        if (state == 'queued' || state == 'sending' || state == 'sent') {
+          return;
+        }
         await repo.updateOutboxContent(
           _outboxDraftId!,
           to: _toController.text.trim(),
@@ -366,6 +373,9 @@ class _ComposeSheetBodyState extends State<_ComposeSheetBody> {
     if (_busy) {
       return;
     }
+    // Cancel pending autosave so it cannot demote queued → draft mid-send.
+    _autosaveTimer?.cancel();
+    _autosaveTimer = null;
     final List<String> toList = splitOutboxRecipients(_toController.text);
     final List<String> ccList = splitOutboxRecipients(_ccController.text);
     final List<String> bccList = splitOutboxRecipients(_bccController.text);
@@ -533,8 +543,32 @@ class _ComposeSheetBodyState extends State<_ComposeSheetBody> {
     const Duration budget = Duration(seconds: 45);
     final DateTime deadline = DateTime.now().add(budget);
     OutboxItem? latest;
+    var triedFresh = false;
     while (DateTime.now().isBefore(deadline)) {
-      await syncEngine.kick();
+      final Duration remaining = deadline.difference(DateTime.now());
+      if (remaining <= Duration.zero) {
+        break;
+      }
+      final Duration slice = remaining < const Duration(seconds: 12)
+          ? remaining
+          : const Duration(seconds: 12);
+      try {
+        await syncEngine.kick().timeout(slice);
+      } on TimeoutException {
+        // A hung IMAP/SMTP kick must not pin Compose on "Sending…" forever.
+        if (!triedFresh) {
+          triedFresh = true;
+          try {
+            await syncEngine.kickFresh().timeout(
+              remaining < const Duration(seconds: 20)
+                  ? remaining
+                  : const Duration(seconds: 20),
+            );
+          } on TimeoutException {
+            // Fall through to status check / deadline.
+          }
+        }
+      }
       latest = await _findOutbox(repo, outboxId);
       if (latest == null ||
           latest.state == 'sent' ||
@@ -585,11 +619,40 @@ class _ComposeSheetBodyState extends State<_ComposeSheetBody> {
     _scheduleAutosave();
   }
 
+  /// D6-4: resolves the sending account + first To recipient into a
+  /// [TemplateVarContext] for `{{token}}` expansion.
+  TemplateVarContext _templateVarContext() {
+    final MailAccount fromAccount = widget.accounts.firstWhere(
+      (MailAccount a) => a.id == _accountId,
+      orElse: () => widget.accounts.first,
+    );
+    final ({String? name, String? email})? firstTo = _firstRecipientOf(
+      _toController.text,
+    );
+    return TemplateVarContext(
+      recipientName: firstTo?.name,
+      recipientEmail: firstTo?.email,
+      fromName: fromAccount.label,
+      fromEmail: fromAccount.address,
+      subject: _subjectController.text,
+      date: DateTime.now(),
+    );
+  }
+
   void _insertTemplate(MailTemplate template) {
-    final String plain = _stripHtmlLite(template.bodyHtml);
+    final TemplateVarContext varContext = _templateVarContext();
+    final String expandedSubject = expandTemplatePlaceholders(
+      template.subject,
+      varContext,
+    );
+    final String expandedBodyHtml = expandTemplatePlaceholders(
+      template.bodyHtml,
+      varContext,
+    );
+    final String plain = _stripHtmlLite(expandedBodyHtml);
     if (_subjectController.text.trim().isEmpty &&
-        template.subject.trim().isNotEmpty) {
-      _subjectController.text = template.subject;
+        expandedSubject.trim().isNotEmpty) {
+      _subjectController.text = expandedSubject;
     }
     final String existing = _bodyController.text;
     _bodyController.text = existing.isEmpty ? plain : '$plain\n\n$existing';
@@ -684,43 +747,53 @@ class _ComposeSheetBodyState extends State<_ComposeSheetBody> {
           ),
           Row(
             children: <Widget>[
-              IconButton(
-                tooltip: 'Bold',
-                onPressed: () => _wrapSelection('**', '**'),
-                icon: Icon(Icons.format_bold, color: t.muted),
-              ),
-              IconButton(
-                tooltip: 'Italic',
-                onPressed: () => _wrapSelection('_', '_'),
-                icon: Icon(Icons.format_italic, color: t.muted),
-              ),
-              IconButton(
-                tooltip: 'Link',
-                onPressed: () => _wrapSelection('[', '](https://)'),
-                icon: Icon(Icons.link, color: t.muted),
-              ),
-              IconButton(
-                tooltip: 'Attach',
-                onPressed: _attaching ? null : _pickAttachments,
-                icon: Icon(
-                  Icons.attach_file,
-                  color: _attaching ? t.muted : t.teal,
-                ),
-              ),
-              if (_templates.isNotEmpty)
-                PopupMenuButton<MailTemplate>(
-                  tooltip: 'Insert template',
-                  icon: Icon(Icons.article_outlined, color: t.muted),
-                  onSelected: _insertTemplate,
-                  itemBuilder: (BuildContext context) => <PopupMenuEntry<MailTemplate>>[
-                    for (final MailTemplate tpl in _templates)
-                      PopupMenuItem<MailTemplate>(
-                        value: tpl,
-                        child: Text(tpl.name),
+              Flexible(
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: <Widget>[
+                      IconButton(
+                        tooltip: 'Bold',
+                        onPressed: () => _wrapSelection('**', '**'),
+                        icon: Icon(Icons.format_bold, color: t.muted),
                       ),
-                  ],
+                      IconButton(
+                        tooltip: 'Italic',
+                        onPressed: () => _wrapSelection('_', '_'),
+                        icon: Icon(Icons.format_italic, color: t.muted),
+                      ),
+                      IconButton(
+                        tooltip: 'Link',
+                        onPressed: () => _wrapSelection('[', '](https://)'),
+                        icon: Icon(Icons.link, color: t.muted),
+                      ),
+                      IconButton(
+                        tooltip: 'Attach',
+                        onPressed: _attaching ? null : _pickAttachments,
+                        icon: Icon(
+                          Icons.attach_file,
+                          color: _attaching ? t.muted : t.teal,
+                        ),
+                      ),
+                      if (_templates.isNotEmpty)
+                        PopupMenuButton<MailTemplate>(
+                          tooltip: 'Insert template',
+                          icon: Icon(Icons.article_outlined, color: t.muted),
+                          onSelected: _insertTemplate,
+                          itemBuilder: (BuildContext context) =>
+                              <PopupMenuEntry<MailTemplate>>[
+                            for (final MailTemplate tpl in _templates)
+                              PopupMenuItem<MailTemplate>(
+                                value: tpl,
+                                child: Text(tpl.name),
+                              ),
+                          ],
+                        ),
+                    ],
+                  ),
                 ),
-              const Spacer(),
+              ),
               TextButton.icon(
                 onPressed: _pickSchedule,
                 icon: Icon(Icons.schedule, size: 18, color: t.teal),
@@ -729,6 +802,7 @@ class _ComposeSheetBodyState extends State<_ComposeSheetBody> {
                       ? 'Schedule'
                       : _formatSendAfter(_sendAfterMs!),
                   style: TextStyle(color: t.teal),
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
               if (_sendAfterMs != null)
@@ -952,6 +1026,54 @@ String _stripHtmlLite(String raw) {
       .replaceAll('&amp;', '&')
       .replaceAll('&lt;', '<')
       .replaceAll('&gt;', '>');
+}
+
+/// D6-4: extracts the display name + email of the first To recipient from a
+/// raw comma/semicolon-separated field (e.g. `"Jane Doe <jane@x.com>, ..."`),
+/// used for `{{name}}`/`{{email}}` template placeholder resolution. Returns
+/// null when [raw] has no parseable recipient.
+({String? name, String? email})? _firstRecipientOf(String raw) {
+  final String trimmed = raw.trim();
+  if (trimmed.isEmpty) {
+    return null;
+  }
+  final StringBuffer buffer = StringBuffer();
+  int angleDepth = 0;
+  for (int i = 0; i < trimmed.length; i++) {
+    final String ch = trimmed[i];
+    if (ch == '<') {
+      angleDepth++;
+    } else if (ch == '>' && angleDepth > 0) {
+      angleDepth--;
+    } else if ((ch == ',' || ch == ';') && angleDepth == 0) {
+      break;
+    }
+    buffer.write(ch);
+  }
+  final String firstEntry = buffer.toString().trim();
+  if (firstEntry.isEmpty) {
+    return null;
+  }
+  final Match? withName = RegExp(
+    r'^(.*?)<\s*([^<>\s@]+@[^<>\s@]+)\s*>\s*$',
+  ).firstMatch(firstEntry);
+  if (withName != null) {
+    final String namePart = withName
+        .group(1)!
+        .trim()
+        .replaceAll('"', '');
+    return (
+      name: namePart.isEmpty ? null : namePart,
+      email: withName.group(2)!.trim(),
+    );
+  }
+  final Match? bareEmail = RegExp(
+    r'^([^\s,;<>"]+@[^\s,;<>"]+)$',
+  ).firstMatch(firstEntry);
+  if (bareEmail != null) {
+    return (name: null, email: bareEmail.group(1)!.trim());
+  }
+  return null;
 }
 
 String _formatBytes(int bytes) {

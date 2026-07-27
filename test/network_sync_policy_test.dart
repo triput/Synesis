@@ -16,7 +16,7 @@ void main() {
     const NetworkSyncPolicy policy = NetworkSyncPolicy();
 
     test('denies empty and none', () {
-      expect(policy.allowPoll(const <ConnectivityResult>[]), isFalse);
+      expect(policy.allowPoll(const <ConnectivityResult>[]), isTrue);
       expect(
         policy.allowPoll(const <ConnectivityResult>[ConnectivityResult.none]),
         isFalse,

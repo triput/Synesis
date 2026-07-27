@@ -1,7 +1,7 @@
 ---
 globs: "test/**/*.dart"
 name: renee
-model: gpt-5.6-sol[]
+model: grok-4.5[]
 description: Use when writing unit tests, reviewing security/validation logic, or debugging complex state issues.
 ---
 

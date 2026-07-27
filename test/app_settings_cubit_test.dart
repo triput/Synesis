@@ -1,10 +1,11 @@
 // ==============================================================================
 // File: test/app_settings_cubit_test.dart
-// Description: Persistence tests for AppSettingsCubit including trash retention.
+// Description: Persistence tests for AppSettingsCubit including trash retention,
+//   auto-mark-as-read (UI-P28), and per-account image privacy / trackers (D6-2/D6-7).
 // Component: Test
-// Version: 1.1 (Gold Master)
+// Version: 1.3 (Gold Master)
 // Created: 2026-07-17
-// Last Update: 2026-07-18
+// Last Update: 2026-07-23
 // ==============================================================================
 
 import 'package:synesis/settings/app_settings_cubit.dart';
@@ -168,6 +169,136 @@ void main() {
       final SharedPreferences prefs = await SharedPreferences.getInstance();
       final AppSettingsCubit cubit = AppSettingsCubit(prefs);
       expect(cubit.state.blockRemoteImages, isTrue);
+      await cubit.close();
+    });
+  });
+
+  group('AppSettingsCubit D6-2 per-account image block + allowlist', () {
+    test('missing override inherits the global blockRemoteImages value', () async {
+      SharedPreferences.setMockInitialValues(<String, Object>{});
+      final SharedPreferences prefs = await SharedPreferences.getInstance();
+      final AppSettingsCubit cubit = AppSettingsCubit(prefs);
+
+      expect(cubit.state.isBlockRemoteImagesForAccount('work'), isTrue);
+      await cubit.setBlockRemoteImages(false);
+      expect(cubit.state.isBlockRemoteImagesForAccount('work'), isFalse);
+      await cubit.close();
+    });
+
+    test('per-account override wins over the global value', () async {
+      SharedPreferences.setMockInitialValues(<String, Object>{});
+      final SharedPreferences prefs = await SharedPreferences.getInstance();
+      final AppSettingsCubit cubit = AppSettingsCubit(prefs);
+
+      await cubit.setAccountBlockRemoteImages('work', false);
+      expect(cubit.state.blockRemoteImages, isTrue);
+      expect(cubit.state.isBlockRemoteImagesForAccount('work'), isFalse);
+      expect(cubit.state.isBlockRemoteImagesForAccount('personal'), isTrue);
+      await cubit.close();
+    });
+
+    test('clearAccountBlockRemoteImages restores inheritance', () async {
+      SharedPreferences.setMockInitialValues(<String, Object>{});
+      final SharedPreferences prefs = await SharedPreferences.getInstance();
+      final AppSettingsCubit cubit = AppSettingsCubit(prefs);
+
+      await cubit.setAccountBlockRemoteImages('work', false);
+      await cubit.clearAccountBlockRemoteImages('work');
+      expect(cubit.state.accountBlockRemoteImages.containsKey('work'), isFalse);
+      expect(cubit.state.isBlockRemoteImagesForAccount('work'), isTrue);
+      await cubit.close();
+    });
+
+    test('persists and rehydrates per-account overrides and allowlist', () async {
+      SharedPreferences.setMockInitialValues(<String, Object>{});
+      final SharedPreferences prefs = await SharedPreferences.getInstance();
+      final AppSettingsCubit cubit = AppSettingsCubit(prefs);
+
+      await cubit.setAccountBlockRemoteImages('work', false);
+      await cubit.setAccountImageAllowlistDomains(
+        'work',
+        <String>['Trusted.com', 'cdn.example.com'],
+      );
+      await cubit.close();
+
+      final AppSettingsCubit reloaded = AppSettingsCubit(prefs);
+      expect(reloaded.state.isBlockRemoteImagesForAccount('work'), isFalse);
+      expect(
+        reloaded.state.imageAllowlistDomainsForAccount('work'),
+        containsAll(<String>['trusted.com', 'cdn.example.com']),
+      );
+      await reloaded.close();
+    });
+
+    test('setAccountImageAllowlistDomains with empty list clears the entry', () async {
+      SharedPreferences.setMockInitialValues(<String, Object>{});
+      final SharedPreferences prefs = await SharedPreferences.getInstance();
+      final AppSettingsCubit cubit = AppSettingsCubit(prefs);
+
+      await cubit.setAccountImageAllowlistDomains('work', <String>['a.com']);
+      expect(
+        cubit.state.imageAllowlistDomainsForAccount('work'),
+        <String>['a.com'],
+      );
+
+      await cubit.setAccountImageAllowlistDomains('work', <String>[]);
+      expect(
+        cubit.state.accountImageAllowlistDomains.containsKey('work'),
+        isFalse,
+      );
+      await cubit.close();
+    });
+
+    test('missing prefs key falls back to empty maps', () async {
+      SharedPreferences.setMockInitialValues(<String, Object>{
+        'synesis.app_settings.v1':
+            '{"themeId":"dark","density":"calm","unifiedFocusEnabled":true,'
+            '"accountFocusEnabled":{},"retentionDays":180,'
+            '"trashRetentionDays":30,"minimizeToTray":true,'
+            '"keyboardShortcutsEnabled":true}',
+      });
+      final SharedPreferences prefs = await SharedPreferences.getInstance();
+      final AppSettingsCubit cubit = AppSettingsCubit(prefs);
+      expect(cubit.state.accountBlockRemoteImages, isEmpty);
+      expect(cubit.state.accountImageAllowlistDomains, isEmpty);
+      await cubit.close();
+    });
+  });
+
+  group('AppSettingsCubit D6-7 blockTrackers', () {
+    test('defaults to true (privacy-first)', () async {
+      SharedPreferences.setMockInitialValues(<String, Object>{});
+      final SharedPreferences prefs = await SharedPreferences.getInstance();
+      final AppSettingsCubit cubit = AppSettingsCubit(prefs);
+      expect(cubit.state.blockTrackers, isTrue);
+      await cubit.close();
+    });
+
+    test('persists and rehydrates blockTrackers', () async {
+      SharedPreferences.setMockInitialValues(<String, Object>{});
+      final SharedPreferences prefs = await SharedPreferences.getInstance();
+      final AppSettingsCubit cubit = AppSettingsCubit(prefs);
+
+      await cubit.setBlockTrackers(false);
+      expect(cubit.state.blockTrackers, isFalse);
+      await cubit.close();
+
+      final AppSettingsCubit reloaded = AppSettingsCubit(prefs);
+      expect(reloaded.state.blockTrackers, isFalse);
+      await reloaded.close();
+    });
+
+    test('missing prefs key falls back to true', () async {
+      SharedPreferences.setMockInitialValues(<String, Object>{
+        'synesis.app_settings.v1':
+            '{"themeId":"dark","density":"calm","unifiedFocusEnabled":true,'
+            '"accountFocusEnabled":{},"retentionDays":180,'
+            '"trashRetentionDays":30,"minimizeToTray":true,'
+            '"keyboardShortcutsEnabled":true}',
+      });
+      final SharedPreferences prefs = await SharedPreferences.getInstance();
+      final AppSettingsCubit cubit = AppSettingsCubit(prefs);
+      expect(cubit.state.blockTrackers, isTrue);
       await cubit.close();
     });
   });
@@ -479,6 +610,75 @@ void main() {
       expect(cubit.state.uiFontFamily, isNull);
       expect(cubit.state.uiFontSizeScale, 1.0);
       expect(cubit.state.uiTextColorArgb, isNull);
+      await cubit.close();
+    });
+  });
+
+  group('AppSettingsCubit autoMarkAsReadSeconds (UI-P28)', () {
+    test('defaults to 5 seconds (enabled)', () async {
+      SharedPreferences.setMockInitialValues(<String, Object>{});
+      final SharedPreferences prefs = await SharedPreferences.getInstance();
+      final AppSettingsCubit cubit = AppSettingsCubit(prefs);
+      expect(cubit.state.autoMarkAsReadSeconds, kAutoMarkAsReadSecondsDefault);
+      expect(cubit.state.autoMarkAsReadEnabled, isTrue);
+      await cubit.close();
+    });
+
+    test('persists and rehydrates a custom delay', () async {
+      SharedPreferences.setMockInitialValues(<String, Object>{});
+      final SharedPreferences prefs = await SharedPreferences.getInstance();
+      final AppSettingsCubit cubit = AppSettingsCubit(prefs);
+
+      await cubit.setAutoMarkAsReadSeconds(15);
+      expect(cubit.state.autoMarkAsReadSeconds, 15);
+      expect(cubit.state.autoMarkAsReadEnabled, isTrue);
+      await cubit.close();
+
+      final AppSettingsCubit reloaded = AppSettingsCubit(prefs);
+      expect(reloaded.state.autoMarkAsReadSeconds, 15);
+      await reloaded.close();
+    });
+
+    test('0 seconds disables auto-mark-as-read and persists across reload', () async {
+      SharedPreferences.setMockInitialValues(<String, Object>{});
+      final SharedPreferences prefs = await SharedPreferences.getInstance();
+      final AppSettingsCubit cubit = AppSettingsCubit(prefs);
+
+      await cubit.setAutoMarkAsReadSeconds(0);
+      expect(cubit.state.autoMarkAsReadSeconds, 0);
+      expect(cubit.state.autoMarkAsReadEnabled, isFalse);
+      await cubit.close();
+
+      final AppSettingsCubit reloaded = AppSettingsCubit(prefs);
+      expect(reloaded.state.autoMarkAsReadSeconds, 0);
+      expect(reloaded.state.autoMarkAsReadEnabled, isFalse);
+      await reloaded.close();
+    });
+
+    test('clamps autoMarkAsReadSeconds to 0–60', () async {
+      SharedPreferences.setMockInitialValues(<String, Object>{});
+      final SharedPreferences prefs = await SharedPreferences.getInstance();
+      final AppSettingsCubit cubit = AppSettingsCubit(prefs);
+
+      await cubit.setAutoMarkAsReadSeconds(-5);
+      expect(cubit.state.autoMarkAsReadSeconds, kAutoMarkAsReadSecondsMin);
+
+      await cubit.setAutoMarkAsReadSeconds(600);
+      expect(cubit.state.autoMarkAsReadSeconds, kAutoMarkAsReadSecondsMax);
+      await cubit.close();
+    });
+
+    test('missing prefs key falls back to the 5s default', () async {
+      SharedPreferences.setMockInitialValues(<String, Object>{
+        'synesis.app_settings.v1':
+            '{"themeId":"dark","density":"calm","unifiedFocusEnabled":true,'
+            '"accountFocusEnabled":{},"retentionDays":180,'
+            '"trashRetentionDays":30,"minimizeToTray":true,'
+            '"keyboardShortcutsEnabled":true}',
+      });
+      final SharedPreferences prefs = await SharedPreferences.getInstance();
+      final AppSettingsCubit cubit = AppSettingsCubit(prefs);
+      expect(cubit.state.autoMarkAsReadSeconds, kAutoMarkAsReadSecondsDefault);
       await cubit.close();
     });
   });

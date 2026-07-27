@@ -89,7 +89,12 @@ void main() {
       const GoogleAuthConfig config = GoogleAuthConfig(clientId: 'google-1');
       expect(config.isConfigured, isTrue);
       expect(GoogleAuthConfig.desktopRedirectUri, contains('8766'));
-      expect(GoogleAuthConfig.androidRedirectUri, 'synesis://google-auth');
+      expect(
+        GoogleAuthConfig.androidReverseClientRedirectUri(
+          '000000000000-example.apps.googleusercontent.com',
+        ),
+        'com.googleusercontent.apps.000000000000-example:/oauth2redirect',
+      );
       expect(GoogleAuthConfig.scopes, contains('https://mail.google.com/'));
     });
   });
@@ -481,6 +486,10 @@ void main() {
       expect(launched, isNotEmpty);
       expect(launched.first.queryParameters['code_challenge_method'], 'S256');
       expect(launched.first.queryParameters['access_type'], 'offline');
+      expect(
+        launched.first.queryParameters['prompt'],
+        'select_account consent',
+      );
       expect(
         launched.first.queryParameters['scope'],
         contains('https://mail.google.com/'),

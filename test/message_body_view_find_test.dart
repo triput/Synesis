@@ -161,7 +161,8 @@ void main() {
           home: Scaffold(
             body: SizedBox(
               width: 640,
-              height: 220,
+              // Tall enough for header + find bar + body without RenderFlex overflow.
+              height: 260,
               child: ReadingPane(
                 message: _plainMessage(),
                 accounts: const <MailAccount>[

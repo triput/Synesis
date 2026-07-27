@@ -6,16 +6,16 @@
 
 | Field | Value |
 | --- | --- |
-| Status | **In progress** — Phases A–F landed (branding, filters, FW-1 polish, FW-2 measure, docs/FW-6, W4/W7 checklist payback); Phase G FW-5 finalize + V1 exit **open** |
+| Status | **Complete** — Phases A–G landed; V1 exit **signed off 2026-07-22** |
 | Spec | [SPEC.md](SPEC.md) v1.4 |
-| Exit checklist | [V1_EXIT_CHECKLIST.md](V1_EXIT_CHECKLIST.md) |
+| Exit checklist | [V1_EXIT_CHECKLIST.md](V1_EXIT_CHECKLIST.md) — **signed off** |
 | Roadmap anchor | [ROADMAP.md § Final wave](ROADMAP.md#final-wave-v1-exit--release-readiness) |
 | Tier integration | [V1_TIER_INTEGRATION.md](V1_TIER_INTEGRATION.md) |
 | Branding lock | [branding/README.md](branding/README.md) |
 | Owners | Steve (orchestrate) · Jules (code) · Renee (QA) · Page (docs) · Tesla (sync/DB when touched) |
-| Last updated | 2026-07-18 |
+| Last updated | 2026-07-22 |
 
-This document is the **execution plan** for a **broadened Final wave**: classic FW-1…FW-6 release readiness **plus** Pri-1 cross-cutting message filters **plus** locked branding wire-up. **Phases A–F landed 2026-07-18** (Phase F: W4/W7 operator validation complete; checklist checkbox tick-off pending). Phase G (FW-5 finalize) and V1 exit remain open (operator-owned).
+This document is the **execution plan** for a **broadened Final wave**: classic FW-1…FW-6 release readiness **plus** Pri-1 cross-cutting message filters **plus** locked branding wire-up. **Phases A–G complete**; W4/W7 checklists and [V1_EXIT_CHECKLIST.md](V1_EXIT_CHECKLIST.md) **signed off 2026-07-22**. FW-5 matrix finalized Pass.
 
 ---
 
@@ -26,24 +26,19 @@ This document is the **execution plan** for a **broadened Final wave**: classic 
 | Area | Status |
 | --- | --- |
 | W0–W3, W5–W6 | **Landed** |
-| W4 Compose | **Landed** (2026-07-18) — code + operator validation; [W4_COMPOSE_CHECKLIST.md](W4_COMPOSE_CHECKLIST.md) checkbox tick-off pending |
-| W7 Hardening | **Landed** (2026-07-18) — TC-3 encryption shipped; operator validation complete; [W7_HARDENING_CHECKLIST.md](W7_HARDENING_CHECKLIST.md) checkbox tick-off pending |
+| W4 Compose | **Landed** (2026-07-18) — code + operator validation; [W4_COMPOSE_CHECKLIST.md](W4_COMPOSE_CHECKLIST.md) **signed off 2026-07-22** |
+| W7 Hardening | **Landed** (2026-07-18) — TC-3 encryption shipped; [W7_HARDENING_CHECKLIST.md](W7_HARDENING_CHECKLIST.md) **signed off 2026-07-22** |
 | Pri-1 message filter system | **Landed** (Phase B, 2026-07-18) — recipient predicate + saved named presets on `MessageViewFilter` / `MessageQuery` |
 | Branding assets | **Landed / wired** (Phase A, 2026-07-18) — Data Envelope v2 + wordmark B + minimal Android splash; see [branding/README.md](branding/README.md) |
-| Final wave FW-1…FW-6 | **In progress** — FW-1 polish + FW-2 measure + FW-3a/b/c + FW-4 + FW-6 **landed**; FW-5 living draft only |
-| W4 / W7 checklists | **Operator validation complete** (2026-07-18); Phase F **landed** — formal checkbox tick-off in checklist files pending |
+| Final wave FW-1…FW-6 | **Complete** — FW-1…FW-6 landed; FW-5 matrix **finalized Pass 2026-07-22** |
+| W4 / W7 checklists | Phase F **landed** (2026-07-18); formal checkbox tick-off **signed off 2026-07-22** |
+| V1 exit | **Signed off 2026-07-22** — [V1_EXIT_CHECKLIST.md](V1_EXIT_CHECKLIST.md) |
 
-### Operator debt (remaining — Phase F gate satisfied)
+### Operator debt (cleared 2026-07-22)
 
-W4 and W7 **operator inspection/validation complete (2026-07-18)** — Phase F checklist payback **landed**. Status docs treat W4 and W7 as **landed**; individual checkbox tick-off in [W4_COMPOSE_CHECKLIST.md](W4_COMPOSE_CHECKLIST.md) and [W7_HARDENING_CHECKLIST.md](W7_HARDENING_CHECKLIST.md) remains operator-owned.
+W4 and W7 checklists **signed off**. Phase G FW-5 matrix **finalized Pass**. [V1_EXIT_CHECKLIST.md](V1_EXIT_CHECKLIST.md) **signed off**.
 
-**Still operator-owned (Phase G / exit):**
-
-- FW-5 `V1_MANUAL_E2E_MATRIX.csv` **finalize** (living draft exists; live Graph/IMAP E2E rows)
-- Live OAuth dogfood (Entra registration)
-- [V1_EXIT_CHECKLIST.md](V1_EXIT_CHECKLIST.md) sign-off
-
-See [§6 Phase F — Checklist payback weekend](#6-phase-f--checklist-payback-weekend) (complete) and [§ Phase G — FW-5 Manual E2E matrix](#phase-g--fw-5-manual-e2e-matrix).
+See [§6 Phase F — Checklist payback weekend](#6-phase-f--checklist-payback-weekend) and [§ Phase G — FW-5 Manual E2E matrix](#phase-g--fw-5-manual-e2e-matrix).
 
 ### Prerequisites to open Final-wave implementation
 
@@ -201,23 +196,20 @@ Polish after feature + filter + branding landings: dead code, API alignment with
 
 ### Phase F — Checklist payback weekend
 
-**Status: Landed (2026-07-18).** Operator inspection/validation complete for deferred W4/W7 checklists. W4 and W7 marked **landed** in status docs/plans. Formal checkbox tick-off in checklist files remains operator-owned.
+**Status: Landed (2026-07-18).** Operator inspection/validation complete for deferred W4/W7 checklists. Formal checkbox tick-off **signed off 2026-07-22**.
 
 | Checklist | Result |
 | --- | --- |
-| [W4_COMPOSE_CHECKLIST.md](W4_COMPOSE_CHECKLIST.md) | Operator validation **complete** — W4 **landed**; checkbox detail pending |
-| [W7_HARDENING_CHECKLIST.md](W7_HARDENING_CHECKLIST.md) | Operator validation **complete** — W7 **landed**; checkbox detail pending |
+| [W4_COMPOSE_CHECKLIST.md](W4_COMPOSE_CHECKLIST.md) | Operator **signed off** (2026-07-22) — W4 **landed** |
+| [W7_HARDENING_CHECKLIST.md](W7_HARDENING_CHECKLIST.md) | Operator **signed off** (2026-07-22) — W7 **landed** |
 
 ---
 
 ### Phase G — FW-5 Manual E2E matrix
 
-- Artifact: `docs/V1_MANUAL_E2E_MATRIX.csv` (versionable; importable to Sheets).
-- Keep separate from automated inventory.
-- Include **filter** scenarios (saved + ephemeral), branding smoke (icon/splash), and live-mail rows after Phase F where applicable.
-- May start as a **living draft** during W7 / Phase B; **finalize** here as formal gate.
+**Status: Landed (2026-07-22).** Artifact [V1_MANUAL_E2E_MATRIX.csv](V1_MANUAL_E2E_MATRIX.csv) — all rows `status=finalized`, `pass_fail=pass` (operator sign-off). Separate from automated inventory. Includes filter, branding, and live-mail coverage.
 
-**Then:** [V1_EXIT_CHECKLIST.md](V1_EXIT_CHECKLIST.md) sign-off.
+**Then:** [V1_EXIT_CHECKLIST.md](V1_EXIT_CHECKLIST.md) — **signed off 2026-07-22**.
 
 ---
 
@@ -352,11 +344,11 @@ When Phase B lands, Page adds a short SPEC subsection (or ROADMAP→SPEC pointer
 - [x] FW-2 coverage measured; critical-path gaps addressed or deferred with reason *(see Phase D notes; filter path ~90%; provider floors deferred to live mail)*
 - [x] FW-3a, FW-3b present; FW-3c current; FW-4 docs match ship
 - [x] FW-6 `MULTI_AGENT_SYSTEM_PROMPT.md` written
-- [ ] FW-5 `V1_MANUAL_E2E_MATRIX.csv` **finalized** (living draft exists; includes filters + branding smoke; live-mail rows operator-owned)
-- [x] W4 + W7 operator validation complete (**Phase F landed 2026-07-18**); checkbox tick-off in checklist files pending
-- [ ] [V1_EXIT_CHECKLIST.md](V1_EXIT_CHECKLIST.md) signed off — **operator owns**
+- [x] FW-5 `V1_MANUAL_E2E_MATRIX.csv` **finalized** (all rows Pass — operator sign-off 2026-07-22)
+- [x] W4 + W7 operator validation complete (**Phase F landed 2026-07-18**); checkbox tick-off **signed off 2026-07-22**
+- [x] [V1_EXIT_CHECKLIST.md](V1_EXIT_CHECKLIST.md) signed off — **2026-07-22**
 
-**Remaining (operator):** Phase G FW-5 finalize · V1 exit sign-off · live-mail E2E rows · checklist checkbox tick-off.
+**Final wave complete.** Post-V1 dogfood items (UI-P29/P30, perf suite, Android focus) remain on [ROADMAP.md](ROADMAP.md) Planned backlog — not V1 blockers.
 
 ---
 

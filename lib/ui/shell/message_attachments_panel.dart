@@ -290,7 +290,7 @@ class _QuickReplyBarState extends State<QuickReplyBar> {
           ),
           const SizedBox(width: 8),
           IconButton(
-            tooltip: 'Open full compose',
+            tooltip: 'Full reply',
             onPressed: () {
               unawaited(
                 showComposeSheet(
@@ -299,7 +299,11 @@ class _QuickReplyBarState extends State<QuickReplyBar> {
                 ),
               );
             },
-            icon: Icon(Icons.open_in_full, color: t.muted),
+            style: IconButton.styleFrom(
+              foregroundColor: t.teal,
+              backgroundColor: t.teal.withValues(alpha: 0.12),
+            ),
+            icon: const Icon(Icons.add_rounded, size: 26),
           ),
           FilledButton(
             onPressed: _busy ? null : () => unawaited(_send()),

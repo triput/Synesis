@@ -2,9 +2,9 @@
 // File: lib/ui/account/manage_accounts_sheet.dart
 // Description: Settings sheet to list, edit, and remove mail accounts
 // Component: UI
-// Version: 1.0 (Gold Master)
+// Version: 1.1 (Gold Master)
 // Created: 2026-07-14
-// Last Update: 2026-07-18
+// Last Update: 2026-07-23
 // ==============================================================================
 
 import 'package:flutter/material.dart';
@@ -33,14 +33,18 @@ Future<void> showManageAccountsSheet(BuildContext context) {
           top: 8,
           bottom: MediaQuery.viewInsetsOf(sheetContext).bottom + 28,
         ),
-        child: const _ManageAccountsSheet(),
+        child: const ManageAccountsSheetBody(),
       );
     },
   );
 }
 
-class _ManageAccountsSheet extends StatelessWidget {
-  const _ManageAccountsSheet();
+/// List/edit/remove accounts content (UI-P21 Accounts section).
+///
+/// Public so `settings_shell.dart` can embed the identical body inside the
+/// sectioned Settings shell instead of duplicating this logic.
+class ManageAccountsSheetBody extends StatelessWidget {
+  const ManageAccountsSheetBody({super.key});
 
   String _providerLabel(MailAccount account) {
     switch (account.providerType) {

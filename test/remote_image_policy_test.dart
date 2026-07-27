@@ -2,9 +2,9 @@
 // File: test/remote_image_policy_test.dart
 // Description: Pure-function tests for remote HTML image blocking/rewriting
 // Component: Test
-// Version: 1.0 (Gold Master)
+// Version: 1.1 (Gold Master)
 // Created: 2026-07-17
-// Last Update: 2026-07-17
+// Last Update: 2026-07-23
 // ==============================================================================
 
 import 'package:synesis/ui/shell/remote_image_policy.dart';
@@ -130,6 +130,71 @@ void main() {
       final RemoteImagePolicyResult result = applyRemoteImagePolicy(
         html,
         blockRemoteImages: true,
+      );
+      expect(result.blockedRemoteImages, isFalse);
+      expect(result.html, html);
+    });
+
+    test('D6-2: allowlisted host keeps remote image while blocking others', () {
+      const String html =
+          '<img src="https://img.trusted.com/a.png">'
+          '<img src="https://cdn.evil.test/b.png">';
+      final RemoteImagePolicyResult result = applyRemoteImagePolicy(
+        html,
+        blockRemoteImages: true,
+        allowlistDomains: <String>['trusted.com'],
+      );
+      expect(result.blockedRemoteImages, isTrue);
+      expect(result.html, contains('https://img.trusted.com/a.png'));
+      expect(result.html, isNot(contains('https://cdn.evil.test')));
+    });
+
+    test('D6-2: allowlist match is case-insensitive suffix match', () {
+      const String html = '<img src="https://IMG.Trusted.COM/a.png">';
+      final RemoteImagePolicyResult result = applyRemoteImagePolicy(
+        html,
+        blockRemoteImages: true,
+        allowlistDomains: <String>['trusted.com'],
+      );
+      expect(result.blockedRemoteImages, isFalse);
+      expect(result.html, html);
+    });
+
+    test('D6-2: allowlist entry does not match unrelated host', () {
+      const String html = '<img src="https://nottrusted.com/a.png">';
+      final RemoteImagePolicyResult result = applyRemoteImagePolicy(
+        html,
+        blockRemoteImages: true,
+        allowlistDomains: <String>['trusted.com'],
+      );
+      expect(result.blockedRemoteImages, isTrue);
+      expect(result.html, isNot(contains('nottrusted.com')));
+    });
+
+    test('rewrites remote srcset candidates to placeholder', () {
+      const String html =
+          '<img src="https://x.test/a.png" '
+          'srcset="https://x.test/a-1x.png 1x, https://x.test/a-2x.png 2x">';
+      final RemoteImagePolicyResult result = applyRemoteImagePolicy(
+        html,
+        blockRemoteImages: true,
+      );
+      expect(result.blockedRemoteImages, isTrue);
+      expect(result.html, isNot(contains('https://x.test')));
+      expect(
+        '1x'.allMatches(result.html).length + '2x'.allMatches(result.html).length,
+        2,
+      );
+    });
+
+    test('srcset allowlisted host is left untouched', () {
+      const String html =
+          '<img src="https://img.trusted.com/a.png" '
+          'srcset="https://img.trusted.com/a-2x.png 2x">';
+      final RemoteImagePolicyResult result = applyRemoteImagePolicy(
+        html,
+        blockRemoteImages: true,
+        allowlistDomains: <String>['trusted.com'],
       );
       expect(result.blockedRemoteImages, isFalse);
       expect(result.html, html);

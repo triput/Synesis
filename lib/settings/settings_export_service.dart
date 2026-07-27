@@ -2,9 +2,9 @@
 // File: lib/settings/settings_export_service.dart
 // Description: Versioned JSON export/import for appearance prefs (UI-P17)
 // Component: Domain / Settings
-// Version: 1.0 (Gold Master)
+// Version: 1.2 (Gold Master)
 // Created: 2026-07-18
-// Last Update: 2026-07-18
+// Last Update: 2026-07-23
 // ==============================================================================
 
 import 'dart:convert';
@@ -177,6 +177,9 @@ class SettingsExportService {
       'swipeRightAction': s.swipeRightAction.name,
       'swipeLeftAction': s.swipeLeftAction.name,
       'blockRemoteImages': s.blockRemoteImages,
+      'accountBlockRemoteImages': s.accountBlockRemoteImages,
+      'accountImageAllowlistDomains': s.accountImageAllowlistDomains,
+      'blockTrackers': s.blockTrackers,
       'pushOnCellular': s.pushOnCellular,
       'readingPanePosition': s.readingPanePosition.name,
       'visualFocusEnabled': s.visualFocusEnabled,
@@ -190,6 +193,7 @@ class SettingsExportService {
       'uiFontFamily': s.uiFontFamily,
       'uiFontSizeScale': s.uiFontSizeScale,
       'uiTextColorArgb': s.uiTextColorArgb,
+      'autoMarkAsReadSeconds': s.autoMarkAsReadSeconds,
     };
   }
 
@@ -207,6 +211,27 @@ class SettingsExportService {
       rawNotifications.forEach(
         (Object? k, Object? v) => notificationsMap[k.toString()] = v == true,
       );
+    }
+    final Map<String, bool> accountBlockRemoteImagesMap = <String, bool>{};
+    final Object? rawAccountBlockRemoteImages =
+        map['accountBlockRemoteImages'];
+    if (rawAccountBlockRemoteImages is Map) {
+      rawAccountBlockRemoteImages.forEach(
+        (Object? k, Object? v) =>
+            accountBlockRemoteImagesMap[k.toString()] = v == true,
+      );
+    }
+    final Map<String, List<String>> accountImageAllowlistDomainsMap =
+        <String, List<String>>{};
+    final Object? rawAccountImageAllowlistDomains =
+        map['accountImageAllowlistDomains'];
+    if (rawAccountImageAllowlistDomains is Map) {
+      rawAccountImageAllowlistDomains.forEach((Object? k, Object? v) {
+        if (v is List) {
+          accountImageAllowlistDomainsMap[k.toString()] =
+              v.map((Object? e) => e.toString()).toList(growable: false);
+        }
+      });
     }
     return AppSettingsState(
       themeId: ThemeId.values.firstWhere(
@@ -243,6 +268,9 @@ class SettingsExportService {
         orElse: () => SwipeListAction.delete,
       ),
       blockRemoteImages: map['blockRemoteImages'] as bool? ?? true,
+      accountBlockRemoteImages: accountBlockRemoteImagesMap,
+      accountImageAllowlistDomains: accountImageAllowlistDomainsMap,
+      blockTrackers: map['blockTrackers'] as bool? ?? true,
       pushOnCellular: map['pushOnCellular'] as bool? ?? false,
       readingPanePosition: ReadingPanePosition.values.firstWhere(
         (ReadingPanePosition e) => e.name == map['readingPanePosition'],
@@ -261,6 +289,9 @@ class SettingsExportService {
       uiFontFamily: map['uiFontFamily'] as String?,
       uiFontSizeScale: (map['uiFontSizeScale'] as num?)?.toDouble() ?? 1.0,
       uiTextColorArgb: map['uiTextColorArgb'] as int?,
+      autoMarkAsReadSeconds:
+          map['autoMarkAsReadSeconds'] as int? ??
+              kAutoMarkAsReadSecondsDefault,
     );
   }
 

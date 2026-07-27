@@ -2,12 +2,13 @@
 // File: lib/ui/shell/reading_pane.dart
 // Description: Reading pane with adaptive actions and portrait message paging
 // Component: UI
-// Version: 1.4 (Gold Master)
+// Version: 1.7 (Gold Master)
 // Created: 2026-07-14
-// Last Update: 2026-07-18
+// Last Update: 2026-07-23
 // ==============================================================================
 
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -23,6 +24,7 @@ import 'package:synesis/theme/theme_tokens.dart';
 import 'package:synesis/ui/common/empty_state.dart';
 import 'package:synesis/ui/shell/address_scope_action.dart';
 import 'package:synesis/ui/shell/auto_mark_as_read.dart';
+import 'package:synesis/ui/shell/mail_split_layout.dart';
 import 'package:synesis/ui/shell/message_attachments_panel.dart';
 import 'package:synesis/ui/shell/message_body_find.dart';
 import 'package:synesis/ui/shell/message_body_view.dart';
@@ -41,9 +43,15 @@ class ReadingPane extends StatefulWidget {
     this.isLoadingBody = false,
     this.bodyErrorMessage,
     this.blockRemoteImages = true,
+    this.accountBlockRemoteImages = const <String, bool>{},
+    this.accountImageAllowlistDomains = const <String, List<String>>{},
+    this.blockTrackers = true,
+    this.autoMarkAsReadEnabled = true,
+    this.autoMarkAsReadDwell = kAutoMarkAsReadDwell,
     this.findInMessageRequested = false,
     this.onFindRequestHandled,
     this.allowOpenInNewWindow = true,
+    this.onBackToList,
     this.onMarkRead,
     this.onMarkUnread,
     this.onShowHeaders,
@@ -77,6 +85,26 @@ class ReadingPane extends StatefulWidget {
   /// Global preference: block remote images in HTML bodies (privacy-first).
   final bool blockRemoteImages;
 
+  /// D6-2: per-account override of [blockRemoteImages]; missing key inherits
+  /// the global value.
+  final Map<String, bool> accountBlockRemoteImages;
+
+  /// D6-2: per-account image-host allowlist domains.
+  final Map<String, List<String>> accountImageAllowlistDomains;
+
+  /// D6-7: global tracker-blocking preference, independent of
+  /// [blockRemoteImages].
+  final bool blockTrackers;
+
+  /// UI-P28: whether the auto-mark-as-read dwell timer is enabled at all.
+  /// False when the user set the delay to 0 (Off) in Appearance settings.
+  final bool autoMarkAsReadEnabled;
+
+  /// UI-P28: dwell before an open unread message is auto-marked read.
+  /// Resolved from [AppSettingsState.autoMarkAsReadSeconds] by the caller so
+  /// settings changes apply without recreating the pane.
+  final Duration autoMarkAsReadDwell;
+
   /// When true, open the in-message find bar (Ctrl+F from workspace).
   final bool findInMessageRequested;
 
@@ -85,6 +113,9 @@ class ReadingPane extends StatefulWidget {
 
   /// When false, hides overflow "Open in new window" (detached reader).
   final bool allowOpenInNewWindow;
+
+  /// Phone full-bleed: return to the message list (clears selection).
+  final VoidCallback? onBackToList;
 
   final VoidCallback? onMarkRead;
   final VoidCallback? onMarkUnread;
@@ -181,13 +212,42 @@ class _ReadingPaneState extends State<ReadingPane> {
     _syncAutoMarkAsRead();
   }
 
-  /// Reconciles the DEF-034 dwell timer against the currently open message.
+  /// Reconciles the DEF-034/UI-P28 dwell timer against the currently open
+  /// message, honoring the resolved settings dwell/enabled flag and any
+  /// active UI-P30 hold — without recreating the controller when settings
+  /// change.
   void _syncAutoMarkAsRead() {
     _autoMarkAsRead.update(
       messageId: widget.message?.id,
       unread: widget.message?.unread ?? false,
       onMarkRead: widget.onMarkRead,
+      dwell: widget.autoMarkAsReadDwell,
+      enabled: widget.autoMarkAsReadEnabled,
     );
+  }
+
+  /// UI-P30: true when the currently displayed message is held (auto-mark
+  /// paused) so the reading pane doesn't lose the row under a restrictive
+  /// filter (e.g. Unread) mid-read.
+  bool get _autoMarkHeldForCurrentMessage {
+    final String? id = widget.message?.id;
+    return id != null && _autoMarkAsRead.heldMessageId == id;
+  }
+
+  /// UI-P30: the hold toggle is only offered while the message is unread and
+  /// auto-mark-as-read is enabled — nothing to hold otherwise.
+  bool get _showAutoMarkHoldOption =>
+      (widget.message?.unread ?? false) && widget.autoMarkAsReadEnabled;
+
+  void _toggleAutoMarkHold() {
+    setState(() {
+      if (_autoMarkHeldForCurrentMessage) {
+        _autoMarkAsRead.releaseHold();
+      } else {
+        _autoMarkAsRead.holdCurrent();
+      }
+    });
+    _syncAutoMarkAsRead();
   }
 
   @override
@@ -310,7 +370,8 @@ class _ReadingPaneState extends State<ReadingPane> {
     if (widget.navigationIds.length < 2) {
       return false;
     }
-    return MediaQuery.orientationOf(context) == Orientation.portrait;
+    // Width-based (not Orientation): keyboard adjustResize can flip orientation.
+    return isPortraitMobileLayout(context);
   }
 
   @override
@@ -353,9 +414,13 @@ class _ReadingPaneState extends State<ReadingPane> {
         isLoadingBody: widget.isLoadingBody,
         bodyErrorMessage: widget.bodyErrorMessage,
         blockRemoteImages: widget.blockRemoteImages,
+        accountBlockRemoteImages: widget.accountBlockRemoteImages,
+        accountImageAllowlistDomains: widget.accountImageAllowlistDomains,
+        blockTrackers: widget.blockTrackers,
         sessionAllowedRemoteImages: _sessionAllowedRemoteImages,
         onAllowRemoteImages: _allowRemoteImagesForMessage,
         onNavigateToMessage: widget.onNavigateToMessage!,
+        onBackToList: widget.onBackToList,
         findOpen: _findOpen,
         findQuery: _findQuery,
         findActiveIndex: _findActiveIndex,
@@ -386,6 +451,9 @@ class _ReadingPaneState extends State<ReadingPane> {
         onNotJunk: widget.onNotJunk,
         onMarkFocused: widget.onMarkFocused,
         onMarkOther: widget.onMarkOther,
+        autoMarkHeld: _autoMarkHeldForCurrentMessage,
+        showAutoMarkHoldOption: _showAutoMarkHoldOption,
+        onToggleAutoMarkHold: _toggleAutoMarkHold,
       );
     }
 
@@ -398,6 +466,9 @@ class _ReadingPaneState extends State<ReadingPane> {
       isLoadingBody: widget.isLoadingBody,
       bodyErrorMessage: widget.bodyErrorMessage,
       blockRemoteImages: widget.blockRemoteImages,
+      accountBlockRemoteImages: widget.accountBlockRemoteImages,
+      accountImageAllowlistDomains: widget.accountImageAllowlistDomains,
+      blockTrackers: widget.blockTrackers,
       allowRemoteImages: _sessionAllowedRemoteImages.contains(selected.id),
       onLoadRemoteImages: () => _allowRemoteImagesForMessage(selected.id),
       findOpen: _findOpen,
@@ -412,6 +483,7 @@ class _ReadingPaneState extends State<ReadingPane> {
       onFindNext: _findNext,
       onFindPrevious: _findPrevious,
       onFindMatchCountChanged: _onFindMatchCountChanged,
+      onBackToList: widget.onBackToList,
       onMarkRead: widget.onMarkRead,
       onMarkUnread: widget.onMarkUnread,
       onShowHeaders: widget.onShowHeaders,
@@ -430,6 +502,9 @@ class _ReadingPaneState extends State<ReadingPane> {
       onNotJunk: widget.onNotJunk,
       onMarkFocused: widget.onMarkFocused,
       onMarkOther: widget.onMarkOther,
+      autoMarkHeld: _autoMarkHeldForCurrentMessage,
+      showAutoMarkHoldOption: _showAutoMarkHoldOption,
+      onToggleAutoMarkHold: _toggleAutoMarkHold,
     );
   }
 }
@@ -464,6 +539,7 @@ class _PortraitReadingPager extends StatefulWidget {
     required this.accounts,
     required this.density,
     required this.onNavigateToMessage,
+    this.onBackToList,
     required this.sessionAllowedRemoteImages,
     required this.onAllowRemoteImages,
     required this.findOpen,
@@ -482,6 +558,9 @@ class _PortraitReadingPager extends StatefulWidget {
     this.isLoadingBody = false,
     this.bodyErrorMessage,
     this.blockRemoteImages = true,
+    this.accountBlockRemoteImages = const <String, bool>{},
+    this.accountImageAllowlistDomains = const <String, List<String>>{},
+    this.blockTrackers = true,
     this.onMarkRead,
     this.onMarkUnread,
     this.onShowHeaders,
@@ -500,6 +579,9 @@ class _PortraitReadingPager extends StatefulWidget {
     this.onNotJunk,
     this.onMarkFocused,
     this.onMarkOther,
+    this.autoMarkHeld = false,
+    this.showAutoMarkHoldOption = false,
+    this.onToggleAutoMarkHold,
   });
 
   final String selectedId;
@@ -511,9 +593,13 @@ class _PortraitReadingPager extends StatefulWidget {
   final bool isLoadingBody;
   final String? bodyErrorMessage;
   final bool blockRemoteImages;
+  final Map<String, bool> accountBlockRemoteImages;
+  final Map<String, List<String>> accountImageAllowlistDomains;
+  final bool blockTrackers;
   final Set<String> sessionAllowedRemoteImages;
   final ValueChanged<String> onAllowRemoteImages;
   final ValueChanged<String> onNavigateToMessage;
+  final VoidCallback? onBackToList;
   final bool findOpen;
   final String findQuery;
   final int findActiveIndex;
@@ -545,6 +631,14 @@ class _PortraitReadingPager extends StatefulWidget {
   final ValueChanged<AddressMatchScope>? onMarkFocused;
   final ValueChanged<AddressMatchScope>? onMarkOther;
 
+  /// UI-P30: true when the currently selected page's message is held.
+  final bool autoMarkHeld;
+
+  /// UI-P30: true when the hold toggle should be offered for the selected
+  /// page (unread + auto-mark enabled).
+  final bool showAutoMarkHoldOption;
+  final VoidCallback? onToggleAutoMarkHold;
+
   @override
   State<_PortraitReadingPager> createState() => _PortraitReadingPagerState();
 }
@@ -565,6 +659,100 @@ class _PortraitReadingPagerState extends State<_PortraitReadingPager> {
       }
     }
     return null;
+  }
+
+  Future<void> _openMessagePicker(BuildContext context) async {
+    final ThemeTokens t = tokensOf(context);
+    final List<MailMessage> ordered = <MailMessage>[];
+    for (final String id in widget.navigationIds) {
+      final MailMessage? message = _messageFor(id);
+      if (message != null) {
+        ordered.add(message);
+      }
+    }
+    if (ordered.isEmpty) {
+      return;
+    }
+    final String? chosen = await showModalBottomSheet<String>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: t.panel,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (BuildContext sheetContext) {
+        final double height = MediaQuery.sizeOf(sheetContext).height * 0.7;
+        return SizedBox(
+          height: height,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: <Widget>[
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 14, 8, 8),
+                child: Row(
+                  children: <Widget>[
+                    Expanded(
+                      child: Text(
+                        'Messages',
+                        style: TextStyle(
+                          color: t.text,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: () => Navigator.pop(sheetContext),
+                      icon: Icon(Icons.close_rounded, color: t.muted),
+                    ),
+                  ],
+                ),
+              ),
+              Divider(height: 1, color: t.line),
+              Expanded(
+                child: ListView.separated(
+                  itemCount: ordered.length,
+                  separatorBuilder: (BuildContext context, int index) =>
+                      Divider(height: 1, color: t.line),
+                  itemBuilder: (BuildContext context, int index) {
+                    final MailMessage message = ordered[index];
+                    final bool selected = message.id == widget.selectedId;
+                    return ListTile(
+                      selected: selected,
+                      selectedTileColor: t.indigo.withValues(alpha: 0.12),
+                      title: Text(
+                        message.subject.trim().isEmpty
+                            ? '(no subject)'
+                            : message.subject,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: t.text,
+                          fontSize: 14,
+                          fontWeight: selected
+                              ? FontWeight.w600
+                              : FontWeight.w500,
+                        ),
+                      ),
+                      subtitle: Text(
+                        '${message.fromName} · ${message.whenLabel}',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(color: t.muted, fontSize: 12),
+                      ),
+                      onTap: () => Navigator.pop(sheetContext, message.id),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+    if (chosen != null && chosen != widget.selectedId) {
+      widget.onNavigateToMessage(chosen);
+    }
   }
 
   @override
@@ -605,45 +793,75 @@ class _PortraitReadingPagerState extends State<_PortraitReadingPager> {
       children: <Widget>[
         Material(
           color: t.content,
-          child: Row(
-            children: <Widget>[
-              IconButton(
-                tooltip: 'Previous message',
-                onPressed: canPrev
-                    ? () => widget.onNavigateToMessage(
-                          widget.navigationIds[current - 1],
-                        )
-                    : null,
-                icon: Icon(
-                  Icons.chevron_left_rounded,
-                  color: canPrev ? t.text : t.muted,
+          child: SizedBox(
+            height: 44,
+            child: Row(
+              children: <Widget>[
+                if (widget.onBackToList != null)
+                  IconButton(
+                    tooltip: 'Back to list',
+                    onPressed: widget.onBackToList,
+                    icon: Icon(Icons.arrow_back_rounded, color: t.text),
+                  ),
+                if (canPrev)
+                  IconButton(
+                    tooltip: 'Previous message',
+                    onPressed: () => widget.onNavigateToMessage(
+                      widget.navigationIds[current - 1],
+                    ),
+                    icon: Icon(
+                      Icons.chevron_left_rounded,
+                      color: t.text,
+                    ),
+                  )
+                else if (widget.onBackToList == null)
+                  const SizedBox(width: 48),
+                Expanded(
+                  child: InkWell(
+                    onTap: () => _openMessagePicker(context),
+                    borderRadius: BorderRadius.circular(8),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: <Widget>[
+                        Text(
+                          '${current + 1} of ${widget.navigationIds.length}',
+                          style: TextStyle(
+                            color: t.text,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        Icon(Icons.unfold_more_rounded, size: 16, color: t.muted),
+                      ],
+                    ),
+                  ),
                 ),
-              ),
-              Expanded(
-                child: Text(
-                  '${current + 1} of ${widget.navigationIds.length}',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(color: t.muted, fontSize: 12),
-                ),
-              ),
-              IconButton(
-                tooltip: 'Next message',
-                onPressed: canNext
-                    ? () => widget.onNavigateToMessage(
-                          widget.navigationIds[current + 1],
-                        )
-                    : null,
-                icon: Icon(
-                  Icons.chevron_right_rounded,
-                  color: canNext ? t.text : t.muted,
-                ),
-              ),
-            ],
+                if (canNext)
+                  IconButton(
+                    tooltip: 'Next message',
+                    onPressed: () => widget.onNavigateToMessage(
+                      widget.navigationIds[current + 1],
+                    ),
+                    icon: Icon(
+                      Icons.chevron_right_rounded,
+                      color: t.text,
+                    ),
+                  )
+                else
+                  const SizedBox(width: 48),
+              ],
+            ),
           ),
         ),
         Expanded(
           child: PageView.builder(
             controller: _controller,
+            // On phone, disable swipe-between-messages so the body WebView can
+            // receive vertical scroll. Use chrome next/prev / picker instead.
+            physics: widget.onBackToList != null
+                ? const NeverScrollableScrollPhysics()
+                : null,
             itemCount: widget.navigationIds.length,
             onPageChanged: (int index) {
               if (_syncingFromParent) {
@@ -669,6 +887,10 @@ class _PortraitReadingPagerState extends State<_PortraitReadingPager> {
                 isLoadingBody: isSelected && widget.isLoadingBody,
                 bodyErrorMessage: isSelected ? widget.bodyErrorMessage : null,
                 blockRemoteImages: widget.blockRemoteImages,
+                accountBlockRemoteImages: widget.accountBlockRemoteImages,
+                accountImageAllowlistDomains:
+                    widget.accountImageAllowlistDomains,
+                blockTrackers: widget.blockTrackers,
                 allowRemoteImages:
                     widget.sessionAllowedRemoteImages.contains(id),
                 onLoadRemoteImages: () => widget.onAllowRemoteImages(id),
@@ -706,6 +928,11 @@ class _PortraitReadingPagerState extends State<_PortraitReadingPager> {
                 onNotJunk: isSelected ? widget.onNotJunk : null,
                 onMarkFocused: isSelected ? widget.onMarkFocused : null,
                 onMarkOther: isSelected ? widget.onMarkOther : null,
+                autoMarkHeld: isSelected && widget.autoMarkHeld,
+                showAutoMarkHoldOption:
+                    isSelected && widget.showAutoMarkHoldOption,
+                onToggleAutoMarkHold:
+                    isSelected ? widget.onToggleAutoMarkHold : null,
               );
             },
           ),
@@ -724,6 +951,9 @@ class _ReadingPaneContent extends StatelessWidget {
     this.isLoadingBody = false,
     this.bodyErrorMessage,
     this.blockRemoteImages = true,
+    this.accountBlockRemoteImages = const <String, bool>{},
+    this.accountImageAllowlistDomains = const <String, List<String>>{},
+    this.blockTrackers = true,
     this.allowRemoteImages = false,
     this.onLoadRemoteImages,
     this.findOpen = false,
@@ -738,6 +968,7 @@ class _ReadingPaneContent extends StatelessWidget {
     this.onFindNext,
     this.onFindPrevious,
     this.onFindMatchCountChanged,
+    this.onBackToList,
     this.onMarkRead,
     this.onMarkUnread,
     this.onShowHeaders,
@@ -756,6 +987,9 @@ class _ReadingPaneContent extends StatelessWidget {
     this.onNotJunk,
     this.onMarkFocused,
     this.onMarkOther,
+    this.autoMarkHeld = false,
+    this.showAutoMarkHoldOption = false,
+    this.onToggleAutoMarkHold,
   });
 
   final MailMessage message;
@@ -765,6 +999,9 @@ class _ReadingPaneContent extends StatelessWidget {
   final bool isLoadingBody;
   final String? bodyErrorMessage;
   final bool blockRemoteImages;
+  final Map<String, bool> accountBlockRemoteImages;
+  final Map<String, List<String>> accountImageAllowlistDomains;
+  final bool blockTrackers;
   final bool allowRemoteImages;
   final VoidCallback? onLoadRemoteImages;
   final bool findOpen;
@@ -779,6 +1016,7 @@ class _ReadingPaneContent extends StatelessWidget {
   final VoidCallback? onFindNext;
   final VoidCallback? onFindPrevious;
   final ValueChanged<int>? onFindMatchCountChanged;
+  final VoidCallback? onBackToList;
   final VoidCallback? onMarkRead;
   final VoidCallback? onMarkUnread;
   final VoidCallback? onShowHeaders;
@@ -798,6 +1036,13 @@ class _ReadingPaneContent extends StatelessWidget {
   final ValueChanged<AddressMatchScope>? onMarkFocused;
   final ValueChanged<AddressMatchScope>? onMarkOther;
 
+  /// UI-P30: true when auto-mark-as-read is currently held for [message].
+  final bool autoMarkHeld;
+
+  /// UI-P30: true when the hold toggle should be offered (unread + enabled).
+  final bool showAutoMarkHoldOption;
+  final VoidCallback? onToggleAutoMarkHold;
+
   @override
   Widget build(BuildContext context) {
     final ThemeTokens t = tokensOf(context);
@@ -812,9 +1057,12 @@ class _ReadingPaneContent extends StatelessWidget {
         accent: t.indigo,
       ),
     );
-    final EdgeInsets pad = density == ViewDensity.calm
-        ? const EdgeInsets.symmetric(horizontal: 32, vertical: 28)
-        : const EdgeInsets.symmetric(horizontal: 20, vertical: 18);
+    final EdgeInsets pad = MediaQuery.sizeOf(context).width <
+            kReadingPaneWideBreakpoint
+        ? const EdgeInsets.symmetric(horizontal: 14, vertical: 10)
+        : density == ViewDensity.calm
+            ? const EdgeInsets.symmetric(horizontal: 32, vertical: 28)
+            : const EdgeInsets.symmetric(horizontal: 20, vertical: 18);
 
     final bool inTrash = msg.trashedAt != null || ReadingPane.isTrashRole(folderRole);
     final bool inJunk = ReadingPane.isJunkRole(folderRole);
@@ -832,59 +1080,91 @@ class _ReadingPaneContent extends StatelessWidget {
         ),
         color: t.content,
       ),
-      // Keep a minimum body slot when the reading pane is short (top/bottom
-      // split); scroll the chrome instead of starving MessageBodyView.
       child: LayoutBuilder(
         builder: (BuildContext context, BoxConstraints constraints) {
-          const double minBodyHeight = 96;
-          final double headerMaxHeight =
-              constraints.hasBoundedHeight && constraints.maxHeight.isFinite
-                  ? (constraints.maxHeight > minBodyHeight
-                      ? constraints.maxHeight - minBodyHeight
-                      : constraints.maxHeight * 0.45)
-                  : double.infinity;
+          final bool phoneLayout = isPortraitMobileLayout(context);
+          final bool cramped = constraints.hasBoundedHeight &&
+              constraints.maxHeight.isFinite &&
+              constraints.maxHeight < 320;
+          final bool showQuickReply = !inTrash &&
+              constraints.hasBoundedHeight &&
+              constraints.maxHeight >= 160;
+          // Keep chrome compact so the body owns most of the viewport and can
+          // scroll the full message (header used to claim up to 55%).
+          final double headerFraction = cramped
+              ? 0.28
+              : (phoneLayout ? 0.34 : 0.45);
 
           return Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
-              ConstrainedBox(
-                constraints: BoxConstraints(maxHeight: headerMaxHeight),
-                child: SingleChildScrollView(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    mainAxisSize: MainAxisSize.min,
-                    children: <Widget>[
-                      Padding(
-                        padding: pad,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: <Widget>[
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 3,
-                              ),
-                              decoration: BoxDecoration(
-                                color: account.accent.withValues(alpha: 0.18),
-                                borderRadius: BorderRadius.circular(999),
-                                border: Border.all(
-                                  color: account.accent.withValues(alpha: 0.35),
+              Flexible(
+                fit: FlexFit.loose,
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    maxHeight: constraints.hasBoundedHeight &&
+                            constraints.maxHeight.isFinite
+                        ? math.max(
+                            cramped ? 64 : 88,
+                            constraints.maxHeight * headerFraction,
+                          )
+                        : double.infinity,
+                  ),
+                  child: SingleChildScrollView(
+                    child: Padding(
+                      padding: pad,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: <Widget>[
+                          if (onBackToList != null) ...<Widget>[
+                            Align(
+                              alignment: Alignment.centerLeft,
+                              child: IconButton(
+                                tooltip: 'Back to list',
+                                onPressed: onBackToList,
+                                visualDensity: VisualDensity.compact,
+                                padding: EdgeInsets.zero,
+                                constraints: const BoxConstraints(
+                                  minWidth: 32,
+                                  minHeight: 32,
+                                ),
+                                icon: Icon(
+                                  Icons.arrow_back_rounded,
+                                  color: t.text,
                                 ),
                               ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: <Widget>[
-                                  Container(
-                                    width: 7,
-                                    height: 7,
-                                    decoration: BoxDecoration(
-                                      color: account.accent,
-                                      shape: BoxShape.circle,
-                                    ),
+                            ),
+                            const SizedBox(height: 4),
+                          ],
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 3,
+                            ),
+                            decoration: BoxDecoration(
+                              color: account.accent.withValues(alpha: 0.18),
+                              borderRadius: BorderRadius.circular(999),
+                              border: Border.all(
+                                color: account.accent.withValues(alpha: 0.35),
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: <Widget>[
+                                Container(
+                                  width: 7,
+                                  height: 7,
+                                  decoration: BoxDecoration(
+                                    color: account.accent,
+                                    shape: BoxShape.circle,
                                   ),
-                                  const SizedBox(width: 6),
-                                  Text(
+                                ),
+                                const SizedBox(width: 6),
+                                Flexible(
+                                  child: Text(
                                     account.address,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
                                     style: TextStyle(
                                       color: Color.lerp(
                                         account.accent,
@@ -894,110 +1174,179 @@ class _ReadingPaneContent extends StatelessWidget {
                                       fontSize: 11,
                                     ),
                                   ),
-                                ],
-                              ),
+                                ),
+                              ],
                             ),
-                            const SizedBox(height: 8),
-                            Text(
-                              msg.subject,
-                              style: Theme.of(context).textTheme.headlineMedium,
-                            ),
+                          ),
+                          if (autoMarkHeld) ...<Widget>[
                             const SizedBox(height: 6),
-                            Text(
-                              '${msg.fromName} <${msg.fromAddress}> · to me',
-                              style: TextStyle(
-                                color: secondaryText,
-                                fontSize: 13,
-                              ),
-                            ),
-                            const SizedBox(height: 12),
-                            _ReadingActionBar(
-                              message: msg,
-                              inTrash: inTrash,
-                              inJunk: inJunk,
-                              onMarkRead: onMarkRead,
-                              onMarkUnread: onMarkUnread,
-                              onShowHeaders: onShowHeaders,
-                              onReply: onReply,
-                              onReplyAll: onReplyAll,
-                              onForward: onForward,
-                              onArchive: onArchive,
-                              onDelete: onDelete,
-                              onPermanentDelete: onPermanentDelete,
-                              onToggleStar: onToggleStar,
-                              onPin: onPin,
-                              onSnooze: onSnooze,
-                              onMove: onMove,
-                              onReportJunk: onReportJunk,
-                              onRecover: onRecover,
-                              onNotJunk: onNotJunk,
-                              onMarkFocused: onMarkFocused,
-                              onMarkOther: onMarkOther,
-                              onOpenFind: onOpenFind,
-                            ),
+                            _AutoMarkHeldChip(),
                           ],
-                        ),
+                          const SizedBox(height: 8),
+                          Text(
+                            msg.subject.trim().isEmpty
+                                ? '(no subject)'
+                                : msg.subject,
+                            maxLines: 3,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color: t.text,
+                              fontSize: density.bodySize + 1,
+                              fontWeight: FontWeight.w600,
+                              height: 1.25,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            '${msg.fromName} <${msg.fromAddress}> · ${msg.whenLabel}',
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color: secondaryText,
+                              fontSize: 12,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          _ReadingActionBar(
+                            message: msg,
+                            inTrash: inTrash,
+                            inJunk: inJunk,
+                            onMarkRead: onMarkRead,
+                            onMarkUnread: onMarkUnread,
+                            onShowHeaders: onShowHeaders,
+                            onReply: onReply,
+                            onReplyAll: onReplyAll,
+                            onForward: onForward,
+                            onArchive: onArchive,
+                            onDelete: onDelete,
+                            onPermanentDelete: onPermanentDelete,
+                            onToggleStar: onToggleStar,
+                            onPin: onPin,
+                            onSnooze: onSnooze,
+                            onMove: onMove,
+                            onReportJunk: onReportJunk,
+                            onRecover: onRecover,
+                            onNotJunk: onNotJunk,
+                            onMarkFocused: onMarkFocused,
+                            onMarkOther: onMarkOther,
+                            onOpenFind: onOpenFind,
+                            autoMarkHeld: autoMarkHeld,
+                            showAutoMarkHoldOption: showAutoMarkHoldOption,
+                            onToggleAutoMarkHold: onToggleAutoMarkHold,
+                          ),
+                        ],
                       ),
-                      if (findOpen &&
-                          onCloseFind != null &&
-                          onFindQueryChanged != null)
-                        _MessageFindBar(
-                          query: findQuery,
-                          activeIndex: findActiveIndex,
-                          matchCount: findMatchCount,
-                          onQueryChanged: onFindQueryChanged!,
-                          onNext: onFindNext ?? () {},
-                          onPrevious: onFindPrevious ?? () {},
-                          onClose: onCloseFind!,
-                        ),
-                    ],
+                    ),
                   ),
                 ),
               ),
+              if (findOpen &&
+                  onCloseFind != null &&
+                  onFindQueryChanged != null)
+                _MessageFindBar(
+                  query: findQuery,
+                  activeIndex: findActiveIndex,
+                  matchCount: findMatchCount,
+                  onQueryChanged: onFindQueryChanged!,
+                  onNext: onFindNext ?? () {},
+                  onPrevious: onFindPrevious ?? () {},
+                  onClose: onCloseFind!,
+                ),
               Divider(height: 1, color: t.line),
               Expanded(
                 child: Padding(
-                  padding: pad,
-                  child: LayoutBuilder(
-                    builder:
-                        (BuildContext context, BoxConstraints bodyConstraints) {
-                      // Quick reply needs ~52px; hide it in short split panes
-                      // so MessageBodyView keeps the reserved min body slot.
-                      const double quickReplyReserve = 56;
-                      final bool showQuickReply = !inTrash &&
-                          bodyConstraints.maxHeight >=
-                              (minBodyHeight + quickReplyReserve);
-                      return Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: <Widget>[
-                          MessageAttachmentsPanel(message: msg),
-                          Expanded(
-                            child: MessageBodyView(
-                              body: msg.body,
-                              isLoadingBody: isLoadingBody,
-                              bodyErrorMessage: bodyErrorMessage,
-                              bodySize: density.bodySize,
-                              muted: secondaryText,
-                              blockRemoteImages: blockRemoteImages,
-                              allowRemoteImages: allowRemoteImages,
-                              onLoadRemoteImages: onLoadRemoteImages,
-                              findQuery: findOpen ? findQuery : '',
-                              findActiveIndex: findActiveIndex,
-                              findNavigateEpoch: findNavigateEpoch,
-                              findNavigateReverse: findNavigateReverse,
-                              onFindMatchCountChanged: onFindMatchCountChanged,
+                  padding: EdgeInsets.fromLTRB(
+                    pad.left,
+                    8,
+                    pad.right,
+                    showQuickReply ? 0 : pad.bottom,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: <Widget>[
+                      if (!cramped)
+                        ConstrainedBox(
+                          constraints: const BoxConstraints(maxHeight: 88),
+                          child: SingleChildScrollView(
+                            child: MessageAttachmentsPanel(message: msg),
+                          ),
+                        ),
+                      Expanded(
+                        child: MessageBodyView(
+                          body: msg.body,
+                          isLoadingBody: isLoadingBody,
+                          bodyErrorMessage: bodyErrorMessage,
+                          bodySize: density.bodySize,
+                          muted: secondaryText,
+                          blockRemoteImages: accountBlockRemoteImages[
+                                  msg.accountId] ??
+                              blockRemoteImages,
+                          allowRemoteImages: allowRemoteImages,
+                          onLoadRemoteImages: onLoadRemoteImages,
+                          imageAllowlistDomains:
+                              accountImageAllowlistDomains[msg.accountId] ??
+                                  const <String>[],
+                          blockTrackers: blockTrackers,
+                          findQuery: findOpen ? findQuery : '',
+                          findActiveIndex: findActiveIndex,
+                          findNavigateEpoch: findNavigateEpoch,
+                          findNavigateReverse: findNavigateReverse,
+                          onFindMatchCountChanged: onFindMatchCountChanged,
+                        ),
+                      ),
+                      if (showQuickReply)
+                        Padding(
+                          padding: EdgeInsets.only(
+                            bottom: math.max(
+                              0,
+                              MediaQuery.viewInsetsOf(context).bottom > 0
+                                  ? 4
+                                  : pad.bottom,
                             ),
                           ),
-                          if (showQuickReply) QuickReplyBar(message: msg),
-                        ],
-                      );
-                    },
+                          child: QuickReplyBar(message: msg),
+                        ),
+                    ],
                   ),
                 ),
               ),
             ],
           );
         },
+      ),
+    );
+  }
+}
+
+/// UI-P30: small visual affordance shown when auto-mark-as-read is held for
+/// the currently open message (in addition to the More-menu checkmark).
+class _AutoMarkHeldChip extends StatelessWidget {
+  const _AutoMarkHeldChip();
+
+  @override
+  Widget build(BuildContext context) {
+    final ThemeTokens t = tokensOf(context);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: t.amber.withValues(alpha: 0.16),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: t.amber.withValues(alpha: 0.4)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          Icon(Icons.pause_circle_outline_rounded, size: 12, color: t.amber),
+          const SizedBox(width: 4),
+          Text(
+            'Auto-mark paused',
+            style: TextStyle(
+              color: t.amber,
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -1165,6 +1514,9 @@ class _ReadingActionBar extends StatelessWidget {
     this.onMarkFocused,
     this.onMarkOther,
     this.onOpenFind,
+    this.autoMarkHeld = false,
+    this.showAutoMarkHoldOption = false,
+    this.onToggleAutoMarkHold,
   });
 
   final MailMessage message;
@@ -1189,112 +1541,134 @@ class _ReadingActionBar extends StatelessWidget {
   final ValueChanged<AddressMatchScope>? onMarkFocused;
   final ValueChanged<AddressMatchScope>? onMarkOther;
   final VoidCallback? onOpenFind;
+  final bool autoMarkHeld;
+  final bool showAutoMarkHoldOption;
+  final VoidCallback? onToggleAutoMarkHold;
 
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (BuildContext context, BoxConstraints constraints) {
         final bool wide = constraints.maxWidth >= kReadingPaneWideBreakpoint;
-        return Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          crossAxisAlignment: WrapCrossAlignment.center,
-          children: <Widget>[
-            if (onReply != null)
+        final List<Widget> actions = <Widget>[
+          if (onReply != null)
+            _AdaptiveAction(
+              wide: wide,
+              label: 'Reply',
+              icon: Icons.reply_rounded,
+              onPressed: onReply!,
+            ),
+          if (onReplyAll != null)
+            _AdaptiveAction(
+              wide: wide,
+              label: 'Reply all',
+              icon: Icons.reply_all_rounded,
+              onPressed: onReplyAll!,
+            ),
+          if (onForward != null)
+            _AdaptiveAction(
+              wide: wide,
+              label: 'Forward',
+              icon: Icons.forward_rounded,
+              onPressed: onForward!,
+            ),
+          if (!inTrash && onArchive != null)
+            _AdaptiveAction(
+              wide: wide,
+              label: 'Archive',
+              icon: Icons.archive_outlined,
+              onPressed: onArchive!,
+            ),
+          if (inTrash) ...<Widget>[
+            if (onRecover != null)
               _AdaptiveAction(
                 wide: wide,
-                label: 'Reply',
-                icon: Icons.reply_rounded,
-                onPressed: onReply!,
+                label: 'Recover',
+                icon: Icons.restore_from_trash_outlined,
+                onPressed: onRecover!,
               ),
-            if (onReplyAll != null)
+            if (onPermanentDelete != null)
               _AdaptiveAction(
                 wide: wide,
-                label: 'Reply all',
-                icon: Icons.reply_all_rounded,
-                onPressed: onReplyAll!,
-              ),
-            if (onForward != null)
-              _AdaptiveAction(
-                wide: wide,
-                label: 'Forward',
-                icon: Icons.forward_rounded,
-                onPressed: onForward!,
-              ),
-            if (!inTrash && onArchive != null)
-              _AdaptiveAction(
-                wide: wide,
-                label: 'Archive',
-                icon: Icons.archive_outlined,
-                onPressed: onArchive!,
-              ),
-            if (inTrash) ...<Widget>[
-              if (onRecover != null)
-                _AdaptiveAction(
-                  wide: wide,
-                  label: 'Recover',
-                  icon: Icons.restore_from_trash_outlined,
-                  onPressed: onRecover!,
-                ),
-              if (onPermanentDelete != null)
-                _AdaptiveAction(
-                  wide: wide,
-                  label: 'Delete permanently',
-                  icon: Icons.delete_forever_outlined,
-                  onPressed: onPermanentDelete!,
-                  danger: true,
-                ),
-            ] else if (onDelete != null)
-              _AdaptiveAction(
-                wide: wide,
-                label: 'Delete',
-                icon: Icons.delete_outline_rounded,
-                onPressed: onDelete!,
+                label: 'Delete permanently',
+                icon: Icons.delete_forever_outlined,
+                onPressed: onPermanentDelete!,
                 danger: true,
               ),
-            if (onToggleStar != null)
-              _AdaptiveAction(
-                wide: wide,
-                label: message.starred ? 'Starred' : 'Star',
-                icon: message.starred
-                    ? Icons.star_rounded
-                    : Icons.star_outline_rounded,
-                onPressed: onToggleStar!,
-                emphasized: message.starred,
-              ),
-            if (onPin != null)
-              _AdaptiveAction(
-                wide: wide,
-                label: message.pinned ? 'Pinned' : 'Pin',
-                icon: message.pinned
-                    ? Icons.push_pin_rounded
-                    : Icons.push_pin_outlined,
-                onPressed: onPin!,
-                emphasized: message.pinned,
-              ),
-            if (onSnooze != null)
-              _AdaptiveAction(
-                wide: wide,
-                label: 'Snooze',
-                icon: Icons.snooze_rounded,
-                onPressed: onSnooze!,
-              ),
-            _OverflowActions(
+          ] else if (onDelete != null)
+            _AdaptiveAction(
               wide: wide,
-              message: message,
-              inTrash: inTrash,
-              inJunk: inJunk,
-              onMarkRead: onMarkRead,
-              onMarkUnread: onMarkUnread,
-              onShowHeaders: onShowHeaders,
-              onMove: onMove,
-              onReportJunk: onReportJunk,
-              onNotJunk: onNotJunk,
-              onMarkFocused: onMarkFocused,
-              onMarkOther: onMarkOther,
-              onOpenFind: onOpenFind,
+              label: 'Delete',
+              icon: Icons.delete_outline_rounded,
+              onPressed: onDelete!,
+              danger: true,
             ),
-          ],
+          if (onToggleStar != null)
+            _AdaptiveAction(
+              wide: wide,
+              label: message.starred ? 'Starred' : 'Star',
+              icon: message.starred
+                  ? Icons.star_rounded
+                  : Icons.star_outline_rounded,
+              onPressed: onToggleStar!,
+              emphasized: message.starred,
+            ),
+          if (onPin != null)
+            _AdaptiveAction(
+              wide: wide,
+              label: message.pinned ? 'Pinned' : 'Pin',
+              icon: message.pinned
+                  ? Icons.push_pin_rounded
+                  : Icons.push_pin_outlined,
+              onPressed: onPin!,
+              emphasized: message.pinned,
+            ),
+          if (onSnooze != null)
+            _AdaptiveAction(
+              wide: wide,
+              label: 'Snooze',
+              icon: Icons.snooze_rounded,
+              onPressed: onSnooze!,
+            ),
+          _OverflowActions(
+            wide: wide,
+            message: message,
+            inTrash: inTrash,
+            inJunk: inJunk,
+            onMarkRead: onMarkRead,
+            onMarkUnread: onMarkUnread,
+            onShowHeaders: onShowHeaders,
+            onMove: onMove,
+            onReportJunk: onReportJunk,
+            onNotJunk: onNotJunk,
+            onMarkFocused: onMarkFocused,
+            onMarkOther: onMarkOther,
+            onOpenFind: onOpenFind,
+            autoMarkHeld: autoMarkHeld,
+            showAutoMarkHoldOption: showAutoMarkHoldOption,
+            onToggleAutoMarkHold: onToggleAutoMarkHold,
+          ),
+        ];
+
+        if (wide) {
+          return Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: actions,
+          );
+        }
+
+        // Phone: one compact horizontal strip — never wrap into multi-row chips.
+        return SizedBox(
+          height: 40,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            itemCount: actions.length,
+            separatorBuilder: (BuildContext context, int index) =>
+                const SizedBox(width: 4),
+            itemBuilder: (BuildContext context, int index) => actions[index],
+          ),
         );
       },
     );
@@ -1316,6 +1690,9 @@ class _OverflowActions extends StatelessWidget {
     this.onMarkFocused,
     this.onMarkOther,
     this.onOpenFind,
+    this.autoMarkHeld = false,
+    this.showAutoMarkHoldOption = false,
+    this.onToggleAutoMarkHold,
   });
 
   final bool wide;
@@ -1331,6 +1708,9 @@ class _OverflowActions extends StatelessWidget {
   final ValueChanged<AddressMatchScope>? onMarkFocused;
   final ValueChanged<AddressMatchScope>? onMarkOther;
   final VoidCallback? onOpenFind;
+  final bool autoMarkHeld;
+  final bool showAutoMarkHoldOption;
+  final VoidCallback? onToggleAutoMarkHold;
 
   bool get _hasSecondaryMenu => true;
 
@@ -1392,6 +1772,9 @@ class _OverflowActions extends StatelessWidget {
               onMarkFocused: onMarkFocused,
               onMarkOther: onMarkOther,
               onOpenFind: onOpenFind,
+              autoMarkHeld: autoMarkHeld,
+              showAutoMarkHoldOption: showAutoMarkHoldOption,
+              onToggleAutoMarkHold: onToggleAutoMarkHold,
             ),
         ],
       );
@@ -1411,6 +1794,9 @@ class _OverflowActions extends StatelessWidget {
       onMarkFocused: onMarkFocused,
       onMarkOther: onMarkOther,
       onOpenFind: onOpenFind,
+      autoMarkHeld: autoMarkHeld,
+      showAutoMarkHoldOption: showAutoMarkHoldOption,
+      onToggleAutoMarkHold: onToggleAutoMarkHold,
     );
   }
 }
@@ -1430,6 +1816,9 @@ class _MoreMenu extends StatelessWidget {
     this.onMarkFocused,
     this.onMarkOther,
     this.onOpenFind,
+    this.autoMarkHeld = false,
+    this.showAutoMarkHoldOption = false,
+    this.onToggleAutoMarkHold,
   });
 
   final MailMessage message;
@@ -1445,6 +1834,13 @@ class _MoreMenu extends StatelessWidget {
   final ValueChanged<AddressMatchScope>? onMarkFocused;
   final ValueChanged<AddressMatchScope>? onMarkOther;
   final VoidCallback? onOpenFind;
+
+  /// UI-P30: true when auto-mark-as-read is currently held for [message].
+  final bool autoMarkHeld;
+
+  /// UI-P30: true when "Hold auto-mark" should be offered in this menu.
+  final bool showAutoMarkHoldOption;
+  final VoidCallback? onToggleAutoMarkHold;
 
   Future<void> _print(BuildContext context) async {
     try {
@@ -1532,6 +1928,32 @@ class _MoreMenu extends StatelessWidget {
     }
   }
 
+  /// D6-6: sibling of [_saveEml] that exports the message as a PDF file.
+  Future<void> _savePdf(BuildContext context) async {
+    try {
+      final String? path = await saveMessageAsPdf(message);
+      if (!context.mounted) {
+        return;
+      }
+      if (path == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Save cancelled')),
+        );
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Saved PDF to $path')),
+      );
+    } catch (error) {
+      if (!context.mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Save PDF failed: $error')),
+      );
+    }
+  }
+
   Future<void> _openDetached(BuildContext context) async {
     try {
       await context
@@ -1568,6 +1990,8 @@ class _MoreMenu extends StatelessWidget {
               onMarkRead?.call();
             case 'mark_unread':
               onMarkUnread?.call();
+            case 'toggle_auto_mark_hold':
+              onToggleAutoMarkHold?.call();
             case 'find':
               onOpenFind?.call();
             case 'print':
@@ -1582,6 +2006,8 @@ class _MoreMenu extends StatelessWidget {
               });
             case 'save_eml':
               unawaited(_saveEml(context));
+            case 'save_pdf':
+              unawaited(_savePdf(context));
             case 'open_window':
               unawaited(_openDetached(context));
           }
@@ -1620,6 +2046,15 @@ class _MoreMenu extends StatelessWidget {
               ),
             );
           }
+          if (showAutoMarkHoldOption && onToggleAutoMarkHold != null) {
+            items.add(
+              CheckedPopupMenuItem<String>(
+                value: 'toggle_auto_mark_hold',
+                checked: autoMarkHeld,
+                child: const Text('Keep unread while reading'),
+              ),
+            );
+          }
           if (items.isNotEmpty) {
             items.add(const PopupMenuDivider());
           }
@@ -1639,6 +2074,12 @@ class _MoreMenu extends StatelessWidget {
             const PopupMenuItem<String>(
               value: 'save_eml',
               child: Text('Save as EML'),
+            ),
+          );
+          items.add(
+            const PopupMenuItem<String>(
+              value: 'save_pdf',
+              child: Text('Save as PDF'),
             ),
           );
           if (_ReadingPaneOptions.allowOpenInNewWindowOf(context)) {
@@ -1760,12 +2201,16 @@ class _AdaptiveAction extends StatelessWidget {
       child: IconButton(
         onPressed: onPressed,
         tooltip: label,
-        icon: Icon(icon, size: 20, color: foreground),
+        visualDensity: VisualDensity.compact,
+        padding: const EdgeInsets.all(6),
+        constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+        icon: Icon(icon, size: 18, color: foreground),
         style: IconButton.styleFrom(
           side: BorderSide(color: border),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(8),
           ),
+          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
         ),
       ),
     );

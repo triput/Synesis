@@ -2,5 +2,6 @@
   "SYNESIS_GRAPH_CLIENT_ID": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
   "SYNESIS_GRAPH_TENANT": "common",
   "SYNESIS_GOOGLE_CLIENT_ID": "xxxxxxxx.apps.googleusercontent.com",
+  "SYNESIS_GOOGLE_ANDROID_CLIENT_ID": "xxxxxxxx.apps.googleusercontent.com",
   "SYNESIS_GOOGLE_CLIENT_SECRET": ""
 }

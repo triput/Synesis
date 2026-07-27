@@ -12,6 +12,7 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:synesis/mime/mime.dart';
+import 'package:enough_mail/enough_mail.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -80,6 +81,26 @@ void main() {
       );
       expect(mime, contains('Content-Transfer-Encoding: base64'));
       expect(mime, contains(base64.encode(utf8.encode('attach-bytes'))));
+    });
+
+    // DEF-048: enough_mail SmtpClient.sendMessage reads recipientAddresses
+    // from the parsed MimeMessage unless recipients: is passed. Our hand-built
+    // MIME includes a To: header as text, but parseFromData does not populate
+    // to/cc/bcc address lists — documenting that quirk so sendEnvelope must
+    // keep passing recipients explicitly.
+    test('parseFromData does not populate recipientAddresses (DEF-048)', () {
+      final Uint8List bytes = buildMultipartMessage(
+        const OutgoingEnvelope(
+          from: 'me@byte.io',
+          to: <String>['you@byte.io'],
+          cc: <String>['cc@byte.io'],
+          subject: 'Hello',
+          textBody: 'Plain body',
+        ),
+      );
+      final MimeMessage parsed = MimeMessage.parseFromData(bytes);
+      expect(utf8.decode(bytes), contains('To: you@byte.io'));
+      expect(parsed.recipientAddresses, isEmpty);
     });
   });
 }

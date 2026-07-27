@@ -2,9 +2,9 @@
 // File: lib/mailbox/message_action_service.dart
 // Description: Optimistic mailbox mutations with enqueue-only remote sync
 // Component: Data / Sync
-// Version: 1.0 (Gold Master)
+// Version: 1.3 (Gold Master)
 // Created: 2026-07-17
-// Last Update: 2026-07-17
+// Last Update: 2026-07-23
 // ==============================================================================
 
 import 'dart:async';
@@ -135,6 +135,60 @@ class MessageActionService {
       isRead: !unread,
       folders: currentState().folders,
     );
+    if (softErrors.isNotEmpty) {
+      apply(MailboxMutationResult(errorMessage: softErrors.first));
+    }
+  }
+
+  /// Marks every message in a folder read or unread (UI-P23).
+  ///
+  /// Works without opening the folder first: queries the repository
+  /// directly for messages needing the change (filtered to the opposite
+  /// read state for efficiency), applies the bulk mutation, enqueues
+  /// remote push jobs where a provider id exists, then requests a full
+  /// [MailboxMutationResult.shouldRefresh] so folder unread badges and any
+  /// currently-visible list recount from the database.
+  Future<void> markFolderUnread({
+    required String accountId,
+    required String folderId,
+    required bool unread,
+    required MailboxMutationApply apply,
+  }) async {
+    final List<MailMessage> targets = await _repository.listMessages(
+      MessageQuery(
+        accountId: accountId,
+        folderId: folderId,
+        // Messages needing the change currently sit at the opposite state.
+        userFilter: MessageViewFilter(unread: !unread),
+        includeDrafts: true,
+        includeTrashed: true,
+      ),
+    );
+    if (targets.isEmpty) {
+      return;
+    }
+    final List<String> ids = targets
+        .map((MailMessage message) => message.id)
+        .toList(growable: false);
+    try {
+      await _repository.setUnreadBulk(ids, unread);
+    } catch (error) {
+      apply(
+        MailboxMutationResult(
+          errorMessage: 'Could not update folder read state: $error',
+        ),
+      );
+      return;
+    }
+
+    final List<MailFolder> folders = await _repository.listFolders();
+    final List<String> softErrors = await _enqueueReadState(
+      targets,
+      isRead: !unread,
+      folders: folders,
+    );
+
+    await apply(const MailboxMutationResult(shouldRefresh: true));
     if (softErrors.isNotEmpty) {
       apply(MailboxMutationResult(errorMessage: softErrors.first));
     }
@@ -321,11 +375,18 @@ class MessageActionService {
     }
   }
 
-  /// Local-only snooze for the current selection. Does not enqueue sync jobs.
+  /// Snoozes the current selection. `snoozed_until` remains the local
+  /// source of truth; when the account's provider reports
+  /// [MailCapabilities.supportsServerSnooze] (D6-5, best-effort), the
+  /// message is additionally parked in the account's Snoozed folder both
+  /// locally and via an enqueued remote move job so other clients see it
+  /// leave the inbox too. Local snooze state applies even if that remote
+  /// move cannot be resolved or fails.
   Future<void> snoozeSelected(
     MailboxState state, {
     required int snoozedUntil,
     required MailboxMutationApply apply,
+    required MailboxState Function() currentState,
   }) async {
     final List<MailMessage> targets = _actionTargets(state);
     if (targets.isEmpty) {
@@ -337,8 +398,16 @@ class MessageActionService {
       snoozedUntil,
       apply: apply,
     );
+    await _moveSnoozedTargetsToServerFolder(
+      targets,
+      apply: apply,
+      currentState: currentState,
+    );
   }
 
+  /// Clears an active snooze early. Mirrors [snoozeSelected]: for accounts
+  /// with server-side snooze support, best-effort moves any message parked
+  /// in the Snoozed folder back to Inbox (D6-5).
   Future<void> clearSnoozeSelected(
     MailboxState state, {
     required MailboxMutationApply apply,
@@ -353,6 +422,167 @@ class MessageActionService {
       null,
       apply: apply,
     );
+    await _moveServerSnoozedTargetsBackToInbox(targets);
+  }
+
+  /// D6-5: clears local snoozes that have expired and, for accounts with
+  /// [MailCapabilities.supportsServerSnooze], best-effort moves any message
+  /// sitting in the account's Snoozed folder back to Inbox (local move +
+  /// enqueued remote move). Callers (mailbox refresh / resurface timer)
+  /// should use this instead of calling [MailRepository.clearExpiredSnoozes]
+  /// directly so server-parked snoozes resurface consistently.
+  Future<void> resurfaceExpiredSnoozes({int? nowMs}) async {
+    final int now = nowMs ?? DateTime.now().millisecondsSinceEpoch;
+    final List<MailMessage> all = await _repository.listMessages(
+      const MessageQuery(
+        excludeSnoozed: false,
+        includeDrafts: true,
+        includeTrashed: true,
+      ),
+    );
+    final List<MailMessage> expired = all
+        .where(
+          (MailMessage message) =>
+              message.snoozedUntil != null && message.snoozedUntil! <= now,
+        )
+        .toList(growable: false);
+    if (expired.isNotEmpty) {
+      await _moveServerSnoozedTargetsBackToInbox(expired);
+    }
+    await _repository.clearExpiredSnoozes(nowMs: now);
+  }
+
+  /// D6-5: best-effort server-side park. Groups [targets] by account and,
+  /// for each account whose provider reports
+  /// [MailCapabilities.supportsServerSnooze], resolves (or, with
+  /// confirmation, creates) the Snoozed folder via [ensureSystemFolder] and
+  /// moves the messages into it — mirroring [archiveSelected]. Silently
+  /// skips accounts without server-snooze support, without a resolvable
+  /// provider, or where the move fails; local snooze state already applied
+  /// by [_setSnoozedBulk] remains authoritative.
+  Future<void> _moveSnoozedTargetsToServerFolder(
+    List<MailMessage> targets, {
+    required MailboxMutationApply apply,
+    required MailboxState Function() currentState,
+  }) async {
+    final Map<String, List<MailMessage>> byAccount =
+        <String, List<MailMessage>>{};
+    for (final MailMessage message in targets) {
+      byAccount
+          .putIfAbsent(message.accountId, () => <MailMessage>[])
+          .add(message);
+    }
+    for (final MapEntry<String, List<MailMessage>> entry
+        in byAccount.entries) {
+      final String accountId = entry.key;
+      if (!await _accountSupportsServerSnooze(accountId)) {
+        continue;
+      }
+      final MailFolder? snoozedFolder = await ensureSystemFolder(
+        state: currentState(),
+        accountId: accountId,
+        role: 'snoozed',
+        apply: apply,
+      );
+      if (snoozedFolder == null) {
+        continue;
+      }
+      final List<MailMessage> accountTargets = entry.value;
+      try {
+        await _repository.moveMessagesLocal(
+          accountTargets
+              .map((MailMessage message) => message.id)
+              .toList(growable: false),
+          snoozedFolder.id,
+        );
+        await _enqueueMove(
+          accountTargets,
+          targetFolder: snoozedFolder,
+          action: 'move',
+          folders: currentState().folders,
+        );
+        await apply(const MailboxMutationResult(shouldRefresh: true));
+      } catch (_) {
+        // Best-effort: local snooze already applied via _setSnoozedBulk
+        // even if the server-side Snoozed-folder move fails.
+      }
+    }
+  }
+
+  /// D6-5: best-effort move-back companion to
+  /// [_moveSnoozedTargetsToServerFolder]. For accounts with server-snooze
+  /// support, moves any of [targets] currently sitting in the Snoozed
+  /// folder back to Inbox (local move + enqueued remote move). No-op per
+  /// account when the Snoozed/Inbox folder cannot be resolved, none of the
+  /// targets are parked there, or the account is local-only.
+  Future<void> _moveServerSnoozedTargetsBackToInbox(
+    List<MailMessage> targets,
+  ) async {
+    final Map<String, List<MailMessage>> byAccount =
+        <String, List<MailMessage>>{};
+    for (final MailMessage message in targets) {
+      byAccount
+          .putIfAbsent(message.accountId, () => <MailMessage>[])
+          .add(message);
+    }
+    for (final MapEntry<String, List<MailMessage>> entry
+        in byAccount.entries) {
+      final String accountId = entry.key;
+      if (!await _accountSupportsServerSnooze(accountId)) {
+        continue;
+      }
+      final MailFolder? snoozedFolder = await _repository.resolveFolderByRole(
+        accountId,
+        'snoozed',
+      );
+      if (snoozedFolder == null) {
+        continue;
+      }
+      final List<MailMessage> parked = entry.value
+          .where((MailMessage message) => message.folderId == snoozedFolder.id)
+          .toList(growable: false);
+      if (parked.isEmpty) {
+        continue;
+      }
+      final MailFolder? inbox = await _repository.resolveFolderByRole(
+        accountId,
+        'inbox',
+      );
+      if (inbox == null) {
+        continue;
+      }
+      try {
+        await _repository.moveMessagesLocal(
+          parked.map((MailMessage message) => message.id).toList(growable: false),
+          inbox.id,
+        );
+        await _enqueueMove(
+          parked,
+          targetFolder: inbox,
+          action: 'move',
+          folders: await _repository.listFolders(),
+        );
+      } catch (_) {
+        // Best-effort: local snooze state already cleared even if the
+        // remote move-back fails.
+      }
+    }
+  }
+
+  /// D6-5: resolves the account's provider solely to read
+  /// [MailCapabilities.supportsServerSnooze], disposing it immediately
+  /// afterward. Returns false when no provider can be resolved (e.g.
+  /// missing credentials) so server-side snooze is simply skipped.
+  Future<bool> _accountSupportsServerSnooze(String accountId) async {
+    final MailProvider? provider = await _resolveProvider(accountId);
+    if (provider == null) {
+      return false;
+    }
+    try {
+      return provider.capabilities.supportsServerSnooze;
+    } finally {
+      await provider.dispose();
+    }
   }
 
   Future<void> _setSnoozedBulk(
@@ -504,6 +734,62 @@ class MessageActionService {
       trashedAt: DateTime.now().millisecondsSinceEpoch,
       apply: apply,
       currentState: currentState,
+    );
+  }
+
+  /// ID-targeted archive for callers without a live [MailboxState] snapshot
+  /// (D6-8: Windows toast Archive action). Resolves the message directly
+  /// from the repository, moves it to the account's archive folder, and
+  /// enqueues the same remote sync job the in-app archive path uses. Silent
+  /// no-op if the message or its archive folder cannot be resolved — there
+  /// is no UI surface here to confirm creating a missing system folder.
+  Future<void> archiveMessageById(String messageId) async {
+    await _moveMessageByRoleStandalone(
+      messageId,
+      role: 'archive',
+      action: 'move',
+    );
+  }
+
+  /// ID-targeted soft-delete (move to Trash) for callers without a live
+  /// [MailboxState] snapshot (D6-8: Windows toast Delete action). See
+  /// [archiveMessageById] for the resolution/no-op semantics.
+  Future<void> deleteMessageById(String messageId) async {
+    await _moveMessageByRoleStandalone(
+      messageId,
+      role: 'trash',
+      action: 'delete',
+      trashedAt: DateTime.now().millisecondsSinceEpoch,
+    );
+  }
+
+  Future<void> _moveMessageByRoleStandalone(
+    String messageId, {
+    required String role,
+    required String action,
+    int? trashedAt,
+  }) async {
+    final MailMessage? message = await _repository.getMessage(messageId);
+    if (message == null) {
+      return;
+    }
+    final MailFolder? destination = await _repository.resolveFolderByRole(
+      message.accountId,
+      role,
+    );
+    if (destination == null) {
+      return;
+    }
+    await _repository.moveMessagesLocal(
+      <String>[message.id],
+      destination.id,
+      trashedAt: trashedAt,
+    );
+    await _enqueueMove(
+      <MailMessage>[message],
+      targetFolder: destination,
+      action: action,
+      folders: await _repository.listFolders(),
     );
   }
 
@@ -1341,6 +1627,7 @@ class MessageActionService {
       case 'junkemail':
       case 'spam':
       case 'archive':
+      case 'snoozed':
         return true;
       default:
         return false;

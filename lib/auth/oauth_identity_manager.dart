@@ -4,7 +4,7 @@
 // Component: Auth / Integration
 // Version: 1.0 (Gold Master)
 // Created: 2026-07-14
-// Last Update: 2026-07-17
+// Last Update: 2026-07-23
 // ==============================================================================
 
 import 'dart:convert';
@@ -70,15 +70,38 @@ class GraphAuthConfig {
 
 /// Google Cloud OAuth client parameters for Gmail IMAP/SMTP XOAUTH2.
 class GoogleAuthConfig {
-  const GoogleAuthConfig({this.clientId = '', this.clientSecret = ''});
+  const GoogleAuthConfig({
+    this.clientId = '',
+    this.androidClientId = '',
+    this.clientSecret = '',
+  });
 
   factory GoogleAuthConfig.fromEnvironment() => const GoogleAuthConfig(
     clientId: String.fromEnvironment('SYNESIS_GOOGLE_CLIENT_ID'),
+    androidClientId: String.fromEnvironment(
+      'SYNESIS_GOOGLE_ANDROID_CLIENT_ID',
+    ),
     clientSecret: String.fromEnvironment('SYNESIS_GOOGLE_CLIENT_SECRET'),
   );
 
   static const String desktopRedirectUri = 'http://127.0.0.1:8766/callback';
+
+  /// Legacy custom scheme (blocked by Google policy for new Android clients).
+  @Deprecated('Use androidReverseClientRedirectUri')
   static const String androidRedirectUri = 'synesis://google-auth';
+
+  /// Google-approved Android redirect: `com.googleusercontent.apps.<PREFIX>:/oauth2redirect`.
+  static String androidReverseClientRedirectUri(String clientId) {
+    final String id = clientId.trim();
+    if (id.isEmpty) {
+      return 'synesis://google-auth';
+    }
+    const String suffix = '.apps.googleusercontent.com';
+    final String prefix = id.endsWith(suffix)
+        ? id.substring(0, id.length - suffix.length)
+        : id;
+    return 'com.googleusercontent.apps.$prefix:/oauth2redirect';
+  }
 
   /// Full mail scope for classic IMAP/SMTP XOAUTH2, plus OpenID profile claims.
   static const List<String> scopes = <String>[
@@ -88,15 +111,40 @@ class GoogleAuthConfig {
     'https://mail.google.com/',
   ];
 
+  /// Desktop / default Google OAuth client ID.
   final String clientId;
+
+  /// Android-specific client ID (required for phone OAuth; Desktop client
+  /// + custom scheme is blocked by Google policy).
+  final String androidClientId;
+
   final String clientSecret;
 
-  /// Empty [clientId] means Google OAuth is not configured for this build.
-  bool get isConfigured => clientId.trim().isNotEmpty;
+  /// Client ID for the current platform (Android prefers [androidClientId]).
+  String get platformClientId {
+    if (Platform.isAndroid) {
+      final String android = androidClientId.trim();
+      if (android.isNotEmpty) {
+        return android;
+      }
+    }
+    return clientId.trim();
+  }
+
+  /// Desktop secret only. Android OAuth clients are public/secretless.
+  String get platformClientSecret {
+    if (Platform.isAndroid) {
+      return '';
+    }
+    return clientSecret.trim();
+  }
+
+  /// Empty platform client ID means Google OAuth is not configured.
+  bool get isConfigured => platformClientId.isNotEmpty;
 
   String get redirectUri {
     if (Platform.isAndroid) {
-      return androidRedirectUri;
+      return androidReverseClientRedirectUri(platformClientId);
     }
     return desktopRedirectUri;
   }
@@ -167,9 +215,8 @@ class OAuthIdentityManager {
            redirectCapture ?? createPlatformOAuthRedirectCapture(),
        _googleRedirectCapture =
            googleRedirectCapture ??
-           createPlatformOAuthRedirectCapture(
-             loopbackPort: 8766,
-             appLinkHost: 'google-auth',
+           createGoogleOAuthRedirectCapture(
+             androidRedirectUri: googleConfig.redirectUri,
            ),
        _clock = clock ?? DateTime.now;
 
@@ -261,6 +308,22 @@ class OAuthIdentityManager {
         value: expiresAt.toUtc().millisecondsSinceEpoch.toString(),
       );
     }
+  }
+
+  /// True when any Google access/refresh token is stored for [credentialsRef].
+  Future<bool> hasGoogleCredentials(String credentialsRef) async {
+    final String? access = await _credentials.readSecret(
+      credentialsRef: credentialsRef,
+      name: _googleAccessTokenName,
+    );
+    if (access != null && access.trim().isNotEmpty) {
+      return true;
+    }
+    final String? refresh = await _credentials.readSecret(
+      credentialsRef: credentialsRef,
+      name: _googleRefreshTokenName,
+    );
+    return refresh != null && refresh.trim().isNotEmpty;
   }
 
   /// Returns the current opaque Graph access token without refresh.
@@ -494,7 +557,7 @@ class OAuthIdentityManager {
     final String codeChallenge = _codeChallengeS256(codeVerifier);
     final Uri authorizeUrl = googleConfig.authorizationEndpoint.replace(
       queryParameters: <String, String>{
-        'client_id': googleConfig.clientId.trim(),
+        'client_id': googleConfig.platformClientId,
         'response_type': 'code',
         'redirect_uri': googleConfig.redirectUri,
         'scope': GoogleAuthConfig.scopes.join(' '),
@@ -502,7 +565,10 @@ class OAuthIdentityManager {
         'code_challenge': codeChallenge,
         'code_challenge_method': 'S256',
         'access_type': 'offline',
-        'prompt': 'consent',
+        // select_account: force chooser so a second Gmail is pickable
+        // (consent alone reuses the phone's primary Google session).
+        // consent: keep offline refresh tokens on re-grant.
+        'prompt': 'select_account consent',
       },
     );
 
@@ -635,13 +701,13 @@ class OAuthIdentityManager {
     required String codeVerifier,
   }) {
     final Map<String, String> body = <String, String>{
-      'client_id': googleConfig.clientId.trim(),
+      'client_id': googleConfig.platformClientId,
       'grant_type': 'authorization_code',
       'code': code,
       'redirect_uri': googleConfig.redirectUri,
       'code_verifier': codeVerifier,
     };
-    final String secret = googleConfig.clientSecret.trim();
+    final String secret = googleConfig.platformClientSecret;
     if (secret.isNotEmpty) {
       body['client_secret'] = secret;
     }
@@ -654,11 +720,11 @@ class OAuthIdentityManager {
 
   Future<_TokenResponse> _exchangeGoogleRefreshToken(String refreshToken) {
     final Map<String, String> body = <String, String>{
-      'client_id': googleConfig.clientId.trim(),
+      'client_id': googleConfig.platformClientId,
       'grant_type': 'refresh_token',
       'refresh_token': refreshToken,
     };
-    final String secret = googleConfig.clientSecret.trim();
+    final String secret = googleConfig.platformClientSecret;
     if (secret.isNotEmpty) {
       body['client_secret'] = secret;
     }

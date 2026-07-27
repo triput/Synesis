@@ -2,9 +2,9 @@
 // File: lib/protocol/imap_smtp_mail_provider.dart
 // Description: IMAP and SMTP implementation of the remote mail contract.
 // Component: Protocol / Integration
-// Version: 1.0 (Gold Master)
+// Version: 1.2 (Gold Master)
 // Created: 2026-07-14
-// Last Update: 2026-07-18
+// Last Update: 2026-07-24
 // ==============================================================================
 
 import 'dart:async';
@@ -142,6 +142,10 @@ class ImapSmtpMailProvider extends MailProvider {
         supportsMove: true,
         supportsDelete: true,
         supportsAttachments: true,
+        // D6-5: snooze stays local-only on IMAP (no reliable cross-client
+        // "Snoozed" folder convention) — explicit for clarity even though
+        // this matches MailCapabilities' default.
+        supportsServerSnooze: false,
       );
 
   @override
@@ -361,7 +365,10 @@ class ImapSmtpMailProvider extends MailProvider {
         builder.bcc = bccAddresses;
       }
       builtMessage = builder.buildMimeMessage();
-      final SmtpResponse response = await smtp.sendMessage(builtMessage);
+      final SmtpResponse response = await smtp.sendMessage(
+        builtMessage,
+        from: MailAddress(null, user),
+      );
       if (!response.isOkStatus) {
         throw ProtocolException('SMTP server rejected the message: $response');
       }
@@ -409,14 +416,20 @@ class ImapSmtpMailProvider extends MailProvider {
     final MimeMessage builtMessage = MimeMessage.parseFromData(mimeBytes);
     final SmtpClient smtp = SmtpClient(_smtpClientDomain());
     try {
-      await smtp.connectToServer(
-        smtpHost,
-        smtpPort,
-        isSecure: smtpPort == 465,
+      await _smtpStep(
+        smtp.connectToServer(
+          smtpHost,
+          smtpPort,
+          isSecure: smtpPort == 465,
+        ),
+        'connect',
       );
-      await smtp.ehlo();
+      await _smtpStep(smtp.ehlo(), 'EHLO');
       if (smtpPort != 465 && smtp.serverInfo.supportsStartTls) {
-        final SmtpResponse tlsResponse = await smtp.startTls();
+        final SmtpResponse tlsResponse = await _smtpStep(
+          smtp.startTls(),
+          'STARTTLS',
+        );
         if (!tlsResponse.isOkStatus) {
           throw ProtocolException(
             'SMTP STARTTLS failed: $tlsResponse',
@@ -424,20 +437,60 @@ class ImapSmtpMailProvider extends MailProvider {
         }
       }
       if (authMode == ImapAuthMode.xoauth2) {
-        await smtp.authenticate(user, password, AuthMechanism.xoauth2);
+        await _smtpStep(
+          smtp.authenticate(user, password, AuthMechanism.xoauth2),
+          'authenticate',
+        );
       } else {
-        await smtp.authenticate(user, password);
+        await _smtpStep(
+          smtp.authenticate(user, password),
+          'authenticate',
+        );
       }
-      final SmtpResponse response = await smtp.sendMessage(builtMessage);
+      // DEF-048: MimeMessage.parseFromData on our hand-built MIME does not
+      // populate enough_mail's recipientAddresses (To/Cc/Bcc header parse gap).
+      // sendMessage then throws the client-side "500 no recipients" before any
+      // real SMTP RCPT. Pass envelope recipients explicitly.
+      final List<MailAddress> rcptTo = <MailAddress>[
+        ..._mailAddresses(normalized.to),
+        ..._mailAddresses(normalized.cc),
+        ..._mailAddresses(normalized.bcc),
+      ];
+      if (rcptTo.isEmpty) {
+        throw const ProtocolException('A recipient is required to send mail.');
+      }
+      final SmtpResponse response = await _smtpStep(
+        smtp.sendMessage(
+          builtMessage,
+          from: MailAddress(null, normalized.from),
+          recipients: rcptTo,
+        ),
+        'send',
+      );
       if (!response.isOkStatus) {
         throw ProtocolException('SMTP server rejected the message: $response');
       }
     } catch (error) {
       throw _protocolError('Unable to send SMTP mail.', error);
     } finally {
-      await smtp.disconnect();
+      try {
+        await smtp.disconnect().timeout(const Duration(seconds: 5));
+      } on Object {
+        // Best-effort close.
+      }
     }
     await _appendToSentBestEffort(builtMessage);
+  }
+
+  static const Duration _smtpStepTimeout = Duration(seconds: 45);
+
+  Future<T> _smtpStep<T>(Future<T> future, String label) {
+    return future.timeout(
+      _smtpStepTimeout,
+      onTimeout: () => throw TimeoutException(
+        'SMTP $label timed out after ${_smtpStepTimeout.inSeconds}s',
+      ),
+    );
   }
 
   List<MailAddress> _mailAddresses(List<String> addresses) {

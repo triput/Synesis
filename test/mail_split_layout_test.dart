@@ -4,7 +4,7 @@
 // Component: Test
 // Version: 1.0 (Gold Master)
 // Created: 2026-07-17
-// Last Update: 2026-07-17
+// Last Update: 2026-07-23
 // ==============================================================================
 
 import 'package:synesis/settings/app_settings_state.dart';
@@ -23,24 +23,28 @@ Widget _harness({
     home: MediaQuery(
       data: MediaQueryData(size: size),
       child: Scaffold(
-        body: MailSplitLayout(
-          position: position,
-          visualFocusActive: visualFocusActive,
-          showSidebar: showSidebar,
-          sidebarWidth: 200,
-          listWidth: 320,
-          forceHorizontalSplit: forceHorizontalSplit,
-          sidebar: const ColoredBox(
-            color: Colors.blue,
-            child: Center(child: Text('sidebar')),
-          ),
-          listPane: const ColoredBox(
-            color: Colors.green,
-            child: Center(child: Text('list')),
-          ),
-          readingPane: const ColoredBox(
-            color: Colors.orange,
-            child: Center(child: Text('reading')),
+        body: SizedBox(
+          width: size.width,
+          height: size.height,
+          child: MailSplitLayout(
+            position: position,
+            visualFocusActive: visualFocusActive,
+            showSidebar: showSidebar,
+            sidebarWidth: 200,
+            listWidth: 320,
+            forceHorizontalSplit: forceHorizontalSplit,
+            sidebar: const ColoredBox(
+              color: Colors.blue,
+              child: Center(child: Text('sidebar')),
+            ),
+            listPane: const ColoredBox(
+              color: Colors.green,
+              child: Center(child: Text('list')),
+            ),
+            readingPane: const ColoredBox(
+              color: Colors.orange,
+              child: Center(child: Text('reading')),
+            ),
           ),
         ),
       ),
@@ -168,7 +172,31 @@ void main() {
         expect(find.byKey(MailSplitLayoutKeys.horizontalSplit), findsOneWidget);
         expect(find.byKey(MailSplitLayoutKeys.verticalSplit), findsNothing);
         expect(find.byKey(MailSplitLayoutKeys.list), findsOneWidget);
-        expect(find.byKey(MailSplitLayoutKeys.reading), findsOneWidget);
+        // List fills remaining width; reading is full-bleed via Visual Focus.
+        expect(find.byKey(MailSplitLayoutKeys.reading), findsNothing);
+        expect(find.text('list'), findsOneWidget);
+        expect(find.text('reading'), findsNothing);
+      },
+    );
+
+    testWidgets(
+      'portrait mobile does not overflow with desktop listWidth',
+      (WidgetTester tester) async {
+        await tester.pumpWidget(
+          _harness(
+            position: ReadingPanePosition.right,
+            visualFocusActive: false,
+            showSidebar: false,
+            forceHorizontalSplit: true,
+            size: const Size(360, 780),
+          ),
+        );
+
+        expect(tester.takeException(), isNull);
+        final Size listSize = tester.getSize(
+          find.byKey(MailSplitLayoutKeys.list),
+        );
+        expect(listSize.width, lessThanOrEqualTo(360));
       },
     );
   });
@@ -181,6 +209,29 @@ void main() {
           home: MediaQuery(
             data: const MediaQueryData(
               size: Size(390, 844),
+            ),
+            child: Builder(
+              builder: (BuildContext context) {
+                result = isPortraitMobileLayout(context);
+                return const SizedBox.shrink();
+              },
+            ),
+          ),
+        ),
+      );
+      expect(result, isTrue);
+    });
+
+    testWidgets('true when keyboard shrinks height below width', (
+      WidgetTester tester,
+    ) async {
+      // adjustResize: 360×780 → ~360×320; Orientation would be landscape.
+      late bool result;
+      await tester.pumpWidget(
+        MaterialApp(
+          home: MediaQuery(
+            data: const MediaQueryData(
+              size: Size(360, 320),
             ),
             child: Builder(
               builder: (BuildContext context) {

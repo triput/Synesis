@@ -2,9 +2,9 @@
 // File: lib/ui/mailbox/mailbox_cubit.dart
 // Description: Cubit façade for mailbox navigation, selection, and refresh
 // Component: Bloc / UI
-// Version: 1.4 (Gold Master)
+// Version: 1.6 (Gold Master)
 // Created: 2026-07-14
-// Last Update: 2026-07-17
+// Last Update: 2026-07-23
 // ==============================================================================
 
 import 'dart:async';
@@ -77,7 +77,7 @@ class MailboxCubit extends Cubit<MailboxState> {
     }
     emit(state.copyWith(isLoading: true, clearError: true));
     try {
-      await _repository.clearExpiredSnoozes();
+      await _actions.resurfaceExpiredSnoozes();
       await _repository.recountUnreadCounts();
       final accounts = await _repository.listAccounts();
       final folders = await _repository.listFolders();
@@ -170,6 +170,10 @@ class MailboxCubit extends Cubit<MailboxState> {
         clearSelectedMessageIds: true,
         focusFilter: FocusBucket.focused,
         virtualView: MailboxVirtualView.none,
+        expandedAccountIds: <String>{
+          ...state.expandedAccountIds,
+          accountId,
+        },
       ),
     );
     await refresh();
@@ -281,6 +285,22 @@ class MailboxCubit extends Cubit<MailboxState> {
     emit(state.copyWith(clearSelectedMessageIds: true));
   }
 
+  /// Clears the primary selection (and sticky preview). Used for phone
+  /// back-navigation from the full-bleed reading pane to the list.
+  ///
+  /// Always emits a clear so phone shells that ignore the first-row
+  /// [MailboxState.selectedMessage] fallback return to the list reliably.
+  void clearSelectedMessage() {
+    emit(
+      state.copyWith(
+        clearSelectedMessageId: true,
+        clearSelectedMessageIds: true,
+        clearStickySelectedMessage: true,
+        clearBodyError: true,
+      ),
+    );
+  }
+
   Future<void> setUnread(String messageId, bool unread) async {
     await _actions.setUnread(
       state,
@@ -298,6 +318,24 @@ class MailboxCubit extends Cubit<MailboxState> {
       unread,
       apply: _applyMutation,
       currentState: () => state,
+    );
+  }
+
+  /// Marks every message in [folderId] read or unread (UI-P23).
+  ///
+  /// Does not require the folder to be open/selected first — queries the
+  /// repository directly, then triggers a full refresh so unread badges
+  /// across the sidebar recount.
+  Future<void> markFolderUnread({
+    required String accountId,
+    required String folderId,
+    required bool unread,
+  }) async {
+    await _actions.markFolderUnread(
+      accountId: accountId,
+      folderId: folderId,
+      unread: unread,
+      apply: _applyMutation,
     );
   }
 
@@ -357,6 +395,7 @@ class MailboxCubit extends Cubit<MailboxState> {
       state,
       snoozedUntil: snoozedUntil,
       apply: _applyMutation,
+      currentState: () => state,
     );
     await _scheduleSnoozeResurface();
   }

@@ -29,6 +29,7 @@ Synesis supports **Microsoft (Graph)**, **Google (OAuth → Gmail IMAP/SMTP)**, 
 
 - **Sidebar** — per-account folders plus virtual views: **Starred**, **Pinned**, **Snoozed**, **Trash**.
 - **Unified Inbox** — merges all accounts when selected.
+- **Android (phone)** — swipe from the left edge opens the full drawer; the title-bar menu and list **Show folders** open a folder-picker sheet for the active account (account chips live in the drawer header).
 - **Threading** — on by default; toggle flat list in Appearance.
 - **Date sections** — Today, Yesterday, This week, … are **grouping headers**, not separate filter modes.
 - **Unread badges** — recount from local SQLite after sync.
@@ -158,7 +159,7 @@ Account wipe does **not** delete mail on your provider's server.
 
 | Topic | Windows | Android |
 | --- | --- | --- |
-| **Navigation** | Keyboard shortcuts (`?` for help), mouse, tray | Touch, back gesture, swipes |
+| **Navigation** | Keyboard shortcuts (`?` for help), mouse, tray | Touch, back gesture, swipes; **Show folders** / title-bar menu → folder-picker sheet |
 | **Reading pane** | Split layouts; detached message window (one) | Portrait pager; adaptive toolbar at ≥520px |
 | **Compose / search** | Ctrl+N, Ctrl+Shift+F | Title-bar actions |
 | **Notifications** | Native toast | Notification channel + permission |

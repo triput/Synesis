@@ -2,9 +2,9 @@
 // File: lib/main.dart
 // Description: Application entrypoint; opens database and seeds demo mail
 // Component: UI
-// Version: 1.1 (Gold Master)
+// Version: 1.3 (Gold Master)
 // Created: 2026-07-14
-// Last Update: 2026-07-18
+// Last Update: 2026-07-23
 // ==============================================================================
 
 import 'dart:async';
@@ -19,6 +19,8 @@ import 'package:synesis/auth/secure_credential_store.dart';
 import 'package:synesis/desktop/detached_message_app.dart';
 import 'package:synesis/desktop/detached_message_window_controller.dart';
 import 'package:synesis/desktop/windows_desktop_controller.dart';
+import 'package:synesis/domain/models.dart';
+import 'package:synesis/mailbox/message_action_service.dart';
 import 'package:synesis/notifications/android_notification_adapter.dart';
 import 'package:synesis/notifications/app_foreground_tracker.dart';
 import 'package:synesis/notifications/notification_platform.dart';
@@ -40,6 +42,7 @@ import 'package:window_manager/window_manager.dart';
 
 Future<void> main(List<String> args) async {
   WidgetsFlutterBinding.ensureInitialized();
+  final SharedPreferences prefs = await SharedPreferences.getInstance();
 
   if (!kIsWeb && Platform.isWindows) {
     final WindowController windowController =
@@ -65,11 +68,18 @@ Future<void> main(List<String> args) async {
           );
           final SynesisDatabase database = SynesisDatabase.open();
           final DriftMailRepository repository = DriftMailRepository(database);
+          final AppSettingsCubit detachedSettingsCubit = AppSettingsCubit(
+            prefs,
+          );
+          final int detachedAutoMarkAsReadSeconds =
+              detachedSettingsCubit.state.autoMarkAsReadSeconds;
+          unawaited(detachedSettingsCubit.close());
           runApp(
             DetachedMessageApp(
               repository: repository,
               windowController: windowController,
               initialMessageId: decoded['messageId'] as String,
+              autoMarkAsReadSeconds: detachedAutoMarkAsReadSeconds,
             ),
           );
           return;
@@ -80,7 +90,6 @@ Future<void> main(List<String> args) async {
     }
   }
 
-  final SharedPreferences prefs = await SharedPreferences.getInstance();
   final SynesisDatabase database = SynesisDatabase.open();
   final DriftMailRepository repository = DriftMailRepository(database);
   final SecureCredentialStore credentialStore = SecureCredentialStore();
@@ -120,7 +129,39 @@ Future<void> main(List<String> args) async {
   final NotificationPlatform notificationPlatform = _buildNotificationPlatform(
     desktopController: desktopController,
   );
-  final NotificationService notificationService = NotificationService(
+
+  // `notificationService` is referenced by `syncEngine.onNewUnread` below
+  // before it exists — declared `late final` and assigned once
+  // `toastActionService` (which needs `syncEngine` itself) is ready. Safe:
+  // the closure only runs once real sync activity occurs, well after both
+  // are assigned.
+  late final NotificationService notificationService;
+
+  final SyncEngine syncEngine = SyncEngine(
+    repository: repository,
+    resolveProvider: providerRegistry.resolve,
+    trashRetentionDays: () => settingsCubit.state.trashRetentionDays,
+    deviceRetentionDays: () => settingsCubit.state.retentionDays,
+    pushOnCellular: () => settingsCubit.state.pushOnCellular,
+    onNewUnread: (List<MailMessage> messages) =>
+        notificationService.onNewMail(messages),
+  );
+  syncEngine.startNetworkWatcher();
+
+  // D6-8: dedicated service for Windows toast Archive/Delete actions. These
+  // fire outside the widget tree, so they cannot reach the live
+  // MailboxCubit-bound MessageActionService created in `app.dart`. Mutating
+  // the shared `repository` here is safe — the mailbox UI's
+  // `attachDbWatch()` (see `app.dart`) already refreshes whenever the
+  // repository's change stream fires, exactly as it does for any in-app
+  // archive/delete action.
+  final MessageActionService toastActionService = MessageActionService(
+    repository: repository,
+    resolveProvider: providerRegistry.resolve,
+    syncEngine: syncEngine,
+  );
+
+  notificationService = NotificationService(
     settings: AppSettingsNotificationSource(settingsCubit),
     platform: notificationPlatform,
     isAppForeground: () {
@@ -129,18 +170,14 @@ Future<void> main(List<String> args) async {
       }
       return foregroundTracker.isForeground;
     },
+    onArchiveMessage: (String messageId) {
+      unawaited(toastActionService.archiveMessageById(messageId));
+    },
+    onDeleteMessage: (String messageId) {
+      unawaited(toastActionService.deleteMessageById(messageId));
+    },
   );
   await notificationService.initialize();
-
-  final SyncEngine syncEngine = SyncEngine(
-    repository: repository,
-    resolveProvider: providerRegistry.resolve,
-    trashRetentionDays: () => settingsCubit.state.trashRetentionDays,
-    deviceRetentionDays: () => settingsCubit.state.retentionDays,
-    pushOnCellular: () => settingsCubit.state.pushOnCellular,
-    onNewUnread: notificationService.onNewMail,
-  );
-  syncEngine.startNetworkWatcher();
   await repository.seedDemoDataIfEmpty();
   await widgetSnapshots.refreshAll(themeId: settingsCubit.state.themeId);
 

@@ -42,6 +42,23 @@
                     android:scheme="synesis"
                     android:host="google-auth"/>
             </intent-filter>
+            <!-- Google OAuth reverse-client redirect (Android client ID PREFIX). -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+                <data
+                    android:scheme="com.googleusercontent.apps.516797703585-hoq871m0eohoagss4qvjivno5f99tdgj"
+                    android:path="/oauth2redirect"/>
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+                <data
+                    android:scheme="com.googleusercontent.apps.516797703585-hoq871m0eohoagss4qvjivno5f99tdgj"
+                    android:host="oauth2redirect"/>
+            </intent-filter>
         </activity>
         <receiver
             android:name=".SynesisWidgetProvider"

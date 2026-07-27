@@ -2,9 +2,9 @@
 // File: lib/ui/settings/notifications_sheet.dart
 // Description: Global, quiet-hours, and per-account notification settings sheet
 // Component: UI
-// Version: 1.0 (Gold Master)
+// Version: 1.1 (Gold Master)
 // Created: 2026-07-17
-// Last Update: 2026-07-17
+// Last Update: 2026-07-23
 // ==============================================================================
 
 import 'package:flutter/material.dart';
@@ -23,17 +23,33 @@ Future<void> showNotificationsSheet(BuildContext context) {
     showDragHandle: true,
     isScrollControlled: true,
     builder: (BuildContext context) {
-      return BlocBuilder<AppSettingsCubit, AppSettingsState>(
-        builder: (BuildContext context, AppSettingsState settings) {
-          final t = tokensOf(context);
-          final AppSettingsCubit cubit = context.read<AppSettingsCubit>();
-          final List<MailAccount> accounts = _accountsFromContext(context);
-          return Padding(
-            padding: const EdgeInsets.fromLTRB(20, 0, 20, 28),
-            child: SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
+      return const Padding(
+        padding: EdgeInsets.fromLTRB(20, 0, 20, 28),
+        child: NotificationsSheetBody(),
+      );
+    },
+  );
+}
+
+/// Global / quiet-hours / per-account notification controls (UI-P21
+/// Notifications section).
+///
+/// Public so `settings_shell.dart` can embed the identical content inside
+/// the sectioned Settings shell instead of duplicating this logic.
+class NotificationsSheetBody extends StatelessWidget {
+  const NotificationsSheetBody({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocBuilder<AppSettingsCubit, AppSettingsState>(
+      builder: (BuildContext context, AppSettingsState settings) {
+        final t = tokensOf(context);
+        final AppSettingsCubit cubit = context.read<AppSettingsCubit>();
+        final List<MailAccount> accounts = _accountsFromContext(context);
+        return SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
                   Text(
                     'Notifications',
                     style: Theme.of(context).textTheme.titleLarge,
@@ -149,14 +165,12 @@ Future<void> showNotificationsSheet(BuildContext context) {
                               }
                             : null,
                       ),
-                ],
-              ),
-            ),
-          );
-        },
-      );
-    },
-  );
+            ],
+          ),
+        );
+      },
+    );
+  }
 }
 
 List<MailAccount> _accountsFromContext(BuildContext context) {

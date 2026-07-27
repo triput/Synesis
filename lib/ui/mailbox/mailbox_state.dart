@@ -2,9 +2,9 @@
 // File: lib/ui/mailbox/mailbox_state.dart
 // Description: Mail workspace navigation and selection state
 // Component: Bloc / UI
-// Version: 1.3 (Gold Master)
+// Version: 1.4 (Gold Master)
 // Created: 2026-07-14
-// Last Update: 2026-07-17
+// Last Update: 2026-07-22
 // ==============================================================================
 
 import 'package:equatable/equatable.dart';
@@ -48,6 +48,7 @@ class MailboxState extends Equatable {
     this.dateGroupingMode = DateGroupingMode.outlookBuckets,
     this.expandedThreadIds = const {},
     this.threadDisplayMode = ThreadDisplayMode.threaded,
+    this.stickySelectedMessage,
   });
 
   final bool unified;
@@ -90,6 +91,15 @@ class MailboxState extends Equatable {
   /// Mirrored from [AppSettingsState.threadDisplayMode] on refresh.
   final ThreadDisplayMode threadDisplayMode;
 
+  /// Last known copy of the selected message (UI-P30), retained after it
+  /// drops out of a restrictive filter (e.g. Unread following auto-mark) so
+  /// the reading pane keeps showing it instead of clearing or jumping to
+  /// another row. Kept in sync with [messages] by [copyWith] whenever the
+  /// selected id is present in the latest list; cleared when the selection
+  /// is cleared, changed to a different message, or the owning account is
+  /// removed.
+  final MailMessage? stickySelectedMessage;
+
   /// Projects [messages] into dated / threaded sections. Keeps raw [messages]
   /// as the source of truth; UI list rewrite (M4) consumes this getter.
   List<MessageListSection> get listSections {
@@ -120,10 +130,29 @@ class MailboxState extends Equatable {
     return null;
   }
 
+  /// The message shown in the reading pane.
+  ///
+  /// When no message is explicitly selected, defaults to the first message
+  /// in the current list (unchanged pre-UI-P30 behavior). When a specific
+  /// [selectedMessageId] is set but no longer present in [messages] (e.g. it
+  /// dropped out of a restrictive filter like Unread after an auto-mark),
+  /// falls back to [stickySelectedMessage] instead of jumping to a different
+  /// message or clearing the pane (UI-P30).
   MailMessage? get selectedMessage {
-    if (messages.isEmpty) return null;
-    final match = messages.where((m) => m.id == selectedMessageId);
-    return match.isEmpty ? messages.first : match.first;
+    final String? id = selectedMessageId;
+    if (id == null) {
+      return messages.isEmpty ? null : messages.first;
+    }
+    for (final MailMessage message in messages) {
+      if (message.id == id) {
+        return message;
+      }
+    }
+    final MailMessage? sticky = stickySelectedMessage;
+    if (sticky != null && sticky.id == id) {
+      return sticky;
+    }
+    return null;
   }
 
   List<MailFolder> foldersForAccount(String accountId) {
@@ -174,15 +203,48 @@ class MailboxState extends Equatable {
     DateGroupingMode? dateGroupingMode,
     Set<String>? expandedThreadIds,
     ThreadDisplayMode? threadDisplayMode,
+    MailMessage? stickySelectedMessage,
+    bool clearStickySelectedMessage = false,
   }) {
+    final String? nextSelectedMessageId = clearSelectedMessageId
+        ? null
+        : (selectedMessageId ?? this.selectedMessageId);
+    final List<MailMessage> nextMessages = messages ?? this.messages;
+
+    // UI-P30: keep stickySelectedMessage in sync automatically so callers
+    // don't need to thread it through every selection/mutation call site.
+    MailMessage? nextSticky;
+    if (clearSelectedMessageId || clearStickySelectedMessage) {
+      nextSticky = null;
+    } else if (stickySelectedMessage != null) {
+      nextSticky = stickySelectedMessage;
+    } else if (nextSelectedMessageId != null) {
+      MailMessage? freshMatch;
+      for (final MailMessage candidate in nextMessages) {
+        if (candidate.id == nextSelectedMessageId) {
+          freshMatch = candidate;
+          break;
+        }
+      }
+      if (freshMatch != null) {
+        nextSticky = freshMatch;
+      } else if (this.stickySelectedMessage?.id == nextSelectedMessageId) {
+        // Still the same selection, just dropped from the filtered list —
+        // keep the last known copy instead of losing it (UI-P30).
+        nextSticky = this.stickySelectedMessage;
+      } else {
+        nextSticky = null;
+      }
+    } else {
+      nextSticky = null;
+    }
+
     return MailboxState(
       unified: unified ?? this.unified,
       accountId: clearAccountId ? null : (accountId ?? this.accountId),
       folderId: clearFolderId ? null : (folderId ?? this.folderId),
       focusFilter: focusFilter ?? this.focusFilter,
-      selectedMessageId: clearSelectedMessageId
-          ? null
-          : (selectedMessageId ?? this.selectedMessageId),
+      selectedMessageId: nextSelectedMessageId,
       selectedMessageIds: clearSelectedMessageIds
           ? const <String>{}
           : (selectedMessageIds ?? this.selectedMessageIds),
@@ -190,7 +252,7 @@ class MailboxState extends Equatable {
       accounts: accounts ?? this.accounts,
       folders: folders ?? this.folders,
       expandedAccountIds: expandedAccountIds ?? this.expandedAccountIds,
-      messages: messages ?? this.messages,
+      messages: nextMessages,
       isLoading: isLoading ?? this.isLoading,
       isLoadingBody: isLoadingBody ?? this.isLoadingBody,
       isLoadingHeaders: isLoadingHeaders ?? this.isLoadingHeaders,
@@ -209,6 +271,7 @@ class MailboxState extends Equatable {
       dateGroupingMode: dateGroupingMode ?? this.dateGroupingMode,
       expandedThreadIds: expandedThreadIds ?? this.expandedThreadIds,
       threadDisplayMode: threadDisplayMode ?? this.threadDisplayMode,
+      stickySelectedMessage: nextSticky,
     );
   }
 
@@ -239,5 +302,6 @@ class MailboxState extends Equatable {
     dateGroupingMode,
     expandedThreadIds,
     threadDisplayMode,
+    stickySelectedMessage,
   ];
 }

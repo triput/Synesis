@@ -2,9 +2,9 @@
 // File: lib/ui/shell/html_email_body.dart
 // Description: Platform WebView renderers for HTML message bodies
 // Component: UI
-// Version: 1.1 (Gold Master)
+// Version: 1.2 (Gold Master)
 // Created: 2026-07-14
-// Last Update: 2026-07-17
+// Last Update: 2026-07-23
 // ==============================================================================
 
 import 'dart:async';
@@ -12,6 +12,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -19,6 +20,18 @@ import 'package:webview_flutter/webview_flutter.dart';
 import 'package:webview_flutter_windows/webview_flutter_windows.dart' as win;
 import 'package:synesis/ui/shell/html_email_document.dart';
 import 'package:flutter_widget_from_html/flutter_widget_from_html.dart';
+
+/// Gesture factories so a platform WebView can win vertical drags when nested
+/// inside a [PageView] (phone message pager) or other scrollables.
+///
+/// [EagerGestureRecognizer] is required on Android so the platform view claims
+/// the arena before the parent pager; horizontal next/prev still works via the
+/// chrome chevrons / message picker.
+Set<Factory<OneSequenceGestureRecognizer>> get _htmlBodyGestureRecognizers {
+  return <Factory<OneSequenceGestureRecognizer>>{
+    Factory<EagerGestureRecognizer>(() => EagerGestureRecognizer()),
+  };
+}
 
 /// True when platform WebView init failed and we should render via HtmlWidget.
 ///
@@ -514,7 +527,11 @@ class _MobileHtmlEmailBodyState extends State<_MobileHtmlEmailBody> {
     }
     return ClipRRect(
       borderRadius: BorderRadius.circular(8),
-      child: WebViewWidget(controller: _controller!),
+      child: WebViewWidget(
+        controller: _controller!,
+        // Compete with parent PageView so the message body can scroll.
+        gestureRecognizers: _htmlBodyGestureRecognizers,
+      ),
     );
   }
 }

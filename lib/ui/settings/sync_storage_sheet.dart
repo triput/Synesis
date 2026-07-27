@@ -1,10 +1,11 @@
 // ==============================================================================
 // File: lib/ui/settings/sync_storage_sheet.dart
-// Description: Default sync profile retention, body policy, and attachment max
+// Description: Default sync profile retention, trash retention, body policy,
+//   attachment max, and push-on-cellular controls (UI-P21 Sync & storage)
 // Component: UI
-// Version: 1.0 (Gold Master)
+// Version: 1.1 (Gold Master)
 // Created: 2026-07-17
-// Last Update: 2026-07-17
+// Last Update: 2026-07-23
 // ==============================================================================
 
 import 'package:flutter/material.dart';
@@ -24,19 +25,23 @@ Future<void> showSyncStorageSheet(BuildContext context) {
     showDragHandle: true,
     isScrollControlled: true,
     builder: (BuildContext sheetContext) {
-      return const _SyncStorageSheet();
+      return const SyncStorageSheetBody();
     },
   );
 }
 
-class _SyncStorageSheet extends StatefulWidget {
-  const _SyncStorageSheet();
+/// Default sync profile + trash retention controls (UI-P21 Sync & storage).
+///
+/// Public so `settings_shell.dart` can embed the identical body inside the
+/// sectioned Settings shell instead of duplicating this logic.
+class SyncStorageSheetBody extends StatefulWidget {
+  const SyncStorageSheetBody({super.key});
 
   @override
-  State<_SyncStorageSheet> createState() => _SyncStorageSheetState();
+  State<SyncStorageSheetBody> createState() => _SyncStorageSheetBodyState();
 }
 
-class _SyncStorageSheetState extends State<_SyncStorageSheet> {
+class _SyncStorageSheetBodyState extends State<SyncStorageSheetBody> {
   SyncProfile? _profile;
   bool _loading = true;
   bool _saving = false;
@@ -195,7 +200,10 @@ class _SyncStorageSheetState extends State<_SyncStorageSheet> {
                             ),
                   ),
                   Text(
-                    'Larger attachments slow send and may fail on some servers.',
+                    'Larger attachments slow send and may fail on some '
+                    'servers. Microsoft 365/Outlook accounts upload files '
+                    'over 3 MB in the background, so raising this cap is '
+                    'safe for those accounts.',
                     style: TextStyle(color: t.muted, fontSize: 12),
                   ),
                   const SizedBox(height: 12),
@@ -249,6 +257,34 @@ class _SyncStorageSheetState extends State<_SyncStorageSheet> {
                                     .read<AppSettingsCubit>()
                                     .setPushOnCellular(value);
                               },
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 8),
+                  BlocBuilder<AppSettingsCubit, AppSettingsState>(
+                    buildWhen: (AppSettingsState prev, AppSettingsState next) =>
+                        prev.trashRetentionDays != next.trashRetentionDays,
+                    builder: (BuildContext context, AppSettingsState settings) {
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: <Widget>[
+                          Text(
+                            'Empty trash after (days)',
+                            style: TextStyle(color: t.muted, fontSize: 12),
+                          ),
+                          Slider(
+                            value: settings.trashRetentionDays
+                                .clamp(7, 90)
+                                .toDouble(),
+                            min: 7,
+                            max: 90,
+                            divisions: 83,
+                            label: '${settings.trashRetentionDays}',
+                            onChanged: (double v) => context
+                                .read<AppSettingsCubit>()
+                                .setTrashRetentionDays(v.round()),
+                          ),
+                        ],
                       );
                     },
                   ),

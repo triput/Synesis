@@ -13,6 +13,7 @@ import 'package:synesis/settings/app_settings_cubit.dart';
 import 'package:synesis/sync/sync_engine.dart';
 import 'package:synesis/theme/custom_theme.dart';
 import 'package:synesis/ui/mailbox/mailbox_cubit.dart';
+import 'package:synesis/ui/mailbox/mailbox_state.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -803,17 +804,21 @@ class _ThrowingHeaderProvider extends MailProvider {
 }
 
 class _CreateFolderProvider extends MailProvider {
+  _CreateFolderProvider({this.supportsServerSnooze = false});
+
   int createCalls = 0;
   String? lastDisplayName;
   String? lastRole;
+  final bool supportsServerSnooze;
 
   @override
-  MailCapabilities get capabilities => const MailCapabilities(
+  MailCapabilities get capabilities => MailCapabilities(
     supportsServerSearch: false,
     supportsPush: false,
     supportsPartialBody: false,
     supportsSend: false,
     supportsMove: true,
+    supportsServerSnooze: supportsServerSnooze,
   );
 
   @override
@@ -1179,6 +1184,112 @@ void main() {
     );
   });
 
+  group('MailboxCubit markFolderUnread (UI-P23)', () {
+    late _RecordingRepo repo;
+    late SharedPreferences prefs;
+
+    setUp(() async {
+      SharedPreferences.setMockInitialValues({});
+      prefs = await SharedPreferences.getInstance();
+      repo = _RecordingRepo(
+        messages: const <MailMessage>[
+          _RecordingRepo.message, // msg-1, unread: true
+          _RecordingRepo.messageTwo, // msg-2, unread: false
+          _RecordingRepo.messageThree, // msg-3, unread: false
+        ],
+      );
+    });
+
+    test(
+      'marks every unread message in a folder read without opening it '
+      'first, and recounts the folder badge',
+      () async {
+        final MailboxCubit cubit = await _buildCubit(repo: repo, prefs: prefs);
+        // Never selected/opened the folder — still unified/no folder chosen.
+        expect(cubit.state.unified, isTrue);
+        expect(cubit.state.folderId, isNull);
+
+        await cubit.markFolderUnread(
+          accountId: 'work',
+          folderId: 'inbox-work',
+          unread: false,
+        );
+
+        expect(repo.setUnreadBulkCalls, 1);
+        expect(repo.lastUnreadBulkIds, const <String>['msg-1']);
+        expect(repo.lastUnreadBulkValue, isFalse);
+
+        // One push_message_action(read) job enqueued for the provider-backed
+        // message that actually changed state.
+        final List<Map<String, String?>> readJobs = repo.enqueuedJobs
+            .where((Map<String, String?> job) =>
+                job['type'] == 'push_message_action')
+            .toList(growable: false);
+        expect(readJobs, hasLength(1));
+        expect(readJobs.single['payloadJson'], contains('"action":"read"'));
+        expect(readJobs.single['payloadJson'], contains('"isRead":true'));
+
+        // shouldRefresh triggers a full re-list; badge and message reflect DB.
+        final MailMessage updated = cubit.state.messages.firstWhere(
+          (MailMessage m) => m.id == 'msg-1',
+        );
+        expect(updated.unread, isFalse);
+        final MailFolder inbox = cubit.state.folders.firstWhere(
+          (MailFolder f) => f.id == 'inbox-work',
+        );
+        expect(inbox.unreadCount, 0);
+        await cubit.close();
+      },
+    );
+
+    test(
+      'marks every read message in a folder unread',
+      () async {
+        final MailboxCubit cubit = await _buildCubit(repo: repo, prefs: prefs);
+
+        await cubit.markFolderUnread(
+          accountId: 'work',
+          folderId: 'inbox-work',
+          unread: true,
+        );
+
+        expect(repo.setUnreadBulkCalls, 1);
+        expect(repo.lastUnreadBulkIds!.toSet(), <String>{'msg-2', 'msg-3'});
+        expect(repo.lastUnreadBulkValue, isTrue);
+
+        final Set<String> unreadIds = cubit.state.messages
+            .where((MailMessage m) => m.unread)
+            .map((MailMessage m) => m.id)
+            .toSet();
+        expect(unreadIds, <String>{'msg-1', 'msg-2', 'msg-3'});
+        await cubit.close();
+      },
+    );
+
+    test(
+      'is a no-op when every message already has the target read state',
+      () async {
+        repo = _RecordingRepo(
+          messages: const <MailMessage>[
+            _RecordingRepo.messageTwo,
+            _RecordingRepo.messageThree,
+          ],
+        );
+        final MailboxCubit cubit = await _buildCubit(repo: repo, prefs: prefs);
+
+        await cubit.markFolderUnread(
+          accountId: 'work',
+          folderId: 'inbox-work',
+          unread: false,
+        );
+
+        expect(repo.setUnreadBulkCalls, 0);
+        expect(repo.enqueuedJobs, isEmpty);
+        await cubit.close();
+      },
+    );
+  });
+
   group('MailboxCubit ensureHeadersCached', () {
     late _RecordingRepo repo;
     late SharedPreferences prefs;
@@ -1388,6 +1499,215 @@ void main() {
       expect(repo.lastMovedFolderId, isNotNull);
       await cubit.close();
     });
+  });
+
+  group('MailboxCubit D6-5 server-side snooze', () {
+    late SharedPreferences prefs;
+
+    const MailFolder snoozedFolder = MailFolder(
+      id: 'snoozed-work',
+      accountId: 'work',
+      name: 'Snoozed',
+      remoteId: 'Snoozed',
+      role: 'snoozed',
+    );
+
+    setUp(() async {
+      SharedPreferences.setMockInitialValues({});
+      prefs = await SharedPreferences.getInstance();
+    });
+
+    test(
+      'snoozeSelected on a server-snooze-capable account creates the '
+      'Snoozed folder, moves the message, and enqueues a remote move',
+      () async {
+        final _RecordingRepo repo = _RecordingRepo(
+          folders: const <MailFolder>[_RecordingRepo.inbox],
+        );
+        final _CreateFolderProvider provider = _CreateFolderProvider(
+          supportsServerSnooze: true,
+        );
+        final MailboxCubit cubit = await _buildCubit(
+          repo: repo,
+          prefs: prefs,
+          resolveProvider: (_) async => provider,
+          onConfirmCreateSystemFolder: (String accountId, String roleDisplayName) async {
+            expect(accountId, 'work');
+            expect(roleDisplayName, 'Snoozed');
+            return true;
+          },
+        );
+        cubit.emit(
+          cubit.state.copyWith(
+            selectedMessageId: 'msg-1',
+            messages: const <MailMessage>[_RecordingRepo.message],
+            folders: const <MailFolder>[_RecordingRepo.inbox],
+          ),
+        );
+        final int futureUntil =
+            DateTime.now().add(const Duration(hours: 2)).millisecondsSinceEpoch;
+
+        await cubit.snoozeSelected(snoozedUntil: futureUntil);
+
+        expect(repo.setSnoozedBulkCalls, 1);
+        expect(provider.createCalls, 1);
+        expect(provider.lastDisplayName, 'Snoozed');
+        expect(provider.lastRole, 'snoozed');
+        expect(repo.moveMessagesLocalCalls, 1);
+        expect(repo.lastMovedIds, <String>['msg-1']);
+        expect(repo.lastMovedFolderId, isNotNull);
+
+        final List<Map<String, String?>> moveJobs = repo.enqueuedJobs
+            .where(
+              (Map<String, String?> job) =>
+                  job['type'] == 'push_message_action',
+            )
+            .toList(growable: false);
+        expect(moveJobs, hasLength(1));
+        expect(moveJobs.single['payloadJson'], contains('"action":"move"'));
+        expect(
+          moveJobs.single['payloadJson'],
+          contains('"folderRemoteId":"Snoozed"'),
+        );
+
+        final MailMessage? persisted = await repo.getMessage('msg-1');
+        expect(persisted?.folderId, repo.lastMovedFolderId);
+        await cubit.close();
+      },
+    );
+
+    test(
+      'snoozeSelected on an account without server-snooze support stays '
+      'local-only (no folder create / move / remote enqueue)',
+      () async {
+        final _RecordingRepo repo = _RecordingRepo(
+          folders: const <MailFolder>[_RecordingRepo.inbox],
+        );
+        final _CreateFolderProvider provider = _CreateFolderProvider(
+          supportsServerSnooze: false,
+        );
+        final MailboxCubit cubit = await _buildCubit(
+          repo: repo,
+          prefs: prefs,
+          resolveProvider: (_) async => provider,
+          onConfirmCreateSystemFolder: (_, __) async => true,
+        );
+        cubit.emit(
+          cubit.state.copyWith(
+            selectedMessageId: 'msg-1',
+            messages: const <MailMessage>[_RecordingRepo.message],
+            folders: const <MailFolder>[_RecordingRepo.inbox],
+          ),
+        );
+        final int futureUntil =
+            DateTime.now().add(const Duration(hours: 2)).millisecondsSinceEpoch;
+
+        await cubit.snoozeSelected(snoozedUntil: futureUntil);
+
+        expect(repo.setSnoozedBulkCalls, 1);
+        expect(provider.createCalls, 0);
+        expect(repo.moveMessagesLocalCalls, 0);
+        expect(repo.enqueuedJobs, isEmpty);
+        await cubit.close();
+      },
+    );
+
+    test(
+      'clearSnoozeSelected on a server-snooze account moves a parked '
+      'message back to Inbox',
+      () async {
+        final MailMessage parked = _RecordingRepo.message.copyWith(
+          folderId: snoozedFolder.id,
+          snoozedUntil:
+              DateTime.now().add(const Duration(hours: 2)).millisecondsSinceEpoch,
+        );
+        final _RecordingRepo repo = _RecordingRepo(
+          messages: <MailMessage>[parked],
+          folders: const <MailFolder>[_RecordingRepo.inbox, snoozedFolder],
+        );
+        final _CreateFolderProvider provider = _CreateFolderProvider(
+          supportsServerSnooze: true,
+        );
+        final MailboxCubit cubit = await _buildCubit(
+          repo: repo,
+          prefs: prefs,
+          resolveProvider: (_) async => provider,
+        );
+        cubit.emit(
+          cubit.state.copyWith(
+            selectedMessageId: 'msg-1',
+            virtualView: MailboxVirtualView.snoozed,
+            messages: <MailMessage>[parked],
+            folders: const <MailFolder>[_RecordingRepo.inbox, snoozedFolder],
+          ),
+        );
+
+        await cubit.clearSnoozeSelected();
+
+        expect(repo.moveMessagesLocalCalls, 1);
+        expect(repo.lastMovedIds, <String>['msg-1']);
+        expect(repo.lastMovedFolderId, 'inbox-work');
+        final List<Map<String, String?>> moveJobs = repo.enqueuedJobs
+            .where(
+              (Map<String, String?> job) =>
+                  job['type'] == 'push_message_action',
+            )
+            .toList(growable: false);
+        expect(moveJobs, hasLength(1));
+        expect(moveJobs.single['payloadJson'], contains('"action":"move"'));
+        expect(
+          moveJobs.single['payloadJson'],
+          contains('"folderRemoteId":"INBOX"'),
+        );
+        await cubit.close();
+      },
+    );
+
+    test(
+      'refresh() resurfaces an expired server-parked snooze back to Inbox',
+      () async {
+        final MailMessage expired = _RecordingRepo.message.copyWith(
+          folderId: snoozedFolder.id,
+          snoozedUntil: DateTime.now()
+              .subtract(const Duration(minutes: 1))
+              .millisecondsSinceEpoch,
+        );
+        final _RecordingRepo repo = _RecordingRepo(
+          messages: <MailMessage>[expired],
+          folders: const <MailFolder>[_RecordingRepo.inbox, snoozedFolder],
+        );
+        final _CreateFolderProvider provider = _CreateFolderProvider(
+          supportsServerSnooze: true,
+        );
+        final MailboxCubit cubit = await _buildCubit(
+          repo: repo,
+          prefs: prefs,
+          resolveProvider: (_) async => provider,
+        );
+
+        await cubit.refresh();
+
+        expect(repo.moveMessagesLocalCalls, 1);
+        expect(repo.lastMovedIds, <String>['msg-1']);
+        expect(repo.lastMovedFolderId, 'inbox-work');
+        final List<Map<String, String?>> moveJobs = repo.enqueuedJobs
+            .where(
+              (Map<String, String?> job) =>
+                  job['type'] == 'push_message_action',
+            )
+            .toList(growable: false);
+        expect(moveJobs, hasLength(1));
+        expect(moveJobs.single['payloadJson'], contains('"action":"move"'));
+
+        final MailMessage? persisted = await repo.getMessage('msg-1');
+        expect(persisted?.snoozedUntil, isNull);
+        expect(
+          cubit.state.messages.any((MailMessage m) => m.id == 'msg-1'),
+          isTrue,
+        );
+        await cubit.close();
+      },
+    );
   });
 
   group('MailboxCubit message actions', () {
@@ -1818,5 +2138,125 @@ void main() {
       expect(repo.lastQuery!.includeTrashed, isTrue);
       await cubit.close();
     });
+  });
+
+  group('MailboxCubit clearUserFilter (UI-P29)', () {
+    late SharedPreferences prefs;
+
+    setUp(() async {
+      SharedPreferences.setMockInitialValues({});
+      prefs = await SharedPreferences.getInstance();
+    });
+
+    test('clears an active userFilter and restores unfiltered messages', () async {
+      final _RecordingRepo repo = _RecordingRepo(
+        messages: const <MailMessage>[
+          _RecordingRepo.message,
+          _RecordingRepo.messageTwo,
+        ],
+      );
+      final MailboxCubit cubit = await _buildCubit(repo: repo, prefs: prefs);
+
+      await cubit.setUserFilter(const MessageViewFilter(unread: true));
+      expect(cubit.state.userFilter?.unread, isTrue);
+      expect(
+        cubit.state.messages.map((MailMessage m) => m.id),
+        const <String>['msg-1'],
+      );
+
+      await cubit.clearUserFilter();
+
+      expect(cubit.state.userFilter, isNull);
+      expect(
+        cubit.state.messages.map((MailMessage m) => m.id),
+        containsAll(const <String>['msg-1', 'msg-2']),
+      );
+      await cubit.close();
+    });
+
+    test('is a no-op when no filter is active', () async {
+      final _RecordingRepo repo = _RecordingRepo();
+      final MailboxCubit cubit = await _buildCubit(repo: repo, prefs: prefs);
+      final before = cubit.state;
+
+      await cubit.clearUserFilter();
+
+      expect(cubit.state, same(before));
+      await cubit.close();
+    });
+  });
+
+  group('MessageActionService ID-targeted actions (D6-8 toast wiring)', () {
+    test(
+      'archiveMessageById moves the message to archive and enqueues sync',
+      () async {
+        final _RecordingRepo repo = _RecordingRepo();
+        final MessageActionService actions = MessageActionService(
+          repository: repo,
+          resolveProvider: (_) async => null,
+        );
+
+        await actions.archiveMessageById('msg-1');
+
+        expect(repo.moveMessagesLocalCalls, 1);
+        expect(repo.lastMovedIds, const <String>['msg-1']);
+        expect(repo.lastMovedFolderId, 'archive-work');
+        expect(repo.enqueuedJobs, hasLength(1));
+        expect(repo.enqueuedJobs.single['type'], 'push_message_action');
+      },
+    );
+
+    test(
+      'deleteMessageById moves the message to trash with trashedAt set',
+      () async {
+        final _RecordingRepo repo = _RecordingRepo();
+        final MessageActionService actions = MessageActionService(
+          repository: repo,
+          resolveProvider: (_) async => null,
+        );
+
+        await actions.deleteMessageById('msg-1');
+
+        expect(repo.moveMessagesLocalCalls, 1);
+        expect(repo.lastMovedIds, const <String>['msg-1']);
+        expect(repo.lastMovedFolderId, 'trash-work');
+        expect(repo.lastMovedTrashedAt, isNotNull);
+        expect(repo.enqueuedJobs, hasLength(1));
+      },
+    );
+
+    test(
+      'archiveMessageById is a silent no-op for an unknown message id',
+      () async {
+        final _RecordingRepo repo = _RecordingRepo();
+        final MessageActionService actions = MessageActionService(
+          repository: repo,
+          resolveProvider: (_) async => null,
+        );
+
+        await actions.archiveMessageById('does-not-exist');
+
+        expect(repo.moveMessagesLocalCalls, 0);
+        expect(repo.enqueuedJobs, isEmpty);
+      },
+    );
+
+    test(
+      'archiveMessageById is a silent no-op with no archive folder to resolve',
+      () async {
+        final _RecordingRepo repo = _RecordingRepo(
+          folders: const <MailFolder>[_RecordingRepo.inbox],
+        );
+        final MessageActionService actions = MessageActionService(
+          repository: repo,
+          resolveProvider: (_) async => null,
+        );
+
+        await actions.archiveMessageById('msg-1');
+
+        expect(repo.moveMessagesLocalCalls, 0);
+        expect(repo.enqueuedJobs, isEmpty);
+      },
+    );
   });
 }

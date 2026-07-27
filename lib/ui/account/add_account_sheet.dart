@@ -4,7 +4,7 @@
 // Component: UI
 // Version: 1.0 (Gold Master)
 // Created: 2026-07-14
-// Last Update: 2026-07-17
+// Last Update: 2026-07-23
 // ==============================================================================
 
 import 'package:flutter/foundation.dart';
@@ -139,7 +139,8 @@ class _AddAccountFormState extends State<_AddAccountForm>
         expiresAt: result.expiresAt,
       );
       await syncEngine.kick();
-      await mailbox.refresh();
+      mailbox.setSidebarVisible(true);
+      await mailbox.selectAccount(id);
       if (!mounted) {
         return;
       }
@@ -181,7 +182,8 @@ class _AddAccountFormState extends State<_AddAccountForm>
         expiresAt: result.expiresAt,
       );
       await syncEngine.kick();
-      await mailbox.refresh();
+      mailbox.setSidebarVisible(true);
+      await mailbox.selectAccount(id);
       if (!mounted) {
         return;
       }
@@ -561,7 +563,9 @@ class _AddAccountFormState extends State<_AddAccountForm>
                     if (googleConfigured) ...[
                       Text(
                         'Sign in with Google to connect Gmail over IMAP/SMTP '
-                        'using OAuth (XOAUTH2). No app password required.',
+                        'using OAuth (XOAUTH2). No app password required.\n\n'
+                        'You will get an account chooser — pick the Gmail '
+                        'inbox you want (including a second account).',
                         style: TextStyle(color: t.muted, fontSize: 13),
                       ),
                       const SizedBox(height: 16),

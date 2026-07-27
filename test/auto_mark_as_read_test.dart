@@ -1,10 +1,11 @@
 // ==============================================================================
 // File: test/auto_mark_as_read_test.dart
-// Description: Dwell-timer schedule/cancel coverage for DEF-034 / UI-P27.
+// Description: Dwell-timer schedule/cancel/hold coverage for DEF-034 / UI-P27,
+//   custom dwell/enabled overrides (UI-P28), and hold (UI-P30).
 // Component: Test
-// Version: 1.0 (Gold Master)
+// Version: 1.1 (Gold Master)
 // Created: 2026-07-18
-// Last Update: 2026-07-18
+// Last Update: 2026-07-22
 // ==============================================================================
 
 import 'dart:async';
@@ -206,6 +207,217 @@ void main() {
 
       expect(markReadCalls, 0);
       expect(controller.isScheduled, isFalse);
+    });
+  });
+
+  group('AutoMarkAsReadController UI-P28 dwell/enabled overrides', () {
+    test('constructor dwell is used when update omits an override', () {
+      Duration? usedDuration;
+      final AutoMarkAsReadController controller = AutoMarkAsReadController(
+        dwell: const Duration(seconds: 20),
+        createTimer: (Duration duration, void Function() callback) {
+          usedDuration = duration;
+          return _FakeTimer(callback);
+        },
+      );
+
+      controller.update(messageId: 'm1', unread: true, onMarkRead: () {});
+
+      expect(usedDuration, const Duration(seconds: 20));
+    });
+
+    test('update dwell override takes precedence over constructor dwell', () {
+      Duration? usedDuration;
+      final AutoMarkAsReadController controller = AutoMarkAsReadController(
+        createTimer: (Duration duration, void Function() callback) {
+          usedDuration = duration;
+          return _FakeTimer(callback);
+        },
+      );
+
+      controller.update(
+        messageId: 'm1',
+        unread: true,
+        onMarkRead: () {},
+        dwell: const Duration(seconds: 30),
+      );
+
+      expect(usedDuration, const Duration(seconds: 30));
+    });
+
+    test('a custom dwell of zero still schedules an immediate-fire timer', () {
+      Duration? usedDuration;
+      final AutoMarkAsReadController controller = AutoMarkAsReadController(
+        createTimer: (Duration duration, void Function() callback) {
+          usedDuration = duration;
+          return _FakeTimer(callback);
+        },
+      );
+
+      controller.update(
+        messageId: 'm1',
+        unread: true,
+        onMarkRead: () {},
+        dwell: Duration.zero,
+      );
+
+      expect(usedDuration, Duration.zero);
+      expect(controller.isScheduled, isTrue);
+    });
+
+    test('enabled: false does not schedule (UI-P28 "Off")', () {
+      final AutoMarkAsReadController controller = AutoMarkAsReadController(
+        createTimer: (Duration duration, void Function() callback) =>
+            throw StateError('unexpected timer creation'),
+      );
+
+      controller.update(
+        messageId: 'm1',
+        unread: true,
+        onMarkRead: () {},
+        enabled: false,
+      );
+
+      expect(controller.isScheduled, isFalse);
+    });
+
+    test('enabled: false cancels a timer already pending for the message',
+        () {
+      final List<_FakeTimer> created = <_FakeTimer>[];
+      final AutoMarkAsReadController controller = AutoMarkAsReadController(
+        createTimer: (Duration duration, void Function() callback) {
+          final _FakeTimer timer = _FakeTimer(callback);
+          created.add(timer);
+          return timer;
+        },
+      );
+
+      controller.update(messageId: 'm1', unread: true, onMarkRead: () {});
+      expect(controller.isScheduled, isTrue);
+
+      controller.update(
+        messageId: 'm1',
+        unread: true,
+        onMarkRead: () {},
+        enabled: false,
+      );
+
+      expect(created.single.isCancelled, isTrue);
+      expect(controller.isScheduled, isFalse);
+    });
+  });
+
+  group('AutoMarkAsReadController UI-P30 hold', () {
+    test('holdCurrent prevents scheduling for the held message', () {
+      final List<_FakeTimer> created = <_FakeTimer>[];
+      final AutoMarkAsReadController controller = AutoMarkAsReadController(
+        createTimer: (Duration duration, void Function() callback) {
+          final _FakeTimer timer = _FakeTimer(callback);
+          created.add(timer);
+          return timer;
+        },
+      );
+
+      controller.update(messageId: 'm1', unread: true, onMarkRead: () {});
+      controller.holdCurrent();
+
+      expect(controller.isHeld, isTrue);
+      expect(controller.heldMessageId, 'm1');
+
+      final int createCountBeforeRetry = created.length;
+      controller.update(messageId: 'm1', unread: true, onMarkRead: () {});
+
+      expect(controller.isScheduled, isFalse);
+      expect(created, hasLength(createCountBeforeRetry));
+    });
+
+    test('holdCurrent cancels a timer already pending for the message', () {
+      final List<_FakeTimer> created = <_FakeTimer>[];
+      int markReadCalls = 0;
+      final AutoMarkAsReadController controller = AutoMarkAsReadController(
+        createTimer: (Duration duration, void Function() callback) {
+          final _FakeTimer timer = _FakeTimer(callback);
+          created.add(timer);
+          return timer;
+        },
+      );
+
+      controller.update(
+        messageId: 'm1',
+        unread: true,
+        onMarkRead: () => markReadCalls++,
+      );
+      expect(controller.isScheduled, isTrue);
+
+      controller.holdCurrent();
+
+      expect(created.single.isCancelled, isTrue);
+      expect(controller.isScheduled, isFalse);
+
+      created.single.fire();
+      expect(markReadCalls, 0);
+    });
+
+    test('releaseHold allows scheduling to resume on the next update', () {
+      final List<_FakeTimer> created = <_FakeTimer>[];
+      final AutoMarkAsReadController controller = AutoMarkAsReadController(
+        createTimer: (Duration duration, void Function() callback) {
+          final _FakeTimer timer = _FakeTimer(callback);
+          created.add(timer);
+          return timer;
+        },
+      );
+
+      controller.update(messageId: 'm1', unread: true, onMarkRead: () {});
+      controller.holdCurrent();
+      controller.releaseHold();
+
+      expect(controller.isHeld, isFalse);
+
+      controller.update(messageId: 'm1', unread: true, onMarkRead: () {});
+
+      expect(controller.isScheduled, isTrue);
+      expect(created, hasLength(2));
+    });
+
+    test('a different message id clears an existing hold', () {
+      final List<_FakeTimer> created = <_FakeTimer>[];
+      final AutoMarkAsReadController controller = AutoMarkAsReadController(
+        createTimer: (Duration duration, void Function() callback) {
+          final _FakeTimer timer = _FakeTimer(callback);
+          created.add(timer);
+          return timer;
+        },
+      );
+
+      controller.update(messageId: 'm1', unread: true, onMarkRead: () {});
+      controller.holdCurrent();
+      expect(controller.isHeld, isTrue);
+
+      controller.update(messageId: 'm2', unread: true, onMarkRead: () {});
+
+      expect(controller.isHeld, isFalse);
+      expect(controller.heldMessageId, isNull);
+      expect(controller.isScheduled, isTrue);
+      expect(controller.scheduledMessageId, 'm2');
+
+      // Holding m1 again after returning to it should not resurrect the
+      // stale hold — it must be re-armed explicitly.
+      controller.update(messageId: 'm1', unread: true, onMarkRead: () {});
+      expect(controller.isScheduled, isTrue);
+      expect(controller.scheduledMessageId, 'm1');
+    });
+
+    test('holdCurrent before any update() call is a no-op', () {
+      final AutoMarkAsReadController controller = AutoMarkAsReadController(
+        createTimer: (Duration duration, void Function() callback) =>
+            throw StateError('unexpected timer creation'),
+      );
+
+      controller.holdCurrent();
+
+      expect(controller.isHeld, isFalse);
+      expect(controller.heldMessageId, isNull);
     });
   });
 }

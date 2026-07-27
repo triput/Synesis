@@ -2,9 +2,9 @@
 // File: lib/ui/shell/message_list_pane.dart
 // Description: Projected message list with filters, threads, swipes, and refresh
 // Component: UI
-// Version: 1.2 (Gold Master)
+// Version: 1.3 (Gold Master)
 // Created: 2026-07-14
-// Last Update: 2026-07-18
+// Last Update: 2026-07-27
 // ==============================================================================
 
 import 'package:flutter/foundation.dart';
@@ -190,7 +190,7 @@ class MessageListPane extends StatelessWidget {
                     alignment: Alignment.centerLeft,
                     child: TextButton.icon(
                       onPressed: onShowSidebar,
-                      icon: Icon(Icons.menu, size: 16, color: t.teal),
+                      icon: Icon(Icons.folder_open_rounded, size: 16, color: t.teal),
                       label: Text(
                         'Show folders',
                         style: TextStyle(color: t.teal),
@@ -357,7 +357,9 @@ class MessageListPane extends StatelessWidget {
                     showCheckbox: _selectionMode,
                     density: density,
                     onSelect: onSelect,
-                    onToggleExpand: onToggleThreadExpand == null
+                    // DEF-042: no expand chrome on single-message threads.
+                    onToggleExpand:
+                        onToggleThreadExpand == null || thread.count < 2
                         ? null
                         : () => onToggleThreadExpand!(
                               thread.expansionKey,
@@ -835,6 +837,11 @@ class _ThreadRow extends StatelessWidget {
     final Color snippetColor = thread.anyUnread
         ? t.muted
         : t.muted.withValues(alpha: 0.7);
+    final bool compactChrome = density == ViewDensity.compact;
+    final double leadingIconSize = compactChrome ? 16 : 18;
+    final BoxConstraints leadingConstraints = compactChrome
+        ? const BoxConstraints(minWidth: 22, minHeight: 22)
+        : const BoxConstraints(minWidth: 28, minHeight: 28);
 
     return Material(
       color: highlighted
@@ -870,7 +877,7 @@ class _ThreadRow extends StatelessWidget {
                 ),
               if (onToggleStar != null)
                 Padding(
-                  padding: const EdgeInsets.only(left: 2),
+                  padding: EdgeInsets.only(left: compactChrome ? 0 : 2),
                   child: Center(
                     child: IconButton(
                       onPressed: onToggleStar,
@@ -878,21 +885,19 @@ class _ThreadRow extends StatelessWidget {
                         thread.anyStarred
                             ? Icons.star_rounded
                             : Icons.star_outline_rounded,
-                        size: 18,
+                        size: leadingIconSize,
                         color: thread.anyStarred ? t.amber : t.muted,
                       ),
                       padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(
-                        minWidth: 28,
-                        minHeight: 28,
-                      ),
+                      constraints: leadingConstraints,
+                      visualDensity: VisualDensity.compact,
                       tooltip: thread.anyStarred ? 'Unstar' : 'Star',
                     ),
                   ),
                 ),
               if (onToggleExpand != null)
                 Padding(
-                  padding: const EdgeInsets.only(left: 2),
+                  padding: EdgeInsets.only(left: compactChrome ? 0 : 2),
                   child: Center(
                     child: IconButton(
                       onPressed: onToggleExpand,
@@ -900,14 +905,12 @@ class _ThreadRow extends StatelessWidget {
                         expanded
                             ? Icons.expand_more_rounded
                             : Icons.chevron_right_rounded,
-                        size: 18,
+                        size: leadingIconSize,
                         color: t.muted,
                       ),
                       padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(
-                        minWidth: 28,
-                        minHeight: 28,
-                      ),
+                      constraints: leadingConstraints,
+                      visualDensity: VisualDensity.compact,
                       tooltip: expanded ? 'Collapse thread' : 'Expand thread',
                     ),
                   ),
@@ -958,26 +961,29 @@ class _ThreadRow extends StatelessWidget {
                               ),
                             ),
                           ),
-                          Container(
-                            margin: const EdgeInsets.only(left: 6, right: 6),
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 6,
-                              vertical: 1,
-                            ),
-                            decoration: BoxDecoration(
-                              color: t.panel2,
-                              borderRadius: BorderRadius.circular(999),
-                              border: Border.all(color: t.line),
-                            ),
-                            child: Text(
-                              '${thread.count}',
-                              style: TextStyle(
-                                color: t.muted,
-                                fontSize: 10,
-                                fontWeight: FontWeight.w600,
+                          if (thread.count >= 2)
+                            Container(
+                              margin: const EdgeInsets.only(left: 6, right: 6),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 6,
+                                vertical: 1,
                               ),
-                            ),
-                          ),
+                              decoration: BoxDecoration(
+                                color: t.panel2,
+                                borderRadius: BorderRadius.circular(999),
+                                border: Border.all(color: t.line),
+                              ),
+                              child: Text(
+                                '${thread.count}',
+                                style: TextStyle(
+                                  color: t.muted,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            )
+                          else
+                            const SizedBox(width: 6),
                           Text(
                             latest.whenLabel,
                             style: TextStyle(color: t.muted, fontSize: 12),
@@ -1094,7 +1100,9 @@ class _MessageRow extends StatelessWidget {
                   ),
                 if (onToggleStar != null)
                   Padding(
-                    padding: const EdgeInsets.only(left: 2),
+                    padding: EdgeInsets.only(
+                      left: density == ViewDensity.compact ? 0 : 2,
+                    ),
                     child: Center(
                       child: IconButton(
                         onPressed: onToggleStar,
@@ -1102,14 +1110,20 @@ class _MessageRow extends StatelessWidget {
                           message.starred
                               ? Icons.star_rounded
                               : Icons.star_outline_rounded,
-                          size: 18,
+                          size: density == ViewDensity.compact ? 16 : 18,
                           color: message.starred ? t.amber : t.muted,
                         ),
                         padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints(
-                          minWidth: 28,
-                          minHeight: 28,
-                        ),
+                        constraints: density == ViewDensity.compact
+                            ? const BoxConstraints(
+                                minWidth: 22,
+                                minHeight: 22,
+                              )
+                            : const BoxConstraints(
+                                minWidth: 28,
+                                minHeight: 28,
+                              ),
+                        visualDensity: VisualDensity.compact,
                         tooltip: message.starred ? 'Unstar' : 'Star',
                       ),
                     ),

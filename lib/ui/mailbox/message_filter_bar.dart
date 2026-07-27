@@ -2,9 +2,9 @@
 // File: lib/ui/mailbox/message_filter_bar.dart
 // Description: Quick filter chips and advanced filter sheet for the message list
 // Component: UI
-// Version: 1.0 (Gold Master)
+// Version: 1.1 (Gold Master)
 // Created: 2026-07-17
-// Last Update: 2026-07-18
+// Last Update: 2026-07-22
 // ==============================================================================
 
 import 'package:flutter/material.dart';
@@ -166,16 +166,7 @@ class MessageFilterBar extends StatelessWidget {
           ],
           if (_hasActiveFilter) ...<Widget>[
             const SizedBox(width: 6),
-            TextButton(
-              onPressed: onClearFilters,
-              style: TextButton.styleFrom(
-                foregroundColor: t.coral,
-                padding: const EdgeInsets.symmetric(horizontal: 8),
-                minimumSize: Size.zero,
-                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              ),
-              child: const Text('Clear', style: TextStyle(fontSize: 12)),
-            ),
+            _ClearFiltersChip(onTap: onClearFilters),
           ],
         ],
       ),
@@ -236,6 +227,56 @@ class _FilterChip extends StatelessWidget {
                   ),
                 ),
               ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// UI-P29: one-click "Clear filters" affordance shown only while a filter is
+/// active. Styled like an active [FilterChip] with a delete (×) icon so it
+/// reads as "tap to remove" rather than a plain text link.
+class _ClearFiltersChip extends StatelessWidget {
+  const _ClearFiltersChip({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final ThemeTokens t = tokensOf(context);
+    return Semantics(
+      button: true,
+      label: 'Clear filters',
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(999),
+          child: Ink(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(999),
+              border: Border.all(color: t.coral.withValues(alpha: 0.55)),
+              color: t.coral.withValues(alpha: 0.16),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  Text(
+                    'Clear filters',
+                    style: TextStyle(
+                      color: t.coral,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  Icon(Icons.close_rounded, size: 14, color: t.coral),
+                ],
+              ),
             ),
           ),
         ),

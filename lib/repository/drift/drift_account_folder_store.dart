@@ -2,9 +2,9 @@
 // File: lib/repository/drift/drift_account_folder_store.dart
 // Description: Drift persistence for accounts, folders, and account wipe.
 // Component: Repository / Data
-// Version: 1.0 (Gold Master)
+// Version: 1.1 (Gold Master)
 // Created: 2026-07-17
-// Last Update: 2026-07-17
+// Last Update: 2026-07-23
 // ==============================================================================
 
 import 'package:synesis/domain/models.dart';
@@ -296,6 +296,8 @@ class DriftAccountFolderStore {
       case 'drafts':
       case 'draft':
         return 'drafts';
+      case 'snoozed':
+        return 'snoozed';
       default:
         return null;
     }
@@ -337,6 +339,8 @@ class DriftAccountFolderStore {
         return normalized == 'archive' || normalized == '[gmail]/all mail';
       case 'inbox':
         return normalized == 'inbox';
+      case 'snoozed':
+        return normalized == 'snoozed';
       default:
         return false;
     }
@@ -373,6 +377,8 @@ class DriftAccountFolderStore {
         ];
       case 'inbox':
         suffixes = const <String>['/inbox'];
+      case 'snoozed':
+        suffixes = const <String>['/snoozed'];
       default:
         return false;
     }

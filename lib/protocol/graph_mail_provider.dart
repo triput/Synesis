@@ -2,14 +2,15 @@
 // File: lib/protocol/graph_mail_provider.dart
 // Description: Microsoft Graph implementation of the remote mail contract.
 // Component: Protocol / Integration
-// Version: 1.0 (Gold Master)
+// Version: 1.1 (Gold Master)
 // Created: 2026-07-14
-// Last Update: 2026-07-18
+// Last Update: 2026-07-23
 // ==============================================================================
 
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math' as math;
 import 'dart:typed_data';
 
 import 'package:synesis/focus/focus_header_map.dart';
@@ -17,6 +18,17 @@ import 'package:synesis/mime/outgoing_envelope.dart';
 import 'package:synesis/protocol/mail_provider.dart';
 import 'package:http/http.dart' as http;
 import 'package:path/path.dart' as p;
+
+/// Attachments at or below this size are sent inline as base64 `contentBytes`
+/// on a single `POST /me/sendMail` call. Above this per-file threshold,
+/// [GraphMailProvider.sendEnvelope] switches to the draft + upload-session
+/// path (D6-3) so large files don't hit inline Graph payload limits.
+const int kGraphInlineAttachmentMaxBytes = 3 * 1024 * 1024;
+
+/// Chunk size used for `PUT` calls against a Graph attachment upload
+/// session. Microsoft recommends chunk sizes that are a multiple of 320 KiB;
+/// this is 10 * 320 KiB (~3.125 MiB) to balance request count vs. memory use.
+const int kGraphUploadChunkSizeBytes = 320 * 1024 * 10;
 
 /// Thrown when Graph rejects the bearer token and interactive re-auth is needed.
 class GraphAuthException implements Exception {
@@ -58,15 +70,24 @@ class GraphMailProvider extends MailProvider {
     this._accessToken, {
     http.Client? client,
     Duration timeout = const Duration(seconds: 45),
+    Duration uploadTimeout = const Duration(minutes: 10),
     GraphUnauthorizedHandler? onUnauthorized,
   })  : _ownsClient = client == null,
-        _client = _TimeoutClient(client ?? http.Client(), timeout),
-        _onUnauthorized = onUnauthorized;
+        _innerClient = client ?? http.Client(),
+        _onUnauthorized = onUnauthorized {
+    _client = _TimeoutClient(_innerClient, timeout);
+    // Large-attachment upload sessions can legitimately take minutes per
+    // chunk on slow links, so this leg uses a much longer timeout than the
+    // JSON-centric Graph calls above.
+    _uploadClient = _TimeoutClient(_innerClient, uploadTimeout);
+  }
 
   static final Uri _graphBaseUri = Uri.parse('https://graph.microsoft.com/v1.0');
 
   final Future<String> Function() _accessToken;
-  final http.Client _client;
+  final http.Client _innerClient;
+  late final http.Client _client;
+  late final http.Client _uploadClient;
   final bool _ownsClient;
   final GraphUnauthorizedHandler? _onUnauthorized;
   bool _disposed = false;
@@ -81,6 +102,7 @@ class GraphMailProvider extends MailProvider {
         supportsMove: true,
         supportsDelete: true,
         supportsAttachments: true,
+        supportsServerSnooze: true,
       );
 
   static const String graphDeltaCursorKey = 'graph_delta';
@@ -365,6 +387,48 @@ class GraphMailProvider extends MailProvider {
     if (toClean.isEmpty && ccClean.isEmpty && bccClean.isEmpty) {
       throw const ProtocolException('A recipient is required to send mail.');
     }
+    final Map<String, Object> message = _buildOutgoingMessage(
+      envelope,
+      toClean: toClean,
+      ccClean: ccClean,
+      bccClean: bccClean,
+    );
+
+    if (envelope.attachmentPaths.isEmpty) {
+      await _sendMailDirect(message);
+      return;
+    }
+
+    final List<_OutgoingAttachmentFile> files =
+        await _resolveAttachmentFiles(envelope.attachmentPaths);
+    final bool anyLarge = files.any(
+      (_OutgoingAttachmentFile file) =>
+          file.sizeBytes > kGraphInlineAttachmentMaxBytes,
+    );
+
+    if (!anyLarge) {
+      // Small path: every attachment fits under the inline threshold, so
+      // keep the single-request `sendMail` call with base64 contentBytes.
+      message['attachments'] = await _buildInlineAttachments(files);
+      await _sendMailDirect(message);
+      return;
+    }
+
+    // Large path: at least one attachment exceeds the inline threshold.
+    // Once we're on this path every attachment uses an upload session so
+    // there is a single, well-tested code path for large sends (D6-3).
+    await _sendViaUploadSessions(message, files);
+  }
+
+  /// Builds the Graph `message` JSON object (subject, body, recipients,
+  /// threading headers) shared by both the inline and upload-session send
+  /// paths. Attachments are attached separately by each path.
+  Map<String, Object> _buildOutgoingMessage(
+    OutgoingEnvelope envelope, {
+    required List<String> toClean,
+    required List<String> ccClean,
+    required List<String> bccClean,
+  }) {
     final bool useHtml =
         envelope.htmlBody != null && envelope.htmlBody!.trim().isNotEmpty;
     final Map<String, Object> message = <String, Object>{
@@ -401,23 +465,55 @@ class GraphMailProvider extends MailProvider {
     if (headers.isNotEmpty) {
       message['internetMessageHeaders'] = headers;
     }
-    if (envelope.attachmentPaths.isNotEmpty) {
-      final List<Map<String, Object>> attachments = <Map<String, Object>>[];
-      for (final String path in envelope.attachmentPaths) {
-        final File file = File(path);
-        if (!await file.exists()) {
-          throw ProtocolException('Attachment missing: $path');
-        }
-        final Uint8List bytes = await file.readAsBytes();
-        attachments.add(<String, Object>{
-          '@odata.type': '#microsoft.graph.fileAttachment',
-          'name': p.basename(path),
-          'contentType': 'application/octet-stream',
-          'contentBytes': base64Encode(bytes),
-        });
+    return message;
+  }
+
+  /// Validates attachment paths exist and captures size/name/content-type
+  /// metadata without reading full file bytes (needed before deciding
+  /// between the inline and upload-session send paths).
+  Future<List<_OutgoingAttachmentFile>> _resolveAttachmentFiles(
+    List<String> paths,
+  ) async {
+    final List<_OutgoingAttachmentFile> files = <_OutgoingAttachmentFile>[];
+    for (final String path in paths) {
+      final File file = File(path);
+      if (!await file.exists()) {
+        throw ProtocolException('Attachment missing: $path');
       }
-      message['attachments'] = attachments;
+      final int sizeBytes = await file.length();
+      files.add(
+        _OutgoingAttachmentFile(
+          path: path,
+          name: p.basename(path),
+          sizeBytes: sizeBytes,
+          contentType: 'application/octet-stream',
+        ),
+      );
     }
+    return List<_OutgoingAttachmentFile>.unmodifiable(files);
+  }
+
+  /// Reads each file fully and base64-encodes it as an inline
+  /// `#microsoft.graph.fileAttachment` for the small/`sendMail` path.
+  Future<List<Map<String, Object>>> _buildInlineAttachments(
+    List<_OutgoingAttachmentFile> files,
+  ) async {
+    final List<Map<String, Object>> attachments = <Map<String, Object>>[];
+    for (final _OutgoingAttachmentFile file in files) {
+      final Uint8List bytes = await File(file.path).readAsBytes();
+      attachments.add(<String, Object>{
+        '@odata.type': '#microsoft.graph.fileAttachment',
+        'name': file.name,
+        'contentType': file.contentType,
+        'contentBytes': base64Encode(bytes),
+      });
+    }
+    return attachments;
+  }
+
+  /// Sends [message] with any attachments already inlined via a single
+  /// `POST /me/sendMail`.
+  Future<void> _sendMailDirect(Map<String, Object> message) async {
     final String payload = jsonEncode(<String, Object>{
       'message': message,
       'saveToSentItems': true,
@@ -431,6 +527,169 @@ class GraphMailProvider extends MailProvider {
       contentType: 'application/json',
     );
     _ensureSuccess(response);
+  }
+
+  /// Large-attachment send path (D6-3): creates a draft message, uploads
+  /// every attachment through a Graph upload session, then sends the
+  /// draft. If anything fails after the draft is created, best-effort
+  /// deletes the draft so it doesn't leak into Sent/Drafts.
+  Future<void> _sendViaUploadSessions(
+    Map<String, Object> message,
+    List<_OutgoingAttachmentFile> files,
+  ) async {
+    final http.Response draftResponse = await _sendAuthorized(
+      (Map<String, String> headers) => _client.post(
+        _uri('/me/messages'),
+        headers: headers,
+        body: jsonEncode(message),
+      ),
+      contentType: 'application/json',
+    );
+    final Map<String, Object?> draft = _decodeObjectResponse(draftResponse);
+    final String? draftId = draft['id'] as String?;
+    if (draftId == null || draftId.isEmpty) {
+      throw const ProtocolException(
+        'Microsoft Graph did not return a draft id for the large-attachment '
+        'send path.',
+      );
+    }
+
+    try {
+      for (final _OutgoingAttachmentFile file in files) {
+        await _uploadAttachmentSession(draftId, file);
+      }
+      final http.Response sendResponse = await _sendAuthorized(
+        (Map<String, String> headers) => _client.post(
+          _uri('/me/messages/${Uri.encodeComponent(draftId)}/send'),
+          headers: headers,
+          body: '{}',
+        ),
+        contentType: 'application/json',
+      );
+      _ensureSuccess(sendResponse);
+    } on Object {
+      await _bestEffortDeleteDraft(draftId);
+      rethrow;
+    }
+  }
+
+  /// Creates an attachment upload session for [file] on draft [draftId],
+  /// then streams the file to the returned `uploadUrl` in fixed-size chunks.
+  Future<void> _uploadAttachmentSession(
+    String draftId,
+    _OutgoingAttachmentFile file,
+  ) async {
+    final Map<String, Object> sessionRequest = <String, Object>{
+      'AttachmentItem': <String, Object>{
+        'attachmentType': 'file',
+        'name': file.name,
+        'size': file.sizeBytes,
+        'contentType': file.contentType,
+      },
+    };
+    final http.Response sessionResponse = await _sendAuthorized(
+      (Map<String, String> headers) => _client.post(
+        _uri(
+          '/me/messages/${Uri.encodeComponent(draftId)}/attachments/createUploadSession',
+        ),
+        headers: headers,
+        body: jsonEncode(sessionRequest),
+      ),
+      contentType: 'application/json',
+    );
+    final Map<String, Object?> session = _decodeObjectResponse(sessionResponse);
+    final String? uploadUrl = session['uploadUrl'] as String?;
+    if (uploadUrl == null || uploadUrl.isEmpty) {
+      throw ProtocolException(
+        'Microsoft Graph did not return an upload URL for attachment '
+        '${file.name}.',
+      );
+    }
+    await _uploadFileInChunks(uploadUrl, file);
+  }
+
+  /// Streams [file] to the pre-authorized upload-session [uploadUrl] using
+  /// `PUT` requests with `Content-Range` chunk headers. `uploadUrl` may be
+  /// on a different host than `graph.microsoft.com`, so it is used verbatim
+  /// rather than resolved against the Graph base URI.
+  Future<void> _uploadFileInChunks(
+    String uploadUrl,
+    _OutgoingAttachmentFile file,
+  ) async {
+    _ensureNotDisposed();
+    final Uri uri = Uri.parse(uploadUrl);
+    final int total = file.sizeBytes;
+    if (total == 0) {
+      // Degenerate but valid input — upload an empty final chunk so the
+      // session still completes instead of hanging with zero PUTs.
+      await _putUploadChunk(uri, Uint8List(0), start: 0, end: 0, total: 0);
+      return;
+    }
+    final RandomAccessFile handle = await File(file.path).open();
+    try {
+      int start = 0;
+      while (start < total) {
+        final int end = math.min(start + kGraphUploadChunkSizeBytes, total) - 1;
+        final int length = end - start + 1;
+        await handle.setPosition(start);
+        final Uint8List chunk = await handle.read(length);
+        final http.Response response = await _putUploadChunk(
+          uri,
+          chunk,
+          start: start,
+          end: end,
+          total: total,
+        );
+        if (response.statusCode < 200 || response.statusCode >= 300) {
+          throw ProtocolException(
+            'Microsoft Graph rejected an upload-session chunk for '
+            '${file.name}.',
+            statusCode: response.statusCode,
+          );
+        }
+        start = end + 1;
+      }
+    } finally {
+      await handle.close();
+    }
+  }
+
+  /// Issues one chunked `PUT` against an upload-session `uploadUrl`.
+  ///
+  /// `uploadUrl` is pre-authorized by Graph, so no `Authorization` header is
+  /// sent here — this deliberately does not go through [_sendAuthorized]
+  /// since a 401 refresh/retry is not meaningful against a session token.
+  Future<http.Response> _putUploadChunk(
+    Uri uri,
+    Uint8List bytes, {
+    required int start,
+    required int end,
+    required int total,
+  }) async {
+    final http.Request request = http.Request('PUT', uri)
+      ..headers['Content-Range'] = 'bytes $start-$end/$total'
+      ..headers['Content-Type'] = 'application/octet-stream'
+      ..bodyBytes = bytes;
+    final http.StreamedResponse streamed = await _uploadClient.send(request);
+    return http.Response.fromStream(streamed);
+  }
+
+  /// Best-effort cleanup for a draft created during the upload-session path
+  /// when a later step (attachment upload or `/send`) fails. Swallows its
+  /// own errors so the original failure is what surfaces to the caller.
+  Future<void> _bestEffortDeleteDraft(String draftId) async {
+    try {
+      final http.Response response = await _sendAuthorized(
+        (Map<String, String> headers) => _client.delete(
+          _uri('/me/messages/${Uri.encodeComponent(draftId)}'),
+          headers: headers,
+        ),
+      );
+      _ensureSuccess(response);
+    } on Object {
+      // Draft cleanup is best-effort; the original send failure is what
+      // matters to the caller and has already propagated via rethrow.
+    }
   }
 
   static List<String> _cleanAddresses(List<String> addresses) {
@@ -613,7 +872,7 @@ class GraphMailProvider extends MailProvider {
     if (!_disposed) {
       _disposed = true;
       if (_ownsClient) {
-        _client.close();
+        _innerClient.close();
       }
     }
   }
@@ -916,6 +1175,23 @@ class GraphMailProvider extends MailProvider {
       throw const ProtocolException('This Graph provider has been disposed.');
     }
   }
+}
+
+/// Local attachment file staged for an outbound Graph send, resolved once
+/// up front (path/name/size/content-type) so [GraphMailProvider.sendEnvelope]
+/// can pick the inline vs. upload-session path without re-reading files.
+class _OutgoingAttachmentFile {
+  const _OutgoingAttachmentFile({
+    required this.path,
+    required this.name,
+    required this.sizeBytes,
+    required this.contentType,
+  });
+
+  final String path;
+  final String name;
+  final int sizeBytes;
+  final String contentType;
 }
 
 class _TimeoutClient extends http.BaseClient {

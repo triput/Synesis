@@ -246,6 +246,7 @@ void main() {
       expect(find.text('Find in message').last, findsOneWidget);
       expect(find.text('Print').last, findsOneWidget);
       expect(find.text('Save as EML').last, findsOneWidget);
+      expect(find.text('Save as PDF').last, findsOneWidget);
       expect(find.text('Open in new window').last, findsOneWidget);
     });
   });

@@ -4,7 +4,7 @@
 // Component: Sync / Integration
 // Version: 1.1 (Gold Master)
 // Created: 2026-07-14
-// Last Update: 2026-07-18
+// Last Update: 2026-07-23
 // ==============================================================================
 
 import 'package:synesis/auth/oauth_identity_manager.dart';
@@ -39,11 +39,15 @@ class ProviderRegistry {
     }
     String? reference = account.credentialsRef?.trim();
     // Recover Google OAuth refs if the account row lost credentials_ref but
-    // tokens were stored under the canonical google:$id key.
+    // tokens were stored under the canonical google:$id key (includes Workspace
+    // custom domains — not only @gmail.com).
     if ((reference == null || reference.isEmpty) &&
-        account.providerType == 'imap' &&
-        _looksLikeGmailAddress(account.address)) {
-      reference = 'google:${account.id}';
+        account.providerType == 'imap') {
+      final String googleRef = 'google:${account.id}';
+      if (_looksLikeGmailAddress(account.address) ||
+          await _identityManager.hasGoogleCredentials(googleRef)) {
+        reference = googleRef;
+      }
     }
     if (reference == null || reference.isEmpty) {
       return null;

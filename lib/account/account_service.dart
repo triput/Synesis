@@ -4,7 +4,7 @@
 // Component: Account / Integration
 // Version: 1.0 (Gold Master)
 // Created: 2026-07-14
-// Last Update: 2026-07-17
+// Last Update: 2026-07-23
 // ==============================================================================
 
 import 'package:synesis/auth/oauth_identity_manager.dart';
@@ -220,6 +220,16 @@ class AccountService {
       providerType: 'imap',
       focusEnabled: focusEnabled,
     );
+    // Seed Inbox so the sidebar can expand immediately while bootstrap LIST runs.
+    await _repository.upsertFolders(<MailFolder>[
+      MailFolder(
+        id: MailFolder.inboxId(id),
+        accountId: id,
+        name: 'Inbox',
+        remoteId: 'INBOX',
+        role: 'inbox',
+      ),
+    ]);
     await _repository.enqueueSyncJob(
       accountId: id,
       type: 'bootstrap',

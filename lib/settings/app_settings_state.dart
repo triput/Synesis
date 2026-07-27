@@ -2,9 +2,9 @@
 // File: lib/settings/app_settings_state.dart
 // Description: Immutable appearance and Focus preference snapshot
 // Component: Bloc / Settings
-// Version: 1.1 (Gold Master)
+// Version: 1.3 (Gold Master)
 // Created: 2026-07-14
-// Last Update: 2026-07-18
+// Last Update: 2026-07-23
 // ==============================================================================
 
 import 'package:equatable/equatable.dart';
@@ -38,6 +38,15 @@ const double kUiFontSizeScaleMin = 0.85;
 
 /// Maximum allowed [AppSettingsState.uiFontSizeScale] (UI-P18).
 const double kUiFontSizeScaleMax = 1.3;
+
+/// Default [AppSettingsState.autoMarkAsReadSeconds] dwell (UI-P28/UI-P27).
+const int kAutoMarkAsReadSecondsDefault = 5;
+
+/// Minimum allowed [AppSettingsState.autoMarkAsReadSeconds]. `0` means Off.
+const int kAutoMarkAsReadSecondsMin = 0;
+
+/// Maximum allowed [AppSettingsState.autoMarkAsReadSeconds] (UI-P28).
+const int kAutoMarkAsReadSecondsMax = 60;
 
 /// Android message-list swipe action (left or right).
 enum SwipeListAction {
@@ -75,6 +84,9 @@ class AppSettingsState extends Equatable {
     this.swipeRightAction = SwipeListAction.archive,
     this.swipeLeftAction = SwipeListAction.delete,
     this.blockRemoteImages = true,
+    this.accountBlockRemoteImages = const <String, bool>{},
+    this.accountImageAllowlistDomains = const <String, List<String>>{},
+    this.blockTrackers = true,
     this.pushOnCellular = false,
     this.readingPanePosition = ReadingPanePosition.right,
     this.visualFocusEnabled = false,
@@ -89,6 +101,7 @@ class AppSettingsState extends Equatable {
     this.uiFontSizeScale = 1.0,
     this.uiTextColorArgb,
     this.savedFilters = const <SavedMessageFilter>[],
+    this.autoMarkAsReadSeconds = kAutoMarkAsReadSecondsDefault,
   });
 
   final ThemeId themeId;
@@ -110,6 +123,21 @@ class AppSettingsState extends Equatable {
   /// When true, HTML mail blocks remote http(s) images until the user allows
   /// them for the current reading session. Default true (privacy-first).
   final bool blockRemoteImages;
+
+  /// Per-account override of [blockRemoteImages] (D6-2). A missing key
+  /// inherits the global [blockRemoteImages] value for that account.
+  final Map<String, bool> accountBlockRemoteImages;
+
+  /// Per-account list of image-host domains that are always loaded even when
+  /// remote images are blocked (D6-2). Matching is a case-insensitive suffix
+  /// match (see `isHostAllowlisted`), so `example.com` also covers
+  /// `img.example.com`.
+  final Map<String, List<String>> accountImageAllowlistDomains;
+
+  /// When true, strips known ESP/analytics tracking pixels and open-tracking
+  /// beacons from HTML bodies, independent of [blockRemoteImages] (D6-7).
+  /// Default true (privacy-first).
+  final bool blockTrackers;
 
   /// When true, Android may run IMAP IDLE / near-push on cellular data.
   /// Default false (opt-in). Desktop ignores this and always allows push online.
@@ -160,11 +188,28 @@ class AppSettingsState extends Equatable {
   /// Device-local named message list filter presets.
   final List<SavedMessageFilter> savedFilters;
 
+  /// Dwell in seconds before an open unread message is auto-marked read
+  /// (UI-P28). Clamped to [kAutoMarkAsReadSecondsMin]–
+  /// [kAutoMarkAsReadSecondsMax]. `0` disables auto-mark-as-read entirely.
+  final int autoMarkAsReadSeconds;
+
+  /// True when auto-mark-as-read is enabled (non-zero dwell).
+  bool get autoMarkAsReadEnabled => autoMarkAsReadSeconds > 0;
+
   bool isAccountFocusEnabled(String accountId) =>
       accountFocusEnabled[accountId] ?? true;
 
   bool isAccountNotificationsEnabled(String accountId) =>
       accountNotificationsEnabled[accountId] ?? true;
+
+  /// Effective remote-image-blocking policy for [accountId] (D6-2): a
+  /// per-account override takes precedence over the global [blockRemoteImages].
+  bool isBlockRemoteImagesForAccount(String accountId) =>
+      accountBlockRemoteImages[accountId] ?? blockRemoteImages;
+
+  /// Image-host allowlist for [accountId] (D6-2); empty when unset.
+  List<String> imageAllowlistDomainsForAccount(String accountId) =>
+      accountImageAllowlistDomains[accountId] ?? const <String>[];
 
   bool focusEnabledForContext({required bool isUnified, String? accountId}) {
     if (isUnified) return unifiedFocusEnabled;
@@ -185,6 +230,9 @@ class AppSettingsState extends Equatable {
     SwipeListAction? swipeRightAction,
     SwipeListAction? swipeLeftAction,
     bool? blockRemoteImages,
+    Map<String, bool>? accountBlockRemoteImages,
+    Map<String, List<String>>? accountImageAllowlistDomains,
+    bool? blockTrackers,
     bool? pushOnCellular,
     ReadingPanePosition? readingPanePosition,
     bool? visualFocusEnabled,
@@ -202,6 +250,7 @@ class AppSettingsState extends Equatable {
     int? uiTextColorArgb,
     bool clearUiTextColorArgb = false,
     List<SavedMessageFilter>? savedFilters,
+    int? autoMarkAsReadSeconds,
   }) {
     return AppSettingsState(
       themeId: themeId ?? this.themeId,
@@ -217,6 +266,11 @@ class AppSettingsState extends Equatable {
       swipeRightAction: swipeRightAction ?? this.swipeRightAction,
       swipeLeftAction: swipeLeftAction ?? this.swipeLeftAction,
       blockRemoteImages: blockRemoteImages ?? this.blockRemoteImages,
+      accountBlockRemoteImages:
+          accountBlockRemoteImages ?? this.accountBlockRemoteImages,
+      accountImageAllowlistDomains:
+          accountImageAllowlistDomains ?? this.accountImageAllowlistDomains,
+      blockTrackers: blockTrackers ?? this.blockTrackers,
       pushOnCellular: pushOnCellular ?? this.pushOnCellular,
       readingPanePosition: readingPanePosition ?? this.readingPanePosition,
       visualFocusEnabled: visualFocusEnabled ?? this.visualFocusEnabled,
@@ -242,6 +296,8 @@ class AppSettingsState extends Equatable {
           ? null
           : (uiTextColorArgb ?? this.uiTextColorArgb),
       savedFilters: savedFilters ?? this.savedFilters,
+      autoMarkAsReadSeconds: (autoMarkAsReadSeconds ?? this.autoMarkAsReadSeconds)
+          .clamp(kAutoMarkAsReadSecondsMin, kAutoMarkAsReadSecondsMax),
     );
   }
 
@@ -259,6 +315,9 @@ class AppSettingsState extends Equatable {
         swipeRightAction,
         swipeLeftAction,
         blockRemoteImages,
+        accountBlockRemoteImages,
+        accountImageAllowlistDomains,
+        blockTrackers,
         pushOnCellular,
         readingPanePosition,
         visualFocusEnabled,
@@ -273,5 +332,6 @@ class AppSettingsState extends Equatable {
         uiFontSizeScale,
         uiTextColorArgb,
         savedFilters,
+        autoMarkAsReadSeconds,
       ];
 }

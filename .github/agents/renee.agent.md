@@ -2,7 +2,7 @@
 name: Renee
 description: Quality Engineering and test automation specialist ensuring architectural stability
 user-invocable: false
-model: "Claude Sonnet 5 (copilot)"
+model: "GPT-5.3-Codex (copilot)"
 tools: ['search/codebase', 'file/read']
 ---
 

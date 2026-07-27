@@ -10,6 +10,8 @@
 
 ## Open
 
+> **Changelog (2026-07-27):** Android dogfood folder/drawer polish complete — account chips, folder-picker sheet, title-bar **Show folders** → sheet.
+
 ### DEF-011 — IMAP edit ignores host/port/user changes without a new password
 
 | Field | Value |
@@ -184,24 +186,6 @@ No provider-backed fetch path for sample messages; documented as intentional gap
 
 ---
 
-### DEF-001 — Workspace Ctrl shortcuts only fire when Quick Reply has focus
-
-| Field | Value |
-| --- | --- |
-| Priority | **Pri-2** |
-| Status | **Closed** (2026-07-17, W5) |
-| Area | Desktop keyboard shortcuts (`lib/ui/shell/mail_workspace.dart`, `lib/desktop/keyboard_intents.dart`) |
-| Platforms | Windows (reproduced); Android TBD |
-| Logged | 2026-07-14 |
-
-**Summary**  
-With keyboard shortcuts enabled, Ctrl+J / Ctrl+K / Ctrl+N / Ctrl+F work when the reading-pane **Quick Reply** field has focus, but do not function when focus is elsewhere in the mailbox workspace (message list, sidebar, title bar, etc.).
-
-**Resolution**  
-Replaced process-global `HardwareKeyboard` registration with route-root `Focus.onKeyEvent` on the workspace. Ancestor-only `EditableText` detection (no descendant walk) so list/sidebar focus no longer false-positives as “editing.” Quick Reply field was removed earlier; stale summary text retained for history.
-
----
-
 ### DEF-007 — Sync header refresh can overwrite local read/unread
 
 | Field | Value |
@@ -226,24 +210,6 @@ Observed during Renee quality gate on mark read/unread. Optimistic cubit state c
 
 ---
 
-### DEF-008 — Ctrl+U toggles only the primary message, not bulk selection
-
-| Field | Value |
-| --- | --- |
-| Priority | **Pri-3** |
-| Status | **Closed** (2026-07-17, W5) |
-| Area | `MessageActionService.toggleSelectedUnread`, `MailboxCubit.toggleSelectedUnread` |
-| Platforms | Desktop |
-| Logged | 2026-07-14 |
-
-**Summary**  
-After Ctrl/Shift multi-select, Ctrl+U still called `toggleSelectedUnread()` on the single `selectedMessageId`, ignoring `selectedMessageIds`.
-
-**Resolution**  
-`toggleSelectedUnread` now resolves `_actionTargets` and applies one uniform bulk state via `setUnreadBulk` (any unread → all read; else all unread).
-
----
-
 ### DEF-009 — Rapid concurrent mark read/unread has no in-flight guard
 
 | Field | Value |
@@ -265,7 +231,268 @@ Each call runs to completion independently with no mutex or generation token.
 
 ---
 
+### DEF-039 — Remove Account confirmation dialog overflows
+
+| Field | Value |
+| --- | --- |
+| Priority | **Pri-3** |
+| Status | Open |
+| Area | `lib/ui/account/remove_account_dialog.dart` |
+| Platforms | Android (likely all narrow widths) |
+| Logged | 2026-07-23 |
+
+**Summary**  
+Yellow/black Flutter overflow stripes appear in the Remove Account confirmation pop-up (dogfood on Android). Non-blocking; confirm/cancel still usable.
+
+**Expected**  
+Dialog content is constrained to the available width/height and scrolls when needed; no overflow indicators.
+
+**Actual**  
+Layout overflows the confirmation dialog chrome.
+
+**Notes**  
+Defer to a post-dogfood UI overflow sweep with DEF-040 and related shell polish. Not blocking daily use.
+
+---
+
+### DEF-040 — Edit Account sheet overflows
+
+| Field | Value |
+| --- | --- |
+| Priority | **Pri-3** |
+| Status | Open |
+| Area | `lib/ui/account/edit_account_sheet.dart` |
+| Platforms | Android (likely all narrow widths) |
+| Logged | 2026-07-23 |
+
+**Summary**  
+Yellow/black Flutter overflow stripes appear on the Edit Account screen (dogfood on Android). Non-blocking for continued dogfood.
+
+**Expected**  
+Sheet content fits the viewport or scrolls when the keyboard/small height requires it; no overflow indicators.
+
+**Actual**  
+Layout overflows on the Edit Account UI.
+
+**Notes**  
+Bundle with DEF-039 in a later UI overflow sweep after more dogfood.
+
+---
+
+### DEF-044 — Home-screen list widget: configurable account/folder + open message
+
+| Field | Value |
+| --- | --- |
+| Priority | **Pri-3** |
+| Status | Open |
+| Area | Android widgets (`SynesisWidgetProvider`, `WidgetSnapshotService`); enhancement |
+| Platforms | Android |
+| Logged | 2026-07-24 |
+
+**Summary**  
+Dogfood: the existing summary/action widget concept is good. Operator wants a second (list-style) widget that can be configured to a selected account/folder and whose rows open the corresponding message when tapped. Current Synesis widget is counter + latest subject + Inbox/Compose actions only (`synesis_widget.xml`); list snapshot data exists (`synesis_widget.list`) but is not rendered as a clickable list UI.
+
+**Expected**  
+Configurable list widget (account and/or folder), rows tappable → deep-link into that message; refresh from local DB snapshots.
+
+**Actual**  
+Only the summary widget ships; no configurable folder-scoped clickable list widget.
+
+**Notes**  
+Feature backlog for a post-dogfood widget pass — not blocking beta mail use.
+
+---
+
+### DEF-046 — Hamburger opens full drawer; prefer folders-only sheet (enhancement)
+
+| Field | Value |
+| --- | --- |
+| Priority | **Pri-3** |
+| Status | Open (enhancement) |
+| Area | `mail_workspace.dart` title-bar menu, `MailNavigationDrawer` / `FolderSidebar` |
+| Platforms | Android (phone) |
+| Logged | 2026-07-24 |
+
+**Summary**  
+On the main list screen, the hamburger currently opens the full navigation drawer (brand header + folders + footer actions). Edge-swipe already opens that full drawer. Operator preference: hamburger should open a **folders-only** view; keep swipe for the full drawer.
+
+**Expected**  
+Hamburger → compact folders/accounts navigation. Swipe-from-left → full drawer (compose, outbox, settings, etc.).
+
+**Actual**  
+Hamburger and swipe both open the same full drawer.
+
+**Notes**  
+Enhancement for the next UI pass — not a defect. Pill outbox affordance stays; drawer Outbox entry landed separately (2026-07-24).
+
+**Related (2026-07-27)** — Drawer account IA (hybrid A) landed in `FolderSidebar` `embeddedInDrawer`: horizontal account chips (one-tap → Inbox via `selectAccount`) + compact **FOLDERS** launch tile that opens a tall folder-picker bottom sheet for the active account (avoids crushing the tree between MAIL and footer on large phones). Phone `_TitleBar` and list **Show folders** both open that same sheet directly (no drawer hop); reading has no hamburger so the title control is the main in-message escape. Last-active account retained when Unified/virtual views are selected. Desktop multi-expand sidebar unchanged. Does not close DEF-046 (hamburger folders-only sheet still open).
+
+---
+
 ## Closed
+
+### DEF-041 — Message list star/expand chrome steals horizontal space (phone)
+
+| Field | Value |
+| --- | --- |
+| Priority | **Pri-2** |
+| Status | **Closed** (2026-07-27) |
+| Area | `lib/ui/shell/message_list_pane.dart` (`_ThreadRow` / `_MessageRow`) |
+| Platforms | Android (narrow widths; likely all phone layouts) |
+| Logged | 2026-07-23 |
+
+**Summary**  
+On the Unified Inbox message list, the leading star and thread expand/collapse controls (plus their tap targets/padding) consume a large share of row width. Sender and subject start too far right and truncate heavily (e.g. “LinkedIn Job Ale…”, “Director of Quality Engineeri…”), even when vertical space is fine. Non-blocking but annoying in daily dogfood.
+
+**Expected**  
+On narrow widths, leading chrome is compact (smaller targets and/or denser layout) so sender/subject retain most of the row; optional: move star to trailing or overflow menu on phone.
+
+**Actual (before fix)**  
+Star + chevron column pushes content mid-screen; primary text is chronically ellipsized.
+
+**Resolution**  
+Compact density shrinks leading star/expand tap targets (16px / 22px constraints) in `lib/ui/shell/message_list_pane.dart`.
+
+---
+
+### DEF-042 — Expand/collapse chevron and “1” badge on single-message threads
+
+| Field | Value |
+| --- | --- |
+| Priority | **Pri-3** |
+| Status | **Closed** (2026-07-27) |
+| Area | `lib/ui/shell/message_list_pane.dart` (`_ThreadRow`), conversation/thread projection |
+| Platforms | Android (also desktop if same row chrome) |
+| Logged | 2026-07-23 |
+
+**Summary**  
+Single messages rendered as threads still show the expand/collapse chevron and a thread-count badge of **1**. Expanding a one-message “thread” feels doubled/redundant and wastes chrome (see also DEF-041).
+
+**Expected**  
+Expand control and count badge only appear when a thread has **2+** messages. Solo messages use flat row chrome (no chevron, no “1” badge).
+
+**Actual (before fix)**  
+Every visible row shows chevron + “1”, including non-threaded singles.
+
+**Resolution**  
+Expand chevron + count badge only when `thread.count >= 2` in `lib/ui/shell/message_list_pane.dart`.
+
+---
+
+### DEF-047 — Compose Send fails with "recipient rejected" for valid addresses (miscategorized SMTP error)
+
+| Field | Value |
+| --- | --- |
+| Priority | **Pri-1** |
+| Status | **Closed** (2026-07-24) |
+| Area | `lib/outbox/send_error_messages.dart`, `lib/protocol/imap_smtp_mail_provider.dart` |
+| Platforms | Android (IMAP/SMTP, incl. Google Workspace XOAUTH2) |
+| Logged | 2026-07-24 |
+
+**Summary**
+After DEF-045 fixed the hung "Sending…" state, mail reached SMTP but Compose showed `Send failed: the server rejected a recipient address. Check To/Cc and try again.` for a plainly valid send (`trish@trishputnam.com` → `trish@silverhelmet.com`). The copy comes from `actionableSendError` in `send_error_messages.dart`.
+
+**Investigation**
+Traced the full recipient pipeline end to end and found it correct: `_toController.text` is stored verbatim on the outbox row, `DriftOutboxStore._recipientListForStorage` / `splitOutboxRecipients` round-trip comma/semicolon/JSON lists without mangling addresses, `OutgoingMessageBuilder.build` and `ImapSmtpMailProvider.sendEnvelope` build a correct `To:` header, and `enough_mail`'s `MimeMessage.recipientAddresses` parses it correctly for `RCPT TO`. The To field is a plain `TextField` bound only to typed text — it never carries an account id or stale value.
+
+**Root cause**
+`actionableSendError` matched bare SMTP status codes (`550`, `551`, `553`) and the substring `recipient` to decide the error was recipient-related. But SMTP servers — especially Gmail/Workspace — reuse the same 5xx code ranges for **envelope-sender** (`MAIL FROM`) rejections, e.g. `553 5.7.1 <addr>... Sender address rejected: not owned by user` (mismatched/unverified "Send mail as" alias) or `554 5.7.1 Unauthenticated email is not accepted due to domain's DMARC policy` (SPF/DKIM/DMARC policy failure on the From domain). Both contain `553`/`554` and neither is a recipient problem, so the bucket matched first and produced a confusing, actively misleading "check To/Cc" message — hiding the real cause and wasting the operator's troubleshooting time on the wrong field. Separately, `ImapSmtpMailProvider.sendEnvelope`/`send` did not pass an explicit `from:` to `enough_mail`'s `smtp.sendMessage`, leaving `MAIL FROM` to be re-derived from the rendered MIME's `From` header instead of the resolved envelope address directly — a correctness gap that could allow sender/recipient diagnosis to diverge from what Synesis actually intended to send.
+
+**Resolution**
+1. `send_error_messages.dart`: added a sender/envelope-from bucket (checked **before** the recipient bucket) matching Gmail/Workspace sender-rejection and DMARC/SPF phrases (`sender address rejected`, `not owned by user`, `dmarc`, `spf`, `5.7.1`/`5.7.25`-`5.7.27`, etc.), mapped to guidance about verifying the "Send mail as" alias and domain SPF/DKIM/DMARC — instead of telling the user to check To/Cc for a From-address problem.
+2. Every bucket now appends a sanitized, length-capped raw server detail (`(Server said: ...)`) so the actual SMTP response is visible in the UI for any future ambiguous case, not just the ones an explicit bucket happens to name.
+3. `imap_smtp_mail_provider.dart`: `sendEnvelope` and `send` now pass `from: MailAddress(null, ...)` explicitly to `smtp.sendMessage`, so `MAIL FROM` always equals the resolved account/envelope address rather than being re-derived from re-parsed MIME headers.
+4. Added regression tests in `send_error_messages_test.dart` covering sender-address-rejected, DMARC/SPF, and genuine-recipient-rejection cases (asserting the recipient bucket is *not* hit for sender-policy errors, and that raw server detail is surfaced).
+
+**Verification**
+`flutter test test/send_error_messages_test.dart test/sync_engine_send_outbox_test.dart test/mime_builder_test.dart test/mail_provider_capabilities_test.dart test/provider_dispose_test.dart` — 24/24 pass. `dart analyze` clean on touched files. `flutter build apk --debug` succeeds.
+
+**Follow-up for the operator**
+Because the real SMTP error text couldn't be captured from the live device in this pass, the next actual failure on this account will now show the *raw* server response in the Compose error banner. If it reads "Sender address rejected" / "not owned by user" / mentions DMARC/SPF, the fix is on the Google Workspace admin side (verify `trishputnam.com` as a "Send mail as" alias, or confirm SPF/DKIM/DMARC authorize Google) rather than in the app.
+
+---
+
+### DEF-048 — SMTP `500 no recipients` from empty MimeMessage.recipientAddresses
+
+| Field | Value |
+| --- | --- |
+| Priority | **Pri-1** |
+| Status | **Closed** (2026-07-24) |
+| Area | `lib/protocol/imap_smtp_mail_provider.dart` (`sendEnvelope`), enough_mail `SmtpClient.sendMessage` |
+| Platforms | All IMAP/SMTP |
+| Logged | 2026-07-24 |
+
+**Summary**
+After DEF-047, Compose still failed with `Send failed: … Check To/Cc … (Server said: 500 no recipients)` for `trish@trishputnam.com` → `trish@silverhelmet.com`. The To field was filled correctly.
+
+**Root cause**
+`sendEnvelope` builds MIME via `buildMultipartMessage` (raw headers including `To:`), then `MimeMessage.parseFromData`. enough_mail's `SmtpClient.sendMessage` uses `message.recipientAddresses` unless `recipients:` is passed. Parsed messages from our hand-built MIME leave `to`/`cc`/`bcc` empty, so enough_mail throws a **client-side** `SmtpException` with response text `500 no recipients` *before* any real SMTP RCPT. DEF-047's investigation incorrectly assumed parse populated recipients; the live `Server said: 500 no recipients` string is that exact enough_mail guard.
+
+**Resolution**
+Pass explicit `recipients:` (To+Cc+Bcc as `MailAddress` list) and `from:` to `smtp.sendMessage`. Map `500 no recipients` / `no recipients` in `actionableSendError` to a non-"check To/Cc" message. Regression: hand-built MIME → parse leaves `recipientAddresses` empty (documents the quirk).
+
+---
+
+### DEF-045 — Compose Send stuck grayed (“Sending…”) / mail never delivered
+
+| Field | Value |
+| --- | --- |
+| Priority | **Pri-1** |
+| Status | **Closed** (2026-07-24) |
+| Area | `compose_sheet.dart`, `SyncEngine.kick`, `ImapSmtpMailProvider.sendEnvelope`, `NetworkSyncPolicy.allowPoll`, `drift_sync_job_store.claimPendingJobs` |
+| Platforms | Android (also any IMAP/SMTP path) |
+| Logged | 2026-07-24 |
+
+**Summary**  
+Compose Send stayed on a gray **Sending…** state and messages were never received. Valid addresses were not the gate — button only disables while `_busy`.
+
+**Root causes (combined)**  
+1. Compose awaited unbounded `syncEngine.kick()` (hung SMTP/IMAP or long prior sync → busy forever).  
+2. Autosave could demote `queued` → `draft`, so `send_outbox` found nothing to send.  
+3. Empty `connectivity_plus` results refused all poll/send kicks.  
+4. SMTP connect/auth/send had no timeouts.  
+5. `send_outbox` could sit behind older incremental jobs in the claim FIFO.
+
+**Resolution**  
+Bounded kick wait + `kickFresh` on timeout; cancel/guard autosave so it cannot demote in-flight sends; treat empty connectivity as online for poll; 45s SMTP step timeouts; claim priority prefers `send_outbox` / `push_message_action`.
+
+---
+
+### DEF-043 — Compose formatting toolbar overflows (~10px)
+
+| Field | Value |
+| --- | --- |
+| Priority | **Pri-2** |
+| Status | **Closed** (2026-07-24) |
+| Area | `lib/ui/compose/compose_sheet.dart` (Bold/Italic/Link/Attach/Schedule row) |
+| Platforms | Android (narrow widths) |
+| Logged | 2026-07-24 |
+
+**Summary**  
+Compose sheet formatting row showed Flutter hazard stripes (“OVERFLOWED BY 9.6 PIXELS”), clipping the Schedule control.
+
+**Resolution**  
+Toolbar row uses a horizontally scrollable leading cluster plus Schedule/clear trailing actions so narrow widths no longer overflow.
+
+---
+
+### DEF-033 — Google / Workspace add shows no folders (collapsed + empty LIST race)
+
+| Field | Value |
+| --- | --- |
+| Priority | **Pri-1** |
+| Status | **Closed** (2026-07-23) |
+| Area | `MailboxCubit.selectAccount`, `add_account_sheet`, `AccountService.addGoogleImapAccount`, `ProviderRegistry`, `folder_sidebar` |
+| Platforms | Android (also desktop) |
+| Logged | 2026-07-23 |
+
+**Summary**  
+After Sign in with Google (including Workspace custom domains), the folder tree looked empty: accounts were never auto-expanded on select, add-account did not select the new account or open the sidebar, Inbox was not seeded before bootstrap LIST finished, and credentials_ref recovery only matched `@gmail.com` / `@googlemail.com`.
+
+**Resolution**  
+`selectAccount` expands the account; Google/Microsoft add opens the sidebar and selects the new account; seed Inbox on Google add; recover `google:$id` for IMAP accounts with stored Google tokens; sidebar “Syncing folders…” empty hint.
+
+---
 
 ### DEF-038 — Microsoft / Google Sign-in missing in dogfood build (Pri-1)
 
@@ -408,6 +635,42 @@ After falling back to `flutter_widget_from_html`, clicking the reading pane focu
 
 **Resolution**  
 `isEditingText` ignores `readOnly` EditableText (selection surfaces). Restored `HardwareKeyboard.addHandler` for workspace chords (still gated by settings + editing check).
+
+---
+
+### DEF-001 — Workspace Ctrl shortcuts only fire when Quick Reply has focus
+
+| Field | Value |
+| --- | --- |
+| Priority | **Pri-2** |
+| Status | **Closed** (2026-07-17, W5) |
+| Area | Desktop keyboard shortcuts (`lib/ui/shell/mail_workspace.dart`, `lib/desktop/keyboard_intents.dart`) |
+| Platforms | Windows (reproduced); Android TBD |
+| Logged | 2026-07-14 |
+
+**Summary**  
+With keyboard shortcuts enabled, Ctrl+J / Ctrl+K / Ctrl+N / Ctrl+F work when the reading-pane **Quick Reply** field has focus, but do not function when focus is elsewhere in the mailbox workspace (message list, sidebar, title bar, etc.).
+
+**Resolution**  
+Replaced process-global `HardwareKeyboard` registration with route-root `Focus.onKeyEvent` on the workspace. Ancestor-only `EditableText` detection (no descendant walk) so list/sidebar focus no longer false-positives as “editing.” Quick Reply field was removed earlier; stale summary text retained for history.
+
+---
+
+### DEF-008 — Ctrl+U toggles only the primary message, not bulk selection
+
+| Field | Value |
+| --- | --- |
+| Priority | **Pri-3** |
+| Status | **Closed** (2026-07-17, W5) |
+| Area | `MessageActionService.toggleSelectedUnread`, `MailboxCubit.toggleSelectedUnread` |
+| Platforms | Desktop |
+| Logged | 2026-07-14 |
+
+**Summary**  
+After Ctrl/Shift multi-select, Ctrl+U still called `toggleSelectedUnread()` on the single `selectedMessageId`, ignoring `selectedMessageIds`.
+
+**Resolution**  
+`toggleSelectedUnread` now resolves `_actionTargets` and applies one uniform bulk state via `setUnreadBulk` (any unread → all read; else all unread).
 
 ---
 

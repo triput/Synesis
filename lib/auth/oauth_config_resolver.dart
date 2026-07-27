@@ -4,7 +4,7 @@
 // Component: Auth / Integration
 // Version: 1.0 (Gold Master)
 // Created: 2026-07-18
-// Last Update: 2026-07-18
+// Last Update: 2026-07-23
 // ==============================================================================
 
 import 'dart:convert';
@@ -74,6 +74,12 @@ class OAuthConfigResolver {
         _environment['SYNESIS_GOOGLE_CLIENT_ID'],
         local['SYNESIS_GOOGLE_CLIENT_ID'],
         OAuthPublicClients.googleClientId,
+      ]),
+      androidClientId: _firstNonEmpty(<String?>[
+        const String.fromEnvironment('SYNESIS_GOOGLE_ANDROID_CLIENT_ID'),
+        _environment['SYNESIS_GOOGLE_ANDROID_CLIENT_ID'],
+        local['SYNESIS_GOOGLE_ANDROID_CLIENT_ID'],
+        OAuthPublicClients.googleAndroidClientId,
       ]),
       clientSecret: _firstNonEmpty(<String?>[
         const String.fromEnvironment('SYNESIS_GOOGLE_CLIENT_SECRET'),

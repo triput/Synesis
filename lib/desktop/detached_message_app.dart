@@ -2,9 +2,9 @@
 // File: lib/desktop/detached_message_app.dart
 // Description: Minimal secondary-window reader for one local message.
 // Component: UI / Desktop
-// Version: 1.2 (Gold Master)
+// Version: 1.3 (Gold Master)
 // Created: 2026-07-17
-// Last Update: 2026-07-18
+// Last Update: 2026-07-22
 // ==============================================================================
 
 import 'dart:async';
@@ -12,6 +12,7 @@ import 'dart:async';
 import 'package:synesis/desktop/detached_message_window_controller.dart';
 import 'package:synesis/domain/models.dart';
 import 'package:synesis/repository/mail_repository.dart';
+import 'package:synesis/settings/app_settings_state.dart';
 import 'package:synesis/theme/app_theme.dart';
 import 'package:synesis/theme/density.dart';
 import 'package:synesis/theme/theme_id.dart';
@@ -31,11 +32,16 @@ class DetachedMessageApp extends StatefulWidget {
     required this.repository,
     required this.windowController,
     required this.initialMessageId,
+    this.autoMarkAsReadSeconds = kAutoMarkAsReadSecondsDefault,
   });
 
   final MailRepository repository;
   final WindowController windowController;
   final String initialMessageId;
+
+  /// UI-P28: persisted auto-mark-as-read dwell (seconds) read from
+  /// [AppSettingsState] at window launch. `0` disables auto-mark.
+  final int autoMarkAsReadSeconds;
 
   @override
   State<DetachedMessageApp> createState() => _DetachedMessageAppState();
@@ -161,6 +167,10 @@ class _DetachedMessageAppState extends State<DetachedMessageApp> {
                     accounts: _accounts,
                     density: ViewDensity.calm,
                     allowOpenInNewWindow: false,
+                    autoMarkAsReadEnabled: widget.autoMarkAsReadSeconds > 0,
+                    autoMarkAsReadDwell: Duration(
+                      seconds: widget.autoMarkAsReadSeconds,
+                    ),
                     onMarkRead: () => unawaited(_setUnread(message.id, false)),
                     onMarkUnread: () => unawaited(_setUnread(message.id, true)),
                   ),

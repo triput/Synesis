@@ -4,7 +4,7 @@
 // Component: Sync
 // Version: 1.0 (Gold Master)
 // Created: 2026-07-17
-// Last Update: 2026-07-17
+// Last Update: 2026-07-24
 // ==============================================================================
 
 import 'package:connectivity_plus/connectivity_plus.dart';
@@ -12,7 +12,8 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 /// Decides whether poll sync and push/IDLE are allowed for the current network.
 ///
 /// Product rules:
-/// - Poll when any non-none connectivity is present.
+/// - Poll when any non-none connectivity is present, or when the plugin
+///   returns an empty list (Android can report `[]` while online).
 /// - Desktop push/IDLE whenever online.
 /// - Mobile push/IDLE on Wi‑Fi/ethernet/VPN, or on cellular when
 ///   [pushOnCellular] is opted in (default off).
@@ -23,9 +24,13 @@ class NetworkSyncPolicy {
   final bool isDesktop;
 
   /// True when at least one interface reports connectivity.
+  ///
+  /// Empty result lists are treated as online: Android's connectivity_plus
+  /// can briefly report `[]` while Wi‑Fi works, and refusing to poll would
+  /// strand user-initiated Send forever.
   bool allowPoll(List<ConnectivityResult> results) {
     if (results.isEmpty) {
-      return false;
+      return true;
     }
     return results.any(
       (ConnectivityResult result) => result != ConnectivityResult.none,

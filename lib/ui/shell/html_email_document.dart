@@ -2,9 +2,9 @@
 // File: lib/ui/shell/html_email_document.dart
 // Description: Wrap message HTML fragments into a full document for WebView
 // Component: UI / Util
-// Version: 1.0 (Gold Master)
+// Version: 1.1 (Gold Master)
 // Created: 2026-07-14
-// Last Update: 2026-07-14
+// Last Update: 2026-07-23
 // ==============================================================================
 
 /// Builds a self-contained HTML document for the reading-pane WebView.
@@ -44,6 +44,7 @@ $content
 
 const String _headExtras = '''
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="referrer" content="no-referrer">
 <style>
   html, body {
     margin: 0;
@@ -54,6 +55,9 @@ const String _headExtras = '''
     font-size: 14px;
     line-height: 1.45;
     overflow-wrap: anywhere;
+    overflow-x: hidden;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
   }
   img, table { max-width: 100%; }
   img { height: auto; }

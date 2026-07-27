@@ -143,6 +143,13 @@ class _FakeRepository implements MailRepository {
     }
   }
 
+  final List<MailFolder> upsertedFolders = <MailFolder>[];
+
+  @override
+  Future<void> upsertFolders(List<MailFolder> folders) async {
+    upsertedFolders.addAll(folders);
+  }
+
   @override
   Future<List<MailMessage>> listMessages(MessageQuery query) async {
     listMessagesCalls += 1;
@@ -363,6 +370,9 @@ void main() {
         expect(identity.savedGoogleRefs, <String>['google:g1']);
         expect(repo.bootstrapAccountIds, <String>['g1']);
         expect(repo.accounts.single.providerType, 'imap');
+        expect(repo.upsertedFolders, hasLength(1));
+        expect(repo.upsertedFolders.single.id, MailFolder.inboxId('g1'));
+        expect(repo.upsertedFolders.single.role, 'inbox');
 
         final Map<String, String> secrets = store.secrets['google:g1']!;
         expect(secrets['imap.host'], 'imap.gmail.com');

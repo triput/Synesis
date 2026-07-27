@@ -57,6 +57,7 @@ flutter:
     - windows/runner/resources/app_icon.ico
     - assets/fonts/OpenSans-Regular.ttf
     - assets/fonts/OpenSans-Bold.ttf
+    - assets/branding/synesis_icon.png
 
 # TC-3: swap the bundled SQLite build for SQLite3MultipleCiphers so opt-in
 # database encryption (lib/repository/db_encryption_config.dart) can apply

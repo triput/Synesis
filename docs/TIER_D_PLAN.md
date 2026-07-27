@@ -5,7 +5,7 @@
 | Status | Planning — post-V1 / deferred scope |
 | Scope | Explicit non-goals, low-ROI, and horizon features ([COMPETITIVE_ANALYSIS.md](COMPETITIVE_ANALYSIS.md) §4, Tier D) |
 | Prerequisite | V1 waves W0–W7 complete (or consciously promoted into V1.x) |
-| Last updated | 2026-07-17 (added editable keyboard shortcuts, D7-9) |
+| Last updated | 2026-07-22 (V1.5 adjacency locked — [V1_5_PLAN.md](V1_5_PLAN.md)) |
 
 Tier D is the **horizon backlog**: work we deliberately excluded from V1 to ship a cohesive mail client first. Items here are fully planned (not vague wishes) so product can **promote** them into V1.1, V2, or enterprise tracks without rediscovery.
 
@@ -61,16 +61,16 @@ Items **already deferred from locked V1** with known hooks. First place to look 
 
 | ID | Feature | V1 hook | Promotion target | Estimate |
 | --- | --- | --- | --- | --- |
-| D6-1 | **Unlimited multi-window desktop** | W5 detached window + layout extension points | **V1.1** | 1–2 weeks |
-| D6-2 | **Per-account image block + domain whitelist** | TC-6 phase 1 global toggle; `account_settings_json` | **V1.1** | 1 week |
-| D6-3 | **Graph large attachment upload session** | W4 compose + sync profile cap | **V1.1** | 1–2 weeks |
-| D6-4 | **Template variables** (`{{name}}`, etc.) | TB-13 templates table | V1.2 | 3–5 days |
-| D6-5 | **Server-side snooze** | TB-4 local snooze | V1.2 | 1–2 weeks |
-| D6-6 | **Save as PDF** (in addition to EML) | TC-9 print path | V1.1 | 3–5 days |
-| D6-7 | **Advanced tracker blocking** | TC-6 HTML sanitize | V1.2 | 1 week |
-| D6-8 | **Windows toast actions** (archive/delete from notification) | W6 notifications | V1.2 | 1 week |
+| D6-1 | **Unlimited multi-window desktop** | W5 detached window + layout extension points | **V1.5** | 1–2 weeks |
+| D6-2 | **Per-account image block + domain whitelist** | TC-6 phase 1 global toggle; `account_settings_json` | **V1.5** | 1 week |
+| D6-3 | **Graph large attachment upload session** | W4 compose + sync profile cap | **V1.5 (must)** | 1–2 weeks |
+| D6-4 | **Template variables** (`{{name}}`, etc.) | TB-13 templates table | **V1.5** | 3–5 days |
+| D6-5 | **Server-side snooze** | TB-4 local snooze | **V1.5** | 1–2 weeks |
+| D6-6 | **Save as PDF** (in addition to EML) | TC-9 print path | **V1.5** | 3–5 days |
+| D6-7 | **Advanced tracker blocking** | TC-6 HTML sanitize | **V1.5** | 1 week |
+| D6-8 | **Windows toast actions** (archive/delete from notification) | W6 notifications | **V1.5** | 1 week |
 
-**Recommendation:** After V1 ship, run a **V1.1 triage** — default bundle D6-1, D6-2, D6-3 if dogfood demands.
+**Recommendation (superseded 2026-07-22):** Thin V1.1 (D6-1/2/3) replaced by consolidated **[V1.5 adjacency bundle](V1_5_PLAN.md)** — all D6 V1.1+V1.2 tags + dogfood UI; D6-3 must-ship.
 
 ---
 
@@ -110,8 +110,8 @@ Items **already deferred from locked V1** with known hooks. First place to look 
 - [ ] Meeting invite actionable from mail body
 
 **Estimate:** 6–10 weeks (major version)  
-**Depends on:** V1 compose, OAuth, sync job framework  
-**Disposition:** **V2 flagship** — do not slip into V1.1 without explicit promotion
+**Depends on:** V1 compose, OAuth, sync job framework; preferably **V1.5** complete  
+**Disposition:** **V2 flagship** — full scope locked in **[V2_PLAN.md](V2_PLAN.md)** (2026-07-22): Outlook-style modules, CardDAV/CalDAV day-one (Runbox dogfood), Graph-first impl order with parallel CardDAV spike, meeting-mail in V2.0a, Watch → V2.1
 
 ---
 
@@ -244,13 +244,13 @@ Items **already deferred from locked V1** with known hooks. First place to look 
 | **iOS** | Flutter iOS build; secure storage; push (APNs); App Store OAuth redirects | 4–6 weeks *after* Android parity | Large market |
 | **macOS** | Menu bar, sandbox, keychain | 3–4 weeks | Shares Windows desktop patterns |
 | **Linux** | GTK/tray, Secret Service API | 3–4 weeks | Thunderbird overlap — niche |
-| **Wear OS / Galaxy Watch** | Lightweight triage companion (unread glance, star/archive, optional voice reply) | 2–3 weeks | **V2** — after Android phone parity; Galaxy Watch target |
+| **Wear OS / Galaxy Watch** | Lightweight triage companion (unread glance, star/archive, optional voice reply) | 2–3 weeks | **P3 / V2.1** — after Android phone parity |
 
-### Galaxy Watch — lightweight V2 companion (locked)
+### Galaxy Watch — lightweight companion (P3 / V2.1)
 
-Not a full mail client on the wrist. Target **Samsung Galaxy Watch** (Wear OS) after Android phone app is stable.
+Not a full mail client on the wrist. Target **Samsung Galaxy Watch** (Wear OS) after Android phone app is stable. **Not on V2.0 critical path** (locked 2026-07-22).
 
-| In scope (V2) | Out of scope |
+| In scope (V2.1) | Out of scope |
 | --- | --- |
 | Unread count / Focused badge | Full compose with attachments |
 | Last 3–5 subject lines per account | HTML rendering |
@@ -274,7 +274,7 @@ Not a full mail client on the wrist. Target **Samsung Galaxy Watch** (Wear OS) a
 - [ ] TestFlight build reads Graph mail with parity to Android core (when iOS ships post-PIM)
 - [ ] Galaxy Watch companion shows unread + triage actions via phone snapshot sync
 
-**Disposition:** **V2 platform** — **PIM (TD-A) is the V2 headline**; iOS/macOS/Linux and Galaxy Watch follow based on demand after PIM lands.
+**Disposition:** **V2.1 platform (P3)** — **PIM (TD-A) is the V2.0 headline**; Watch follows after PIM per [V2_PLAN.md](V2_PLAN.md). iOS/macOS/Linux remain demand-gated V2+.
 
 ---
 
@@ -360,16 +360,21 @@ Not a full mail client on the wrist. Target **Samsung Galaxy Watch** (Wear OS) a
 
 | Item | Tier D ID | Default release | Promote if… |
 | --- | --- | --- | --- |
-| Unlimited multi-window | D6-1 | **V1.1** | Desktop power users want it (likely yes) |
-| Image whitelist per account | D6-2 | **V1.1** | Privacy inbox pattern (likely yes) |
-| Graph large attachments | D6-3 | **V1.1** | Hit attachment cap in dogfood |
+| Unlimited multi-window | D6-1 | **V1.5** | Desktop power users want it |
+| Image whitelist per account | D6-2 | **V1.5** | Privacy inbox pattern |
+| Graph large attachments | D6-3 | **V1.5 (must)** | Operator hits attachment cap often |
 | Contacts & calendar (PIM) | TD-A | **V2 headline** | **Locked** — V2 flagship |
-| Enterprise SKU | TD-B + TD-C subset | **Separate product** | **Locked** — crypto + shared mail + S/MIME |
-| OpenPGP / S/MIME | TD-B | **Enterprise** | Paying org requirement |
-| PST import | TD-C | **After V1.1** | **Locked** — unless migration is acquisition channel |
-| POP3 | TD-C | **V2** | User demand |
-| Shared mailboxes | TD-C | **Enterprise / V1.2** | Workplace Graph accounts |
-| Galaxy Watch (lightweight) | TD-E | **V2** | After Android stable |
+| Enterprise SKU (PGP / S/MIME / shared mail) | TD-B + TD-C subset | **Maybe/Someday** | Promote only if eval/paying need (2026-07-22) |
+| OpenPGP / S/MIME | TD-B | **Maybe/Someday** | Same as Enterprise |
+| PST import | TD-C | **After V1.5** | **Locked** — unless migration is acquisition channel |
+| POP3 | TD-C | **V2+** | User demand |
+| Shared mailboxes | TD-C | **Maybe/Someday** | Workplace Graph accounts |
+| Template variables | D6-4 | **V1.5** | Ex-V1.2; absorbed into adjacency bundle |
+| Server-side snooze | D6-5 | **V1.5** | Ex-V1.2 |
+| Save as PDF | D6-6 | **V1.5** | Ex-V1.1 |
+| Advanced tracker blocking | D6-7 | **V1.5** | Ex-V1.2 |
+| Windows toast actions | D6-8 | **V1.5** | Ex-V1.2 |
+| Galaxy Watch (lightweight) | TD-E | **V2.1 (P3)** | After V2.0 PIM; Android stable |
 | iOS / macOS / Linux | TD-E | **V2+** | After PIM |
 | On-device ML Focus | TD-D1 | **V2+** | Override data + quality bar |
 | JMAP | TD-F | **Optional** | Fastmail users |
@@ -382,14 +387,14 @@ Not a full mail client on the wrist. Target **Samsung Galaxy Watch** (Wear OS) a
 ## 12. Phase overview (if executing Tier D as program)
 
 ```text
-V1.1  (post-W7, ~2–4 weeks) ── D6 adjacency bundle only (locked)
-V1.2  (~4–6 weeks)          ── D7 cherry-picks; PST import if needed
-V2.0  (major)               ── TD-A PIM headline + Galaxy Watch lightweight (TD-E)
-Enterprise SKU              ── TD-B crypto + TD-C shared mail + S/MIME (locked)
+V1.5  (post-V1, ~6–10 weeks) ── Full D6 adjacency + dogfood UI ([V1_5_PLAN.md](V1_5_PLAN.md))
+V2.0  (major)               ── TD-A PIM ([V2_PLAN.md](V2_PLAN.md)) — Graph + CardDAV/CalDAV (Runbox)
+V2.1                        ── Galaxy Watch companion (P3); calendar/contacts polish
 Ongoing                     ── TD-D ML Focus, TD-F protocol depth, iOS/macOS/Linux
+Maybe/Someday               ── Enterprise crypto + shared mail (unless demand)
 ```
 
-**Locked:** V1.1 does **not** include shared mailbox — mail-focused patch only.  
+**Locked (2026-07-22):** First post-V1 ship is **V1.5**. V2.0 = PIM with CardDAV/CalDAV day-one. Watch = V2.1 P3. Enterprise = Maybe/Someday.  
 **Locked:** V2 headline is **contacts & calendar (PIM)**, not a new phone OS.
 
 ---
@@ -423,19 +428,23 @@ Ensure V1 does not block Tier D (verify during W7):
 
 ---
 
-## 15. Locked decisions (2026-07-16)
+## 15. Locked decisions
 
 | # | Question | Locked choice |
 | --- | --- | --- |
-| 1 | First post-V1 bundle | **V1.1 = D6 only** — no shared mailbox in V1.1 |
-| 2 | V2 headline | **PIM** (contacts & calendar) — not iOS-first |
-| 3 | Enterprise SKU | **Yes** — separate track for crypto + shared mail + S/MIME |
-| 4 | PST import | **After V1.1** unless migration becomes acquisition channel |
+| 1 | First post-V1 bundle | **V1.5** — full D6 (ex-V1.1+V1.2) + dogfood UI; no shared mailbox ([V1_5_PLAN.md](V1_5_PLAN.md)) — *updated 2026-07-22; supersedes “V1.1 = D6 only”* |
+| 2 | V2 headline | **PIM** (contacts & calendar) — not iOS-first — **[V2_PLAN.md](V2_PLAN.md)** |
+| 3 | Enterprise SKU | **Maybe/Someday** (2026-07-22) — not critical path; promote only if eval/paying need |
+| 4 | PST import | **After V1.5** unless migration becomes acquisition channel |
 | 5 | On-device ML Focus | After TC-4 override UI + ~90 days dogfood data |
-| 6 | Galaxy Watch | **V2 lightweight companion** — unread/triage/star/archive; not full client |
+| 6 | Galaxy Watch | **P3 / V2.1** (2026-07-22) — triage companion; not V2.0 critical path |
 | 7 | Former non-goals | **Maybe/Someday backlog** (§16) — on radar, unplanned |
+| 8 | D6-3 Graph large attach | **Must-ship in V1.5** — operator hits sync-profile cap often (2026-07-22) |
+| 9 | V2 provider order | Graph PIM first, then CardDAV/CalDAV; parallel CardDAV spike OK; dogfood **Runbox** |
+| 10 | V2 shell | Outlook-style modules — Mail home, Calendar deep, Contacts useful |
 
-*Cross-tier locked V1 decisions: [V1_TIER_INTEGRATION.md §12](V1_TIER_INTEGRATION.md#12-locked-decisions-2026-07-16).*
+*Cross-tier locked V1 decisions: [V1_TIER_INTEGRATION.md §12](V1_TIER_INTEGRATION.md#12-locked-decisions-2026-07-16).*  
+*V1.5 scope: [V1_5_PLAN.md](V1_5_PLAN.md). V2 scope: [V2_PLAN.md](V2_PLAN.md).*
 
 ---
 
@@ -456,7 +465,9 @@ Items we have **explicitly considered and declined for V1/V2 planning** for now.
 | MS-9 | **Windows shell widgets** (full) | OS APIs immature; tray/toast sufficient v1 | Windows platform adds mail widget API |
 | MS-10 | **iOS as V2 headline** (before PIM) | **Locked:** PIM first | PIM shipped + market demands iOS |
 
-**Not Maybe/Someday:** Galaxy Watch (V2 planned, §8), PIM (V2 headline), Enterprise SKU (locked), D6 V1.1 items (scheduled).
+| MS-11 | **Enterprise SKU now** (PGP/S/MIME + shared mail as active track) | Not critical path for operator (2026-07-22) | Eval or paying org requires it |
+
+**Not Maybe/Someday:** Galaxy Watch (**V2.1 P3** planned), PIM (**V2.0** — [V2_PLAN.md](V2_PLAN.md)), D6 items (**V1.5** — [V1_5_PLAN.md](V1_5_PLAN.md)).
 
 ---
 

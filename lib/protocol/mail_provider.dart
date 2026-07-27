@@ -2,9 +2,9 @@
 // File: lib/protocol/mail_provider.dart
 // Description: Provider-neutral remote mail contract and value types.
 // Component: Protocol
-// Version: 1.0 (Gold Master)
+// Version: 1.1 (Gold Master)
 // Created: 2026-07-14
-// Last Update: 2026-07-18
+// Last Update: 2026-07-23
 // ==============================================================================
 
 import 'dart:typed_data';
@@ -22,6 +22,7 @@ class MailCapabilities {
     this.supportsMove = false,
     this.supportsDelete = false,
     this.supportsAttachments = false,
+    this.supportsServerSnooze = false,
   });
 
   final bool supportsServerSearch;
@@ -32,6 +33,11 @@ class MailCapabilities {
   final bool supportsMove;
   final bool supportsDelete;
   final bool supportsAttachments;
+
+  /// D6-5: true when this provider can best-effort mirror local snooze by
+  /// moving the message to/from a server-side "Snoozed" folder (Graph).
+  /// False for IMAP — snooze stays local-only there.
+  final bool supportsServerSnooze;
 }
 
 /// Metadata for a remote attachment part.

@@ -2,9 +2,9 @@
 // File: test/notification_service_test.dart
 // Description: Unit tests for NotificationService filter and aggregation rules
 // Component: Test
-// Version: 1.0 (Gold Master)
+// Version: 1.1 (Gold Master)
 // Created: 2026-07-17
-// Last Update: 2026-07-17
+// Last Update: 2026-07-23
 // ==============================================================================
 
 import 'package:synesis/domain/models.dart';
@@ -44,8 +44,9 @@ class _FakeSettings implements NotificationSettingsSource {
 }
 
 class _FakePlatform implements NotificationPlatform {
-  final List<({String title, String body})> shown =
-      <({String title, String body})>[];
+  final List<({String title, String body, String? messageId, bool hasActions})>
+      shown =
+      <({String title, String body, String? messageId, bool hasActions})>[];
 
   @override
   Future<void> initialize() async {}
@@ -54,8 +55,17 @@ class _FakePlatform implements NotificationPlatform {
   Future<void> showNewMail({
     required String title,
     required String body,
+    String? messageId,
+    NewMailToastActions? actions,
   }) async {
-    shown.add((title: title, body: body));
+    shown.add(
+      (
+        title: title,
+        body: body,
+        messageId: messageId,
+        hasActions: actions != null,
+      ),
+    );
   }
 }
 
@@ -208,5 +218,70 @@ void main() {
       expect(platform.shown.single.title, '2 new messages');
       expect(platform.shown.single.body, 'First');
     });
+
+    test(
+      'single-message toast carries messageId and actions when wired (D6-8)',
+      () async {
+        final _FakePlatform platform = _FakePlatform();
+        final List<String> archived = <String>[];
+        final List<String> deleted = <String>[];
+        final NotificationService service = NotificationService(
+          settings: _FakeSettings(),
+          platform: platform,
+          isAppForeground: () => false,
+          onArchiveMessage: archived.add,
+          onDeleteMessage: deleted.add,
+        );
+
+        await service.onNewMail(<MailMessage>[_msg(id: 'm1')]);
+
+        expect(platform.shown, hasLength(1));
+        expect(platform.shown.single.messageId, 'm1');
+        expect(platform.shown.single.hasActions, isTrue);
+        expect(archived, isEmpty);
+        expect(deleted, isEmpty);
+      },
+    );
+
+    test(
+      'aggregated multi-message toast never carries messageId or actions',
+      () async {
+        final _FakePlatform platform = _FakePlatform();
+        final NotificationService service = NotificationService(
+          settings: _FakeSettings(),
+          platform: platform,
+          isAppForeground: () => false,
+          onArchiveMessage: (_) {},
+          onDeleteMessage: (_) {},
+        );
+
+        await service.onNewMail(<MailMessage>[
+          _msg(id: 'm1', subject: 'First'),
+          _msg(id: 'm2', subject: 'Second'),
+        ]);
+
+        expect(platform.shown, hasLength(1));
+        expect(platform.shown.single.messageId, isNull);
+        expect(platform.shown.single.hasActions, isFalse);
+      },
+    );
+
+    test(
+      'single-message toast omits actions when no callbacks are wired',
+      () async {
+        final _FakePlatform platform = _FakePlatform();
+        final NotificationService service = NotificationService(
+          settings: _FakeSettings(),
+          platform: platform,
+          isAppForeground: () => false,
+        );
+
+        await service.onNewMail(<MailMessage>[_msg(id: 'm1')]);
+
+        expect(platform.shown, hasLength(1));
+        expect(platform.shown.single.messageId, 'm1');
+        expect(platform.shown.single.hasActions, isFalse);
+      },
+    );
   });
 }

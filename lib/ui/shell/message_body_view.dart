@@ -2,9 +2,9 @@
 // File: lib/ui/shell/message_body_view.dart
 // Description: Renders cached message bodies as HTML (WebView) or plain text
 // Component: UI
-// Version: 1.3 (Gold Master)
+// Version: 1.4 (Gold Master)
 // Created: 2026-07-14
-// Last Update: 2026-07-17
+// Last Update: 2026-07-23
 // ==============================================================================
 
 import 'package:flutter/material.dart';
@@ -14,6 +14,7 @@ import 'package:synesis/ui/mailbox/message_body_normalizer.dart';
 import 'package:synesis/ui/shell/html_email_body.dart';
 import 'package:synesis/ui/shell/message_body_find.dart';
 import 'package:synesis/ui/shell/remote_image_policy.dart';
+import 'package:synesis/ui/shell/tracker_blocking_policy.dart';
 
 class MessageBodyView extends StatefulWidget {
   const MessageBodyView({
@@ -26,6 +27,8 @@ class MessageBodyView extends StatefulWidget {
     this.blockRemoteImages = true,
     this.allowRemoteImages = false,
     this.onLoadRemoteImages,
+    this.imageAllowlistDomains = const <String>[],
+    this.blockTrackers = true,
     this.findQuery = '',
     this.findActiveIndex = 0,
     this.findNavigateEpoch = 0,
@@ -39,7 +42,7 @@ class MessageBodyView extends StatefulWidget {
   final bool isLoadingBody;
   final String? bodyErrorMessage;
 
-  /// Global preference: strip remote http(s) images from HTML bodies.
+  /// Effective (already account-resolved) remote-image-blocking policy.
   final bool blockRemoteImages;
 
   /// Session override: load remote images for this message.
@@ -47,6 +50,14 @@ class MessageBodyView extends StatefulWidget {
 
   /// Invoked when the user chooses to load remote images for this message.
   final VoidCallback? onLoadRemoteImages;
+
+  /// D6-2: image-host domains always loaded even when [blockRemoteImages] is
+  /// true (case-insensitive suffix match).
+  final List<String> imageAllowlistDomains;
+
+  /// D6-7: strip known ESP/analytics tracking pixels, independent of
+  /// [blockRemoteImages].
+  final bool blockTrackers;
 
   /// Case-insensitive find query; empty disables highlighting.
   final String findQuery;
@@ -184,11 +195,20 @@ class _MessageBodyViewState extends State<MessageBodyView> {
     if (isHtmlMessageBody(widget.body)) {
       final bool shouldBlock =
           widget.blockRemoteImages && !widget.allowRemoteImages;
-      final RemoteImagePolicyResult policy = applyRemoteImagePolicy(
+      final RemoteImagePolicyResult imagePolicy = applyRemoteImagePolicy(
         widget.body,
         blockRemoteImages: shouldBlock,
+        allowlistDomains: widget.imageAllowlistDomains,
       );
-      final bool showBanner = policy.blockedRemoteImages;
+      final TrackerBlockingPolicyResult trackerPolicy =
+          applyTrackerBlockingPolicy(
+        imagePolicy.html,
+        blockTrackers: widget.blockTrackers,
+        allowlistDomains: widget.imageAllowlistDomains,
+      );
+      final bool showImagesBlockedBanner = imagePolicy.blockedRemoteImages;
+      final bool showTrackersBlockedBanner =
+          !showImagesBlockedBanner && trackerPolicy.blockedTrackers;
 
       // WebView owns scrolling; must fill the expanded reading pane.
       // When the pane is extremely short (split/visual-focus), skip the banner
@@ -197,20 +217,25 @@ class _MessageBodyViewState extends State<MessageBodyView> {
         builder: (BuildContext context, BoxConstraints constraints) {
           const double bannerBudget = 72;
           const double minHtmlHeight = 48;
-          final bool canShowBanner = showBanner &&
-              constraints.hasBoundedHeight &&
+          final bool hasBannerRoom = constraints.hasBoundedHeight &&
               constraints.maxHeight >= bannerBudget + minHtmlHeight;
+          final bool canShowImagesBanner =
+              showImagesBlockedBanner && hasBannerRoom;
+          final bool canShowTrackersBanner =
+              showTrackersBlockedBanner && hasBannerRoom;
           return Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
-              if (canShowBanner)
+              if (canShowImagesBanner)
                 _RemoteImagesBlockedBanner(
                   muted: widget.muted,
                   onLoadImages: widget.onLoadRemoteImages,
                 ),
+              if (canShowTrackersBanner)
+                _TrackersBlockedBanner(muted: widget.muted),
               Expanded(
                 child: HtmlEmailBody(
-                  html: policy.html,
+                  html: trackerPolicy.html,
                   muted: widget.muted,
                   findQuery: widget.findQuery,
                   findNavigateEpoch: widget.findNavigateEpoch,
@@ -305,6 +330,42 @@ class _PlainBodyWithFind extends StatelessWidget {
     }
 
     return Text.rich(TextSpan(style: baseStyle, children: spans));
+  }
+}
+
+/// D6-7: lightweight, dismissible-by-nature informational banner shown when
+/// tracking pixels were stripped but general remote images still loaded
+/// (i.e. [MessageBodyView.blockRemoteImages] is off/allowed for this
+/// message but [MessageBodyView.blockTrackers] caught known ESP trackers).
+class _TrackersBlockedBanner extends StatelessWidget {
+  const _TrackersBlockedBanner({required this.muted});
+
+  final Color muted;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Material(
+        color: muted.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(8),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          child: Row(
+            children: <Widget>[
+              Icon(Icons.shield_outlined, size: 18, color: muted),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'Tracking pixels blocked',
+                  style: TextStyle(color: muted, fontSize: 13),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }
 

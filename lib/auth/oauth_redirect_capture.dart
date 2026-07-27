@@ -4,7 +4,7 @@
 // Component: Auth / Integration
 // Version: 1.1 (Gold Master)
 // Created: 2026-07-16
-// Last Update: 2026-07-17
+// Last Update: 2026-07-23
 // ==============================================================================
 
 import 'dart:async';
@@ -166,16 +166,47 @@ class LoopbackOAuthRedirectCapture implements OAuthRedirectCapture {
 }
 
 /// Android deep-link listener (default Graph: `synesis://auth`).
+///
+/// Google Android uses reverse-client URIs such as
+/// `com.googleusercontent.apps.<PREFIX>:/oauth2redirect` ([path] match,
+/// empty [host]).
 class AppLinksOAuthRedirectCapture implements OAuthRedirectCapture {
   AppLinksOAuthRedirectCapture({
     AppLinks? appLinks,
     this.scheme = 'synesis',
     this.host = 'auth',
+    this.path,
   }) : _appLinks = appLinks ?? AppLinks();
 
   final AppLinks _appLinks;
   final String scheme;
   final String host;
+
+  /// When set, match [Uri.path] (and common host-parsed variants) instead of
+  /// requiring [host] alone.
+  final String? path;
+
+  bool _matchesRedirect(Uri uri) {
+    if (uri.scheme != scheme) {
+      return false;
+    }
+    final String? expectedPath = path;
+    if (expectedPath == null || expectedPath.isEmpty) {
+      return uri.host == host;
+    }
+    final String normalizedPath =
+        uri.path.endsWith('/') && uri.path.length > 1
+        ? uri.path.substring(0, uri.path.length - 1)
+        : uri.path;
+    if (normalizedPath == expectedPath) {
+      return true;
+    }
+    // Some stacks parse `scheme:/oauth2redirect` as host=oauth2redirect.
+    final String pathAsHost = expectedPath.startsWith('/')
+        ? expectedPath.substring(1)
+        : expectedPath;
+    return uri.host == pathAsHost;
+  }
 
   @override
   Future<Uri> waitForAuthorizationRedirect({
@@ -189,7 +220,7 @@ class AppLinksOAuthRedirectCapture implements OAuthRedirectCapture {
       if (completer.isCompleted) {
         return;
       }
-      if (uri.scheme != scheme || uri.host != host) {
+      if (!_matchesRedirect(uri)) {
         return;
       }
       final String? state = uri.queryParameters['state'];
@@ -246,18 +277,37 @@ class AppLinksOAuthRedirectCapture implements OAuthRedirectCapture {
 /// Creates the platform-appropriate redirect capture.
 ///
 /// Graph defaults: loopback port `8765`, Android host `auth`.
-/// Google uses port `8766` and Android host `google-auth`.
 OAuthRedirectCapture createPlatformOAuthRedirectCapture({
   int loopbackPort = 8765,
   String loopbackPath = '/callback',
   String appLinkScheme = 'synesis',
   String appLinkHost = 'auth',
+  String? appLinkPath,
 }) {
   if (Platform.isAndroid) {
     return AppLinksOAuthRedirectCapture(
       scheme: appLinkScheme,
       host: appLinkHost,
+      path: appLinkPath,
     );
   }
   return LoopbackOAuthRedirectCapture(port: loopbackPort, path: loopbackPath);
+}
+
+/// Google redirect capture: Android reverse-client scheme, else loopback :8766.
+///
+/// Pass [androidRedirectUri] from [GoogleAuthConfig.redirectUri] (ignored on
+/// non-Android).
+OAuthRedirectCapture createGoogleOAuthRedirectCapture({
+  required String androidRedirectUri,
+}) {
+  if (Platform.isAndroid) {
+    final Uri redirect = Uri.parse(androidRedirectUri);
+    return AppLinksOAuthRedirectCapture(
+      scheme: redirect.scheme,
+      host: redirect.host,
+      path: redirect.path.isEmpty ? '/oauth2redirect' : redirect.path,
+    );
+  }
+  return LoopbackOAuthRedirectCapture(port: 8766, path: '/callback');
 }

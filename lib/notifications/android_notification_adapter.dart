@@ -2,9 +2,9 @@
 // File: lib/notifications/android_notification_adapter.dart
 // Description: Android local notifications adapter for new-mail toasts
 // Component: Notifications
-// Version: 1.0 (Gold Master)
+// Version: 1.1 (Gold Master)
 // Created: 2026-07-17
-// Last Update: 2026-07-18
+// Last Update: 2026-07-23
 // ==============================================================================
 
 import 'package:synesis/notifications/notification_platform.dart';
@@ -54,7 +54,13 @@ class AndroidNotificationAdapter implements NotificationPlatform {
   Future<void> showNewMail({
     required String title,
     required String body,
+    String? messageId,
+    NewMailToastActions? actions,
   }) async {
+    // D6-8 toast Archive/Delete actions are Windows-only (local_notifier);
+    // Android has no inline-action affordance here, so [messageId] and
+    // [actions] are accepted for interface compatibility and intentionally
+    // ignored — this notification remains title/body only.
     if (!_initialized) {
       await initialize();
     }

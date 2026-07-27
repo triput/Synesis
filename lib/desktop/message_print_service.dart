@@ -2,14 +2,15 @@
 // File: lib/desktop/message_print_service.dart
 // Description: Builds and submits printable message documents.
 // Component: Platform Integration
-// Version: 1.0 (Gold Master)
+// Version: 1.1 (Gold Master)
 // Created: 2026-07-17
-// Last Update: 2026-07-17
+// Last Update: 2026-07-23
 // ==============================================================================
 
 import 'dart:typed_data';
 
 import 'package:synesis/domain/models.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
@@ -76,6 +77,25 @@ Future<bool> shareMessagePdf(MailMessage message) async {
     filename: '${_safeFileName(message.subject)}.pdf',
   );
   return true;
+}
+
+/// Native save-file dialog for exporting [message] as a standalone PDF
+/// (D6-6) — mirrors [saveMessageAsEml] in `message_file_service.dart`.
+///
+/// Returns the saved file path, or `null` if the user cancelled the dialog.
+Future<String?> saveMessageAsPdf(MailMessage message) async {
+  final Uint8List bytes = await buildMessagePdf(
+    message,
+    PdfPageFormat.letter,
+  );
+  return FilePicker.saveFile(
+    dialogTitle: 'Save message as PDF',
+    fileName: '${_safeFileName(message.subject)}.pdf',
+    type: FileType.custom,
+    allowedExtensions: const <String>['pdf'],
+    bytes: bytes,
+    lockParentWindow: true,
+  );
 }
 
 /// Unicode-capable theme — Helvetica cannot draw em dashes / smart quotes.
