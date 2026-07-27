@@ -57,7 +57,7 @@ Local store is provider-agnostic (`contacts` / `events` + sync cursors), same ph
 
 Per-version hygiene after V1.5 freeze: toolchain + pub debt + native/plugin skew + docs SDK pins. Checklist: [WAVE_H_DEPENDENCY_HYGIENE.md](WAVE_H_DEPENDENCY_HYGIENE.md).
 
-**Sequence:** Wave 0 → **Wave H ✅** → **Wave 1 (P0) ✅** → **Wave 2 (P1) ← next** → Waves 3–6.
+**Sequence:** Wave 0 → **Wave H ✅** → **Wave 1 (P0) ✅** → **Wave 2 (P1) ← next** → Waves 3–6 → **Wave 7** (if time permits).
 
 | Batch | Scope | Notes |
 | --- | --- | --- |
@@ -83,8 +83,23 @@ Per-version hygiene after V1.5 freeze: toolchain + pub debt + native/plugin skew
 | **Wave 4** | P3–P4 — CardDAV/CalDAV (Runbox; multi address-book / calendar discovery) | Jules | V2.0b |
 | **Wave 5** | P5–P6 — compose contact picker (FTS across selected lists) + Calendar module UI (multi-select overlay / side-by-side) | Jules | V2.0c |
 | **Wave 6** | Cross-account / cross-list **DnD copy** for events + contacts (local copy + push) | Jules + Tesla | Post-V2.0c polish |
+| **Wave 7** | **Final polish / Trish extras** — UI niceties & enhancement backlog if time permits (resizable panes, list context menus, mobile nav polish, overflow sweeps, widget wishlist). **Not V2.0 critical path.** | Jules / Andi | Scope-creep parking lot |
 
 Checklist: [V2_0A_P0_CHECKLIST.md](V2_0A_P0_CHECKLIST.md) (Wave 1 exit).
+
+### Wave 7 — Final polish / Trish extras (parking lot)
+
+**Status:** **Planned** — last operator wave; honest scope-creep bucket. Ship only if Waves 1–6 exit cleanly and operator bandwidth allows. Does **not** block V2.0 release narrative.
+
+| Item | Source | Notes |
+| --- | --- | --- |
+| Resizable Windows mail panes (drag splitters) | [DEF-054](DEFECTS.md) | Outlook-style rail / sidebar / list / reading widths |
+| Right-click **Mark read** on list rows (solo vs thread) | [DEF-050](DEFECTS.md) | Pri-2.5 enhancement; context menu + thread disambiguation |
+| Hamburger → folders-only sheet (swipe keeps full drawer) | [DEF-046](DEFECTS.md) | Android phone nav polish |
+| Account dialog overflow sweep | [DEF-039](DEFECTS.md), [DEF-040](DEFECTS.md) | Remove / Edit Account yellow-black stripes on narrow widths |
+| Configurable home-screen list widget | [DEF-044](DEFECTS.md) | Tap-through to message from widget rows |
+
+Real Pri-1/2 defects and PIM gates stay on their owning waves — this bucket is **enhancement-shaped** backlog only.
 
 ### Multi-calendar product requirements (operator, 2026-07-27)
 
@@ -136,7 +151,7 @@ P6  Calendar module UI (month/week, CRUD) wired to local store
 
 ## 8. Release buckets (ship grouping)
 
-Operator waves 1–6 map into these buckets for release narrative:
+Operator waves 1–7 map into these buckets for release narrative:
 
 | Bucket | Phases | Operator waves |
 | --- | --- | --- |
@@ -144,6 +159,7 @@ Operator waves 1–6 map into these buckets for release narrative:
 | **V2.0b** | P3–P4 — CardDAV/CalDAV (Runbox dogfood) | Wave **4** |
 | **V2.0c** | P5–P6 — picker + Calendar module UI (deep CRUD, multi-select display) | Wave **5** |
 | **V2.0 +** | Cross-account DnD copy polish | Wave **6** |
+| **V2.0 ++** | Final polish / Trish extras (if time permits) | Wave **7** |
 | **V2.1** | Watch companion (P3); CalDAV depth / free-busy; Contacts polish | Post-V2.0 |
 
 | Gate | Scope | Status |
@@ -179,6 +195,7 @@ Operator waves 1–6 map into these buckets for release narrative:
 | Rooms/resources, shared calendar ACLs, Teams deep links | Later calendar depth |
 | Avatar / monogram hover cards (Option C) | V-Next / late polish |
 | Cross-account DnD copy (events + contacts) | **Wave 6** — after provider sync + Calendar/People UI |
+| UI niceties / operator enhancement backlog | **Wave 7 / Trish extras** — not V2.0 critical path |
 
 ## 11. Forward-compat (from V1 / during V1.5)
 
@@ -203,4 +220,4 @@ Do not expand V1.5 scope — only avoid painting corners:
 
 ---
 
-*Wave 0 complete 2026-07-27. Wave H complete 2026-07-27. **Wave 1 / V2.0a P0 complete** 2026-07-27 (`00ebdef`, 516 tests) — expanded multi-list / multi-calendar schema foundations. **Wave 2 (Graph PIM) next** — Tesla.*
+*Wave 0 complete 2026-07-27. Wave H complete 2026-07-27. **Wave 1 / V2.0a P0 complete** 2026-07-27 (`00ebdef`, 516 tests) — expanded multi-list / multi-calendar schema foundations. **Wave 2 (Graph PIM) next** — Tesla. **Wave 7 / Trish extras** parked for final polish if time permits.*

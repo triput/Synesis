@@ -11,6 +11,8 @@
 ## Open
 
 > Android dogfood folder/drawer polish (2026-07-27): account chips, folder-picker sheet, title-bar **Show folders** → sheet.
+>
+> **V2 Wave 7 / Trish extras parking lot** (2026-07-27): enhancement-shaped Pri-3 UI backlog parked for **Wave 7 — Final polish / Trish extras** — last if time permits; not V2.0 critical path. See [V2_PLAN.md](V2_PLAN.md) § Wave 7.
 
 ### DEF-050 — Right-click mark read on message list (solo vs thread)
 
@@ -18,6 +20,7 @@
 | --- | --- |
 | Priority | **Pri-2.5** |
 | Status | Open (enhancement) |
+| Target wave | **Wave 7 / Trish extras** |
 | Area | `lib/ui/shell/message_list_pane.dart` (`_MessageRow`, `_ThreadRow`), `MailboxCubit.setUnreadBulk` |
 | Platforms | All (desktop right-click; phone long-press) |
 | Logged | 2026-07-27 |
@@ -32,7 +35,7 @@ Per-row context menu (right-click / long-press) with Mark read; thread rows disa
 Message rows expose mark read/unread only via multi-select bulk toolbar and keyboard shortcuts. Folder tree already has mark-all-read context menus (`folder_sidebar.dart`); list rows do not.
 
 **Notes**  
-Enhancement backlog — not urgent, not blocking daily use. Related: [DEF-007](#def-007--sync-header-refresh-can-overwrite-local-readunread), [DEF-009](#def-009--rapid-concurrent-mark-readunread-has-no-in-flight-guard); closed [DEF-034](#def-034--no-auto-mark-as-read-after-viewing-a-message) (auto-mark on read dwell).
+Enhancement backlog — not urgent, not blocking daily use. **Target wave: Wave 7 / Trish extras** (final polish bucket; honest scope creep). Related: [DEF-007](#def-007--sync-header-refresh-can-overwrite-local-readunread), [DEF-009](#def-009--rapid-concurrent-mark-readunread-has-no-in-flight-guard); closed [DEF-034](#def-034--no-auto-mark-as-read-after-viewing-a-message) (auto-mark on read dwell).
 
 ---
 
@@ -150,6 +153,7 @@ DEF-022, DEF-023, DEF-045, DEF-047, DEF-048, DEF-049 (Graph-only).
 | --- | --- |
 | Priority | **Pri-3** |
 | Status | Open (enhancement) |
+| Target wave | **Wave 7 / Trish extras** |
 | Area | `lib/ui/shell/mail_workspace.dart` (account rail), `lib/ui/shell/mail_split_layout.dart` (folder sidebar / list / reading), `lib/ui/theme/density.dart` (`sidebarWidth`, `listWidth`) |
 | Platforms | Windows desktop (primary); consider macOS/Linux parity after Windows dogfood |
 | Logged | 2026-07-27 |
@@ -164,7 +168,7 @@ Drag handles between adjacent panes resize them within sensible min/max bounds; 
 W5 desktop shell uses fixed widths: account rail ~88px, folder sidebar and list widths from density tokens (`SizedBox` / `sidebarWidth` / `listWidth` in `MailSplitLayout`). No user-resizable splitters.
 
 **Notes**  
-Enhancement backlog — not urgent, not blocking daily use or Wave 2 PIM. Related: [W5_WINDOWS_CHECKLIST](W5_WINDOWS_CHECKLIST.md) (fixed four-pane layout landed); [UI enhancement sweep](ROADMAP.md#ui-enhancement-sweep-planui_enhancement_sweepmd).
+Enhancement backlog — not urgent, not blocking daily use or Wave 2 PIM. **Target wave: Wave 7 / Trish extras** (Outlook-style splitters when Trish has bandwidth). Related: [W5_WINDOWS_CHECKLIST](W5_WINDOWS_CHECKLIST.md) (fixed four-pane layout landed); [UI enhancement sweep](ROADMAP.md#ui-enhancement-sweep-planui_enhancement_sweepmd).
 
 ---
 
@@ -393,6 +397,7 @@ Each call runs to completion independently with no mutex or generation token.
 | --- | --- |
 | Priority | **Pri-3** |
 | Status | Open |
+| Target wave | **Wave 7 / Trish extras** |
 | Area | `lib/ui/account/remove_account_dialog.dart` |
 | Platforms | Android (likely all narrow widths) |
 | Logged | 2026-07-23 |
@@ -407,7 +412,7 @@ Dialog content is constrained to the available width/height and scrolls when nee
 Layout overflows the confirmation dialog chrome.
 
 **Notes**  
-Defer to a post-dogfood UI overflow sweep with DEF-040 and related shell polish. Not blocking daily use.
+Defer to a post-dogfood UI overflow sweep with DEF-040 and related shell polish. **Target wave: Wave 7 / Trish extras.** Not blocking daily use.
 
 ---
 
@@ -417,6 +422,7 @@ Defer to a post-dogfood UI overflow sweep with DEF-040 and related shell polish.
 | --- | --- |
 | Priority | **Pri-3** |
 | Status | Open |
+| Target wave | **Wave 7 / Trish extras** |
 | Area | `lib/ui/account/edit_account_sheet.dart` |
 | Platforms | Android (likely all narrow widths) |
 | Logged | 2026-07-23 |
@@ -431,7 +437,7 @@ Sheet content fits the viewport or scrolls when the keyboard/small height requir
 Layout overflows on the Edit Account UI.
 
 **Notes**  
-Bundle with DEF-039 in a later UI overflow sweep after more dogfood.
+Bundle with DEF-039 in a later UI overflow sweep after more dogfood. **Target wave: Wave 7 / Trish extras.**
 
 ---
 
@@ -441,6 +447,7 @@ Bundle with DEF-039 in a later UI overflow sweep after more dogfood.
 | --- | --- |
 | Priority | **Pri-3** |
 | Status | Open |
+| Target wave | **Wave 7 / Trish extras** |
 | Area | Android widgets (`SynesisWidgetProvider`, `WidgetSnapshotService`); enhancement |
 | Platforms | Android |
 | Logged | 2026-07-24 |
@@ -455,7 +462,7 @@ Configurable list widget (account and/or folder), rows tappable → deep-link in
 Only the summary widget ships; no configurable folder-scoped clickable list widget.
 
 **Notes**  
-Feature backlog for a post-dogfood widget pass — not blocking beta mail use.
+Feature backlog for a post-dogfood widget pass — not blocking beta mail use. **Target wave: Wave 7 / Trish extras** (widget wishlist corner of the parking lot).
 
 ---
 
@@ -465,6 +472,7 @@ Feature backlog for a post-dogfood widget pass — not blocking beta mail use.
 | --- | --- |
 | Priority | **Pri-3** |
 | Status | Open (enhancement) |
+| Target wave | **Wave 7 / Trish extras** |
 | Area | `mail_workspace.dart` title-bar menu, `MailNavigationDrawer` / `FolderSidebar` |
 | Platforms | Android (phone) |
 | Logged | 2026-07-24 |
@@ -479,7 +487,7 @@ Hamburger → compact folders/accounts navigation. Swipe-from-left → full draw
 Hamburger and swipe both open the same full drawer.
 
 **Notes**  
-Enhancement for the next UI pass — not a defect. Pill outbox affordance stays; drawer Outbox entry landed separately (2026-07-24).
+Enhancement for the next UI pass — not a defect. Pill outbox affordance stays; drawer Outbox entry landed separately (2026-07-24). **Target wave: Wave 7 / Trish extras** (hamburger behavior polish; hybrid A partial relief already landed).
 
 **Related (2026-07-27)** — Drawer account IA (hybrid A) landed in `FolderSidebar` `embeddedInDrawer`: horizontal account chips (one-tap → Inbox via `selectAccount`) + compact **FOLDERS** launch tile that opens a tall folder-picker bottom sheet for the active account (avoids crushing the tree between MAIL and footer on large phones). Phone `_TitleBar` and list **Show folders** both open that same sheet directly (no drawer hop); reading has no hamburger so the title control is the main in-message escape. Last-active account retained when Unified/virtual views are selected. Desktop multi-expand sidebar unchanged. Does not close DEF-046 (hamburger folders-only sheet still open).
 
