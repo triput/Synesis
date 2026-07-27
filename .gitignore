@@ -15,6 +15,12 @@ build/
 **/android/gradlew.bat
 **/android/local.properties
 **/android/**/GeneratedPluginRegistrant.java
+**/android/.kotlin/
+**/android/build/
+**/android/app/debug
+**/android/app/profile
+**/android/app/release
+**/.cxx/
 
 # iOS/XCode related
 **/ios/**/*.mode1v3
@@ -26,9 +32,9 @@ build/
 **/ios/Flutter/Flutter.framework
 **/ios/Flutter/Flutter.podspec
 **/ios/Flutter/Generated.xcconfig
+**/ios/Flutter/flutter_assets/
 **/ios/Flutter/app.flx
 **/ios/Flutter/app.zip
-**/ios/Flutter/flutter_assets/
 **/ios/Flutter/flutter_export_environment.sh
 **/ios/ServiceDefinitions.json
 **/ios/Runner/GeneratedPluginRegistrant.*
@@ -69,6 +75,12 @@ app.*.map.json
 !.vscode/tasks.json
 !.vscode/launch.json
 !.vscode/extensions.json
+
+# Editor / toolchain noise
+*.log
+*.class
+.history
+.widget_preview/
 
 # Custom Ignore Rules
 # Local OAuth client IDs (copy from oauth_local.json.example) — never commit.

@@ -7,6 +7,12 @@ gradle-wrapper.jar
 GeneratedPluginRegistrant.java
 .cxx/
 
+# Kotlin Gradle Plugin / compiler daemon caches & error dumps
+.kotlin/
+
+# Android module build outputs (root /build/ does not cover this)
+/build/
+
 # Remember to never publicly share your keystore.
 # See https://flutter.dev/to/reference-keystore
 key.properties
