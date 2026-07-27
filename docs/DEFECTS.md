@@ -36,6 +36,114 @@ Enhancement backlog — not urgent, not blocking daily use. Related: [DEF-007](#
 
 ---
 
+### DEF-051 — Bcc addresses written into outbound SMTP MIME headers
+
+| Field | Value |
+| --- | --- |
+| Priority | **Pri-2** |
+| Status | Open |
+| Area | `lib/mime/multipart_builder.dart` (`buildMultipartMessage`), `ImapSmtpMailProvider.sendEnvelope` / `_appendToSentBestEffort` |
+| Platforms | All IMAP/SMTP |
+| Logged | 2026-07-27 |
+| Found by | Renee (SMTP send audit, v2.0) |
+
+**Summary**  
+Outbound MIME built for SMTP includes a `Bcc:` header whenever the envelope has BCC recipients. That header is part of the SMTP `DATA` payload (and the best-effort IMAP Sent APPEND). RFC-correct SMTP clients keep BCC only on the envelope (`RCPT TO`) and omit it from headers visible to To/Cc recipients / stored copies that leave the MUA.
+
+**Evidence**  
+`multipart_builder.dart` writes `Bcc: ${envelope.bcc.join(', ')}` into the hand-built MIME. `sendEnvelope` correctly passes BCC into enough_mail `recipients:` (so delivery works), but does not strip the header before `sendMessage` / Sent APPEND. Many MTAs strip BCC before delivery; that is not guaranteed, and Sent copies retain the leak for anyone with mailbox access.
+
+**Expected**  
+MIME `DATA` / Sent APPEND omit `Bcc:`; BCC remains only in the SMTP recipient list (and Graph `bccRecipients`).
+
+**Actual**  
+`Bcc:` is serialized into the message bytes.
+
+**Notes**  
+Localized fix candidate (omit Bcc header in builder; optionally strip before APPEND). Do not thrash outbox while Wave 1 PIM is in flight unless operator prioritizes. Related: closed DEF-022 (multi-recipient BCC support), DEF-048 (explicit `recipients:`).
+
+---
+
+### DEF-052 — Cc/Bcc-only send injects account address as To
+
+| Field | Value |
+| --- | --- |
+| Priority | **Pri-3** |
+| Status | Open |
+| Area | `lib/protocol/imap_smtp_mail_provider.dart` (`sendEnvelope`), `lib/mime/multipart_builder.dart`, `lib/protocol/graph_mail_provider.dart` (`_buildOutgoingMessage`) |
+| Platforms | IMAP/SMTP and Graph |
+| Logged | 2026-07-27 |
+| Found by | Renee (SMTP send audit, v2.0) |
+
+**Summary**  
+Compose allows send with empty To when Cc and/or Bcc are set. Both providers then synthesize a To recipient equal to the sending account address so the MIME builder / Graph payload always has a non-empty To list.
+
+**Evidence**  
+- `buildMultipartMessage` throws if `envelope.to.isEmpty`.  
+- `ImapSmtpMailProvider.sendEnvelope` sets `to: <String>[user]` when To is empty but Cc/Bcc are not.  
+- Graph `_buildOutgoingMessage` uses `toClean.isNotEmpty ? toClean : <String>[envelope.from]` for `toRecipients`.
+
+**Impact**  
+1. Visible `To:` header shows the sender (unexpected UX / may confuse recipients and filters).  
+2. SMTP `RCPT TO` includes the sender — self-copy of every Cc/Bcc-only send.  
+3. Not a hard send failure, but a correctness footgun if dogfood uses Cc-only.
+
+**Expected**  
+Allow empty To when Cc/Bcc present; omit To header or emit `To: undetermined-recipients:;` / empty To per common MUA practice; do not add self as To unless the user did.
+
+**Notes**  
+Fix needs multipart builder + IMAP/SMTP + Graph alignment. Low urgency vs Wave 1 PIM.
+
+---
+
+### DEF-053 — SMTP send residual risk (post DEF-045/047/048 audit)
+
+| Field | Value |
+| --- | --- |
+| Priority | **Pri-3** |
+| Status | Open (investigation / watchlist) |
+| Area | Compose → outbox → `SyncEngine._sendOutbox` → `ImapSmtpMailProvider.sendEnvelope` → `actionableSendError` |
+| Platforms | IMAP/SMTP (esp. Google Workspace XOAUTH2) |
+| Logged | 2026-07-27 |
+| Found by | Renee (SMTP send audit, v2.0) |
+
+**Verdict**  
+No additional Pri-1 “send hard-fails for valid To” smoking gun beyond closed DEF-045 / DEF-047 / DEF-048. Remaining issues are footguns, privacy (DEF-051), Cc-only correctness (DEF-052), and diagnosis/coverage gaps. Operator “can’t quite pin down” symptoms are most likely intermittent **From/alias/policy** failures (still surface raw `Server said:` after DEF-047) or residual UX confusion — not another empty-`recipientAddresses` class bug (DEF-048 path is explicit `recipients:` + `from:`).
+
+**Hottest paths**  
+1. `compose_sheet._queueSend` → outbox `queued` → `send_outbox` job → `_awaitOutboxOutcome` (45s + `kickFresh`)  
+2. `OutgoingMessageBuilder.build` → `buildMultipartMessageInIsolate` → `MimeMessage.parseFromData` → `smtp.sendMessage(..., recipients:, from:)`  
+3. `actionableSendError` bucket order (auth → TLS → network → sender → no-recipients → Graph header → recipient → size)
+
+**Residual risks (code-backed)**  
+| Risk | Evidence | Severity |
+| --- | --- | --- |
+| BCC header leak | DEF-051 | Pri-2 |
+| Cc/Bcc-only synthetic To | DEF-052 | Pri-3 |
+| Missing attachment blobs silently omitted | `OutgoingMessageBuilder.build` skips null blob paths; only missing *files* throw in multipart | Pri-2 soft (send succeeds without attachment) |
+| No client `Message-ID` on SMTP MIME | `multipart_builder` omits Message-ID (server may add; reply threading to own Sent weaker) | Pri-3 |
+| Error-bucket overbreadth | Auth bucket matches bare `token` / `oauth` / `401`; TLS bucket matches bare `tls` — possible miscategorization if server text is odd | Pri-3 |
+| Legacy `MailProvider.send` / default `sendEnvelope` | No 45s step timeouts; MessageBuilder path (not hand MIME). Sync uses IMAP/Graph overrides — low live risk | Pri-3 |
+| DEF-047 doc inconsistency | Early investigation claimed parse populated `recipientAddresses`; DEF-048 proved that wrong for hand-built MIME | Docs only (closed) |
+
+**Test coverage**  
+Present: `send_error_messages_test.dart` (047/048/049 buckets), `mime_builder_test.dart` (DEF-048 parse quirk), `sync_engine_send_outbox_test.dart` (failure surfacing / multi-recipient).  
+Gaps: no integration test that IMAP `sendEnvelope` passes `recipients:`/`from:`; no Cc-only / BCC-header assertions; no missing-blob attachment omit; no XOAUTH vs password SMTP auth unit; no reply `In-Reply-To`/`References` on IMAP MIME regression.
+
+**Recommended dogfood probes (Trish)**  
+1. Normal To send on Workspace IMAP (`trish@trishputnam.com` → external) — confirm success **and** that any failure banner shows honest `Server said:` (From/alias vs RCPT).  
+2. Reply on IMAP (not Graph) — confirm threading headers present in Sent / recipient client.  
+3. Cc-only (empty To) — observe whether self appears in To and receives a copy (DEF-052).  
+4. Bcc + one To — inspect raw source at recipient: is `Bcc:` visible? (DEF-051).  
+5. Attachment send — delete/move blob mid-compose or corrupt ref; confirm fail vs silent drop.  
+6. Outbox Retry after forced airplane-mode fail — reclaim `sending`→`queued`, actionable error, successful retry.  
+7. Schedule-send past `sendAfter` — fires on next kick, not stuck queued forever.
+
+**Related closed**  
+DEF-022, DEF-023, DEF-045, DEF-047, DEF-048, DEF-049 (Graph-only).
+
+---
+
 ### DEF-011 — IMAP edit ignores host/port/user changes without a new password
 
 | Field | Value |
