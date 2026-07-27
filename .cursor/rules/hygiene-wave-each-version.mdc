@@ -1,0 +1,14 @@
+---
+description: Every new version plan includes a Dependency Hygiene wave unless Trish overrides
+alwaysApply: true
+---
+
+# Hygiene wave each version
+
+When planning a **new Synesis version** (after a freeze/tag such as `v1.5.0`, before that version’s feature waves / P0):
+
+1. **Default:** Include a **Dependency Hygiene** wave (toolchain + `pub outdated` majors + native/plugin debt including Built-in Kotlin/KGP + Drift codegen skew + docs SDK pins). Hold feature waves until hygiene exits (or a documented quick-scan pass).
+2. **Override:** Only skip or shrink to a quick scan when Trish explicitly says so for that version (e.g. upgrades done in the last few days).
+3. **Do not** silently omit hygiene from version plans or ROADMAP/V2_* sequencing.
+
+Current example: **Wave H** after Wave 0, before Wave 1 / V2.0a PIM P0.
