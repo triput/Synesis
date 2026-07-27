@@ -19,10 +19,8 @@ import 'package:synesis/repository/database.dart';
 /// toggles (Wave 2 / V2.0a P0 QA). New rows use [PimIds.stableLocalId] after a
 /// lookup by `(accountId, providerId)` to avoid duplicate local rows.
 class DriftPimStore {
-  DriftPimStore(
-    this._database, {
-    required void Function() notify,
-  }) : _notify = notify;
+  DriftPimStore(this._database, {required void Function() notify})
+    : _notify = notify;
 
   final SynesisDatabase _database;
   final void Function() _notify;
@@ -41,9 +39,7 @@ class DriftPimStore {
   Future<List<ContactList>> listContactLists({String? accountId}) async {
     final query = _database.select(_database.contactLists);
     if (accountId != null) {
-      query.where(
-        (ContactLists table) => table.accountId.equals(accountId),
-      );
+      query.where((ContactLists table) => table.accountId.equals(accountId));
     }
     query.orderBy(<OrderingTerm Function(ContactLists)>[
       (ContactLists table) => OrderingTerm.asc(table.sortIndex),
@@ -92,10 +88,9 @@ class DriftPimStore {
           providerId: list.providerId,
         );
         if (existing != null) {
-          await (_database.update(_database.contactLists)..where(
-                (ContactLists table) => table.id.equals(existing.id),
-              ))
-              .write(
+          await (_database.update(
+            _database.contactLists,
+          )..where((ContactLists table) => table.id.equals(existing.id))).write(
             ContactListsCompanion(
               name: Value<String>(list.name),
               colorArgb: Value<int?>(list.colorArgb),
@@ -107,7 +102,9 @@ class DriftPimStore {
           );
         } else {
           final String id = stableLocalId(list.accountId, list.providerId);
-          await _database.into(_database.contactLists).insert(
+          await _database
+              .into(_database.contactLists)
+              .insert(
                 ContactListsCompanion.insert(
                   id: id,
                   accountId: list.accountId,
@@ -165,8 +162,9 @@ class DriftPimStore {
     if (selected.isEmpty) {
       return const <Contact>[];
     }
-    final Set<String> listIds =
-        selected.map((ContactList list) => list.id).toSet();
+    final Set<String> listIds = selected
+        .map((ContactList list) => list.id)
+        .toSet();
     final List<Contact> contacts = await listContacts(accountId: accountId);
     return contacts
         .where((Contact contact) => listIds.contains(contact.contactListId))
@@ -196,9 +194,12 @@ class DriftPimStore {
           accountId: contact.accountId,
           providerId: contact.providerId,
         );
-        final String id = existing?.id ??
+        final String id =
+            existing?.id ??
             stableLocalId(contact.accountId, contact.providerId);
-        await _database.into(_database.contacts).insertOnConflictUpdate(
+        await _database
+            .into(_database.contacts)
+            .insertOnConflictUpdate(
               ContactsCompanion.insert(
                 id: id,
                 accountId: contact.accountId,
@@ -222,16 +223,14 @@ class DriftPimStore {
   Future<List<ContactEmail>> listContactEmails(String contactId) async {
     final List<ContactEmailRow> rows = await (_database.select(
       _database.contactEmails,
-    )..where((ContactEmails table) => table.contactId.equals(contactId)))
-        .get();
+    )..where((ContactEmails table) => table.contactId.equals(contactId))).get();
     return rows.map(_contactEmailFromRow).toList(growable: false);
   }
 
   Future<List<ContactPhone>> listContactPhones(String contactId) async {
     final List<ContactPhoneRow> rows = await (_database.select(
       _database.contactPhones,
-    )..where((ContactPhones table) => table.contactId.equals(contactId)))
-        .get();
+    )..where((ContactPhones table) => table.contactId.equals(contactId))).get();
     return rows.map(_contactPhoneFromRow).toList(growable: false);
   }
 
@@ -241,7 +240,9 @@ class DriftPimStore {
     }
     await _database.transaction(() async {
       for (final ContactEmail email in emails) {
-        await _database.into(_database.contactEmails).insertOnConflictUpdate(
+        await _database
+            .into(_database.contactEmails)
+            .insertOnConflictUpdate(
               ContactEmailsCompanion.insert(
                 id: email.id,
                 contactId: email.contactId,
@@ -261,7 +262,9 @@ class DriftPimStore {
     }
     await _database.transaction(() async {
       for (final ContactPhone phone in phones) {
-        await _database.into(_database.contactPhones).insertOnConflictUpdate(
+        await _database
+            .into(_database.contactPhones)
+            .insertOnConflictUpdate(
               ContactPhonesCompanion.insert(
                 id: phone.id,
                 contactId: phone.contactId,
@@ -291,6 +294,17 @@ class DriftPimStore {
     return rows.map(_calendarFromRow).toList(growable: false);
   }
 
+  /// Returns the marked default calendar, falling back to the first calendar.
+  Future<Calendar?> findDefaultCalendar(String accountId) async {
+    final List<Calendar> calendars = await listCalendars(accountId: accountId);
+    for (final Calendar calendar in calendars) {
+      if (calendar.isDefault) {
+        return calendar;
+      }
+    }
+    return calendars.isEmpty ? null : calendars.first;
+  }
+
   /// Calendars with [Calendar.isSelectedForDisplay] == true.
   Future<List<Calendar>> listSelectedCalendars({String? accountId}) async {
     final List<Calendar> all = await listCalendars(accountId: accountId);
@@ -306,9 +320,7 @@ class DriftPimStore {
     final List<Calendar> calendars = await listCalendars(accountId: accountId);
     final Map<String, List<Calendar>> grouped = <String, List<Calendar>>{};
     for (final Calendar calendar in calendars) {
-      grouped
-          .putIfAbsent(calendar.accountId, () => <Calendar>[])
-          .add(calendar);
+      grouped.putIfAbsent(calendar.accountId, () => <Calendar>[]).add(calendar);
     }
     return grouped;
   }
@@ -342,10 +354,9 @@ class DriftPimStore {
           providerId: calendar.providerId,
         );
         if (existing != null) {
-          await (_database.update(_database.calendars)..where(
-                (Calendars table) => table.id.equals(existing.id),
-              ))
-              .write(
+          await (_database.update(
+            _database.calendars,
+          )..where((Calendars table) => table.id.equals(existing.id))).write(
             CalendarsCompanion(
               name: Value<String>(calendar.name),
               colorArgb: Value<int>(calendar.colorArgb),
@@ -357,9 +368,13 @@ class DriftPimStore {
             ),
           );
         } else {
-          final String id =
-              stableLocalId(calendar.accountId, calendar.providerId);
-          await _database.into(_database.calendars).insert(
+          final String id = stableLocalId(
+            calendar.accountId,
+            calendar.providerId,
+          );
+          await _database
+              .into(_database.calendars)
+              .insert(
                 CalendarsCompanion.insert(
                   id: id,
                   accountId: calendar.accountId,
@@ -420,8 +435,9 @@ class DriftPimStore {
     if (selected.isEmpty) {
       return const <CalendarEvent>[];
     }
-    final Set<String> calendarIds =
-        selected.map((Calendar calendar) => calendar.id).toSet();
+    final Set<String> calendarIds = selected
+        .map((Calendar calendar) => calendar.id)
+        .toSet();
     final List<CalendarEvent> events = await listEvents(accountId: accountId);
     return events
         .where((CalendarEvent event) => calendarIds.contains(event.calendarId))
@@ -451,9 +467,11 @@ class DriftPimStore {
           accountId: event.accountId,
           providerId: event.providerId,
         );
-        final String id = existing?.id ??
-            stableLocalId(event.accountId, event.providerId);
-        await _database.into(_database.events).insertOnConflictUpdate(
+        final String id =
+            existing?.id ?? stableLocalId(event.accountId, event.providerId);
+        await _database
+            .into(_database.events)
+            .insertOnConflictUpdate(
               EventsCompanion.insert(
                 id: id,
                 accountId: event.accountId,
@@ -480,8 +498,7 @@ class DriftPimStore {
   Future<List<EventAttendee>> listEventAttendees(String eventId) async {
     final List<EventAttendeeRow> rows = await (_database.select(
       _database.eventAttendees,
-    )..where((EventAttendees table) => table.eventId.equals(eventId)))
-        .get();
+    )..where((EventAttendees table) => table.eventId.equals(eventId))).get();
     return rows.map(_attendeeFromRow).toList(growable: false);
   }
 
@@ -491,7 +508,9 @@ class DriftPimStore {
     }
     await _database.transaction(() async {
       for (final EventAttendee attendee in attendees) {
-        await _database.into(_database.eventAttendees).insertOnConflictUpdate(
+        await _database
+            .into(_database.eventAttendees)
+            .insertOnConflictUpdate(
               EventAttendeesCompanion.insert(
                 id: attendee.id,
                 eventId: attendee.eventId,
@@ -535,8 +554,7 @@ class DriftPimStore {
       )..where((Contacts table) => table.accountId.equals(accountId))).go();
       await (_database.delete(
         _database.contactLists,
-      )..where((ContactLists table) => table.accountId.equals(accountId)))
-          .go();
+      )..where((ContactLists table) => table.accountId.equals(accountId))).go();
     });
   }
 
@@ -597,82 +615,82 @@ class DriftPimStore {
   }
 
   static ContactList _contactListFromRow(ContactListRow row) => ContactList(
-        id: row.id,
-        accountId: row.accountId,
-        providerId: row.providerId,
-        name: row.name,
-        colorArgb: row.colorArgb,
-        isDefault: row.isDefault,
-        isSelectedForDisplay: row.isSelectedForDisplay,
-        sortIndex: row.sortIndex,
-      );
+    id: row.id,
+    accountId: row.accountId,
+    providerId: row.providerId,
+    name: row.name,
+    colorArgb: row.colorArgb,
+    isDefault: row.isDefault,
+    isSelectedForDisplay: row.isSelectedForDisplay,
+    sortIndex: row.sortIndex,
+  );
 
   static Contact _contactFromRow(ContactRow row) => Contact(
-        id: row.id,
-        accountId: row.accountId,
-        contactListId: row.contactListId,
-        providerId: row.providerId,
-        displayName: row.displayName,
-        givenName: row.givenName,
-        familyName: row.familyName,
-        company: row.company,
-        notes: row.notes,
-        etag: row.etag,
-        updatedAt: row.updatedAt,
-        deletedAt: row.deletedAt,
-      );
+    id: row.id,
+    accountId: row.accountId,
+    contactListId: row.contactListId,
+    providerId: row.providerId,
+    displayName: row.displayName,
+    givenName: row.givenName,
+    familyName: row.familyName,
+    company: row.company,
+    notes: row.notes,
+    etag: row.etag,
+    updatedAt: row.updatedAt,
+    deletedAt: row.deletedAt,
+  );
 
   static ContactEmail _contactEmailFromRow(ContactEmailRow row) => ContactEmail(
-        id: row.id,
-        contactId: row.contactId,
-        address: row.address,
-        type: row.type,
-        isPrimary: row.isPrimary,
-      );
+    id: row.id,
+    contactId: row.contactId,
+    address: row.address,
+    type: row.type,
+    isPrimary: row.isPrimary,
+  );
 
   static ContactPhone _contactPhoneFromRow(ContactPhoneRow row) => ContactPhone(
-        id: row.id,
-        contactId: row.contactId,
-        number: row.number,
-        type: row.type,
-      );
+    id: row.id,
+    contactId: row.contactId,
+    number: row.number,
+    type: row.type,
+  );
 
   static Calendar _calendarFromRow(CalendarRow row) => Calendar(
-        id: row.id,
-        accountId: row.accountId,
-        providerId: row.providerId,
-        name: row.name,
-        colorArgb: row.colorArgb,
-        colorOverrideArgb: row.colorOverrideArgb,
-        isDefault: row.isDefault,
-        isSelectedForDisplay: row.isSelectedForDisplay,
-        sortIndex: row.sortIndex,
-      );
+    id: row.id,
+    accountId: row.accountId,
+    providerId: row.providerId,
+    name: row.name,
+    colorArgb: row.colorArgb,
+    colorOverrideArgb: row.colorOverrideArgb,
+    isDefault: row.isDefault,
+    isSelectedForDisplay: row.isSelectedForDisplay,
+    sortIndex: row.sortIndex,
+  );
 
   static CalendarEvent _eventFromRow(EventRow row) => CalendarEvent(
-        id: row.id,
-        accountId: row.accountId,
-        calendarId: row.calendarId,
-        providerId: row.providerId,
-        title: row.title,
-        body: row.body,
-        startEpochMs: row.startEpochMs,
-        endEpochMs: row.endEpochMs,
-        allDay: row.allDay,
-        location: row.location,
-        rrule: row.rrule,
-        reminderMinutes: row.reminderMinutes,
-        etag: row.etag,
-        updatedAt: row.updatedAt,
-        deletedAt: row.deletedAt,
-      );
+    id: row.id,
+    accountId: row.accountId,
+    calendarId: row.calendarId,
+    providerId: row.providerId,
+    title: row.title,
+    body: row.body,
+    startEpochMs: row.startEpochMs,
+    endEpochMs: row.endEpochMs,
+    allDay: row.allDay,
+    location: row.location,
+    rrule: row.rrule,
+    reminderMinutes: row.reminderMinutes,
+    etag: row.etag,
+    updatedAt: row.updatedAt,
+    deletedAt: row.deletedAt,
+  );
 
   static EventAttendee _attendeeFromRow(EventAttendeeRow row) => EventAttendee(
-        id: row.id,
-        eventId: row.eventId,
-        email: row.email,
-        displayName: row.displayName,
-        responseStatus: row.responseStatus,
-        isOrganizer: row.isOrganizer,
-      );
+    id: row.id,
+    eventId: row.eventId,
+    email: row.email,
+    displayName: row.displayName,
+    responseStatus: row.responseStatus,
+    isOrganizer: row.isOrganizer,
+  );
 }

@@ -1,17 +1,19 @@
 // ==============================================================================
 // File: lib/ui/shell/message_attachments_panel.dart
-// Description: Inbound attachment list/download + quick-reply strip for reading pane.
+// Description: Inbound attachment list, calendar import, download, and quick reply.
 // Component: UI
 // Version: 1.0 (Gold Master)
 // Created: 2026-07-17
-// Last Update: 2026-07-17
+// Last Update: 2026-07-27
 // ==============================================================================
 
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:synesis/compose/outgoing_message_builder.dart';
 import 'package:synesis/domain/models.dart';
+import 'package:synesis/pim/meeting_invite_service.dart';
 import 'package:synesis/protocol/mail_provider.dart';
 import 'package:synesis/repository/mail_repository.dart';
 import 'package:synesis/sync/sync_engine.dart';
@@ -23,6 +25,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
+
+/// Whether an attachment is a calendar invite that can be imported locally.
+bool isCalendarInviteAttachment(MailAttachmentMeta meta) {
+  final String contentType = meta.contentType.toLowerCase();
+  return meta.name.toLowerCase().endsWith('.ics') ||
+      contentType.contains('text/calendar') ||
+      contentType.contains('application/ics');
+}
 
 /// Lists remote attachments for [message] and offers save-to-downloads.
 class MessageAttachmentsPanel extends StatefulWidget {
@@ -137,6 +147,49 @@ class _MessageAttachmentsPanelState extends State<MessageAttachmentsPanel> {
     }
   }
 
+  Future<void> _addToCalendar(MailAttachmentMeta meta) async {
+    final String? providerId = widget.message.providerId;
+    if (providerId == null || providerId.isEmpty) {
+      return;
+    }
+    setState(() => _busyPartId = meta.partId);
+    try {
+      final MailProvider? provider = await context
+          .read<SyncEngine>()
+          .resolveMailProvider(widget.message.accountId);
+      if (provider == null) {
+        throw const ProtocolException('Mail provider unavailable.');
+      }
+      final MailAttachmentBytes bytes =
+          await provider.fetchAttachment(providerId, meta.partId);
+      final String icsText = utf8.decode(bytes.bytes, allowMalformed: true);
+      if (!mounted) {
+        return;
+      }
+      await context.read<MeetingInviteService>().addIcsToCalendar(
+        accountId: widget.message.accountId,
+        icsText: icsText,
+      );
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Added to calendar')),
+      );
+    } on Object catch (error) {
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Add to calendar failed: $error')),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _busyPartId = null);
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     if (!widget.message.hasAttachments) {
@@ -178,18 +231,33 @@ class _MessageAttachmentsPanelState extends State<MessageAttachmentsPanel> {
             runSpacing: 4,
             children: <Widget>[
               for (final MailAttachmentMeta meta in items)
-                ActionChip(
-                  avatar: _busyPartId == meta.partId
-                      ? const SizedBox(
-                          width: 14,
-                          height: 14,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : Icon(Icons.attach_file, size: 16, color: t.teal),
-                  label: Text(meta.name.isEmpty ? meta.partId : meta.name),
-                  onPressed:
-                      _busyPartId == null ? () => unawaited(_download(meta)) : null,
-                ),
+                ...<Widget>[
+                  ActionChip(
+                    avatar: _busyPartId == meta.partId
+                        ? const SizedBox(
+                            width: 14,
+                            height: 14,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : Icon(Icons.attach_file, size: 16, color: t.teal),
+                    label: Text(meta.name.isEmpty ? meta.partId : meta.name),
+                    onPressed: _busyPartId == null
+                        ? () => unawaited(_download(meta))
+                        : null,
+                  ),
+                  if (isCalendarInviteAttachment(meta))
+                    ActionChip(
+                      avatar: Icon(
+                        Icons.calendar_month_outlined,
+                        size: 16,
+                        color: t.teal,
+                      ),
+                      label: const Text('Add to calendar'),
+                      onPressed: _busyPartId == null
+                          ? () => unawaited(_addToCalendar(meta))
+                          : null,
+                    ),
+                ],
             ],
           ),
         ],

@@ -21,6 +21,7 @@ import 'package:synesis/mailbox/message_action_service.dart';
 import 'package:synesis/mailbox/message_body_cache.dart';
 import 'package:synesis/mime/eml_codec.dart';
 import 'package:synesis/notifications/app_foreground_tracker.dart';
+import 'package:synesis/pim/meeting_invite_service.dart';
 import 'package:synesis/repository/mail_repository.dart';
 import 'package:synesis/settings/app_settings_cubit.dart';
 import 'package:synesis/settings/app_settings_state.dart';
@@ -42,6 +43,7 @@ class SynesisApp extends StatelessWidget {
     required this.accountService,
     required this.identityManager,
     required this.resolveProvider,
+    this.meetingInviteService,
     this.retentionService,
     this.settingsCubit,
     this.desktopController = const NoopDesktopController(),
@@ -57,6 +59,7 @@ class SynesisApp extends StatelessWidget {
   final AccountService accountService;
   final OAuthIdentityManager identityManager;
   final ProviderResolver resolveProvider;
+  final MeetingInviteService? meetingInviteService;
   final RetentionService? retentionService;
   final AppSettingsCubit? settingsCubit;
   final DesktopController desktopController;
@@ -75,6 +78,10 @@ class SynesisApp extends StatelessWidget {
         RepositoryProvider<RetentionService>.value(value: retention),
         RepositoryProvider<AccountService>.value(value: accountService),
         RepositoryProvider<OAuthIdentityManager>.value(value: identityManager),
+        if (meetingInviteService != null)
+          RepositoryProvider<MeetingInviteService>.value(
+            value: meetingInviteService!,
+          ),
         RepositoryProvider<DesktopController>.value(value: desktopController),
         RepositoryProvider<DetachedMessageWindowController>.value(
           value: detachedMessageWindowController,
@@ -85,13 +92,11 @@ class SynesisApp extends StatelessWidget {
           if (settingsCubit != null)
             BlocProvider<AppSettingsCubit>.value(value: settingsCubit!)
           else
-            BlocProvider(
-              create: (_) => AppSettingsCubit(prefs),
-            ),
+            BlocProvider(create: (_) => AppSettingsCubit(prefs)),
           BlocProvider(
             create: (context) {
-              final AppSettingsCubit settings =
-                  context.read<AppSettingsCubit>();
+              final AppSettingsCubit settings = context
+                  .read<AppSettingsCubit>();
               final MessageActionService actions = MessageActionService(
                 repository: repository,
                 resolveProvider: resolveProvider,
@@ -226,9 +231,9 @@ class _ThemedMailAppState extends State<_ThemedMailApp> {
     final AppSettingsState settings = widget.settings;
     final ThemeTokens? tokensOverride =
         settings.customThemeId != null &&
-                settings.customThemeId == _loadedCustomThemeId
-            ? _loadedTokens
-            : null;
+            settings.customThemeId == _loadedCustomThemeId
+        ? _loadedTokens
+        : null;
     return MaterialApp(
       title: 'Synesis',
       debugShowCheckedModeBanner: false,
@@ -261,7 +266,8 @@ class _ForegroundLifecycleBinder extends StatefulWidget {
       _ForegroundLifecycleBinderState();
 }
 
-class _ForegroundLifecycleBinderState extends State<_ForegroundLifecycleBinder> {
+class _ForegroundLifecycleBinderState
+    extends State<_ForegroundLifecycleBinder> {
   @override
   void initState() {
     super.initState();
@@ -309,9 +315,9 @@ class _LaunchHomeState extends State<_LaunchHome> {
         if (!mounted) {
           return;
         }
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Unable to open EML: $error')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Unable to open EML: $error')));
       }
     });
   }

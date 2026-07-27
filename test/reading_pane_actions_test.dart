@@ -1,6 +1,11 @@
+import 'package:drift/native.dart';
 import 'package:synesis/desktop/detached_message_window_controller.dart';
 import 'package:synesis/domain/address_match_scope.dart';
 import 'package:synesis/domain/models.dart';
+import 'package:synesis/pim/meeting_invite_service.dart';
+import 'package:synesis/repository/database.dart';
+import 'package:synesis/repository/drift/drift_pim_store.dart';
+import 'package:synesis/repository/drift_mail_repository.dart';
 import 'package:synesis/theme/density.dart';
 import 'package:synesis/theme/theme_id.dart';
 import 'package:synesis/theme/theme_tokens.dart';
@@ -40,9 +45,10 @@ Widget _harness({
   VoidCallback? onPin,
   VoidCallback? onSnooze,
   ValueChanged<AddressMatchScope>? onMarkFocused,
+  MeetingInviteService? meetingInviteService,
 }) {
   final ThemeTokens tokens = ThemeTokens.forId(ThemeId.dark);
-  return MaterialApp(
+  Widget app = MaterialApp(
     theme: ThemeData(
       useMaterial3: true,
       brightness: tokens.brightness,
@@ -82,6 +88,21 @@ Widget _harness({
         ),
       ),
     ),
+  );
+  if (meetingInviteService != null) {
+    app = RepositoryProvider<MeetingInviteService>.value(
+      value: meetingInviteService,
+      child: app,
+    );
+  }
+  return app;
+}
+
+MeetingInviteService _inviteService(SynesisDatabase database) {
+  return MeetingInviteService(
+    pimStore: DriftPimStore(database, notify: () {}),
+    repository: DriftMailRepository(database),
+    resolvePim: (_) async => null,
   );
 }
 
@@ -253,5 +274,53 @@ void main() {
 
   test('wide breakpoint constant is 520', () {
     expect(kReadingPaneWideBreakpoint, 520);
+  });
+
+  testWidgets('invites render RSVP actions before standard reply', (
+    WidgetTester tester,
+  ) async {
+    final SynesisDatabase database = SynesisDatabase(NativeDatabase.memory());
+    await database.customSelect('SELECT 1').get();
+    addTearDown(database.close);
+    final MailMessage invite = MailMessage(
+      id: 'invite-1',
+      accountId: 'acc',
+      fromName: 'Ada',
+      fromAddress: 'ada@byte.io',
+      subject: 'Meeting invitation',
+      snippet: '',
+      body: '''
+BEGIN:VCALENDAR
+BEGIN:VEVENT
+UID:ui-invite
+DTSTART:20260727T150000Z
+END:VEVENT
+END:VCALENDAR
+''',
+      whenLabel: '10:00',
+      bucket: FocusBucket.focused,
+    );
+
+    await tester.pumpWidget(
+      _harness(
+        width: 640,
+        message: invite,
+        onReply: () {},
+        meetingInviteService: _inviteService(database),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.widgetWithText(OutlinedButton, 'Accept'), findsOneWidget);
+    expect(find.widgetWithText(OutlinedButton, 'Decline'), findsOneWidget);
+    expect(find.widgetWithText(OutlinedButton, 'Tentative'), findsOneWidget);
+    expect(
+      tester.getTopLeft(find.widgetWithText(OutlinedButton, 'Accept')).dy,
+      lessThan(tester.getTopLeft(find.widgetWithText(OutlinedButton, 'Reply')).dy),
+    );
+
+    await tester.tap(find.widgetWithText(OutlinedButton, 'Accept'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Meeting response failed:'), findsOneWidget);
   });
 }

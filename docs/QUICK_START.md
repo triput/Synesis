@@ -19,7 +19,7 @@ flutter run -d windows
 flutter run -d android
 ```
 
-**Microsoft Graph:** pass your Entra app client ID. Wave 2+ PIM sync requires **`Contacts.Read`** and **`Calendars.Read`** on your Entra app — existing accounts need **re-sign-in** after upgrade. See [README](../README.md#microsoft-graph-entra-setup).
+**Microsoft Graph:** pass your Entra app client ID. Wave 3+ PIM and RSVP/write require **`Contacts.Read`** and **`Calendars.ReadWrite`** on your Entra app; `Calendars.ReadWrite` supersedes the prior read-only calendar scope. Existing accounts must **re-sign in** through **Edit account → re-auth** after upgrade. See [README](../README.md#microsoft-graph-entra-setup).
 
 ```bash
 flutter run -d windows --dart-define=SYNESIS_GRAPH_CLIENT_ID=YOUR_CLIENT_ID

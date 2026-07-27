@@ -38,12 +38,12 @@ class GraphAuthConfig {
   static const String desktopRedirectUri = 'http://127.0.0.1:8765/callback';
   static const String androidRedirectUri = 'synesis://auth';
 
-  /// Delegated Graph scopes for mail + read-only PIM (contacts / calendars).
+  /// Delegated Graph scopes for mail, contacts, and calendar RSVP actions.
   ///
   /// **Re-consent:** existing Microsoft Graph accounts signed in before
-  /// `Contacts.Read` / `Calendars.Read` were added must sign in again so the
-  /// refresh token is issued with the expanded scope set. Mail-only tokens
-  /// cannot call People or Calendar APIs until the user re-consents.
+  /// Wave 3's `Calendars.ReadWrite` scope must use **Edit account → Re-auth**
+  /// so the refresh token is issued with the expanded scope set. Mail-only
+  /// tokens cannot call People or Calendar APIs until the user re-consents.
   static const List<String> scopes = <String>[
     'openid',
     'profile',
@@ -52,7 +52,7 @@ class GraphAuthConfig {
     'Mail.ReadWrite',
     'Mail.Send',
     'Contacts.Read',
-    'Calendars.Read',
+    'Calendars.ReadWrite',
   ];
 
   final String clientId;
@@ -86,9 +86,7 @@ class GoogleAuthConfig {
 
   factory GoogleAuthConfig.fromEnvironment() => const GoogleAuthConfig(
     clientId: String.fromEnvironment('SYNESIS_GOOGLE_CLIENT_ID'),
-    androidClientId: String.fromEnvironment(
-      'SYNESIS_GOOGLE_ANDROID_CLIENT_ID',
-    ),
+    androidClientId: String.fromEnvironment('SYNESIS_GOOGLE_ANDROID_CLIENT_ID'),
     clientSecret: String.fromEnvironment('SYNESIS_GOOGLE_CLIENT_SECRET'),
   );
 

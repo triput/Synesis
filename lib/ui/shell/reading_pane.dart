@@ -4,7 +4,7 @@
 // Component: UI
 // Version: 1.7 (Gold Master)
 // Created: 2026-07-14
-// Last Update: 2026-07-23
+// Last Update: 2026-07-27
 // ==============================================================================
 
 import 'dart:async';
@@ -18,6 +18,9 @@ import 'package:synesis/desktop/message_file_service.dart';
 import 'package:synesis/desktop/message_print_service.dart';
 import 'package:synesis/domain/address_match_scope.dart';
 import 'package:synesis/domain/models.dart';
+import 'package:synesis/pim/meeting_invite_resolver.dart';
+import 'package:synesis/pim/meeting_invite_service.dart';
+import 'package:synesis/pim/meeting_rsvp.dart';
 import 'package:synesis/theme/app_theme.dart';
 import 'package:synesis/theme/density.dart';
 import 'package:synesis/theme/theme_tokens.dart';
@@ -1551,6 +1554,7 @@ class _ReadingActionBar extends StatelessWidget {
       builder: (BuildContext context, BoxConstraints constraints) {
         final bool wide = constraints.maxWidth >= kReadingPaneWideBreakpoint;
         final List<Widget> actions = <Widget>[
+          _MeetingInviteActions(message: message, wide: wide),
           if (onReply != null)
             _AdaptiveAction(
               wide: wide,
@@ -1671,6 +1675,142 @@ class _ReadingActionBar extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+}
+
+/// Resolves a meeting invitation once per message and renders RSVP actions.
+class _MeetingInviteActions extends StatefulWidget {
+  const _MeetingInviteActions({
+    required this.message,
+    required this.wide,
+  });
+
+  final MailMessage message;
+  final bool wide;
+
+  @override
+  State<_MeetingInviteActions> createState() => _MeetingInviteActionsState();
+}
+
+class _MeetingInviteActionsState extends State<_MeetingInviteActions> {
+  MeetingInviteDetection? _detection;
+  bool _busy = false;
+
+  @override
+  void initState() {
+    super.initState();
+    unawaited(_detect());
+  }
+
+  @override
+  void didUpdateWidget(covariant _MeetingInviteActions oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.message.id != widget.message.id) {
+      _detection = null;
+      _busy = false;
+      unawaited(_detect());
+    }
+  }
+
+  Future<void> _detect() async {
+    try {
+      final MeetingInviteDetection detection = await context
+          .read<MeetingInviteService>()
+          .detect(message: widget.message);
+      if (mounted) {
+        setState(() => _detection = detection);
+      }
+    } on Object {
+      // A failed detection must not hide or disrupt standard mail actions.
+      if (mounted) {
+        setState(
+          () => _detection = const MeetingInviteDetection(isInvite: false),
+        );
+      }
+    }
+  }
+
+  Future<void> _respond(MeetingRsvpResponse response) async {
+    if (_busy) {
+      return;
+    }
+    setState(() => _busy = true);
+    try {
+      final MeetingInviteActionResult result = await context
+          .read<MeetingInviteService>()
+          .respond(
+            message: widget.message,
+            response: response,
+          );
+      if (!mounted) {
+        return;
+      }
+      final String label = _responseLabel(response);
+      final String message = result.serverResponseSent
+          ? label
+          : '$label — saved locally; server reply not sent';
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(message)),
+      );
+    } on Object catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Meeting response failed: $error')),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _busy = false);
+      }
+    }
+  }
+
+  static String _responseLabel(MeetingRsvpResponse response) {
+    return switch (response) {
+      MeetingRsvpResponse.accept => 'Accepted',
+      MeetingRsvpResponse.decline => 'Declined',
+      MeetingRsvpResponse.tentative => 'Tentative',
+    };
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!(_detection?.isInvite ?? false)) {
+      return const SizedBox.shrink();
+    }
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: <Widget>[
+        _AdaptiveAction(
+          wide: widget.wide,
+          label: 'Accept',
+          icon: Icons.check_rounded,
+          onPressed: _busy
+              ? null
+              : () => unawaited(_respond(MeetingRsvpResponse.accept)),
+          emphasized: true,
+        ),
+        const SizedBox(width: 4),
+        _AdaptiveAction(
+          wide: widget.wide,
+          label: 'Decline',
+          icon: Icons.close_rounded,
+          onPressed: _busy
+              ? null
+              : () => unawaited(_respond(MeetingRsvpResponse.decline)),
+          danger: true,
+        ),
+        const SizedBox(width: 4),
+        _AdaptiveAction(
+          wide: widget.wide,
+          label: 'Tentative',
+          icon: Icons.help_outline_rounded,
+          onPressed: _busy
+              ? null
+              : () => unawaited(_respond(MeetingRsvpResponse.tentative)),
+        ),
+      ],
     );
   }
 }
@@ -2153,7 +2293,7 @@ class _AdaptiveAction extends StatelessWidget {
     required this.wide,
     required this.label,
     required this.icon,
-    required this.onPressed,
+    this.onPressed,
     this.danger = false,
     this.emphasized = false,
   });
@@ -2161,7 +2301,7 @@ class _AdaptiveAction extends StatelessWidget {
   final bool wide;
   final String label;
   final IconData icon;
-  final VoidCallback onPressed;
+  final VoidCallback? onPressed;
   final bool danger;
   final bool emphasized;
 

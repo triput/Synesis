@@ -13,6 +13,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:synesis/domain/pim.dart';
 import 'package:synesis/domain/pim_ids.dart';
+import 'package:synesis/pim/meeting_rsvp.dart';
 import 'package:synesis/protocol/graph_mail_provider.dart'
     show GraphAuthException, GraphUnauthorizedHandler;
 import 'package:synesis/protocol/mail_provider.dart';
@@ -110,13 +111,15 @@ class GraphPimProvider {
     http.Client? client,
     Duration timeout = const Duration(seconds: 45),
     GraphUnauthorizedHandler? onUnauthorized,
-  })  : _ownsClient = client == null,
-        _innerClient = client ?? http.Client(),
-        _onUnauthorized = onUnauthorized {
+  }) : _ownsClient = client == null,
+       _innerClient = client ?? http.Client(),
+       _onUnauthorized = onUnauthorized {
     _client = _TimeoutClient(_innerClient, timeout);
   }
 
-  static final Uri _graphBaseUri = Uri.parse('https://graph.microsoft.com/v1.0');
+  static final Uri _graphBaseUri = Uri.parse(
+    'https://graph.microsoft.com/v1.0',
+  );
 
   static const int _maxPages = 40;
   static const String _contactSelect =
@@ -268,10 +271,8 @@ class GraphPimProvider {
           useDefaultPath
               ? '/me/contacts/delta'
               : '/me/contactFolders/'
-                  '${Uri.encodeComponent(folderProviderId)}/contacts/delta',
-          queryParameters: <String, String>{
-            r'$select': _contactSelect,
-          },
+                    '${Uri.encodeComponent(folderProviderId)}/contacts/delta',
+          queryParameters: <String, String>{r'$select': _contactSelect},
         );
       } on ProtocolException catch (error) {
         // Some tenants reject contact delta — fall back to a full list page.
@@ -354,6 +355,70 @@ class GraphPimProvider {
     );
   }
 
+  /// Sends an RSVP for a Graph event, optionally suppressing the email reply.
+  Future<void> respondToEvent(
+    String providerEventId,
+    MeetingRsvpResponse response, {
+    bool sendResponse = true,
+  }) async {
+    final String id = providerEventId.trim();
+    if (id.isEmpty) {
+      throw ArgumentError.value(
+        providerEventId,
+        'providerEventId',
+        'Must not be empty.',
+      );
+    }
+    final String action = switch (response) {
+      MeetingRsvpResponse.accept => 'accept',
+      MeetingRsvpResponse.decline => 'decline',
+      MeetingRsvpResponse.tentative => 'tentativelyAccept',
+    };
+    await _postObject(
+      '/me/events/${Uri.encodeComponent(id)}/$action',
+      <String, Object?>{'sendResponse': sendResponse},
+    );
+  }
+
+  /// Loads the event associated with a Graph meeting message, if one exists.
+  ///
+  /// Graph returns 404 for regular mail that has no meeting association.
+  Future<Map<String, Object?>?> fetchAssociatedEventForMessage(
+    String messageProviderId,
+  ) async {
+    final String id = messageProviderId.trim();
+    if (id.isEmpty) {
+      return null;
+    }
+    try {
+      return await _getObject('/me/messages/${Uri.encodeComponent(id)}/event');
+    } on ProtocolException catch (error) {
+      if (error.statusCode == 404) {
+        return null;
+      }
+      rethrow;
+    }
+  }
+
+  /// Finds the first event matching the supplied RFC 5545 UID.
+  Future<String?> findEventIdByICalUId(String iCalUId) async {
+    final String uid = iCalUId.trim();
+    if (uid.isEmpty) {
+      return null;
+    }
+    final String escaped = uid.replaceAll("'", "''");
+    final Map<String, Object?> response = await _getCollection(
+      '/me/events',
+      queryParameters: <String, String>{
+        r'$filter': "iCalUId eq '$escaped'",
+        r'$select': 'id',
+        r'$top': '1',
+      },
+    );
+    final List<Map<String, Object?>> values = _values(response);
+    return values.isEmpty ? null : _nonEmpty(values.first['id']?.toString());
+  }
+
   Future<void> dispose() async {
     if (!_disposed) {
       _disposed = true;
@@ -374,7 +439,7 @@ class GraphPimProvider {
       useDefaultPath
           ? '/me/contacts'
           : '/me/contactFolders/'
-              '${Uri.encodeComponent(folderProviderId)}/contacts',
+                '${Uri.encodeComponent(folderProviderId)}/contacts',
       queryParameters: <String, String>{
         r'$select': _contactSelect,
         r'$top': '100',
@@ -459,9 +524,7 @@ class GraphPimProvider {
     } else {
       document = await _getCollection(
         '/me/calendars/${Uri.encodeComponent(calendarProviderId)}/events/delta',
-        queryParameters: <String, String>{
-          r'$select': _eventSelect,
-        },
+        queryParameters: <String, String>{r'$select': _eventSelect},
       );
     }
 
@@ -539,11 +602,7 @@ class GraphPimProvider {
       );
     }
     final bool isDefault = name.toLowerCase() == 'contacts';
-    return GraphContactFolder(
-      providerId: id,
-      name: name,
-      isDefault: isDefault,
-    );
+    return GraphContactFolder(providerId: id, name: name, isDefault: isDefault);
   }
 
   GraphCalendarInfo _calendarFromJson(Map<String, Object?> json) {
@@ -557,7 +616,8 @@ class GraphPimProvider {
     return GraphCalendarInfo(
       providerId: id,
       name: name,
-      colorArgb: _parseGraphColor(json['hexColor'] as String?) ??
+      colorArgb:
+          _parseGraphColor(json['hexColor'] as String?) ??
           kGraphDefaultCalendarColorArgb,
       isDefault: json['isDefaultCalendar'] as bool? ?? false,
     );
@@ -579,12 +639,11 @@ class GraphPimProvider {
     final String resolvedName = displayName.isNotEmpty
         ? displayName
         : <String?>[given, family]
-            .whereType<String>()
-            .where((String part) => part.isNotEmpty)
-            .join(' ');
-    final int updatedAt = _parseEpochMs(
-          json['lastModifiedDateTime'] as String?,
-        ) ??
+              .whereType<String>()
+              .where((String part) => part.isNotEmpty)
+              .join(' ');
+    final int updatedAt =
+        _parseEpochMs(json['lastModifiedDateTime'] as String?) ??
         DateTime.now().millisecondsSinceEpoch;
 
     final Contact contact = Contact(
@@ -609,8 +668,7 @@ class GraphPimProvider {
         if (entry is! Map<Object?, Object?>) {
           continue;
         }
-        final String? address =
-            _nonEmpty(entry['address']?.toString());
+        final String? address = _nonEmpty(entry['address']?.toString());
         if (address == null) {
           continue;
         }
@@ -662,11 +720,7 @@ class GraphPimProvider {
     addPhones(json['homePhones'], 'home');
     addPhones(json['mobilePhone'], 'mobile');
 
-    return GraphContactBundle(
-      contact: contact,
-      emails: emails,
-      phones: phones,
-    );
+    return GraphContactBundle(contact: contact, emails: emails, phones: phones);
   }
 
   GraphEventBundle? _eventBundleFromJson(
@@ -684,8 +738,7 @@ class GraphPimProvider {
     if (startMs == null || endMs == null) {
       return null;
     }
-    final String title =
-        _nonEmpty(json['subject'] as String?) ?? '(No title)';
+    final String title = _nonEmpty(json['subject'] as String?) ?? '(No title)';
     final String? bodyPreview = _nonEmpty(json['bodyPreview'] as String?);
     String? body = bodyPreview;
     final Object? bodyObj = json['body'];
@@ -697,9 +750,8 @@ class GraphPimProvider {
     if (location is Map<Object?, Object?>) {
       locationName = _nonEmpty(location['displayName']?.toString());
     }
-    final int updatedAt = _parseEpochMs(
-          json['lastModifiedDateTime'] as String?,
-        ) ??
+    final int updatedAt =
+        _parseEpochMs(json['lastModifiedDateTime'] as String?) ??
         DateTime.now().millisecondsSinceEpoch;
 
     final CalendarEvent event = CalendarEvent(
@@ -715,7 +767,8 @@ class GraphPimProvider {
       location: locationName,
       rrule: _rruleFromRecurrence(json['recurrence']),
       reminderMinutes: json['reminderMinutesBeforeStart'] as int?,
-      etag: _nonEmpty(json['@odata.etag'] as String?) ??
+      etag:
+          _nonEmpty(json['@odata.etag'] as String?) ??
           _nonEmpty(json['odata.etag'] as String?),
       updatedAt: updatedAt,
     );
@@ -729,8 +782,7 @@ class GraphPimProvider {
         }
         final Map<Object?, Object?>? emailAddress =
             entry['emailAddress'] as Map<Object?, Object?>?;
-        final String? email =
-            _nonEmpty(emailAddress?['address']?.toString());
+        final String? email = _nonEmpty(emailAddress?['address']?.toString());
         if (email == null) {
           continue;
         }
@@ -741,7 +793,10 @@ class GraphPimProvider {
         }
         attendees.add(
           EventAttendee(
-            id: PimIds.stableLocalId(localId, 'attendee:${email.toLowerCase()}'),
+            id: PimIds.stableLocalId(
+              localId,
+              'attendee:${email.toLowerCase()}',
+            ),
             eventId: localId,
             email: email,
             displayName: _nonEmpty(emailAddress?['name']?.toString()),
@@ -757,8 +812,10 @@ class GraphPimProvider {
           organizer['emailAddress'] as Map<Object?, Object?>?;
       final String? email = _nonEmpty(emailAddress?['address']?.toString());
       if (email != null) {
-        final String attendeeId =
-            PimIds.stableLocalId(localId, 'attendee:${email.toLowerCase()}');
+        final String attendeeId = PimIds.stableLocalId(
+          localId,
+          'attendee:${email.toLowerCase()}',
+        );
         final int existing = attendees.indexWhere(
           (EventAttendee a) => a.id == attendeeId,
         );
@@ -767,7 +824,8 @@ class GraphPimProvider {
             id: attendeeId,
             eventId: localId,
             email: email,
-            displayName: attendees[existing].displayName ??
+            displayName:
+                attendees[existing].displayName ??
                 _nonEmpty(emailAddress?['name']?.toString()),
             responseStatus: attendees[existing].responseStatus,
             isOrganizer: true,
@@ -834,10 +892,10 @@ class GraphPimProvider {
     final String candidate = dateTime.endsWith('Z') || dateTime.contains('+')
         ? dateTime
         : (timeZone == null ||
-                timeZone.isEmpty ||
-                timeZone.toUpperCase() == 'UTC')
-            ? '${dateTime}Z'
-            : dateTime;
+              timeZone.isEmpty ||
+              timeZone.toUpperCase() == 'UTC')
+        ? '${dateTime}Z'
+        : dateTime;
     return DateTime.tryParse(candidate)?.toUtc().millisecondsSinceEpoch;
   }
 
@@ -868,8 +926,7 @@ class GraphPimProvider {
   Future<Map<String, Object?>> _getCollection(
     String path, {
     required Map<String, String> queryParameters,
-  }) =>
-      _getObject(path, queryParameters: queryParameters);
+  }) => _getObject(path, queryParameters: queryParameters);
 
   Future<Map<String, Object?>> _getObject(
     String path, {
@@ -890,6 +947,33 @@ class GraphPimProvider {
       (Map<String, String> headers) => _client.get(uri, headers: headers),
     );
     return _decodeObjectResponse(response);
+  }
+
+  Future<Map<String, Object?>> _postObject(
+    String path,
+    Map<String, Object?> body,
+  ) async {
+    final http.Response response = await _sendAuthorized(
+      (Map<String, String> headers) => _client.post(
+        _uri(path),
+        headers: <String, String>{
+          ...headers,
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode(body),
+      ),
+    );
+    _ensureSuccess(response);
+    if (response.body.trim().isEmpty) {
+      return const <String, Object?>{};
+    }
+    final Object? decoded = jsonDecode(response.body);
+    if (decoded is! Map<Object?, Object?>) {
+      throw const ProtocolException('Graph returned an invalid JSON object.');
+    }
+    return decoded.map(
+      (Object? key, Object? value) => MapEntry(key.toString(), value),
+    );
   }
 
   Map<String, Object?> _decodeObjectResponse(http.Response response) {
@@ -923,11 +1007,10 @@ class GraphPimProvider {
   Uri _uri(
     String path, {
     Map<String, String> queryParameters = const <String, String>{},
-  }) =>
-      _graphBaseUri.replace(
-        path: '${_graphBaseUri.path}$path',
-        queryParameters: queryParameters,
-      );
+  }) => _graphBaseUri.replace(
+    path: '${_graphBaseUri.path}$path',
+    queryParameters: queryParameters,
+  );
 
   Future<Map<String, String>> _headers() async {
     final String token = await _accessToken();
@@ -982,7 +1065,9 @@ class GraphPimProvider {
 
   void _ensureNotDisposed() {
     if (_disposed) {
-      throw const ProtocolException('This Graph PIM provider has been disposed.');
+      throw const ProtocolException(
+        'This Graph PIM provider has been disposed.',
+      );
     }
   }
 }
@@ -995,15 +1080,17 @@ class _TimeoutClient extends http.BaseClient {
 
   @override
   Future<http.StreamedResponse> send(http.BaseRequest request) {
-    return _inner.send(request).timeout(
-      _timeout,
-      onTimeout: () {
-        throw TimeoutException(
-          'Microsoft Graph PIM request timed out after ${_timeout.inSeconds}s',
+    return _inner
+        .send(request)
+        .timeout(
           _timeout,
+          onTimeout: () {
+            throw TimeoutException(
+              'Microsoft Graph PIM request timed out after ${_timeout.inSeconds}s',
+              _timeout,
+            );
+          },
         );
-      },
-    );
   }
 
   @override

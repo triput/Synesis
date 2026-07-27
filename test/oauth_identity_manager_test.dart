@@ -78,11 +78,11 @@ void main() {
       expect(config.isConfigured, isTrue);
     });
 
-    test('includes mail and read-only PIM scopes', () {
+    test('includes mail and meeting-write PIM scopes', () {
       expect(GraphAuthConfig.scopes, contains('Mail.ReadWrite'));
       expect(GraphAuthConfig.scopes, contains('Mail.Send'));
       expect(GraphAuthConfig.scopes, contains('Contacts.Read'));
-      expect(GraphAuthConfig.scopes, contains('Calendars.Read'));
+      expect(GraphAuthConfig.scopes, contains('Calendars.ReadWrite'));
     });
   });
 
@@ -337,7 +337,7 @@ void main() {
       );
       expect(
         launched.first.queryParameters['scope'],
-        contains('Calendars.Read'),
+        contains('Calendars.ReadWrite'),
       );
     });
 

@@ -26,6 +26,7 @@ import 'package:synesis/notifications/app_foreground_tracker.dart';
 import 'package:synesis/notifications/notification_platform.dart';
 import 'package:synesis/notifications/notification_service.dart';
 import 'package:synesis/notifications/windows_notification_adapter.dart';
+import 'package:synesis/pim/meeting_invite_service.dart';
 import 'package:synesis/repository/database.dart';
 import 'package:synesis/repository/drift/drift_pim_store.dart';
 import 'package:synesis/repository/drift_mail_repository.dart';
@@ -102,8 +103,9 @@ Future<void> main(List<String> args) async {
     config: oauthConfigs.graph,
     googleConfig: oauthConfigs.google,
   );
-  final WidgetSnapshotService widgetSnapshots =
-      WidgetSnapshotService(repository);
+  final WidgetSnapshotService widgetSnapshots = WidgetSnapshotService(
+    repository,
+  );
   final AccountService accountService = AccountService(
     repository,
     credentialStore,
@@ -118,8 +120,7 @@ Future<void> main(List<String> args) async {
   final AppSettingsCubit settingsCubit = AppSettingsCubit(prefs);
   final RetentionService retentionService = RetentionService(repository);
 
-  final DesktopController desktopController =
-      (!kIsWeb && Platform.isWindows)
+  final DesktopController desktopController = (!kIsWeb && Platform.isWindows)
       ? WindowsDesktopController(
           minimizeToTrayEnabled: settingsCubit.state.minimizeToTray,
         )
@@ -156,6 +157,12 @@ Future<void> main(List<String> args) async {
     pushOnCellular: () => settingsCubit.state.pushOnCellular,
     onNewUnread: (List<MailMessage> messages) =>
         notificationService.onNewMail(messages),
+  );
+  final MeetingInviteService meetingInviteService = MeetingInviteService(
+    pimStore: pimStore,
+    repository: repository,
+    resolvePim: providerRegistry.resolvePim,
+    resolveMail: providerRegistry.resolve,
   );
   syncEngine.startNetworkWatcher();
 
@@ -195,9 +202,7 @@ Future<void> main(List<String> args) async {
   if (!kIsWeb && Platform.isWindows) {
     final WindowController mainWindowController =
         await WindowController.fromCurrentEngine();
-    await mainWindowController.setWindowMethodHandler((
-      MethodCall call,
-    ) async {
+    await mainWindowController.setWindowMethodHandler((MethodCall call) async {
       if (call.method == showMainWindowMethod) {
         await desktopController.show();
       }
@@ -223,6 +228,7 @@ Future<void> main(List<String> args) async {
       retentionService: retentionService,
       accountService: accountService,
       identityManager: identityManager,
+      meetingInviteService: meetingInviteService,
       resolveProvider: providerRegistry.resolve,
       settingsCubit: settingsCubit,
       desktopController: desktopController,

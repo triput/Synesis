@@ -14,6 +14,7 @@ import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:synesis/domain/pim.dart';
 import 'package:synesis/domain/pim_ids.dart';
+import 'package:synesis/pim/meeting_rsvp.dart';
 import 'package:synesis/protocol/graph_pim_provider.dart';
 import 'package:synesis/protocol/mail_provider.dart';
 
@@ -26,14 +27,8 @@ void main() {
       return http.Response(
         jsonEncode(<String, Object>{
           'value': <Map<String, Object>>[
-            <String, Object>{
-              'id': 'folder-default',
-              'displayName': 'Contacts',
-            },
-            <String, Object>{
-              'id': 'folder-vip',
-              'displayName': 'VIP',
-            },
+            <String, Object>{'id': 'folder-default', 'displayName': 'Contacts'},
+            <String, Object>{'id': 'folder-vip', 'displayName': 'VIP'},
           ],
         }),
         200,
@@ -47,8 +42,8 @@ void main() {
     );
     addTearDown(provider.dispose);
 
-    final List<GraphContactFolder> folders =
-        await provider.listContactFolders();
+    final List<GraphContactFolder> folders = await provider
+        .listContactFolders();
     expect(folders, hasLength(2));
     expect(folders.first.isDefault, isTrue);
 
@@ -56,10 +51,14 @@ void main() {
       folders,
       accountId: 'work',
     );
-    expect(lists.singleWhere((ContactList l) => l.providerId == 'folder-default').id,
-        PimIds.stableLocalId('work', 'folder-default'));
-    expect(lists.map((ContactList l) => l.providerId).toList(),
-        <String>['folder-default', 'folder-vip']);
+    expect(
+      lists.singleWhere((ContactList l) => l.providerId == 'folder-default').id,
+      PimIds.stableLocalId('work', 'folder-default'),
+    );
+    expect(lists.map((ContactList l) => l.providerId).toList(), <String>[
+      'folder-default',
+      'folder-vip',
+    ]);
   });
 
   test('listCalendars parses hexColor and default flag', () async {
@@ -160,12 +159,12 @@ void main() {
     addTearDown(provider.dispose);
 
     final String listId = PimIds.stableLocalId('work', 'contacts');
-    final GraphPimDeltaResult<GraphContactBundle> result =
-        await provider.syncContacts(
-      accountId: 'work',
-      contactListId: listId,
-      folderProviderId: 'contacts',
-    );
+    final GraphPimDeltaResult<GraphContactBundle> result = await provider
+        .syncContacts(
+          accountId: 'work',
+          contactListId: listId,
+          folderProviderId: 'contacts',
+        );
 
     expect(
       result.changed.map((GraphContactBundle b) => b.contact.providerId),
@@ -175,10 +174,7 @@ void main() {
     expect(result.changed.first.phones.single.number, '555-0100');
     expect(result.removedProviderIds, <String>['c-gone']);
     expect(result.deltaLink, contains('deltatoken=abc'));
-    expect(
-      result.changed.first.contact.id,
-      PimIds.stableLocalId('work', 'c1'),
-    );
+    expect(result.changed.first.contact.id, PimIds.stableLocalId('work', 'c1'));
   });
 
   test('syncEvents uses calendarView window when no deltaLink', () async {
@@ -233,13 +229,13 @@ void main() {
     addTearDown(provider.dispose);
 
     final String calendarId = PimIds.stableLocalId('work', 'cal-1');
-    final GraphPimDeltaResult<GraphEventBundle> result =
-        await provider.syncEvents(
-      accountId: 'work',
-      calendarId: calendarId,
-      calendarProviderId: 'cal-1',
-      now: DateTime.utc(2026, 7, 27),
-    );
+    final GraphPimDeltaResult<GraphEventBundle> result = await provider
+        .syncEvents(
+          accountId: 'work',
+          calendarId: calendarId,
+          calendarProviderId: 'cal-1',
+          now: DateTime.utc(2026, 7, 27),
+        );
 
     expect(result.changed, hasLength(1));
     expect(result.changed.single.event.title, 'Standup');
@@ -291,4 +287,92 @@ void main() {
       ),
     );
   });
+
+  test('respondToEvent posts accept, decline, and tentative Graph RSVP actions',
+      () async {
+    final List<String> paths = <String>[];
+    final http.Client client = MockClient((http.Request request) async {
+      expect(request.method, 'POST');
+      paths.add(request.url.path);
+      expect(request.headers['content-type'], 'application/json');
+      expect(jsonDecode(request.body), <String, Object>{'sendResponse': true});
+      return http.Response('', 202);
+    });
+    final GraphPimProvider provider = GraphPimProvider(
+      () async => 'token',
+      client: client,
+    );
+    addTearDown(provider.dispose);
+
+    await provider.respondToEvent('event-1', MeetingRsvpResponse.accept);
+    await provider.respondToEvent('event-2', MeetingRsvpResponse.decline);
+    await provider.respondToEvent('event-3', MeetingRsvpResponse.tentative);
+    expect(paths, <String>[
+      '/v1.0/me/events/event-1/accept',
+      '/v1.0/me/events/event-2/decline',
+      '/v1.0/me/events/event-3/tentativelyAccept',
+    ]);
+  });
+
+  test('respondToEvent surfaces a non-success Graph response', () async {
+    final http.Client client = MockClient((http.Request request) async {
+      return http.Response(
+        jsonEncode(<String, Object>{
+          'error': <String, String>{'message': 'RSVP denied'},
+        }),
+        403,
+      );
+    });
+    final GraphPimProvider provider = GraphPimProvider(
+      () async => 'token',
+      client: client,
+    );
+    addTearDown(provider.dispose);
+
+    await expectLater(
+      provider.respondToEvent('event-1', MeetingRsvpResponse.accept),
+      throwsA(
+        isA<ProtocolException>()
+            .having((ProtocolException error) => error.statusCode, 'status', 403)
+            .having((ProtocolException error) => error.message, 'message', 'RSVP denied'),
+      ),
+    );
+  });
+
+  test(
+    'fetchAssociatedEventForMessage returns event and null on 404',
+    () async {
+      int calls = 0;
+      final http.Client client = MockClient((http.Request request) async {
+        calls += 1;
+        expect(request.url.path, startsWith('/v1.0/me/messages/'));
+        if (calls == 1) {
+          return http.Response(
+            jsonEncode(<String, String>{'id': 'event-1'}),
+            200,
+          );
+        }
+        return http.Response(
+          jsonEncode(<String, Object>{
+            'error': <String, String>{'message': 'No event'},
+          }),
+          404,
+        );
+      });
+      final GraphPimProvider provider = GraphPimProvider(
+        () async => 'token',
+        client: client,
+      );
+      addTearDown(provider.dispose);
+
+      expect(
+        (await provider.fetchAssociatedEventForMessage('message-1'))?['id'],
+        'event-1',
+      );
+      expect(
+        await provider.fetchAssociatedEventForMessage('message-2'),
+        isNull,
+      );
+    },
+  );
 }
