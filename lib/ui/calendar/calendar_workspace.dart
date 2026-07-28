@@ -170,7 +170,6 @@ class _CalendarHeader extends StatelessWidget {
                 onPressed: () => showCalendarPickerSheet(
                   context,
                   cubit: cubit,
-                  state: state,
                 ),
                 icon: Icon(Icons.tune, color: t.muted, size: 20),
               ),
@@ -715,84 +714,93 @@ Future<void> showDayEventsSheet(
 
 /// Opens the checkbox picker sheet for calendar display selection
 /// ([DriftPimStore.setCalendarDisplayPrefs]).
+///
+/// Listens to [CalendarCubit] so toggles rebuild after
+/// [CalendarCubit.setCalendarSelected] persists + refreshes (DEF-060).
 Future<void> showCalendarPickerSheet(
   BuildContext context, {
   required CalendarCubit cubit,
-  required CalendarState state,
 }) {
   final ThemeTokens t = tokensOf(context);
-  final Map<String, List<Calendar>> byAccount = <String, List<Calendar>>{};
-  for (final Calendar calendar in state.calendars) {
-    byAccount.putIfAbsent(calendar.accountId, () => <Calendar>[]).add(
-      calendar,
-    );
-  }
   return showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
     backgroundColor: t.panel,
     showDragHandle: true,
     builder: (BuildContext sheetContext) {
-      return Padding(
-        padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: <Widget>[
-            Text(
-              'Calendars',
-              style: Theme.of(sheetContext).textTheme.titleLarge,
-            ),
-            const SizedBox(height: 4),
-            Text(
-              'Choose which calendars display on the workspace.',
-              style: TextStyle(color: t.muted, fontSize: 12),
-            ),
-            const SizedBox(height: 8),
-            Flexible(
-              child: ListView(
-                shrinkWrap: true,
-                children: <Widget>[
-                  for (final MapEntry<String, List<Calendar>> entry
-                      in byAccount.entries) ...<Widget>[
-                    Padding(
-                      padding: const EdgeInsets.only(top: 8, bottom: 2),
-                      child: Text(
-                        _accountLabelFor(state.accounts, entry.key),
-                        style: TextStyle(
-                          color: t.muted,
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                    for (final Calendar calendar in entry.value)
-                      SwitchListTile(
-                        key: ValueKey<String>(
-                          'calendar_toggle_${calendar.id}',
-                        ),
-                        contentPadding: EdgeInsets.zero,
-                        secondary: Container(
-                          width: 12,
-                          height: 12,
-                          decoration: BoxDecoration(
-                            color: Color(calendar.effectiveColorArgb),
-                            shape: BoxShape.circle,
+      return BlocBuilder<CalendarCubit, CalendarState>(
+        bloc: cubit,
+        builder: (BuildContext context, CalendarState state) {
+          final Map<String, List<Calendar>> byAccount =
+              <String, List<Calendar>>{};
+          for (final Calendar calendar in state.calendars) {
+            byAccount
+                .putIfAbsent(calendar.accountId, () => <Calendar>[])
+                .add(calendar);
+          }
+          return Padding(
+            padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: <Widget>[
+                Text(
+                  'Calendars',
+                  style: Theme.of(sheetContext).textTheme.titleLarge,
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Choose which calendars display on the workspace.',
+                  style: TextStyle(color: t.muted, fontSize: 12),
+                ),
+                const SizedBox(height: 8),
+                Flexible(
+                  child: ListView(
+                    shrinkWrap: true,
+                    children: <Widget>[
+                      for (final MapEntry<String, List<Calendar>> entry
+                          in byAccount.entries) ...<Widget>[
+                        Padding(
+                          padding: const EdgeInsets.only(top: 8, bottom: 2),
+                          child: Text(
+                            _accountLabelFor(state.accounts, entry.key),
+                            style: TextStyle(
+                              color: t.muted,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
                         ),
-                        title: Text(calendar.name),
-                        value: calendar.isSelectedForDisplay,
-                        onChanged: (bool value) => cubit.setCalendarSelected(
-                          calendar.id,
-                          value,
-                        ),
-                      ),
-                  ],
-                ],
-              ),
+                        for (final Calendar calendar in entry.value)
+                          SwitchListTile(
+                            key: ValueKey<String>(
+                              'calendar_toggle_${calendar.id}',
+                            ),
+                            contentPadding: EdgeInsets.zero,
+                            secondary: Container(
+                              width: 12,
+                              height: 12,
+                              decoration: BoxDecoration(
+                                color: Color(calendar.effectiveColorArgb),
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                            title: Text(calendar.name),
+                            value: calendar.isSelectedForDisplay,
+                            onChanged: (bool value) =>
+                                cubit.setCalendarSelected(
+                              calendar.id,
+                              value,
+                            ),
+                          ),
+                      ],
+                    ],
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
+          );
+        },
       );
     },
   );

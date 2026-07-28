@@ -96,11 +96,14 @@ class PeopleCubit extends Cubit<PeopleState> {
     emit(state.copyWith(searchResults: hits));
   }
 
-  Future<void> setContactListSelected(String listId, bool selected) {
-    return _pimStore.setContactListDisplayPrefs(
+  /// Toggles [ContactList.isSelectedForDisplay], then refreshes so picker
+  /// sheets listening via BlocBuilder update immediately (DEF-060).
+  Future<void> setContactListSelected(String listId, bool selected) async {
+    await _pimStore.setContactListDisplayPrefs(
       listId,
       isSelectedForDisplay: selected,
     );
+    await refresh();
   }
 
   /// Selects a contact for the detail pane and loads its emails/phones.

@@ -132,14 +132,15 @@ class CalendarCubit extends Cubit<CalendarState> {
     emit(state.copyWith(showAgenda: showAgenda));
   }
 
-  /// Toggles [Calendar.isSelectedForDisplay] for [calendarId]. Refresh is
-  /// driven by the shared [MailRepository.watchChanges] notification that
-  /// [DriftPimStore] fires on write.
-  Future<void> setCalendarSelected(String calendarId, bool selected) {
-    return _pimStore.setCalendarDisplayPrefs(
+  /// Toggles [Calendar.isSelectedForDisplay] for [calendarId], then refreshes
+  /// so picker sheets listening via BlocBuilder update immediately (DEF-060).
+  /// [DriftPimStore] also fires [MailRepository.watchChanges] on write.
+  Future<void> setCalendarSelected(String calendarId, bool selected) async {
+    await _pimStore.setCalendarDisplayPrefs(
       calendarId,
       isSelectedForDisplay: selected,
     );
+    await refresh();
   }
 
   Future<void> setCalendarColorOverride(String calendarId, int? argb) {

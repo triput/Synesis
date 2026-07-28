@@ -9,13 +9,17 @@
 
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:synesis/domain/models.dart';
 import 'package:synesis/domain/pim.dart';
 import 'package:synesis/repository/database.dart';
 import 'package:synesis/repository/drift/drift_pim_store.dart';
 import 'package:synesis/repository/drift_mail_repository.dart';
+import 'package:synesis/theme/app_theme.dart';
+import 'package:synesis/theme/theme_id.dart';
 import 'package:synesis/ui/calendar/calendar_cubit.dart';
+import 'package:synesis/ui/calendar/calendar_workspace.dart';
 
 Future<
   (SynesisDatabase, DriftMailRepository, DriftPimStore)
@@ -242,8 +246,94 @@ void main() {
       expect(cubit.state.hasSelectedCalendars, isTrue);
 
       await cubit.setCalendarSelected(calendarId, false);
-      await cubit.refresh();
       expect(cubit.state.hasSelectedCalendars, isFalse);
+    });
+  });
+
+  group('showCalendarPickerSheet (DEF-060)', () {
+    testWidgets('toggle updates switch after setCalendarSelected', (
+      WidgetTester tester,
+    ) async {
+      final (
+        SynesisDatabase database,
+        DriftMailRepository repo,
+        DriftPimStore pimStore,
+      ) = await _openFixture();
+      addTearDown(database.close);
+
+      final String primaryId = DriftPimStore.stableLocalId('work', 'primary');
+      final String holidaysId = DriftPimStore.stableLocalId('work', 'holidays');
+      await pimStore.upsertCalendars(<Calendar>[
+        Calendar(
+          id: primaryId,
+          accountId: 'work',
+          providerId: 'primary',
+          name: 'Primary',
+          colorArgb: 0xFF2DD4BF,
+          isSelectedForDisplay: true,
+        ),
+        Calendar(
+          id: holidaysId,
+          accountId: 'work',
+          providerId: 'holidays',
+          name: 'Holidays',
+          colorArgb: 0xFFEF4444,
+          isSelectedForDisplay: true,
+        ),
+      ]);
+
+      final CalendarCubit cubit = CalendarCubit(
+        pimStore: pimStore,
+        repository: repo,
+        initialMonth: DateTime(2026, 7, 1),
+      );
+      addTearDown(cubit.close);
+      await cubit.refresh();
+
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: AppTheme.materialThemeFor(ThemeId.dark),
+          home: BlocProvider<CalendarCubit>.value(
+            value: cubit,
+            child: Builder(
+              builder: (BuildContext context) {
+                return Scaffold(
+                  body: TextButton(
+                    key: const Key('open_calendar_picker'),
+                    onPressed: () => showCalendarPickerSheet(
+                      context,
+                      cubit: cubit,
+                    ),
+                    child: const Text('Open'),
+                  ),
+                );
+              },
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const Key('open_calendar_picker')));
+      await tester.pumpAndSettle();
+
+      final Finder holidaysToggle = find.byKey(
+        ValueKey<String>('calendar_toggle_$holidaysId'),
+      );
+      expect(holidaysToggle, findsOneWidget);
+      expect(tester.widget<SwitchListTile>(holidaysToggle).value, isTrue);
+
+      await tester.tap(holidaysToggle);
+      await tester.pumpAndSettle();
+
+      expect(tester.widget<SwitchListTile>(holidaysToggle).value, isFalse);
+      expect(
+        cubit.state.calendars
+            .singleWhere((Calendar c) => c.id == holidaysId)
+            .isSelectedForDisplay,
+        isFalse,
+      );
+      expect(cubit.state.selectedCalendars, hasLength(1));
     });
   });
 }

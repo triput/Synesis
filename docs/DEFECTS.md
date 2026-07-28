@@ -611,6 +611,38 @@ Enhancement for the next UI pass — not a defect. Pill outbox affordance stays;
 
 ## Closed
 
+### DEF-060 — Calendar (and People) display toggles appear stuck on
+
+| Field | Value |
+| --- | --- |
+| Priority | **Pri-2** |
+| Status | **Closed** (2026-07-27) |
+| Fixed | 2026-07-27 |
+| Area | `lib/ui/calendar/calendar_workspace.dart` (`showCalendarPickerSheet`), `lib/ui/people/people_workspace.dart` (`showContactListPickerSheet`), `CalendarCubit.setCalendarSelected` / `PeopleCubit.setContactListSelected` |
+| Platforms | All |
+| Logged | 2026-07-27 |
+| Found by | Trish (dogfood) |
+
+**Summary**  
+Operator could not turn off specific calendars in the Calendar module picker (tune icon → switches). Toggles looked inert / snapped back.
+
+**Root cause**  
+Wave 5 wired store + cubit correctly (`isSelectedForDisplay`, `setCalendarDisplayPrefs`, `listEventsInRange(selectedCalendarsOnly: true)`). The picker bottom sheet closed over a **frozen** `CalendarState` and did not `BlocBuilder`-listen to `CalendarCubit`. `SwitchListTile` is controlled — `onChanged` wrote prefs, but the sheet never rebuilt with the new `value`, so switches appeared stuck. Same pattern in the People contact-list picker.
+
+**Fix**  
+1. Rebuild picker sheets from live cubit state via `BlocBuilder`.  
+2. Await `refresh()` after display-pref writes so the sheet updates immediately.  
+3. Regression: `test/calendar_cubit_test.dart` — `showCalendarPickerSheet (DEF-060)`.
+
+**Repro (before fix)**  
+1. Calendar → tune → toggle a calendar off.  
+2. Switch stays on (or snaps back); after close, workspace may already have filtered events if `watchChanges` refreshed — UI feedback in-sheet was broken either way.
+
+**Verification**  
+`flutter test test/calendar_cubit_test.dart`
+
+---
+
 ### DEF-059 — Edit Account Re-authenticate button vertically clipped
 
 | Field | Value |

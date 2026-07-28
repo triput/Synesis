@@ -132,7 +132,6 @@ class _PeopleHeader extends StatelessWidget {
                 onPressed: () => showContactListPickerSheet(
                   context,
                   cubit: cubit,
-                  state: state,
                 ),
                 icon: Icon(Icons.tune, color: t.muted, size: 20),
               ),
@@ -434,10 +433,12 @@ class _ContactDetailPane extends StatelessWidget {
 
 /// Opens the checkbox picker sheet for contact-list display selection
 /// ([DriftPimStore.setContactListDisplayPrefs]).
+///
+/// Listens to [PeopleCubit] so toggles rebuild after
+/// [PeopleCubit.setContactListSelected] persists + refreshes (DEF-060).
 Future<void> showContactListPickerSheet(
   BuildContext context, {
   required PeopleCubit cubit,
-  required PeopleState state,
 }) {
   final ThemeTokens t = tokensOf(context);
   return showModalBottomSheet<void>(
@@ -446,41 +447,48 @@ Future<void> showContactListPickerSheet(
     backgroundColor: t.panel,
     showDragHandle: true,
     builder: (BuildContext sheetContext) {
-      return Padding(
-        padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: <Widget>[
-            Text(
-              'Contact lists',
-              style: Theme.of(sheetContext).textTheme.titleLarge,
+      return BlocBuilder<PeopleCubit, PeopleState>(
+        bloc: cubit,
+        builder: (BuildContext context, PeopleState state) {
+          return Padding(
+            padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: <Widget>[
+                Text(
+                  'Contact lists',
+                  style: Theme.of(sheetContext).textTheme.titleLarge,
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Choose which address books show contacts here and in the '
+                  'compose picker.',
+                  style: TextStyle(color: t.muted, fontSize: 12),
+                ),
+                const SizedBox(height: 8),
+                Flexible(
+                  child: ListView(
+                    shrinkWrap: true,
+                    children: <Widget>[
+                      for (final ContactList list in state.contactLists)
+                        SwitchListTile(
+                          key: ValueKey<String>(
+                            'contact_list_toggle_${list.id}',
+                          ),
+                          contentPadding: EdgeInsets.zero,
+                          title: Text(list.name),
+                          value: list.isSelectedForDisplay,
+                          onChanged: (bool value) =>
+                              cubit.setContactListSelected(list.id, value),
+                        ),
+                    ],
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 4),
-            Text(
-              'Choose which address books show contacts here and in the '
-              'compose picker.',
-              style: TextStyle(color: t.muted, fontSize: 12),
-            ),
-            const SizedBox(height: 8),
-            Flexible(
-              child: ListView(
-                shrinkWrap: true,
-                children: <Widget>[
-                  for (final ContactList list in state.contactLists)
-                    SwitchListTile(
-                      key: ValueKey<String>('contact_list_toggle_${list.id}'),
-                      contentPadding: EdgeInsets.zero,
-                      title: Text(list.name),
-                      value: list.isSelectedForDisplay,
-                      onChanged: (bool value) =>
-                          cubit.setContactListSelected(list.id, value),
-                    ),
-                ],
-              ),
-            ),
-          ],
-        ),
+          );
+        },
       );
     },
   );
