@@ -117,10 +117,25 @@ class GoogleAuthConfig {
   /// Mail-only tokens cannot call People or Calendar APIs until re-consent.
   /// Calendar uses full `calendar` (not readonly) to mirror Graph
   /// `Calendars.ReadWrite` and avoid a later re-consent for write-back.
+  ///
+  /// **Granular consent (DEF-061):** Google's consent UI may show unchecked
+  /// boxes for Contacts/Calendar. [OAuthIdentityManager.signInGoogle] rejects
+  /// tokens that omit any of [requiredGrantedScopes].
   static const List<String> scopes = <String>[
     'openid',
     'email',
     'profile',
+    'https://mail.google.com/',
+    'https://www.googleapis.com/auth/contacts.readonly',
+    'https://www.googleapis.com/auth/calendar',
+  ];
+
+  /// Scopes that must appear in Google's token `scope` response (DEF-061).
+  ///
+  /// Identity scopes (`openid` / `email` / `profile`) are requested but not
+  /// listed here — Google's granular UI treats them separately, and mail PIM
+  /// sync depends on the three API scopes below.
+  static const List<String> requiredGrantedScopes = <String>[
     'https://mail.google.com/',
     'https://www.googleapis.com/auth/contacts.readonly',
     'https://www.googleapis.com/auth/calendar',
@@ -587,6 +602,8 @@ class OAuthIdentityManager {
         'code_challenge': codeChallenge,
         'code_challenge_method': 'S256',
         'access_type': 'offline',
+        // Explicit: keep previously granted scopes when expanding (Wave G).
+        'include_granted_scopes': 'true',
         // select_account: force chooser so a second Gmail is pickable
         // (consent alone reuses the phone's primary Google session).
         // consent: keep offline refresh tokens on re-grant.
@@ -607,7 +624,7 @@ class OAuthIdentityManager {
       code: code,
       codeVerifier: codeVerifier,
     );
-    _ensureGoogleMailScope(tokens.scope);
+    _ensureGoogleGrantedScopes(tokens.scope);
     final _UserProfile profile = await _fetchGoogleUserInfo(tokens.accessToken);
 
     return GoogleSignInResult(
@@ -619,20 +636,29 @@ class OAuthIdentityManager {
     );
   }
 
-  /// Gmail IMAP/SMTP XOAUTH2 requires the full-mail scope on the access token.
-  static void _ensureGoogleMailScope(String? scope) {
-    const String required = 'https://mail.google.com/';
+  /// Rejects Google tokens that omit mail / People / Calendar API scopes.
+  ///
+  /// Google's granular consent UI (DEF-061) can leave Contacts/Calendar boxes
+  /// unchecked while still returning a usable mail token — validate the token
+  /// response `scope` before persisting credentials.
+  static void _ensureGoogleGrantedScopes(String? scope) {
     final String normalized = (scope ?? '').toLowerCase();
-    if (normalized.contains(required)) {
+    final List<String> missing = GoogleAuthConfig.requiredGrantedScopes
+        .where((String required) => !normalized.contains(required.toLowerCase()))
+        .toList(growable: false);
+    if (missing.isEmpty) {
       return;
     }
+    final String missingList = missing.map((String s) => '"$s"').join(', ');
     throw StateError(
-      'Google sign-in succeeded but the access token is missing '
-      '$required — Gmail IMAP will fail with AUTHENTICATIONFAILED.\n\n'
-      'In Google Cloud → OAuth consent screen, add the Gmail scope '
-      '"$required" (and enable the Gmail API), ensure your account is a '
-      'test user, then remove this account in Synesis and Sign in with '
-      'Google again (consent must be re-granted).',
+      'Google sign-in succeeded but the access token is missing required '
+      'scope(s): $missingList.\n\n'
+      'On Google\'s consent screen, enable every Contacts/People and Calendar '
+      'checkbox (they may default to unchecked under granular permissions), '
+      'then try again.\n\n'
+      'Also confirm Google Cloud → OAuth consent screen lists these scopes, '
+      'People API + Google Calendar API are enabled, and your account is a '
+      'test user if the app is still in Testing.',
     );
   }
 

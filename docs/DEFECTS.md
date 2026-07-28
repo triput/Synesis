@@ -313,6 +313,56 @@ Related: Wave 2 QA residual “No automatic UI when token lacks PIM scopes”; c
 
 ---
 
+### DEF-061 — Google re-auth can persist mail-only token; Calendar PIM 403s (granular consent)
+
+| Field | Value |
+| --- | --- |
+| Priority | **Pri-2** |
+| Status | **Fixed** (2026-07-27) |
+| Fixed | 2026-07-27 |
+| Area | `lib/auth/oauth_identity_manager.dart` (`_ensureGoogleGrantedScopes`, authorize `include_granted_scopes`); `lib/protocol/google_pim_provider.dart` (`_ensureSuccess`); `lib/ui/account/edit_account_sheet.dart` |
+| Platforms | All Google XOAUTH accounts (People + Calendar PIM) |
+| Logged | 2026-07-27 |
+| Found by | Trish (dogfood, Jobs sheet — still failing after re-auth); Renee (triage) |
+
+**Summary**  
+After Wave G (`f4c21b0`), Google account `trish@trishputnam.com` failed `calendars_incremental` with:
+
+`ProtocolException(403): Request had insufficient authentication scopes.`
+
+Operator completed **Edit account → Re-authenticate with Google** and still saw the same 403 — not a “forgot to re-consent” miss.
+
+**Root cause**  
+1. **Scope URIs were correct.** `GoogleAuthConfig.scopes` already requested `contacts.readonly` + full `calendar` (not `calendar.readonly`); authorize URL used `prompt=select_account consent`; `GooglePimProvider` hits Calendar API v3 with the shared Google access token (not a mail-only alternate).  
+2. **Granted-scope validation was mail-only.** `signInGoogle` only called `_ensureGoogleMailScope`. Under Google's **granular permissions** consent UI, Contacts/Calendar appear as separate checkboxes that may **default unchecked**. User can Continue with mail (+ optional Contacts) granted; Synesis accepted the token; Calendar API then returned 403 insufficient scopes.  
+3. Jobs **Retry** requeues the same token → same 403 (parallel useless-Retry class as DEF-058, different provider/error).
+
+**Fix**  
+1. Require `GoogleAuthConfig.requiredGrantedScopes` (mail + `contacts.readonly` + `calendar`) on the token response before persisting credentials; clear error names missing scopes and checkbox UX.  
+2. Set `include_granted_scopes=true` on the authorize request.  
+3. Map Calendar/People API 403 insufficient-scopes bodies to actionable DEF-061 copy.  
+4. Edit-account Google hint mentions enabling every Contacts/Calendar checkbox.
+
+**Dogfood steps (after fix build)**  
+1. GCP: OAuth consent screen includes `contacts.readonly` + `calendar`; enable **People API** + **Google Calendar API**; test user if app is Testing.  
+2. Optional clean slate: Google Account → Security → Third-party access → remove Synesis.  
+3. Appearance → Manage accounts → Edit account → **Re-authenticate with Google**.  
+4. On consent: approve Sign-In, then **check every Contacts/People and Calendar box** (unchecked = this bug). If a required scope is missing, Synesis now fails re-auth immediately with a StateError instead of saving a partial token.  
+5. Sync / Retry `calendars_*` — should succeed. Contacts jobs should also succeed with the same grant.
+
+**Residual (Wave 7 / share with DEF-058)**  
+Jobs sheet still lacks a dedicated needs-reauth CTA; Retry remains ineffective for already-stored partial grants until the operator re-auths again under the new validator.
+
+**Repro (before fix)**  
+1. Re-auth Google after Wave G but leave Calendar unchecked on granular consent (or only mail granted).  
+2. Re-auth appears to succeed (mail scope present).  
+3. `calendars_incremental` fails with 403 insufficient scopes; Retry loops.
+
+**Verification**  
+`flutter test test/oauth_identity_manager_test.dart test/google_pim_provider_test.dart`
+
+---
+
 ### DEF-011 — IMAP edit ignores host/port/user changes without a new password
 
 | Field | Value |

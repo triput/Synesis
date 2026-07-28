@@ -111,6 +111,18 @@ void main() {
         GoogleAuthConfig.scopes,
         contains('https://www.googleapis.com/auth/calendar'),
       );
+      expect(
+        GoogleAuthConfig.requiredGrantedScopes,
+        contains('https://mail.google.com/'),
+      );
+      expect(
+        GoogleAuthConfig.requiredGrantedScopes,
+        contains('https://www.googleapis.com/auth/contacts.readonly'),
+      );
+      expect(
+        GoogleAuthConfig.requiredGrantedScopes,
+        contains('https://www.googleapis.com/auth/calendar'),
+      );
     });
   });
 
@@ -510,12 +522,24 @@ void main() {
       expect(launched.first.queryParameters['code_challenge_method'], 'S256');
       expect(launched.first.queryParameters['access_type'], 'offline');
       expect(
+        launched.first.queryParameters['include_granted_scopes'],
+        'true',
+      );
+      expect(
         launched.first.queryParameters['prompt'],
         'select_account consent',
       );
       expect(
         launched.first.queryParameters['scope'],
         contains('https://mail.google.com/'),
+      );
+      expect(
+        launched.first.queryParameters['scope'],
+        contains('https://www.googleapis.com/auth/contacts.readonly'),
+      );
+      expect(
+        launched.first.queryParameters['scope'],
+        contains('https://www.googleapis.com/auth/calendar'),
       );
     });
 
@@ -560,6 +584,106 @@ void main() {
             (StateError e) => e.message,
             'message',
             contains('https://mail.google.com/'),
+          ),
+        ),
+      );
+    });
+
+    test('rejects token response missing Calendar scope (DEF-061)', () async {
+      final _MemoryCredentialStore store = _MemoryCredentialStore();
+      final Completer<String> stateCompleter = Completer<String>();
+      final OAuthIdentityManager manager = OAuthIdentityManager(
+        store,
+        googleConfig: const GoogleAuthConfig(clientId: 'google-client'),
+        launchBrowser: (Uri url) async {
+          stateCompleter.complete(url.queryParameters['state']!);
+        },
+        googleRedirectCapture: _StatefulRedirectCapture(
+          stateCompleter.future,
+          redirectBase: 'http://127.0.0.1:8766/callback',
+        ),
+        httpClient: MockClient((http.Request request) async {
+          if (request.url.host == 'oauth2.googleapis.com' &&
+              request.url.path == '/token') {
+            return http.Response(
+              jsonEncode(<String, Object?>{
+                'access_token': 'google-access-mail-only-pim',
+                'refresh_token': 'google-refresh-mail-only-pim',
+                'expires_in': 3600,
+                'token_type': 'Bearer',
+                // Granular consent: mail granted, Calendar/People unchecked.
+                'scope':
+                    'openid email profile https://mail.google.com/ '
+                    'https://www.googleapis.com/auth/contacts.readonly',
+              }),
+              200,
+              headers: const <String, String>{
+                'content-type': 'application/json',
+              },
+            );
+          }
+          fail('Unexpected HTTP call: ${request.url}');
+        }),
+      );
+
+      await expectLater(
+        manager.signInGoogle(),
+        throwsA(
+          isA<StateError>().having(
+            (StateError e) => e.message,
+            'message',
+            allOf(
+              contains('https://www.googleapis.com/auth/calendar'),
+              contains('checkbox'),
+            ),
+          ),
+        ),
+      );
+    });
+
+    test('rejects token response missing Contacts scope (DEF-061)', () async {
+      final _MemoryCredentialStore store = _MemoryCredentialStore();
+      final Completer<String> stateCompleter = Completer<String>();
+      final OAuthIdentityManager manager = OAuthIdentityManager(
+        store,
+        googleConfig: const GoogleAuthConfig(clientId: 'google-client'),
+        launchBrowser: (Uri url) async {
+          stateCompleter.complete(url.queryParameters['state']!);
+        },
+        googleRedirectCapture: _StatefulRedirectCapture(
+          stateCompleter.future,
+          redirectBase: 'http://127.0.0.1:8766/callback',
+        ),
+        httpClient: MockClient((http.Request request) async {
+          if (request.url.host == 'oauth2.googleapis.com' &&
+              request.url.path == '/token') {
+            return http.Response(
+              jsonEncode(<String, Object?>{
+                'access_token': 'google-access-no-contacts',
+                'refresh_token': 'google-refresh-no-contacts',
+                'expires_in': 3600,
+                'token_type': 'Bearer',
+                'scope':
+                    'openid email profile https://mail.google.com/ '
+                    'https://www.googleapis.com/auth/calendar',
+              }),
+              200,
+              headers: const <String, String>{
+                'content-type': 'application/json',
+              },
+            );
+          }
+          fail('Unexpected HTTP call: ${request.url}');
+        }),
+      );
+
+      await expectLater(
+        manager.signInGoogle(),
+        throwsA(
+          isA<StateError>().having(
+            (StateError e) => e.message,
+            'message',
+            contains('https://www.googleapis.com/auth/contacts.readonly'),
           ),
         ),
       );

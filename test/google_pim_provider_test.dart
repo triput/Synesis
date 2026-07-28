@@ -333,4 +333,43 @@ void main() {
     expect(result.removedProviderIds, <String>['ev-gone']);
     expect(result.deltaLink, 'good-token-2');
   });
+
+  test('listCalendars maps 403 insufficient scopes to DEF-061 guidance', () async {
+    final http.Client client = MockClient((http.Request request) async {
+      return http.Response(
+        jsonEncode(<String, Object>{
+          'error': <String, Object>{
+            'code': 403,
+            'message': 'Request had insufficient authentication scopes.',
+            'status': 'PERMISSION_DENIED',
+          },
+        }),
+        403,
+        headers: const <String, String>{'content-type': 'application/json'},
+      );
+    });
+
+    final GooglePimProvider provider = GooglePimProvider(
+      () async => 'token',
+      client: client,
+    );
+    addTearDown(provider.dispose);
+
+    await expectLater(
+      provider.listCalendars(),
+      throwsA(
+        isA<ProtocolException>()
+            .having(
+              (ProtocolException e) => e.statusCode,
+              'statusCode',
+              403,
+            )
+            .having(
+              (ProtocolException e) => e.message,
+              'message',
+              allOf(contains('DEF-061'), contains('checkbox')),
+            ),
+      ),
+    );
+  });
 }

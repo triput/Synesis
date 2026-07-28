@@ -1051,8 +1051,24 @@ class GooglePimProvider extends GraphPimProvider {
       } on FormatException {
         // Keep raw body.
       }
+      if (response.statusCode == 403 && _isInsufficientScopesMessage(message)) {
+        throw const ProtocolException(
+          'Google access token is missing People/Calendar scopes (DEF-061). '
+          'Edit account → Re-authenticate with Google and enable every '
+          'Contacts/Calendar checkbox on Google\'s consent screen (boxes may '
+          'default unchecked). Also enable People + Calendar APIs in Google '
+          'Cloud.',
+          statusCode: 403,
+        );
+      }
       throw ProtocolException(message, statusCode: response.statusCode);
     }
+  }
+
+  static bool _isInsufficientScopesMessage(String message) {
+    final String normalized = message.toLowerCase();
+    return normalized.contains('insufficient authentication scopes') ||
+        normalized.contains('access_token_scope_insufficient');
   }
 
   void _ensureNotDisposed() {

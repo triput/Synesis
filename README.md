@@ -137,7 +137,7 @@ flutter run -d windows \
   --dart-define=SYNESIS_GOOGLE_CLIENT_SECRET=optional-if-required
 ```
 
-   **Re-consent:** Existing Google XOAUTH accounts signed in before Wave G only hold mail scopes. After upgrading to a Wave G+ build, users must **sign in again** (**Edit account → Re-authenticate with Google**) so the consent screen includes People + Calendar scopes for contact and calendar sync. Mail-only tokens cannot call People or Calendar APIs until re-consent.
+   **Re-consent:** Existing Google XOAUTH accounts signed in before Wave G only hold mail scopes. After upgrading to a Wave G+ build, users must **sign in again** (**Edit account → Re-authenticate with Google**) so the consent screen includes People + Calendar scopes for contact and calendar sync. On Google's granular consent UI, **enable every Contacts/People and Calendar checkbox** (they may default unchecked — DEF-061). Mail-only or partial tokens cannot call People or Calendar APIs.
 
 Both Graph and Google can be set together:
 

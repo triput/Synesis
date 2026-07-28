@@ -532,7 +532,9 @@ class _EditAccountFormState extends State<_EditAccountForm> {
     return <Widget>[
       Text(
         'Re-auth refreshes mail XOAUTH and grants People + Calendar API '
-        'access for contacts and events sync.',
+        'access for contacts and events sync. On Google\'s consent screen, '
+        'enable every Contacts/People and Calendar checkbox — they may '
+        'default unchecked (DEF-061).',
         style: TextStyle(color: tokensOf(context).muted, fontSize: 12),
       ),
       const SizedBox(height: 8),
