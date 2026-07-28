@@ -289,6 +289,9 @@ Jobs sheet shows **Retry**; no in-sheet re-sign-in CTA.
 **UX gap**  
 No “Sign in again” from failed job or account-health row. Re-auth exists only under Appearance → Manage accounts → Edit account → **Re-authenticate with Microsoft**.
 
+**Related UX friction (separate defect)**  
+Operator also saw the Edit-account **Re-authenticate with Microsoft** control clipped/overflowed in layout — worsens the only dogfood recovery path. Layout fix is **out of scope for DEF-058**; track/fix as the next open ID (Andi; likely DEF-059). Do not conflate with token-endpoint mapping work here.
+
 **Dogfood workaround**  
 Appearance → Manage accounts → Edit account for the Graph account → **Re-authenticate with Microsoft** → consent new scopes → Sync / Retry once tokens are rotated.
 
