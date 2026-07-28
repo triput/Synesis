@@ -367,7 +367,11 @@ void main() {
             .having(
               (ProtocolException e) => e.message,
               'message',
-              allOf(contains('DEF-061'), contains('checkbox')),
+              allOf(
+                contains('DEF-061'),
+                contains('Third-party'),
+                contains('checkbox'),
+              ),
             ),
       ),
     );

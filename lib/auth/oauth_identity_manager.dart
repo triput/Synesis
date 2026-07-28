@@ -113,14 +113,15 @@ class GoogleAuthConfig {
   ///
   /// **Re-consent:** existing Google XOAUTH accounts signed in before Wave G's
   /// People/Calendar scopes must use **Edit account → Re-authenticate with
-  /// Google** so the refresh token is issued with the expanded scope set.
-  /// Mail-only tokens cannot call People or Calendar APIs until re-consent.
+  /// Google** so a **new refresh token** is issued with the expanded scope set.
+  /// A pre-Wave-G refresh token continues to mint mail-only access tokens even
+  /// after Google Account shows Calendar granted for Synesis (DEF-061).
   /// Calendar uses full `calendar` (not readonly) to mirror Graph
   /// `Calendars.ReadWrite` and avoid a later re-consent for write-back.
   ///
-  /// **Granular consent (DEF-061):** Google's consent UI may show unchecked
-  /// boxes for Contacts/Calendar. [OAuthIdentityManager.signInGoogle] rejects
-  /// tokens that omit any of [requiredGrantedScopes].
+  /// **DEF-061:** Validate [requiredGrantedScopes] with exact space-delimited
+  /// token match (not substring), require a refresh token on interactive
+  /// sign-in, and refuse to persist narrowed tokens from stale refresh grants.
   static const List<String> scopes = <String>[
     'openid',
     'email',
@@ -140,6 +141,34 @@ class GoogleAuthConfig {
     'https://www.googleapis.com/auth/contacts.readonly',
     'https://www.googleapis.com/auth/calendar',
   ];
+
+  /// Parses Google's space-delimited `scope` field into normalized tokens.
+  static Set<String> parseGrantedScopes(String? scopeHeader) {
+    if (scopeHeader == null) {
+      return const <String>{};
+    }
+    return scopeHeader
+        .split(RegExp(r'\s+'))
+        .map((String part) => part.trim().toLowerCase())
+        .where((String part) => part.isNotEmpty)
+        .toSet();
+  }
+
+  /// Required API scopes absent from [scopeHeader].
+  ///
+  /// Matching is **exact per token** (case-insensitive). Substring checks are
+  /// unsafe: `calendar.readonly` / `calendar.events` contain the
+  /// `.../auth/calendar` prefix and would false-pass full `calendar`.
+  static List<String> missingRequiredScopes(String? scopeHeader) {
+    final Set<String> granted = parseGrantedScopes(scopeHeader);
+    return requiredGrantedScopes
+        .where((String required) => !granted.contains(required.toLowerCase()))
+        .toList(growable: false);
+  }
+
+  /// True when [scopeHeader] includes every [requiredGrantedScopes] token.
+  static bool hasRequiredGrantedScopes(String? scopeHeader) =>
+      missingRequiredScopes(scopeHeader).isEmpty;
 
   /// Desktop / default Google OAuth client ID.
   final String clientId;
@@ -271,6 +300,8 @@ class OAuthIdentityManager {
   final Duration _accessTokenSkew;
   Future<MicrosoftSignInResult>? _microsoftSignInInFlight;
   Future<GoogleSignInResult>? _googleSignInInFlight;
+  final Map<String, Future<String>> _googleRefreshInFlight =
+      <String, Future<String>>{};
 
   Future<void> saveGraphToken(
     String credentialsRef,
@@ -338,6 +369,51 @@ class OAuthIdentityManager {
         value: expiresAt.toUtc().millisecondsSinceEpoch.toString(),
       );
     }
+  }
+
+  /// Clears prior Google secrets then writes [accessToken] / [refreshToken].
+  ///
+  /// Used after interactive re-auth so a pre-Wave-G refresh token cannot remain
+  /// and mint mail-only access tokens that overwrite a good grant (DEF-061).
+  Future<void> replaceGoogleToken(
+    String credentialsRef,
+    String accessToken, {
+    required String refreshToken,
+    DateTime? expiresAt,
+  }) async {
+    if (accessToken.trim().isEmpty) {
+      throw ArgumentError.value(
+        accessToken,
+        'accessToken',
+        'Must not be empty.',
+      );
+    }
+    if (refreshToken.trim().isEmpty) {
+      throw ArgumentError.value(
+        refreshToken,
+        'refreshToken',
+        'Interactive Google re-auth must persist a new offline refresh token.',
+      );
+    }
+    _googleRefreshInFlight.remove(credentialsRef);
+    await _credentials.deleteSecret(
+      credentialsRef: credentialsRef,
+      name: _googleAccessTokenName,
+    );
+    await _credentials.deleteSecret(
+      credentialsRef: credentialsRef,
+      name: _googleRefreshTokenName,
+    );
+    await _credentials.deleteSecret(
+      credentialsRef: credentialsRef,
+      name: _googleExpiresAtName,
+    );
+    await saveGoogleToken(
+      credentialsRef,
+      accessToken,
+      refreshToken,
+      expiresAt,
+    );
   }
 
   /// True when any Google access/refresh token is stored for [credentialsRef].
@@ -443,6 +519,9 @@ class OAuthIdentityManager {
   ///
   /// When [forceRefresh] is true, always exchanges the refresh token when one
   /// is available (used after Google APIs return HTTP 401).
+  ///
+  /// Concurrent refresh for the same [credentialsRef] is coalesced so a racing
+  /// mail-only refresh cannot overwrite tokens just written by re-auth.
   Future<String> getValidGoogleAccessToken(
     String credentialsRef, {
     bool forceRefresh = false,
@@ -470,10 +549,33 @@ class OAuthIdentityManager {
       return accessToken;
     }
 
+    final Future<String>? inFlight = _googleRefreshInFlight[credentialsRef];
+    if (inFlight != null) {
+      return inFlight;
+    }
+
+    final Future<String> started = _refreshGoogleAccessToken(
+      credentialsRef,
+      previousAccessToken: accessToken,
+    );
+    _googleRefreshInFlight[credentialsRef] = started;
+    try {
+      return await started;
+    } finally {
+      if (identical(_googleRefreshInFlight[credentialsRef], started)) {
+        _googleRefreshInFlight.remove(credentialsRef);
+      }
+    }
+  }
+
+  Future<String> _refreshGoogleAccessToken(
+    String credentialsRef, {
+    required String? previousAccessToken,
+  }) async {
     final String? refreshToken = await getGoogleRefreshToken(credentialsRef);
     if (refreshToken == null || refreshToken.trim().isEmpty) {
-      if (accessToken != null) {
-        return accessToken;
+      if (previousAccessToken != null) {
+        return previousAccessToken;
       }
       throw StateError(
         'No Google access or refresh token is stored for $credentialsRef.',
@@ -481,8 +583,8 @@ class OAuthIdentityManager {
     }
 
     if (!googleConfig.isConfigured) {
-      if (accessToken != null) {
-        return accessToken;
+      if (previousAccessToken != null) {
+        return previousAccessToken;
       }
       throw StateError(
         'Cannot refresh Google token: SYNESIS_GOOGLE_CLIENT_ID is not configured.',
@@ -492,6 +594,25 @@ class OAuthIdentityManager {
     final _TokenResponse tokens = await _exchangeGoogleRefreshToken(
       refreshToken,
     );
+    // Stale pre-Wave-G refresh tokens mint mail-only access tokens. Refuse to
+    // persist them over a still-valid expanded grant (DEF-061).
+    if (tokens.scope != null && tokens.scope!.trim().isNotEmpty) {
+      final List<String> missing = GoogleAuthConfig.missingRequiredScopes(
+        tokens.scope,
+      );
+      if (missing.isNotEmpty) {
+        throw StateError(
+          'Google token refresh returned an access token missing required '
+          'scope(s): ${missing.map((String s) => '"$s"').join(', ')}.\n\n'
+          'The stored refresh token predates People/Calendar consent (or was '
+          'not replaced on re-auth). Google Account may still list Calendar '
+          'for Synesis while this older refresh token cannot mint it.\n\n'
+          'Fix: Google Account → Security → Third-party access → remove '
+          'Synesis, then Edit account → Re-authenticate with Google '
+          '(full app restart — not hot reload).',
+        );
+      }
+    }
     await saveGoogleToken(
       credentialsRef,
       tokens.accessToken,
@@ -624,12 +745,29 @@ class OAuthIdentityManager {
       code: code,
       codeVerifier: codeVerifier,
     );
-    _ensureGoogleGrantedScopes(tokens.scope);
+    final String? refreshToken = tokens.refreshToken?.trim();
+    if (refreshToken == null || refreshToken.isEmpty) {
+      // Without a new RT, Synesis keeps a pre-Wave-G mail-only refresh token
+      // that continues to mint access tokens Calendar API rejects (DEF-061).
+      throw StateError(
+        'Google sign-in did not return a refresh token.\n\n'
+        'Remove Synesis under Google Account → Security → Third-party access '
+        '(or Third-party apps with account access), then Re-authenticate with '
+        'Google again so consent issues a new offline refresh token with '
+        'People + Calendar scopes. Use a full app restart — not hot reload.',
+      );
+    }
+    // Prefer tokeninfo (authoritative for the access token) over the token
+    // endpoint `scope` field alone.
+    final String? tokenInfoScope = await _fetchGoogleTokenInfoScopes(
+      tokens.accessToken,
+    );
+    _ensureGoogleGrantedScopes(tokenInfoScope ?? tokens.scope);
     final _UserProfile profile = await _fetchGoogleUserInfo(tokens.accessToken);
 
     return GoogleSignInResult(
       accessToken: tokens.accessToken,
-      refreshToken: tokens.refreshToken,
+      refreshToken: refreshToken,
       expiresAt: tokens.expiresAt,
       email: profile.email,
       displayName: profile.displayName,
@@ -638,14 +776,10 @@ class OAuthIdentityManager {
 
   /// Rejects Google tokens that omit mail / People / Calendar API scopes.
   ///
-  /// Google's granular consent UI (DEF-061) can leave Contacts/Calendar boxes
-  /// unchecked while still returning a usable mail token — validate the token
-  /// response `scope` before persisting credentials.
+  /// Uses exact space-delimited token match via
+  /// [GoogleAuthConfig.missingRequiredScopes] (DEF-061).
   static void _ensureGoogleGrantedScopes(String? scope) {
-    final String normalized = (scope ?? '').toLowerCase();
-    final List<String> missing = GoogleAuthConfig.requiredGrantedScopes
-        .where((String required) => !normalized.contains(required.toLowerCase()))
-        .toList(growable: false);
+    final List<String> missing = GoogleAuthConfig.missingRequiredScopes(scope);
     if (missing.isEmpty) {
       return;
     }
@@ -656,9 +790,10 @@ class OAuthIdentityManager {
       'On Google\'s consent screen, enable every Contacts/People and Calendar '
       'checkbox (they may default to unchecked under granular permissions), '
       'then try again.\n\n'
-      'Also confirm Google Cloud → OAuth consent screen lists these scopes, '
-      'People API + Google Calendar API are enabled, and your account is a '
-      'test user if the app is still in Testing.',
+      'If Google Account already lists Calendar for Synesis, remove Synesis '
+      'under Third-party access and re-auth so a new refresh token is issued '
+      '(full app restart). Also confirm People API + Google Calendar API are '
+      'enabled in Google Cloud and your account is a test user if Testing.',
     );
   }
 
@@ -887,6 +1022,33 @@ class OAuthIdentityManager {
         ? (json['name'] as String).trim()
         : email;
     return _UserProfile(email: email, displayName: displayName);
+  }
+
+  /// Returns the space-delimited `scope` claim for [accessToken] via tokeninfo.
+  ///
+  /// Null when tokeninfo is unavailable — callers fall back to the token
+  /// endpoint `scope` field.
+  Future<String?> _fetchGoogleTokenInfoScopes(String accessToken) async {
+    final Uri uri = Uri.https('oauth2.googleapis.com', '/tokeninfo', <String, String>{
+      'access_token': accessToken,
+    });
+    final http.Response response = await _httpClient.get(
+      uri,
+      headers: const <String, String>{'Accept': 'application/json'},
+    );
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      return null;
+    }
+    final Object? decoded = jsonDecode(response.body);
+    if (decoded is! Map<Object?, Object?>) {
+      return null;
+    }
+    final Object? scope = decoded['scope'];
+    if (scope is! String) {
+      return null;
+    }
+    final String trimmed = scope.trim();
+    return trimmed.isEmpty ? null : trimmed;
   }
 
   static Future<void> _defaultLaunchBrowser(Uri authorizationUrl) async {

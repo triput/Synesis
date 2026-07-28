@@ -1054,10 +1054,11 @@ class GooglePimProvider extends GraphPimProvider {
       if (response.statusCode == 403 && _isInsufficientScopesMessage(message)) {
         throw const ProtocolException(
           'Google access token is missing People/Calendar scopes (DEF-061). '
-          'Edit account → Re-authenticate with Google and enable every '
-          'Contacts/Calendar checkbox on Google\'s consent screen (boxes may '
-          'default unchecked). Also enable People + Calendar APIs in Google '
-          'Cloud.',
+          'Often a stale pre-Wave-G refresh token: remove Synesis under '
+          'Google Account → Third-party access, full-restart the app, then '
+          'Edit account → Re-authenticate with Google (enable every '
+          'Contacts/Calendar checkbox). Also enable People + Calendar APIs '
+          'in Google Cloud.',
           statusCode: 403,
         );
       }

@@ -313,68 +313,6 @@ Related: Wave 2 QA residual “No automatic UI when token lacks PIM scopes”; c
 
 ---
 
-### DEF-061 — Google Calendar PIM 403 insufficient scopes after successful re-auth (Wave G)
-
-| Field | Value |
-| --- | --- |
-| Priority | **Pri-2** |
-| Status | **Open** — **Tesla owns code fix** (2026-07-27). `af9e06d` mitigation incomplete; do not close on granular-consent alone. |
-| Area | `lib/auth/oauth_identity_manager.dart`; `lib/protocol/google_pim_provider.dart`; `lib/sync/provider_registry.dart`; `lib/account/account_service.dart` (`updateGoogleCredentials`); `lib/ui/account/edit_account_sheet.dart` |
-| Platforms | All Google XOAUTH accounts (People + Calendar PIM) |
-| Logged | 2026-07-27 |
-| Found by | Trish (dogfood, Jobs sheet); Renee (triage); Tesla (assigned fix) |
-
-**Summary**  
-After Wave G (`f4c21b0`), Google account `trish@trishputnam.com` fails `calendars_incremental` with:
-
-`ProtocolException(403): Request had insufficient authentication scopes.`
-
-**Confirmed app bug (not operator miss):** Trish forced Google re-auth **again**, **explicitly selected** the requested People/Calendar permissions, and still gets the same 403. Do not close as "forgot to re-consent."
-
-**What is already ruled out / landed**  
-1. **Wrong scope URI on authorize (not the sole cause).** `GoogleAuthConfig.scopes` requests `https://www.googleapis.com/auth/contacts.readonly` + full `https://www.googleapis.com/auth/calendar` (not `calendar.readonly`); authorize uses `prompt=select_account consent`. `GooglePimProvider` calls Calendar API v3 (`/users/me/calendarList`, `/calendars/{id}/events`) with the shared Google bearer from `getValidGoogleAccessToken` — same token path as IMAP XOAUTH.  
-2. **`af9e06d` (Renee) — hardening only, not root fix.** Added `requiredGrantedScopes` validation, `include_granted_scopes=true`, 403→DEF-061 copy, Edit-account checkbox hint. Useful defense, **insufficient**: explicit grant + re-auth still 403s.  
-3. Jobs **Retry** remains useless until the token actually carries Calendar scopes (parallel class to DEF-058).
-
-**Tesla handoff — ranked hypotheses (investigate in order)**  
-
-1. **Scope validator false-positive (`String.contains`) — fix while debugging.**  
-   `_ensureGoogleGrantedScopes` uses `normalized.contains(requiredUri)`.  
-   `https://www.googleapis.com/auth/calendar.events` **contains** the substring `https://www.googleapis.com/auth/calendar` → validation can pass without granting `calendar` / `calendar.readonly`.  
-   `calendarList.list` requires `calendar` or `calendar.readonly` — **not** `calendar.events` alone → exact 403 on `calendars_incremental`.  
-   **Fix:** split token `scope` on whitespace; require exact token membership; accept `calendar` **or** `calendar.readonly` for read sync.
-
-2. **Post-reauth access token overwritten by refresh of a mail-scoped refresh token.**  
-   Auth-code exchange can return access token A (full scopes) while omitting a new refresh token → `saveGoogleToken` keeps old RT. Concurrent / subsequent `getValidGoogleAccessToken` refresh may mint mail-only access token B and overwrite A before/during PIM sync.  
-   **Probe:** after re-auth, compare tokeninfo scopes immediately vs at first `calendarList` call; always persist new RT when returned; validate scopes on refresh responses; serialize token writes.
-
-3. **credentialsRef / storage path skew.**  
-   Confirm Edit-account `updateGoogleCredentials` writes the same `account.credentialsRef` that `ProviderRegistry.resolvePim` reads for `trish@trishputnam.com` (no `google:` vs `imap:` mismatch, no silent secure-storage write failure).
-
-4. **People vs Calendar split (diagnostic).**  
-   After a "successful" re-auth: do `contact_lists_*` / `contacts_*` succeed while only `calendars_*` 403?  
-   - Contacts OK + calendars 403 → calendar scope missing or hypothesis (1).  
-   - Both 403 → token still lacks PIM scopes at call time (hypothesis 2/3) despite consent UI.
-
-5. **Not primary:** Calendar API disabled in GCP usually returns "API has not been used in project…" / `accessNotConfigured`, not this exact insufficient-scopes message — still verify APIs enabled.
-
-**Coordination**  
-- **Tesla:** owns remaining code fix + tests on auth/PIM token path; may amend or supersede `af9e06d` validation.  
-- **Renee:** docs/DEF reopen + this handoff only — **no further commits** on `oauth_identity_manager.dart` / `google_pim_provider.dart` while Tesla works.  
-- Tesla was briefly told to stop after `af9e06d`; that instruction is **void** — resume fix against this reopened DEF.
-
-**Dogfood after Tesla fix**  
-1. Build with Tesla's commit.  
-2. Optional: revoke Synesis under Google Account → Security → Third-party access.  
-3. Edit account → Re-authenticate with Google (grant People + Calendar).  
-4. Confirm token scopes (debug/tokeninfo) include `calendar` or `calendar.readonly`.  
-5. Retry / sync `calendars_incremental` → success. Note whether contacts jobs already worked.
-
-**Related**  
-DEF-058 (Graph `invalid_grant` / useless Retry UX); DEF-059 (Edit-account re-auth button visibility — closed).
-
----
-
 ### DEF-011 — IMAP edit ignores host/port/user changes without a new password
 
 | Field | Value |
@@ -672,6 +610,48 @@ Enhancement for the next UI pass — not a defect. Pill outbox affordance stays;
 ---
 
 ## Closed
+
+### DEF-061 — Google Calendar PIM 403 despite Account-level Calendar grant (stale refresh token)
+
+| Field | Value |
+| --- | --- |
+| Priority | **Pri-2** |
+| Status | **Closed** (2026-07-27) |
+| Fixed | 2026-07-27 |
+| Area | `lib/auth/oauth_identity_manager.dart` (exact scope match, tokeninfo, require/replace refresh token, refresh scope guard); `lib/account/account_service.dart` (`replaceGoogleToken`); `lib/protocol/google_pim_provider.dart`; `lib/ui/account/edit_account_sheet.dart` |
+| Platforms | All Google XOAUTH accounts (People + Calendar PIM) |
+| Logged | 2026-07-27 |
+| Found by | Trish (dogfood); Renee (triage); Tesla (fix) |
+
+**Summary**  
+After Wave G (`f4c21b0`), `calendars_incremental` for `trish@trishputnam.com` failed with `ProtocolException(403): Request had insufficient authentication scopes.` Re-auth + explicit People/Calendar consent still failed. Google Account → Synesis showed **all six grants** (including Calendar see/edit/share/delete) — granular-checkbox miss is **not** the root cause.
+
+**Root cause**  
+1. Calendar API path and requested scope URIs were already correct (`GET .../calendar/v3/users/me/calendarList` with full `calendar` scope; shared Google AT via `getValidGoogleAccessToken`).  
+2. `af9e06d` (scope checkbox validation) was incomplete.  
+3. **Stale pre-Wave-G refresh token** kept minting mail-only access tokens. Re-auth can return a full-scope AT (and Account UI shows Calendar) while Synesis keeps the old RT when Google omits `refresh_token`, or a racing refresh overwrites the good AT.  
+4. Substring `.contains('.../auth/calendar')` could false-accept `calendar.events` / `calendar.readonly`.
+
+**Fix**  
+1. Exact space-delimited scope matching (`GoogleAuthConfig.missingRequiredScopes`).  
+2. Require `refresh_token` on interactive sign-in; verify AT scopes via `tokeninfo`.  
+3. `replaceGoogleToken` / `updateGoogleCredentials` clear prior Google secrets before writing new AT+RT.  
+4. On refresh: refuse to persist narrowed ATs; coalesce concurrent refreshes per `credentialsRef`.
+
+**Dogfood (full restart — not hot reload)**  
+1. Stop Synesis; relaunch build with this commit.  
+2. Prefer: Google Account → Third-party access → **remove Synesis**.  
+3. Edit account → Re-authenticate with Google (tick Contacts/Calendar).  
+4. Sync / Retry `calendars_*` — should succeed; contacts jobs should too.  
+5. If still 403: confirm Calendar API enabled on the same GCP project as the desktop OAuth client.
+
+**Verification**  
+`flutter test test/oauth_identity_manager_test.dart test/account_service_test.dart test/google_pim_provider_test.dart`
+
+**Related**  
+DEF-058 (useless Retry UX class); closed DEF-059 (Edit-account re-auth visibility).
+
+---
 
 ### DEF-060 — Calendar (and People) display toggles appear stuck on
 

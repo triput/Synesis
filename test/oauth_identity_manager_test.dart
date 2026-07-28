@@ -65,6 +65,18 @@ class _StatefulRedirectCapture implements OAuthRedirectCapture {
   }
 }
 
+bool _isGoogleTokenInfo(http.Request request) =>
+    request.url.host == 'oauth2.googleapis.com' &&
+    request.url.path == '/tokeninfo';
+
+http.Response _googleTokenInfoResponse(String scope) {
+  return http.Response(
+    jsonEncode(<String, Object?>{'scope': scope}),
+    200,
+    headers: const <String, String>{'content-type': 'application/json'},
+  );
+}
+
 void main() {
   group('GraphAuthConfig', () {
     test('treats empty clientId as unconfigured', () {
@@ -124,6 +136,72 @@ void main() {
         contains('https://www.googleapis.com/auth/calendar'),
       );
     });
+
+    test('parseGrantedScopes splits space-delimited Google scope strings', () {
+      expect(
+        GoogleAuthConfig.parseGrantedScopes(
+          'openid email https://mail.google.com/ '
+          'https://www.googleapis.com/auth/calendar',
+        ),
+        <String>{
+          'openid',
+          'email',
+          'https://mail.google.com/',
+          'https://www.googleapis.com/auth/calendar',
+        },
+      );
+      expect(GoogleAuthConfig.parseGrantedScopes(null), isEmpty);
+      expect(GoogleAuthConfig.parseGrantedScopes('  '), isEmpty);
+    });
+
+    test(
+      'missingRequiredScopes uses exact tokens (DEF-061 false-positive guard)',
+      () {
+        // Realistic full grant from Google token / tokeninfo responses.
+        expect(
+          GoogleAuthConfig.missingRequiredScopes(
+            'openid email profile https://mail.google.com/ '
+            'https://www.googleapis.com/auth/contacts.readonly '
+            'https://www.googleapis.com/auth/calendar',
+          ),
+          isEmpty,
+        );
+        expect(
+          GoogleAuthConfig.hasRequiredGrantedScopes(
+            'https://mail.google.com/ '
+            'https://www.googleapis.com/auth/contacts.readonly '
+            'https://www.googleapis.com/auth/calendar',
+          ),
+          isTrue,
+        );
+
+        // Substring trap: calendar.readonly / calendar.events contain
+        // ".../auth/calendar" but must NOT satisfy full calendar.
+        expect(
+          GoogleAuthConfig.missingRequiredScopes(
+            'https://mail.google.com/ '
+            'https://www.googleapis.com/auth/contacts.readonly '
+            'https://www.googleapis.com/auth/calendar.readonly',
+          ),
+          <String>['https://www.googleapis.com/auth/calendar'],
+        );
+        expect(
+          GoogleAuthConfig.missingRequiredScopes(
+            'https://mail.google.com/ '
+            'https://www.googleapis.com/auth/contacts.readonly '
+            'https://www.googleapis.com/auth/calendar.events',
+          ),
+          <String>['https://www.googleapis.com/auth/calendar'],
+        );
+        expect(
+          GoogleAuthConfig.missingRequiredScopes(
+            'https://mail.google.com/ '
+            'https://www.googleapis.com/auth/calendar',
+          ),
+          <String>['https://www.googleapis.com/auth/contacts.readonly'],
+        );
+      },
+    );
   });
 
   group('OAuthIdentityManager.getValidAccessToken', () {
@@ -493,6 +571,13 @@ void main() {
               },
             );
           }
+          if (_isGoogleTokenInfo(request)) {
+            expect(
+              request.url.queryParameters['access_token'],
+              'google-access-sign-in',
+            );
+            return _googleTokenInfoResponse(GoogleAuthConfig.scopes.join(' '));
+          }
           if (request.url.host == 'openidconnect.googleapis.com') {
             expect(
               request.headers['Authorization'],
@@ -546,6 +631,7 @@ void main() {
     test('rejects token response missing Gmail mail scope', () async {
       final _MemoryCredentialStore store = _MemoryCredentialStore();
       final Completer<String> stateCompleter = Completer<String>();
+      const String scope = 'openid email profile';
       final OAuthIdentityManager manager = OAuthIdentityManager(
         store,
         googleConfig: const GoogleAuthConfig(clientId: 'google-client'),
@@ -565,13 +651,16 @@ void main() {
                 'refresh_token': 'google-refresh-no-mail',
                 'expires_in': 3600,
                 'token_type': 'Bearer',
-                'scope': 'openid email profile',
+                'scope': scope,
               }),
               200,
               headers: const <String, String>{
                 'content-type': 'application/json',
               },
             );
+          }
+          if (_isGoogleTokenInfo(request)) {
+            return _googleTokenInfoResponse(scope);
           }
           fail('Unexpected HTTP call: ${request.url}');
         }),
@@ -592,6 +681,9 @@ void main() {
     test('rejects token response missing Calendar scope (DEF-061)', () async {
       final _MemoryCredentialStore store = _MemoryCredentialStore();
       final Completer<String> stateCompleter = Completer<String>();
+      const String scope =
+          'openid email profile https://mail.google.com/ '
+          'https://www.googleapis.com/auth/contacts.readonly';
       final OAuthIdentityManager manager = OAuthIdentityManager(
         store,
         googleConfig: const GoogleAuthConfig(clientId: 'google-client'),
@@ -612,15 +704,16 @@ void main() {
                 'expires_in': 3600,
                 'token_type': 'Bearer',
                 // Granular consent: mail granted, Calendar/People unchecked.
-                'scope':
-                    'openid email profile https://mail.google.com/ '
-                    'https://www.googleapis.com/auth/contacts.readonly',
+                'scope': scope,
               }),
               200,
               headers: const <String, String>{
                 'content-type': 'application/json',
               },
             );
+          }
+          if (_isGoogleTokenInfo(request)) {
+            return _googleTokenInfoResponse(scope);
           }
           fail('Unexpected HTTP call: ${request.url}');
         }),
@@ -644,6 +737,9 @@ void main() {
     test('rejects token response missing Contacts scope (DEF-061)', () async {
       final _MemoryCredentialStore store = _MemoryCredentialStore();
       final Completer<String> stateCompleter = Completer<String>();
+      const String scope =
+          'openid email profile https://mail.google.com/ '
+          'https://www.googleapis.com/auth/calendar';
       final OAuthIdentityManager manager = OAuthIdentityManager(
         store,
         googleConfig: const GoogleAuthConfig(clientId: 'google-client'),
@@ -663,9 +759,55 @@ void main() {
                 'refresh_token': 'google-refresh-no-contacts',
                 'expires_in': 3600,
                 'token_type': 'Bearer',
-                'scope':
-                    'openid email profile https://mail.google.com/ '
-                    'https://www.googleapis.com/auth/calendar',
+                'scope': scope,
+              }),
+              200,
+              headers: const <String, String>{
+                'content-type': 'application/json',
+              },
+            );
+          }
+          if (_isGoogleTokenInfo(request)) {
+            return _googleTokenInfoResponse(scope);
+          }
+          fail('Unexpected HTTP call: ${request.url}');
+        }),
+      );
+
+      await expectLater(
+        manager.signInGoogle(),
+        throwsA(
+          isA<StateError>().having(
+            (StateError e) => e.message,
+            'message',
+            contains('https://www.googleapis.com/auth/contacts.readonly'),
+          ),
+        ),
+      );
+    });
+
+    test('rejects sign-in when Google omits refresh_token (DEF-061)', () async {
+      final _MemoryCredentialStore store = _MemoryCredentialStore();
+      final Completer<String> stateCompleter = Completer<String>();
+      final OAuthIdentityManager manager = OAuthIdentityManager(
+        store,
+        googleConfig: const GoogleAuthConfig(clientId: 'google-client'),
+        launchBrowser: (Uri url) async {
+          stateCompleter.complete(url.queryParameters['state']!);
+        },
+        googleRedirectCapture: _StatefulRedirectCapture(
+          stateCompleter.future,
+          redirectBase: 'http://127.0.0.1:8766/callback',
+        ),
+        httpClient: MockClient((http.Request request) async {
+          if (request.url.host == 'oauth2.googleapis.com' &&
+              request.url.path == '/token') {
+            return http.Response(
+              jsonEncode(<String, Object?>{
+                'access_token': 'google-access-no-rt',
+                'expires_in': 3600,
+                'token_type': 'Bearer',
+                'scope': GoogleAuthConfig.scopes.join(' '),
               }),
               200,
               headers: const <String, String>{
@@ -683,9 +825,99 @@ void main() {
           isA<StateError>().having(
             (StateError e) => e.message,
             'message',
-            contains('https://www.googleapis.com/auth/contacts.readonly'),
+            contains('refresh token'),
           ),
         ),
+      );
+    });
+  });
+
+  group('OAuthIdentityManager Google refresh scope guard (DEF-061)', () {
+    test(
+      'refuses to persist mail-only refresh result over expanded grant',
+      () async {
+        final _MemoryCredentialStore store = _MemoryCredentialStore();
+        final DateTime now = DateTime.utc(2026, 7, 16, 12);
+        int refreshCalls = 0;
+        final OAuthIdentityManager manager = OAuthIdentityManager(
+          store,
+          googleConfig: const GoogleAuthConfig(
+            clientId: 'google-client',
+            clientSecret: 'google-secret',
+          ),
+          clock: () => now,
+          httpClient: MockClient((http.Request request) async {
+            expect(request.url.path, '/token');
+            refreshCalls += 1;
+            return http.Response(
+              jsonEncode(<String, Object?>{
+                'access_token': 'google-access-mail-only-from-stale-rt',
+                'expires_in': 3600,
+                'token_type': 'Bearer',
+                // Stale RT predates Wave G — mints mail-only AT.
+                'scope': 'openid email profile https://mail.google.com/',
+              }),
+              200,
+              headers: const <String, String>{
+                'content-type': 'application/json',
+              },
+            );
+          }),
+        );
+
+        await manager.saveGoogleToken(
+          'google:1',
+          'google-access-full-scopes',
+          'google-refresh-stale-mail-only',
+          now.subtract(const Duration(minutes: 1)),
+        );
+
+        await expectLater(
+          manager.getValidGoogleAccessToken('google:1'),
+          throwsA(
+            isA<StateError>().having(
+              (StateError e) => e.message,
+              'message',
+              allOf(
+                contains('https://www.googleapis.com/auth/calendar'),
+                contains('refresh token predates'),
+              ),
+            ),
+          ),
+        );
+        expect(refreshCalls, 1);
+        // Must not overwrite the prior access token with the narrowed grant.
+        expect(
+          store.secrets['google:1']?['google.access-token'],
+          'google-access-full-scopes',
+        );
+      },
+    );
+
+    test('replaceGoogleToken clears prior refresh token first', () async {
+      final _MemoryCredentialStore store = _MemoryCredentialStore();
+      final OAuthIdentityManager manager = OAuthIdentityManager(
+        store,
+        googleConfig: const GoogleAuthConfig(clientId: 'google-client'),
+      );
+      await manager.saveGoogleToken(
+        'google:1',
+        'old-access',
+        'old-refresh-mail-only',
+        DateTime.utc(2026, 7, 16, 12),
+      );
+
+      await manager.replaceGoogleToken(
+        'google:1',
+        'new-access',
+        refreshToken: 'new-refresh-full',
+        expiresAt: DateTime.utc(2026, 7, 16, 13),
+      );
+
+      expect(store.secrets['google:1']?['google.access-token'], 'new-access');
+      expect(
+        store.secrets['google:1']?['google.refresh-token'],
+        'new-refresh-full',
       );
     });
   });

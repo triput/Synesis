@@ -33,6 +33,14 @@ class _FakeCredentialStore extends SecureCredentialStore {
   }
 
   @override
+  Future<void> deleteSecret({
+    required String credentialsRef,
+    required String name,
+  }) async {
+    secrets[credentialsRef]?.remove(name);
+  }
+
+  @override
   Future<void> deleteCredentials(String credentialsRef) async {
     deletedRefs.add(credentialsRef);
     secrets.remove(credentialsRef);
@@ -484,6 +492,10 @@ void main() {
         ),
       ]);
       final _FakeCredentialStore store = _FakeCredentialStore();
+      store.secrets['google:g1'] = <String, String>{
+        'google.access-token': 'stale-access',
+        'google.refresh-token': 'stale-mail-only-refresh',
+      };
       final _FakeIdentityManager identity = _FakeIdentityManager(store);
       final AccountService service = AccountService(repo, store, identity);
 
@@ -494,6 +506,11 @@ void main() {
       );
 
       expect(identity.savedGoogleRefs, <String>['google:g1']);
+      expect(store.secrets['google:g1']?['google.access-token'], 'google-access-2');
+      expect(
+        store.secrets['google:g1']?['google.refresh-token'],
+        'google-refresh-2',
+      );
       expect(repo.bootstrapAccountIds, <String>['g1']);
       expect(
         repo.enqueuedTypes,
@@ -503,6 +520,33 @@ void main() {
           'calendars_bootstrap',
         ]),
       );
+    });
+
+    test('rejects re-auth without a refresh token (DEF-061)', () async {
+      final _FakeRepository repo = _FakeRepository(<MailAccount>[
+        const MailAccount(
+          id: 'g1',
+          label: 'G',
+          address: 'casey@gmail.com',
+          accent: Color(0xFFEA4335),
+          providerType: 'imap',
+          credentialsRef: 'google:g1',
+        ),
+      ]);
+      final AccountService service = AccountService(
+        repo,
+        _FakeCredentialStore(),
+        _FakeIdentityManager(_FakeCredentialStore()),
+      );
+
+      await expectLater(
+        service.updateGoogleCredentials(
+          account: repo.accounts.first,
+          accessToken: 'google-access-2',
+        ),
+        throwsArgumentError,
+      );
+      expect(repo.bootstrapAccountIds, isEmpty);
     });
   });
 

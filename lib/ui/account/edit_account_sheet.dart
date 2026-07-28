@@ -531,10 +531,11 @@ class _EditAccountFormState extends State<_EditAccountForm> {
     }
     return <Widget>[
       Text(
-        'Re-auth refreshes mail XOAUTH and grants People + Calendar API '
-        'access for contacts and events sync. On Google\'s consent screen, '
-        'enable every Contacts/People and Calendar checkbox — they may '
-        'default unchecked (DEF-061).',
+        'Re-auth refreshes mail XOAUTH and must store a new offline refresh '
+        'token with People + Calendar scopes (DEF-061). Enable every '
+        'Contacts/Calendar checkbox on consent. If Calendar still 403s after '
+        're-auth, remove Synesis under Google Account → Third-party access, '
+        'full-restart the app, then re-auth again.',
         style: TextStyle(color: tokensOf(context).muted, fontSize: 12),
       ),
       const SizedBox(height: 8),

@@ -343,7 +343,9 @@ class AccountService {
   /// Replaces Google OAuth tokens for an existing XOAUTH account.
   ///
   /// Used after Edit account → Re-authenticate with Google (Wave G scope
-  /// expansion). Enqueues mail + PIM bootstrap when [enqueueBootstrap] is true.
+  /// expansion). Clears prior Google secrets first so a stale mail-only
+  /// refresh token cannot remain (DEF-061). Requires [refreshToken].
+  /// Enqueues mail + PIM bootstrap when [enqueueBootstrap] is true.
   Future<void> updateGoogleCredentials({
     required MailAccount account,
     required String accessToken,
@@ -358,12 +360,21 @@ class AccountService {
         'Must not be empty.',
       );
     }
+    final String? trimmedRefresh = refreshToken?.trim();
+    if (trimmedRefresh == null || trimmedRefresh.isEmpty) {
+      throw ArgumentError.value(
+        refreshToken,
+        'refreshToken',
+        'Re-authenticate with Google must return a new offline refresh token. '
+        'Remove Synesis under Google Account → Third-party access, then retry.',
+      );
+    }
     final String ref = account.credentialsRef ?? 'google:${account.id}';
-    await _identityManager.saveGoogleToken(
+    await _identityManager.replaceGoogleToken(
       ref,
       accessToken,
-      refreshToken,
-      expiresAt,
+      refreshToken: trimmedRefresh,
+      expiresAt: expiresAt,
     );
     if (enqueueBootstrap) {
       await _repository.enqueueSyncJob(

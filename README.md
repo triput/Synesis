@@ -137,7 +137,7 @@ flutter run -d windows \
   --dart-define=SYNESIS_GOOGLE_CLIENT_SECRET=optional-if-required
 ```
 
-   **Re-consent:** Existing Google XOAUTH accounts signed in before Wave G only hold mail scopes. After upgrading to a Wave G+ build, users must **sign in again** (**Edit account → Re-authenticate with Google**) so the consent screen includes People + Calendar scopes for contact and calendar sync. On Google's granular consent UI, **enable every Contacts/People and Calendar checkbox** (they may default unchecked — DEF-061). Mail-only or partial tokens cannot call People or Calendar APIs.
+   **Re-consent:** Existing Google XOAUTH accounts signed in before Wave G only hold mail scopes. After upgrading to a Wave G+ build, **full-restart** the app, then **sign in again** (**Edit account → Re-authenticate with Google**) so a **new offline refresh token** includes People + Calendar scopes. On Google's granular consent UI, **enable every Contacts/People and Calendar checkbox**. If Google Account already lists Calendar for Synesis but Calendar sync still 403s, remove Synesis under Google Account → Third-party access and re-auth (stale refresh token — DEF-061).
 
 Both Graph and Google can be set together:
 
