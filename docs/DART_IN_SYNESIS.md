@@ -6,27 +6,33 @@
 
 **For:** Trish (product owner, curious engineer) and anyone who wants to read the codebase without becoming a Dart expert first.
 
-**Not:** A language textbook, the product spec, or end-user documentation. For architecture without code, start with [ARCHITECTURE_OVERVIEW.md](ARCHITECTURE_OVERVIEW.md). For requirements, see [SPEC.md](SPEC.md). For how the team builds, see [AGENTS.md](../AGENTS.md).
+**Not:** A language textbook, the product spec, or end-user documentation. For architecture without code, start with [ARCHITECTURE_OVERVIEW.md](ARCHITECTURE_OVERVIEW.md). For requirements, see [SPEC.md](SPEC.md). For V2 wave status and PIM scope, see [V2_PLAN.md](V2_PLAN.md). For how the team builds, see [AGENTS.md](../AGENTS.md).
+
+**Toolchain (Wave H, 2026-07-27):** Flutter **3.44.6** (`.flutter-version`), Dart SDK **`^3.12.2`** (`pubspec.yaml` `environment.sdk`).
 
 ---
 
 ## 1. Overview — Why Dart Here?
 
-Synesis is a **local-first email client** for **Windows** and **Android**. Dart is the language; **Flutter** is the UI toolkit that turns Dart into native apps on both platforms from one codebase.
+Synesis is a **local-first email + PIM client** for **Windows** and **Android**. V2 headline = **contacts and calendar** alongside mail. Dart is the language; **Flutter** is the UI toolkit that turns Dart into native apps on both platforms from one codebase.
 
 That pairing is deliberate:
 
 | Choice | What it means in Synesis | Why it exists |
 | --- | --- | --- |
 | **Flutter** | One UI codebase compiles to Windows desktop and Android mobile | Ship both v1 platforms without maintaining two separate front ends |
-| **Local-first + SQLite (Drift)** | Everything on screen reads from a local database file | Inbox opens instantly; offline still works; no spinner while waiting on the server |
+| **Local-first + SQLite (Drift)** | Everything on screen reads from a local database file | Inbox, contacts, and calendars open instantly; offline still works; no spinner while waiting on the server |
 | **BLoC / Cubit** | Widgets paint state; Cubits own navigation and mutations | Predictable one-way flow — UI never "secretly" edits data |
 | **Isolates** | Background workers for CPU-heavy MIME assembly | Keeps the UI thread free for 60fps scrolling while building outbound multipart messages |
-| **Hybrid protocols** | `GraphMailProvider` vs `ImapSmtpMailProvider` behind one `MailProvider` contract | Exchange/Outlook use modern HTTPS Graph; Gmail and others use classic IMAP/SMTP — the UI never cares which |
+| **Hybrid mail protocols** | `GraphMailProvider` vs `ImapSmtpMailProvider` behind one `MailProvider` contract | Exchange/Outlook use modern HTTPS Graph; Gmail and others use classic IMAP/SMTP — the UI never cares which |
+| **Hybrid PIM protocols** | `GraphPimProvider`, `GooglePimProvider`, or `DavPimProvider` behind `ProviderRegistry.resolvePim()` | Graph accounts → Graph Contacts + Calendar; Google XOAUTH → People + Calendar API; IMAP/DAV accounts (e.g. Runbox) → CardDAV + CalDAV |
+| **Outlook-style modules** | `ModuleShell` switches Mail / Calendar / People | V2 shell — mail remains cold-start default; PIM modules share the same local store |
 
-**The golden rule:** The UI **reads** SQLite. The **SyncEngine** **writes** SQLite (and enqueues remote jobs). User actions like "mark read" update SQLite first (optimistic), then queue sync work for the server.
+**The golden rule:** The UI **reads** SQLite. The **SyncEngine** **writes** SQLite (and enqueues remote jobs). User actions like "mark read" or "toggle calendar display" update SQLite first (optimistic), then queue sync work for the server.
 
-Integration waves and test coverage are tracked in [V1_TIER_INTEGRATION.md](V1_TIER_INTEGRATION.md) and [TEST_INVENTORY.md](TEST_INVENTORY.md). **List filters** (ephemeral + saved presets) and **branding** (icon/splash) landed in Final wave Phases B and A — user-facing detail in [USER_GUIDE.md](USER_GUIDE.md).
+**V2 status (2026-07-27):** Waves 0, H, 1–5, and G are complete (**597** automated tests — see [TEST_INVENTORY.md](TEST_INVENTORY.md)). Wave 6 (cross-account DnD copy) is next. Drift schema is at **v7** (`contact_lists`, `contacts`, `calendars`, `events`, FTS, sync cursors).
+
+**Google PIM honesty:** Wave G landed `GooglePimProvider` (People + Calendar API, not CardDAV). Automated tests and code review are green; operator dogfood for Google Calendar still requires **full app restart + re-auth** after the DEF-061 refresh-token fix — do not treat Google Calendar as production-proven until your account passes a live `calendars_*` sync. Google Calendar event sync is an MVP windowed snapshot (no persistent `syncToken` yet — see [V2_WAVE_G_QA.md](V2_WAVE_G_QA.md)).
 
 ---
 
@@ -37,43 +43,61 @@ When you wonder "where does this data come from?", trace this path:
 ```mermaid
 flowchart LR
   subgraph UI["UI (Flutter widgets)"]
-    WS[MailWorkspace]
-    RP[ReadingPane / MessageListPane]
+    MS[ModuleShell]
+    MW[MailWorkspace]
+    CW[CalendarWorkspace]
+    PW[PeopleWorkspace]
   end
 
   subgraph State["State (Cubits)"]
     MC[MailboxCubit]
+    CC[CalendarCubit]
+    PC[PeopleCubit]
     AS[AppSettingsCubit]
   end
 
   subgraph Data["Local data"]
     MR[MailRepository]
-    DB[(SQLite via Drift)]
+    PS[DriftPimStore]
+    DB[(SQLite via Drift<br/>schema v7)]
   end
 
   subgraph Background["Background"]
     SE[SyncEngine]
     MP[MailProvider<br/>Graph / IMAP]
+    PP[PimProvider<br/>Graph / Google / DAV]
     NS[NotificationService]
   end
 
-  WS --> MC
-  RP --> MC
+  MS --> MW
+  MS --> CW
+  MS --> PW
+  MW --> MC
+  CW --> CC
+  PW --> PC
   MC --> MR
+  CC --> PS
+  PC --> PS
   AS --> MC
   MR --> DB
+  PS --> DB
   SE --> MR
+  SE --> PS
   SE --> MP
+  SE --> PP
   MP --> SE
+  PP --> SE
   SE --> NS
   NS --> UI
 ```
 
-**Read path:** Widget → Cubit → Repository → SQLite (often via a live `watchChanges` stream).
+**Mail read path:** Widget → Cubit → `MailRepository` → SQLite (often via a live `watchChanges` stream).
 
-**Write path (sync):** MailProvider → SyncEngine → Repository → SQLite → stream fires → Cubit refreshes → UI repaints.
+**PIM read path:** Widget → `CalendarCubit` / `PeopleCubit` → `DriftPimStore` → SQLite. PIM Cubits do **not** call providers directly — same local-first rule as mail.
 
-**Write path (user action):** Cubit → MessageActionService → Repository (local patch) → SyncEngine job queue → provider later.
+**Write path (sync):** MailProvider / PimProvider → SyncEngine → Repository or PimStore → SQLite → stream fires → Cubit refreshes → UI repaints.
+
+**Write path (user action):** Cubit → service layer (`MessageActionService`, display-pref toggles, …) → local SQLite patch → SyncEngine job queue → provider later.
 
 ---
 
@@ -85,7 +109,7 @@ Each item below is **only** what appears in this repo — not the full Dart lang
 
 **Future** = "a value that will arrive later" (like a Promise in JavaScript). **async** functions return Futures. **await** pauses until the Future completes — without blocking the UI thread.
 
-**Synesis example:** `lib/main.dart` — startup is one long async chain: open SharedPreferences, open the database, wire SyncEngine, then `runApp(...)`. Nothing paints until the database and core services exist.
+**Synesis example:** `lib/main.dart` — startup is one long async chain: open SharedPreferences, open the database, wire SyncEngine and `DriftPimStore`, then `runApp(...)`. Nothing paints until the database and core services exist.
 
 ```dart
 final SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -98,9 +122,9 @@ runApp(SynesisApp(...));
 
 A **Stream** emits events over time. Drift-backed repositories broadcast "something changed" so Cubits can refresh without polling.
 
-**Synesis example:** `lib/repository/drift_mail_repository.dart` exposes `watchChanges()`. `lib/ui/mailbox/mailbox_cubit.dart` subscribes in `attachDbWatch()` and calls `refresh()` on each pulse.
+**Synesis example:** `lib/repository/drift_mail_repository.dart` exposes `watchChanges()`. `lib/ui/mailbox/mailbox_cubit.dart` subscribes in `attachDbWatch()` and calls `refresh()` on each pulse. PIM Cubits call `refresh()` after local store mutations and on module open.
 
-**BlocBuilder** (from `flutter_bloc`) rebuilds a widget when a Cubit emits new state — e.g. `MailWorkspace` and panes listen to `MailboxCubit` instead of calling `setState` for mail data.
+**BlocBuilder** (from `flutter_bloc`) rebuilds a widget when a Cubit emits new state — e.g. `MailWorkspace`, `CalendarWorkspace`, and `PeopleWorkspace` listen to their Cubits instead of calling `setState` for domain data.
 
 ### Null safety (`?`, `??`, `required`)
 
@@ -128,11 +152,26 @@ An **Isolate** is a separate memory heap — true parallel work without sharing 
 
 | Location | Role |
 | --- | --- |
-| **`pubspec.yaml` + pub cache** | Third-party packages (`flutter_bloc`, `drift`, `connectivity_plus`, …) |
+| **`pubspec.yaml` + pub cache** | Third-party packages — see notable list below |
 | **`lib/`** | Synesis source, imported as `package:synesis/...` |
-| **`test/`** | Automated tests mirroring `lib/` structure |
+| **`test/`** | Automated tests mirroring `lib/` structure (**597** cases as of Wave G) |
 
 Your product code lives under `lib/`; packages are dependencies you don't edit.
+
+**Notable dependencies (post–Wave H):**
+
+| Package | Role in Synesis |
+| --- | --- |
+| `flutter_bloc` / `equatable` | Cubit state management |
+| `drift` + `sqlite3` (sqlite3mc hook) | Type-safe SQLite; optional encryption via `hooks.user_defines` |
+| `enough_mail` | IMAP/SMTP client |
+| `http` / `oauth2` | Graph, Google, and DAV HTTP + OAuth |
+| `xml` | CardDAV/CalDAV XML parsing |
+| `connectivity_plus` | Network-aware sync policy |
+| `flutter_secure_storage` | Credential vault |
+| `flutter_widget_from_html` | HTML email rendering |
+
+Wave H deferred some major bumps (e.g. `xml` ^7 blocked by `enough_mail`; `file_picker` pinned at 11.0.2) — see [WAVE_H_DEPENDENCY_HYGIENE.md](WAVE_H_DEPENDENCY_HYGIENE.md).
 
 ### Gold Master file headers
 
@@ -152,13 +191,13 @@ Core Dart files start with a comment block like:
 
 ---
 
-## 4. Step-Through — Open App → Inbox → Mark Read → Sync Notifies
+## 4. Step-Through — Mail Path (V1 core, still the default module)
 
-Follow this ordered path when exploring. Each stop: **role** and **why it exists**.
+Follow this ordered path when exploring mail. Each stop: **role** and **why it exists**.
 
 ### Stop 1 — `lib/main.dart` (DI bootstrap)
 
-**Role:** Application entrypoint. Initializes Flutter bindings, opens SQLite, constructs repositories, account service, provider registry, settings Cubit, desktop controller, notification service, and SyncEngine — then calls `runApp`.
+**Role:** Application entrypoint. Initializes Flutter bindings, opens SQLite, constructs `MailRepository`, `DriftPimStore`, repositories, account service, provider registry, settings Cubit, desktop controller, notification service, and SyncEngine — then calls `runApp`.
 
 **Why:** Keeps `app.dart` focused on widget tree wiring. All **dependency injection** (who gets which instance) happens here once. Also handles special cases: detached message windows on Windows, `.eml` file launch args, platform-specific notification adapters.
 
@@ -166,132 +205,185 @@ Follow this ordered path when exploring. Each stop: **role** and **why it exists
 
 ### Stop 2 — `lib/app.dart` (root MaterialApp + providers)
 
-**Role:** Builds `SynesisApp` — `MultiRepositoryProvider` for services (`MailRepository`, `SyncEngine`, `AccountService`, …) and `MultiBlocProvider` for `AppSettingsCubit` and `MailboxCubit`. Applies theme from settings and hosts `MailWorkspace` as the home route.
+**Role:** Builds `SynesisApp` — `MultiRepositoryProvider` for services (`MailRepository`, `DriftPimStore`, `SyncEngine`, `AccountService`, …) and `MultiBlocProvider` for `AppSettingsCubit`, `MailboxCubit`, `CalendarCubit`, and `PeopleCubit`. Applies theme from settings and hosts `ModuleShell` as the home route.
 
 **Why:** Flutter widgets can't reach into globals cleanly; providers expose services to the subtree. One place to see everything the UI layer is allowed to touch.
 
 ---
 
-### Stop 3 — `lib/settings/app_settings_cubit.dart` + `app_settings_state.dart`
+### Stop 3 — `lib/ui/shell/module_shell.dart` (V2 module switcher)
 
-**Role:** `AppSettingsCubit` loads and persists user prefs (theme, density, Focus toggles, retention, tray, notification filters) via `SharedPreferences`. `AppSettingsState` is the immutable snapshot widgets and other Cubits read.
+**Role:** Outlook-style shell: Mail (default cold start), Calendar, People. Swaps body widgets without tearing down shared providers.
 
-**Why:** Settings aren't in SQLite — they're device prefs. Separating state (`app_settings_state.dart`) from mutations (`app_settings_cubit.dart`) matches the BLoC pattern and makes tests easy (emit a state, assert UI behavior).
-
----
-
-### Stop 4 — `lib/ui/shell/mail_workspace.dart` (shell / shortcuts)
-
-**Role:** The main three-pane shell: folder sidebar, message list, reading pane. Owns keyboard shortcuts (`mailbox_shortcuts.dart`), opens sheets (compose, search, sync status, notifications settings), and wires `MailboxCubit.attachDbWatch()` on init.
-
-**Why:** One orchestration widget for navigation chrome so leaf panes stay dumb. Desktop-specific behaviors (Ctrl+J/K/N/F, find-in-message) live here rather than scattered across panes.
+**Why:** V2 product decision — PIM is first-class, but mail behavior in `MailWorkspace` stays unchanged under the hood.
 
 ---
 
-### Stop 5 — `lib/ui/mailbox/mailbox_cubit.dart` + `mailbox_state.dart`
+### Stop 4 — `lib/settings/app_settings_cubit.dart` + `app_settings_state.dart`
 
-**Role:** `MailboxCubit` is the brain of the mailbox UI: current account/folder, selection, message list projection, filters, snooze timers, and delegation to `MessageActionService` for mutations. `MailboxState` holds everything a pane needs to paint.
+**Role:** `AppSettingsCubit` loads and persists user prefs (theme, density, Focus toggles, retention, tray, notification filters, calendar view mode) via `SharedPreferences`. `AppSettingsState` is the immutable snapshot widgets and other Cubits read.
 
-**Why:** Widgets shouldn't query SQLite or enqueue sync jobs. The Cubit centralizes "what is the mailbox showing right now?" and reacts to DB streams + settings changes via `refresh()`.
-
----
-
-### Stop 6 — `lib/mailbox/message_action_service.dart` (mutations)
-
-**Role:** Implements mark read/unread, star, move, archive, delete, junk, snooze, etc. Pattern: **patch local SQLite immediately** (optimistic UI), then **enqueue a SyncEngine job** for the remote provider — never block the UI on network.
-
-**Why:** Local-first UX demands instant feedback. Remote failures surface later via sync job status, not frozen buttons.
+**Why:** Settings aren't in SQLite — they're device prefs. Separating state from mutations matches the BLoC pattern and makes tests easy.
 
 ---
 
-### Stop 7 — `lib/repository/mail_repository.dart` + `drift_mail_repository.dart`
+### Stop 5 — `lib/ui/shell/mail_workspace.dart` (mail shell / shortcuts)
 
-**Role:** `mail_repository.dart` defines the abstract contract (`listMessages`, `setUnreadBulk`, `enqueueSyncJob`, `watchChanges`, …) plus domain types like `SyncJob` and `OutboxItem`. `drift_mail_repository.dart` implements it by delegating to Drift store modules (`drift_message_store.dart`, etc.).
+**Role:** The main three-pane mail shell: folder sidebar, message list, reading pane. Owns keyboard shortcuts, opens sheets (compose, search, sync status), and wires `MailboxCubit.attachDbWatch()` on init.
 
-**Why:** UI and sync depend on an interface, not raw SQL. Swapping storage or testing with fakes (`_RecordingRepo` in tests) doesn't require rewriting Cubits.
-
----
-
-### Stop 8 — `lib/repository/database.dart` (Drift schema entry)
-
-**Role:** Declares SQLite tables (`Accounts`, `Folders`, `Messages`, sync jobs, outbox, FTS, …) and opens the on-disk file under application support. Generated companion: `database.g.dart` (Drift codegen).
-
-**Why:** Single schema source of truth. Migrations and type-safe queries flow from here. See [ARCHITECTURE_OVERVIEW.md](ARCHITECTURE_OVERVIEW.md) §2 for how Drift fits the local-first story.
+**Why:** One orchestration widget for mail navigation chrome so leaf panes stay dumb.
 
 ---
 
-### Stop 9 — `lib/sync/sync_engine.dart` (jobs)
+### Stop 6 — `lib/ui/mailbox/mailbox_cubit.dart` + `mailbox_state.dart`
 
-**Role:** Background processor for durable sync jobs: incremental fetch, send outbox, move/star/delete on server, retention cleanup, push/IDLE wake, remote search. Writes fetched mail into the repository; calls `onNewUnread` when fresh unread inbox mail arrives (non-bootstrap).
+**Role:** Brain of the mailbox UI: current account/folder, selection, message list projection, filters, snooze timers, and delegation to `MessageActionService` for mutations.
 
-**Why:** Network is slow and flaky — it must never run on the UI critical path. Sequential job processing keeps SQLite consistent and makes failures retryable (visible in sync status sheet).
-
----
-
-### Stop 10 — `lib/protocol/mail_provider.dart` + Graph / IMAP providers
-
-**Role:** `mail_provider.dart` defines the provider-neutral contract (`MailCapabilities`, fetch folders/messages, apply mutations, send). `graph_mail_provider.dart` and `imap_smtp_mail_provider.dart` implement it for Exchange vs standard IMAP/SMTP. `ProviderRegistry` in `lib/sync/provider_registry.dart` picks the right one per account.
-
-**Why:** Email servers speak different protocols; the rest of the app speaks one normalized shape stored in SQLite.
+**Why:** Widgets shouldn't query SQLite or enqueue sync jobs. The Cubit centralizes "what is the mailbox showing right now?"
 
 ---
 
-### Stop 11 — `lib/notifications/notification_service.dart` (W6 filter/dispatch)
+### Stop 7 — `lib/mailbox/message_action_service.dart` (mail mutations)
 
-**Role:** Receives new unread messages from SyncEngine (`onNewMail`). Applies product filters: master toggle, per-account enablement, starred-only, quiet hours, foreground suppression. Aggregates and dedupes, then dispatches to `NotificationPlatform` (Android adapter or Windows adapter).
-
-**Why:** Notifications are cross-cutting — settings live in Cubit land, OS APIs live in adapters, policy lives in one service. Keeps sync engine free of UI/platform details.
+**Role:** Mark read/unread, star, move, archive, delete, junk, snooze, etc. Pattern: **patch local SQLite immediately** (optimistic UI), then **enqueue a SyncEngine job** — never block the UI on network.
 
 ---
 
-### Stop 12 — `lib/desktop/windows_desktop_controller.dart` (tray/toast seam)
+### Stop 8 — `lib/repository/mail_repository.dart` + `drift_mail_repository.dart`
 
-**Role:** Windows implementation of `DesktopController`: system tray, minimize-to-tray, window focus tracking (`isWindowFocused` for notification suppression), and toast hook. Non-Windows builds use `NoopDesktopController`.
+**Role:** Abstract mail contract (`listMessages`, `setUnreadBulk`, `enqueueSyncJob`, `watchChanges`, …) plus domain types. `drift_mail_repository.dart` implements via Drift store modules.
 
-**Why:** Platform code isolated behind an interface so `main.dart` and notification wiring stay portable. Tray click can restore the main window via `WindowsNotificationAdapter`.
-
----
-
-### Stop 13 — `lib/ui/shell/reading_pane.dart` (representative UI leaf)
-
-**Role:** Renders the selected message: headers, HTML/text body (`message_body_view.dart`), adaptive action toolbar (reply, archive, star, …), auto-mark-read dwell, print/export on desktop. Calls back into parent/Cubit via callbacks (`onMarkRead`, `onArchive`, …) — it does not touch the repository directly.
-
-**Why:** Leaf widgets stay declarative. Same pane works in split layout and portrait paging because it only needs a `MailMessage` + callbacks.
-
-*(Alternative leaf: `message_list_pane.dart` — list rows, swipe actions on Android, thread expansion.)*
+**Why:** UI and sync depend on an interface, not raw SQL. Tests use fakes without rewriting Cubits.
 
 ---
 
-### Stop 14 — `test/mailbox_cubit_test.dart` (test file pattern)
+### Stop 9 — `lib/repository/database.dart` (Drift schema entry)
 
-**Role:** Unit/bloc tests for `MailboxCubit` using a fake `_RecordingRepo` that implements `MailRepository` in memory. Asserts state transitions for selection, filters, mark read, move, etc., without Flutter UI or real SQLite.
+**Role:** Declares SQLite tables — mail (`Accounts`, `Folders`, `Messages`, sync jobs, outbox, FTS) **and PIM** (`contact_lists`, `contacts`, `contact_emails`, `contact_phones`, `calendars`, `events`, `event_attendees`, `contact_fts`). Schema version **7**. Generated companion: `database.g.dart`.
 
-**Why:** Critical paths get fast, deterministic tests. Pattern: fake repository + real Cubit + `blocTest` / `expect`. Find related cases in [V1_AUTOMATED_TEST_INVENTORY.csv](V1_AUTOMATED_TEST_INVENTORY.csv) (filter by `test_file`). W6 notification policy tests live in `test/notification_service_test.dart`.
-
----
-
-### End-to-end narrative (tie it together)
-
-1. **Open app** — `main.dart` opens DB, starts SyncEngine, `app.dart` mounts providers and `MailWorkspace`.
-2. **See inbox** — `MailboxCubit.refresh()` reads folders/messages via repository; `attachDbWatch()` keeps list live; panes render `MailboxState`.
-3. **Mark read** — Reading pane fires `onMarkRead` → Cubit → `MessageActionService.setUnread(..., false)` → local SQLite update → sync job enqueued → UI updates immediately.
-4. **Sync notifies** — Meanwhile SyncEngine fetches new mail from Graph/IMAP → inserts rows → `onNewUnread` → `NotificationService.onNewMail` → OS notification if settings allow and app isn't focused.
+**Why:** Single schema source of truth. Migrations and type-safe queries flow from here.
 
 ---
 
-## 5. How to Explore Safely
+### Stop 10 — `lib/sync/sync_engine.dart` (jobs)
+
+**Role:** Background processor for durable sync jobs: mail fetch/send/mutations **and PIM bootstrap/incremental** (`pim_sync_jobs.dart` types). Writes fetched data into repositories; calls `onNewUnread` for fresh inbox mail.
+
+**Why:** Network is slow and flaky — it must never run on the UI critical path.
+
+---
+
+### Stop 11 — `lib/protocol/mail_provider.dart` + Graph / IMAP providers
+
+**Role:** Provider-neutral mail contract. `graph_mail_provider.dart` and `imap_smtp_mail_provider.dart` implement Exchange vs IMAP/SMTP. `ProviderRegistry.resolve()` picks the right one per account.
+
+---
+
+### Stop 12 — `lib/notifications/notification_service.dart`
+
+**Role:** Receives new unread messages from SyncEngine. Applies filters (master toggle, per-account, starred-only, quiet hours, foreground suppression), then dispatches to platform adapters.
+
+---
+
+### Stop 13 — `lib/desktop/windows_desktop_controller.dart` (tray/toast seam)
+
+**Role:** Windows `DesktopController`: system tray, minimize-to-tray, window focus tracking, toast hook. Non-Windows builds use `NoopDesktopController`.
+
+---
+
+### Stop 14 — `lib/ui/shell/reading_pane.dart` (representative mail UI leaf)
+
+**Role:** Renders the selected message; calls back via callbacks (`onMarkRead`, `onArchive`, …) — does not touch the repository directly.
+
+---
+
+### Mail end-to-end narrative
+
+1. **Open app** — `main.dart` opens DB, starts SyncEngine, `app.dart` mounts providers and `ModuleShell` (Mail default).
+2. **See inbox** — `MailboxCubit.refresh()` reads via repository; `attachDbWatch()` keeps list live.
+3. **Mark read** — Reading pane → Cubit → `MessageActionService` → local SQLite → sync job enqueued → UI updates immediately.
+4. **Sync notifies** — SyncEngine fetches from Graph/IMAP → inserts rows → `onNewUnread` → `NotificationService` → OS notification if allowed.
+
+---
+
+## 5. Step-Through — PIM Path (V2)
+
+PIM follows the same local-first rule. These stops pair with §4.
+
+### Stop 15 — `lib/ui/calendar/calendar_cubit.dart` + `calendar_workspace.dart`
+
+**Role:** `CalendarCubit` loads calendars and events from `DriftPimStore`, manages multi-calendar display prefs (overlay / side-by-side), and date-range queries. `CalendarWorkspace` is the month/week UI shell.
+
+**Why:** Calendar UI never calls Graph/Google/DAV directly — it reads what SyncEngine already wrote.
+
+---
+
+### Stop 16 — `lib/ui/people/people_cubit.dart` + `people_workspace.dart`
+
+**Role:** `PeopleCubit` lists contact lists and contacts, runs FTS search across selected lists, toggles display prefs. Used by the People module and the compose contact picker (`contact_picker.dart`).
+
+---
+
+### Stop 17 — `lib/repository/drift/drift_pim_store.dart`
+
+**Role:** Drift-backed CRUD and queries for contact lists, contacts, calendars, events, display prefs, and FTS. The PIM equivalent of the mail store modules.
+
+---
+
+### Stop 18 — `lib/sync/provider_registry.dart` → PIM providers
+
+**Role:** `resolvePim(accountId)` returns the right adapter:
+
+| Account type | Provider | Protocol |
+| --- | --- | --- |
+| Graph / Microsoft | `GraphPimProvider` | Graph Contacts + Calendar API |
+| Google XOAUTH (`google:` ref) | `GooglePimProvider` | People + Calendar API (Wave G) |
+| IMAP + DAV credentials | `DavPimProvider` | CardDAV + CalDAV (Wave 4; Runbox dogfood) |
+
+Google XOAUTH accounts **never** fall through to DAV — `resolvePim` returns `GooglePimProvider` before DAV discovery runs.
+
+---
+
+### Stop 19 — `lib/sync/pim_sync_jobs.dart`
+
+**Role:** Job type constants (`contact_lists_bootstrap`, `contacts_incremental`, `calendars_incremental`, `events_incremental`, …) and per-collection sync cursor key helpers (`pim:contacts:{id}`, `pim:events:{id}`, …).
+
+**Reserved no-ops until later waves:** `contacts_push`, `events_push`, `contacts_copy`, `events_copy` (Wave 6 DnD).
+
+---
+
+### Stop 20 — `lib/pim/meeting_invite_service.dart` (meeting-mail bridge)
+
+**Role:** Wave 3 bridge — parses meeting invites in mail (`.ics`), surfaces accept/decline/tentative, drafts local calendar events from invite metadata. Graph RSVP path is live; Google Calendar RSVP is **not** in V2.0.
+
+---
+
+### PIM end-to-end narrative
+
+1. **Add account / re-auth** — OAuth scopes include PIM where required (Graph: `Contacts.Read`, `Calendars.ReadWrite`; Google: `contacts.readonly`, `calendar`).
+2. **SyncEngine enqueues PIM jobs** — bootstrap contact lists/calendars, then incremental pulls per collection.
+3. **Provider fetches remote** — `GraphPimProvider`, `GooglePimProvider`, or `DavPimProvider` normalizes into local rows.
+4. **DriftPimStore writes SQLite** — Cubits refresh; Calendar/People modules paint from local data.
+5. **User toggles display** — Cubit → PimStore local pref update (no network until a future push wave).
+
+---
+
+## 6. How to Explore Safely
 
 ### Prefer Cubit state over hunting `setState`
 
-Mailbox data flows through **`MailboxCubit` / `MailboxState`**, not ad-hoc widget fields. If the list looks wrong, read `mailbox_cubit.dart` → `refresh()` and the `MessageQuery` it builds. Settings visuals → `AppSettingsCubit`.
+Mailbox data → **`MailboxCubit` / `MailboxState`**. Calendar → **`CalendarCubit`**. People / picker → **`PeopleCubit`**. Settings → **`AppSettingsCubit`**.
 
 ### Where to look for bugs
 
 | Symptom | Likely layer | Start here |
 | --- | --- | --- |
 | Wrong mail on screen, stale list | UI state / query | `mailbox_cubit.dart`, `message_query.dart` |
-| Data wrong in DB but UI OK | Repository | `drift_*_store.dart`, `drift_mail_repository.dart` |
-| Server out of sync, jobs failing | Sync / provider | `sync_engine.dart`, `graph_mail_provider.dart`, `imap_smtp_mail_provider.dart` |
+| Wrong contacts/calendars on screen | PIM Cubit / store | `calendar_cubit.dart`, `people_cubit.dart`, `drift_pim_store.dart` |
+| Data wrong in DB but UI OK | Repository / store | `drift_*_store.dart`, `drift_pim_store.dart` |
+| Server out of sync, jobs failing | Sync / provider | `sync_engine.dart`, `graph_mail_provider.dart`, `graph_pim_provider.dart`, `google_pim_provider.dart`, `dav_pim_provider.dart` |
+| Google Calendar 403 after re-auth | OAuth / token lifecycle | `oauth_identity_manager.dart`, `edit_account_sheet.dart` (DEF-061 fix — needs full restart + re-auth) |
+| CardDAV/CalDAV discovery failures | DAV protocol | `lib/protocol/dav/dav_discovery.dart`, `dav_pim_provider.dart` |
 | Notification when you shouldn't get one | Notifications + settings | `notification_service.dart`, `app_settings_state.dart` |
 | Windows tray / focus | Platform seam | `windows_desktop_controller.dart` |
 
@@ -305,21 +397,23 @@ It's **generated** by Drift from `database.dart`. Change the schema or queries i
 flutter test
 ```
 
-For the full catalog of what's already automated, see [TEST_INVENTORY.md](TEST_INVENTORY.md) and [`V1_AUTOMATED_TEST_INVENTORY.csv`](V1_AUTOMATED_TEST_INVENTORY.csv). Wave checklists (e.g. [W6_NOTIFICATIONS_CHECKLIST.md](W6_NOTIFICATIONS_CHECKLIST.md)) link test IDs — they don't duplicate the whole file list.
+For the full catalog (**597** cases), see [TEST_INVENTORY.md](TEST_INVENTORY.md) and [`V1_AUTOMATED_TEST_INVENTORY.csv`](V1_AUTOMATED_TEST_INVENTORY.csv). V2 wave checklists (e.g. [V2_WAVE5_CHECKLIST.md](V2_WAVE5_CHECKLIST.md), [V2_WAVE_G_CHECKLIST.md](V2_WAVE_G_CHECKLIST.md)) link test IDs — they don't duplicate the whole file list. Historical V1 wave docs (W6 notifications, etc.) remain valid for mail subsystems.
 
 ---
 
-## 6. What This Guide Is Not
+## 7. What This Guide Is Not
 
 | This guide | Look elsewhere |
 | --- | --- |
 | Dart language tutorial | [dart.dev](https://dart.dev/guides) |
 | Product requirements & UX spec | [SPEC.md](SPEC.md) |
+| V2 PIM wave plan & exit criteria | [V2_PLAN.md](V2_PLAN.md) |
 | Architecture without code | [ARCHITECTURE_OVERVIEW.md](ARCHITECTURE_OVERVIEW.md) |
 | End-user "how to use Synesis" | [USER_GUIDE.md](USER_GUIDE.md) · [QUICK_START.md](QUICK_START.md) |
-| Manual QA click paths | [V1_MANUAL_E2E_MATRIX.csv](V1_MANUAL_E2E_MATRIX.csv) — living draft (FW-5; not finalized) |
-| Multi-agent team playbook | [MULTI_AGENT_SYSTEM_PROMPT.md](MULTI_AGENT_SYSTEM_PROMPT.md) |
+| Manual QA click paths | [V1_MANUAL_E2E_MATRIX.csv](V1_MANUAL_E2E_MATRIX.csv) |
+| Multi-agent team playbook | [MULTI_AGENT_SYSTEM_PROMPT.md](MULTI_AGENT_SYSTEM_PROMPT.md) · [AGENTS.md](../AGENTS.md) |
+| Dependency upgrade log | [WAVE_H_DEPENDENCY_HYGIENE.md](WAVE_H_DEPENDENCY_HYGIENE.md) |
 
 ---
 
-*Maintained by Page (documentation). Reviewed by Steve. Last updated: 2026-07-18.*
+*Maintained by Page (documentation). Reviewed by Steve. Last updated: 2026-07-27 (V2 Waves 0–G refresh).*
