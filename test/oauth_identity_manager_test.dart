@@ -65,9 +65,25 @@ class _StatefulRedirectCapture implements OAuthRedirectCapture {
   }
 }
 
-bool _isGoogleTokenInfo(http.Request request) =>
-    request.url.host == 'oauth2.googleapis.com' &&
-    request.url.path == '/tokeninfo';
+bool _isGoogleTokenInfo(http.Request request) {
+  final bool oauth2Host =
+      request.url.host == 'oauth2.googleapis.com' &&
+      request.url.path == '/tokeninfo';
+  final bool legacyHost =
+      request.url.host == 'www.googleapis.com' &&
+      request.url.path == '/oauth2/v3/tokeninfo';
+  return request.method == 'POST' && (oauth2Host || legacyHost);
+}
+
+bool _isGoogleCalendarListPreflight(http.Request request) =>
+    request.method == 'GET' &&
+    request.url.host == 'www.googleapis.com' &&
+    request.url.path == '/calendar/v3/users/me/calendarList';
+
+bool _isGoogleContactGroupsPreflight(http.Request request) =>
+    request.method == 'GET' &&
+    request.url.host == 'people.googleapis.com' &&
+    request.url.path == '/v1/contactGroups';
 
 http.Response _googleTokenInfoResponse(String scope) {
   return http.Response(
@@ -75,6 +91,49 @@ http.Response _googleTokenInfoResponse(String scope) {
     200,
     headers: const <String, String>{'content-type': 'application/json'},
   );
+}
+
+http.Response _googlePimPreflightOk() {
+  return http.Response(
+    jsonEncode(<String, Object?>{'items': <Object?>[]}),
+    200,
+    headers: const <String, String>{'content-type': 'application/json'},
+  );
+}
+
+/// Shared Google sign-in HTTP router for DEF-061 tests.
+http.Response? _routeGoogleSignInHttp(
+  http.Request request, {
+  required String accessToken,
+  required String scope,
+  http.Response? calendarPreflight,
+  http.Response? peoplePreflight,
+}) {
+  if (request.url.host == 'oauth2.googleapis.com' &&
+      request.url.path == '/token') {
+    return null; // caller handles token exchange
+  }
+  if (_isGoogleTokenInfo(request)) {
+    expect(request.bodyFields['access_token'], accessToken);
+    return _googleTokenInfoResponse(scope);
+  }
+  if (_isGoogleCalendarListPreflight(request)) {
+    return calendarPreflight ?? _googlePimPreflightOk();
+  }
+  if (_isGoogleContactGroupsPreflight(request)) {
+    return peoplePreflight ?? _googlePimPreflightOk();
+  }
+  if (request.url.host == 'openidconnect.googleapis.com') {
+    return http.Response(
+      jsonEncode(<String, Object?>{
+        'email': 'casey@gmail.com',
+        'name': 'Casey Google',
+      }),
+      200,
+      headers: const <String, String>{'content-type': 'application/json'},
+    );
+  }
+  return null;
 }
 
 void main() {
@@ -175,16 +234,17 @@ void main() {
           isTrue,
         );
 
-        // Substring trap: calendar.readonly / calendar.events contain
-        // ".../auth/calendar" but must NOT satisfy full calendar.
+        // calendar.readonly / calendarlist authorize calendarList.list.
         expect(
           GoogleAuthConfig.missingRequiredScopes(
             'https://mail.google.com/ '
             'https://www.googleapis.com/auth/contacts.readonly '
             'https://www.googleapis.com/auth/calendar.readonly',
           ),
-          <String>['https://www.googleapis.com/auth/calendar'],
+          isEmpty,
         );
+
+        // Substring trap: calendar.events must NOT satisfy calendarList.
         expect(
           GoogleAuthConfig.missingRequiredScopes(
             'https://mail.google.com/ '
@@ -491,22 +551,30 @@ void main() {
         ),
         clock: () => now,
         httpClient: MockClient((http.Request request) async {
-          expect(request.url.host, 'oauth2.googleapis.com');
-          expect(request.url.path, '/token');
-          expect(request.bodyFields['grant_type'], 'refresh_token');
-          expect(request.bodyFields['refresh_token'], 'google-refresh-old');
-          expect(request.bodyFields['client_secret'], 'google-secret');
-          refreshCalls += 1;
-          return http.Response(
-            jsonEncode(<String, Object?>{
-              'access_token': 'google-access-new',
-              'refresh_token': 'google-refresh-new',
-              'expires_in': 3600,
-              'token_type': 'Bearer',
-            }),
-            200,
-            headers: const <String, String>{'content-type': 'application/json'},
-          );
+          if (request.url.path == '/token') {
+            expect(request.url.host, 'oauth2.googleapis.com');
+            expect(request.bodyFields['grant_type'], 'refresh_token');
+            expect(request.bodyFields['refresh_token'], 'google-refresh-old');
+            expect(request.bodyFields['client_secret'], 'google-secret');
+            refreshCalls += 1;
+            return http.Response(
+              jsonEncode(<String, Object?>{
+                'access_token': 'google-access-new',
+                'refresh_token': 'google-refresh-new',
+                'expires_in': 3600,
+                'token_type': 'Bearer',
+                'scope': GoogleAuthConfig.scopes.join(' '),
+              }),
+              200,
+              headers: const <String, String>{
+                'content-type': 'application/json',
+              },
+            );
+          }
+          if (_isGoogleTokenInfo(request)) {
+            return _googleTokenInfoResponse(GoogleAuthConfig.scopes.join(' '));
+          }
+          fail('Unexpected HTTP call: ${request.url}');
         }),
       );
 
@@ -571,28 +639,13 @@ void main() {
               },
             );
           }
-          if (_isGoogleTokenInfo(request)) {
-            expect(
-              request.url.queryParameters['access_token'],
-              'google-access-sign-in',
-            );
-            return _googleTokenInfoResponse(GoogleAuthConfig.scopes.join(' '));
-          }
-          if (request.url.host == 'openidconnect.googleapis.com') {
-            expect(
-              request.headers['Authorization'],
-              'Bearer google-access-sign-in',
-            );
-            return http.Response(
-              jsonEncode(<String, Object?>{
-                'email': 'casey@gmail.com',
-                'name': 'Casey Google',
-              }),
-              200,
-              headers: const <String, String>{
-                'content-type': 'application/json',
-              },
-            );
+          final http.Response? routed = _routeGoogleSignInHttp(
+            request,
+            accessToken: 'google-access-sign-in',
+            scope: GoogleAuthConfig.scopes.join(' '),
+          );
+          if (routed != null) {
+            return routed;
           }
           fail('Unexpected HTTP call: ${request.url}');
         }),
@@ -830,6 +883,140 @@ void main() {
         ),
       );
     });
+
+    test('rejects sign-in when tokeninfo is unavailable (DEF-061)', () async {
+      final _MemoryCredentialStore store = _MemoryCredentialStore();
+      final Completer<String> stateCompleter = Completer<String>();
+      final OAuthIdentityManager manager = OAuthIdentityManager(
+        store,
+        googleConfig: const GoogleAuthConfig(clientId: 'google-client'),
+        launchBrowser: (Uri url) async {
+          stateCompleter.complete(url.queryParameters['state']!);
+        },
+        googleRedirectCapture: _StatefulRedirectCapture(
+          stateCompleter.future,
+          redirectBase: 'http://127.0.0.1:8766/callback',
+        ),
+        httpClient: MockClient((http.Request request) async {
+          if (request.url.host == 'oauth2.googleapis.com' &&
+              request.url.path == '/token') {
+            return http.Response(
+              jsonEncode(<String, Object?>{
+                'access_token': 'google-access-no-tokeninfo',
+                'refresh_token': 'google-refresh-no-tokeninfo',
+                'expires_in': 3600,
+                'token_type': 'Bearer',
+                // Token endpoint claims full scopes — must NOT be trusted alone.
+                'scope': GoogleAuthConfig.scopes.join(' '),
+              }),
+              200,
+              headers: const <String, String>{
+                'content-type': 'application/json',
+              },
+            );
+          }
+          if (_isGoogleTokenInfo(request)) {
+            return http.Response('{"error":"invalid_token"}', 400);
+          }
+          fail('Unexpected HTTP call: ${request.url}');
+        }),
+      );
+
+      await expectLater(
+        manager.signInGoogle(),
+        throwsA(
+          isA<StateError>().having(
+            (StateError e) => e.message,
+            'message',
+            contains('tokeninfo'),
+          ),
+        ),
+      );
+    });
+
+    test(
+      'rejects sign-in when Calendar API is disabled (DEF-061 GCP)',
+      () async {
+        final _MemoryCredentialStore store = _MemoryCredentialStore();
+        final Completer<String> stateCompleter = Completer<String>();
+        final String fullScope = GoogleAuthConfig.scopes.join(' ');
+        final OAuthIdentityManager manager = OAuthIdentityManager(
+          store,
+          googleConfig: const GoogleAuthConfig(clientId: 'google-client'),
+          launchBrowser: (Uri url) async {
+            stateCompleter.complete(url.queryParameters['state']!);
+          },
+          googleRedirectCapture: _StatefulRedirectCapture(
+            stateCompleter.future,
+            redirectBase: 'http://127.0.0.1:8766/callback',
+          ),
+          httpClient: MockClient((http.Request request) async {
+            if (request.url.host == 'oauth2.googleapis.com' &&
+                request.url.path == '/token') {
+              return http.Response(
+                jsonEncode(<String, Object?>{
+                  'access_token': 'google-access-api-disabled',
+                  'refresh_token': 'google-refresh-api-disabled',
+                  'expires_in': 3600,
+                  'token_type': 'Bearer',
+                  'scope': fullScope,
+                }),
+                200,
+                headers: const <String, String>{
+                  'content-type': 'application/json',
+                },
+              );
+            }
+            final http.Response? routed = _routeGoogleSignInHttp(
+              request,
+              accessToken: 'google-access-api-disabled',
+              scope: fullScope,
+              calendarPreflight: http.Response(
+                jsonEncode(<String, Object?>{
+                  'error': <String, Object?>{
+                    'code': 403,
+                    'message':
+                        'Google Calendar API has not been used in project '
+                        '123 before or it is disabled.',
+                    'status': 'PERMISSION_DENIED',
+                    'details': <Object?>[
+                      <String, Object?>{
+                        '@type': 'type.googleapis.com/google.rpc.ErrorInfo',
+                        'reason': 'SERVICE_DISABLED',
+                        'domain': 'googleapis.com',
+                      },
+                    ],
+                  },
+                }),
+                403,
+                headers: const <String, String>{
+                  'content-type': 'application/json',
+                },
+              ),
+            );
+            if (routed != null) {
+              return routed;
+            }
+            fail('Unexpected HTTP call: ${request.url}');
+          }),
+        );
+
+        await expectLater(
+          manager.signInGoogle(),
+          throwsA(
+            isA<StateError>().having(
+              (StateError e) => e.message,
+              'message',
+              allOf(
+                contains('Google Calendar API'),
+                contains('SERVICE_DISABLED'),
+                contains('console.cloud.google.com'),
+              ),
+            ),
+          ),
+        );
+      },
+    );
   });
 
   group('OAuthIdentityManager Google refresh scope guard (DEF-061)', () {
@@ -847,21 +1034,28 @@ void main() {
           ),
           clock: () => now,
           httpClient: MockClient((http.Request request) async {
-            expect(request.url.path, '/token');
-            refreshCalls += 1;
-            return http.Response(
-              jsonEncode(<String, Object?>{
-                'access_token': 'google-access-mail-only-from-stale-rt',
-                'expires_in': 3600,
-                'token_type': 'Bearer',
-                // Stale RT predates Wave G — mints mail-only AT.
-                'scope': 'openid email profile https://mail.google.com/',
-              }),
-              200,
-              headers: const <String, String>{
-                'content-type': 'application/json',
-              },
-            );
+            if (request.url.path == '/token') {
+              refreshCalls += 1;
+              return http.Response(
+                jsonEncode(<String, Object?>{
+                  'access_token': 'google-access-mail-only-from-stale-rt',
+                  'expires_in': 3600,
+                  'token_type': 'Bearer',
+                  // Stale RT predates Wave G — mints mail-only AT.
+                  'scope': 'openid email profile https://mail.google.com/',
+                }),
+                200,
+                headers: const <String, String>{
+                  'content-type': 'application/json',
+                },
+              );
+            }
+            if (_isGoogleTokenInfo(request)) {
+              return _googleTokenInfoResponse(
+                'openid email profile https://mail.google.com/',
+              );
+            }
+            fail('Unexpected HTTP call: ${request.url}');
           }),
         );
 

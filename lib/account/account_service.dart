@@ -166,14 +166,15 @@ class AccountService {
   ///
   /// Persists `providerType: imap` (Drift CHECK) with `credentialsRef` of the
   /// form `google:$id`, Gmail host secrets, `imap.auth=xoauth2`, and Google
-  /// token secrets — not an app password.
+  /// token secrets — not an app password. Requires [refreshToken] so People +
+  /// Calendar sync cannot fall back to a stale mail-only grant (DEF-061).
   Future<MailAccount> addGoogleImapAccount({
     required String id,
     required String label,
     required String address,
     required Color accent,
     required String accessToken,
-    String? refreshToken,
+    required String refreshToken,
     DateTime? expiresAt,
     String? credentialsRef,
     bool focusEnabled = true,
@@ -183,6 +184,15 @@ class AccountService {
         accessToken,
         'accessToken',
         'Must not be empty.',
+      );
+    }
+    final String trimmedRefresh = refreshToken.trim();
+    if (trimmedRefresh.isEmpty) {
+      throw ArgumentError.value(
+        refreshToken,
+        'refreshToken',
+        'Sign in with Google must return an offline refresh token with '
+        'People + Calendar scopes (DEF-061).',
       );
     }
     final String trimmedAddress = address.trim();
@@ -199,11 +209,11 @@ class AccountService {
       focusEnabled: focusEnabled,
       credentialsRef: ref,
     );
-    await _identityManager.saveGoogleToken(
+    await _identityManager.replaceGoogleToken(
       ref,
       accessToken,
-      refreshToken,
-      expiresAt,
+      refreshToken: trimmedRefresh,
+      expiresAt: expiresAt,
     );
     await Future.wait(<Future<void>>[
       _credentials.writeSecret(

@@ -7,7 +7,9 @@
 // Last Update: 2026-07-27
 // ==============================================================================
 
+import 'dart:async';
 import 'dart:convert';
+import 'dart:developer' as developer;
 import 'dart:io';
 import 'dart:math';
 
@@ -131,16 +133,37 @@ class GoogleAuthConfig {
     'https://www.googleapis.com/auth/calendar',
   ];
 
-  /// Scopes that must appear in Google's token `scope` response (DEF-061).
+  /// Preferred scopes that must appear in Google's token `scope` response.
   ///
   /// Identity scopes (`openid` / `email` / `profile`) are requested but not
-  /// listed here — Google's granular UI treats them separately, and mail PIM
-  /// sync depends on the three API scopes below.
+  /// listed here — Google's granular UI treats them separately. See
+  /// [requiredGrantedScopeAlternatives] for read-equivalent tokens Google may
+  /// return under granular consent (DEF-061).
   static const List<String> requiredGrantedScopes = <String>[
     'https://mail.google.com/',
     'https://www.googleapis.com/auth/contacts.readonly',
     'https://www.googleapis.com/auth/calendar',
   ];
+
+  /// Each inner list is one required capability; any listed token satisfies it.
+  ///
+  /// Exact token match only (never substring). `calendar.events` alone does
+  /// **not** authorize `calendarList.list` — only `calendar` /
+  /// `calendar.readonly` (and calendarlist variants) do.
+  static const List<List<String>> requiredGrantedScopeAlternatives =
+      <List<String>>[
+        <String>['https://mail.google.com/'],
+        <String>[
+          'https://www.googleapis.com/auth/contacts.readonly',
+          'https://www.googleapis.com/auth/contacts',
+        ],
+        <String>[
+          'https://www.googleapis.com/auth/calendar',
+          'https://www.googleapis.com/auth/calendar.readonly',
+          'https://www.googleapis.com/auth/calendar.calendarlist',
+          'https://www.googleapis.com/auth/calendar.calendarlist.readonly',
+        ],
+      ];
 
   /// Parses Google's space-delimited `scope` field into normalized tokens.
   static Set<String> parseGrantedScopes(String? scopeHeader) {
@@ -154,19 +177,36 @@ class GoogleAuthConfig {
         .toSet();
   }
 
-  /// Required API scopes absent from [scopeHeader].
+  /// Required API capabilities absent from [scopeHeader].
   ///
-  /// Matching is **exact per token** (case-insensitive). Substring checks are
-  /// unsafe: `calendar.readonly` / `calendar.events` contain the
-  /// `.../auth/calendar` prefix and would false-pass full `calendar`.
+  /// Matching is **exact per token** (case-insensitive) against
+  /// [requiredGrantedScopeAlternatives]. Substring checks are unsafe:
+  /// `calendar.events` contains the `.../auth/calendar` prefix but does not
+  /// authorize `users/me/calendarList`.
+  ///
+  /// Returns the **preferred** missing scope URI from [requiredGrantedScopes]
+  /// for each unsatisfied alternative group (stable error copy).
   static List<String> missingRequiredScopes(String? scopeHeader) {
     final Set<String> granted = parseGrantedScopes(scopeHeader);
-    return requiredGrantedScopes
-        .where((String required) => !granted.contains(required.toLowerCase()))
-        .toList(growable: false);
+    final List<String> missing = <String>[];
+    for (int i = 0; i < requiredGrantedScopeAlternatives.length; i++) {
+      final List<String> alternatives = requiredGrantedScopeAlternatives[i];
+      final bool satisfied = alternatives.any(
+        (String scope) => granted.contains(scope.toLowerCase()),
+      );
+      if (!satisfied) {
+        missing.add(
+          i < requiredGrantedScopes.length
+              ? requiredGrantedScopes[i]
+              : alternatives.first,
+        );
+      }
+    }
+    return List<String>.unmodifiable(missing);
   }
 
-  /// True when [scopeHeader] includes every [requiredGrantedScopes] token.
+  /// True when [scopeHeader] satisfies every [requiredGrantedScopeAlternatives]
+  /// group.
   static bool hasRequiredGrantedScopes(String? scopeHeader) =>
       missingRequiredScopes(scopeHeader).isEmpty;
 
@@ -245,7 +285,9 @@ class GoogleSignInResult {
   });
 
   final String accessToken;
-  final String? refreshToken;
+
+  /// Offline refresh token — always present after a successful [signInGoogle].
+  final String refreshToken;
   final DateTime expiresAt;
   final String email;
   final String displayName;
@@ -594,25 +636,42 @@ class OAuthIdentityManager {
     final _TokenResponse tokens = await _exchangeGoogleRefreshToken(
       refreshToken,
     );
-    // Stale pre-Wave-G refresh tokens mint mail-only access tokens. Refuse to
-    // persist them over a still-valid expanded grant (DEF-061).
-    if (tokens.scope != null && tokens.scope!.trim().isNotEmpty) {
-      final List<String> missing = GoogleAuthConfig.missingRequiredScopes(
-        tokens.scope,
+    // Always verify the minted AT via tokeninfo (authoritative). Do not trust
+    // a missing/partial token-endpoint `scope` field — Google may omit it and
+    // a stale RT can still mint mail-only ATs (DEF-061).
+    final String? tokenInfoScope = await _fetchGoogleTokenInfoScopes(
+      tokens.accessToken,
+    );
+    final String? effectiveScope = tokenInfoScope ?? tokens.scope;
+    if (effectiveScope == null || effectiveScope.trim().isEmpty) {
+      throw StateError(
+        'Google token refresh succeeded but Synesis could not verify the '
+        'access token scopes (tokeninfo unavailable and token response omitted '
+        'scope).\n\n'
+        'Refuse to persist an unverified token over People/Calendar grants. '
+        'Retry sync shortly; if this persists, remove Synesis under Google '
+        'Account → Third-party access, full-restart the app, then '
+        'Re-authenticate with Google.',
       );
-      if (missing.isNotEmpty) {
-        throw StateError(
-          'Google token refresh returned an access token missing required '
-          'scope(s): ${missing.map((String s) => '"$s"').join(', ')}.\n\n'
-          'The stored refresh token predates People/Calendar consent (or was '
-          'not replaced on re-auth). Google Account may still list Calendar '
-          'for Synesis while this older refresh token cannot mint it.\n\n'
-          'Fix: Google Account → Security → Third-party access → remove '
-          'Synesis, then Edit account → Re-authenticate with Google '
-          '(full app restart — not hot reload).',
-        );
-      }
     }
+    final List<String> missing = GoogleAuthConfig.missingRequiredScopes(
+      effectiveScope,
+    );
+    if (missing.isNotEmpty) {
+      _logGoogleGrantedScopes(effectiveScope, phase: 'refresh-rejected');
+      throw StateError(
+        'Google token refresh returned an access token missing required '
+        'scope(s): ${missing.map((String s) => '"$s"').join(', ')}.\n\n'
+        'The stored refresh token predates People/Calendar consent (or was '
+        'not replaced on re-auth). Google Account may still list Calendar '
+        'for Synesis while this older refresh token cannot mint it.\n\n'
+        'Fix: Google Account → Security → Third-party access → remove '
+        'Synesis, then Edit account → Re-authenticate with Google '
+        '(full app restart — not hot reload). Also confirm People API + '
+        'Google Calendar API are enabled on the OAuth client\'s GCP project.',
+      );
+    }
+    _logGoogleGrantedScopes(effectiveScope, phase: 'refresh');
     await saveGoogleToken(
       credentialsRef,
       tokens.accessToken,
@@ -757,12 +816,26 @@ class OAuthIdentityManager {
         'People + Calendar scopes. Use a full app restart — not hot reload.',
       );
     }
-    // Prefer tokeninfo (authoritative for the access token) over the token
-    // endpoint `scope` field alone.
+    // Fail closed: tokeninfo is authoritative. Never fall back to the token
+    // endpoint `scope` alone — under granular consent that field can disagree
+    // with what Calendar/People APIs actually accept (DEF-061 dogfood).
     final String? tokenInfoScope = await _fetchGoogleTokenInfoScopes(
       tokens.accessToken,
     );
-    _ensureGoogleGrantedScopes(tokenInfoScope ?? tokens.scope);
+    if (tokenInfoScope == null || tokenInfoScope.isEmpty) {
+      throw StateError(
+        'Google sign-in succeeded but Synesis could not verify access token '
+        'scopes via tokeninfo.\n\n'
+        'Check network access to oauth2.googleapis.com, then retry. Synesis '
+        'will not save an unverified Google token for People/Calendar sync.',
+      );
+    }
+    _ensureGoogleGrantedScopes(tokenInfoScope);
+    _logGoogleGrantedScopes(tokenInfoScope, phase: 'sign-in');
+    // Live API preflight — catches ACCESS_TOKEN_SCOPE_INSUFFICIENT and
+    // SERVICE_DISABLED (Calendar/People API not enabled on the GCP project)
+    // before credentials are persisted.
+    await _preflightGooglePimApis(tokens.accessToken);
     final _UserProfile profile = await _fetchGoogleUserInfo(tokens.accessToken);
 
     return GoogleSignInResult(
@@ -793,7 +866,8 @@ class OAuthIdentityManager {
       'If Google Account already lists Calendar for Synesis, remove Synesis '
       'under Third-party access and re-auth so a new refresh token is issued '
       '(full app restart). Also confirm People API + Google Calendar API are '
-      'enabled in Google Cloud and your account is a test user if Testing.',
+      'enabled in Google Cloud Console for the same project as your OAuth '
+      'client (APIs & Services → Enabled APIs).',
     );
   }
 
@@ -1026,29 +1100,176 @@ class OAuthIdentityManager {
 
   /// Returns the space-delimited `scope` claim for [accessToken] via tokeninfo.
   ///
-  /// Null when tokeninfo is unavailable — callers fall back to the token
-  /// endpoint `scope` field.
+  /// Uses POST so long access tokens are not truncated by URL length limits.
+  /// Tries `oauth2.googleapis.com/tokeninfo` then the legacy
+  /// `www.googleapis.com/oauth2/v3/tokeninfo` host. Null when both fail —
+  /// callers must fail closed for interactive sign-in / refresh (DEF-061).
   Future<String?> _fetchGoogleTokenInfoScopes(String accessToken) async {
-    final Uri uri = Uri.https('oauth2.googleapis.com', '/tokeninfo', <String, String>{
-      'access_token': accessToken,
-    });
-    final http.Response response = await _httpClient.get(
-      uri,
-      headers: const <String, String>{'Accept': 'application/json'},
+    final String trimmed = accessToken.trim();
+    if (trimmed.isEmpty) {
+      return null;
+    }
+    final List<Uri> endpoints = <Uri>[
+      Uri.https('oauth2.googleapis.com', '/tokeninfo'),
+      Uri.https('www.googleapis.com', '/oauth2/v3/tokeninfo'),
+    ];
+    for (final Uri endpoint in endpoints) {
+      try {
+        final http.Response response = await _httpClient.post(
+          endpoint,
+          headers: const <String, String>{
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'Accept': 'application/json',
+          },
+          body: <String, String>{'access_token': trimmed},
+        );
+        if (response.statusCode < 200 || response.statusCode >= 300) {
+          continue;
+        }
+        final Object? decoded = jsonDecode(response.body);
+        if (decoded is! Map<Object?, Object?>) {
+          continue;
+        }
+        final Object? scope = decoded['scope'];
+        if (scope is! String) {
+          continue;
+        }
+        final String scopeTrimmed = scope.trim();
+        if (scopeTrimmed.isNotEmpty) {
+          return scopeTrimmed;
+        }
+      } on FormatException {
+        continue;
+      } on http.ClientException {
+        continue;
+      } on HandshakeException {
+        continue;
+      } on SocketException {
+        continue;
+      } on TimeoutException {
+        continue;
+      }
+    }
+    return null;
+  }
+
+  /// Calls Calendar + People with the fresh AT before credentials are saved.
+  ///
+  /// Distinguishes ACCESS_TOKEN_SCOPE_INSUFFICIENT from SERVICE_DISABLED /
+  /// accessNotConfigured so operators get a GCP enablement checklist instead
+  /// of another "revoke and re-auth" loop (DEF-061).
+  Future<void> _preflightGooglePimApis(String accessToken) async {
+    final Map<String, String> headers = <String, String>{
+      'Authorization': 'Bearer ${accessToken.trim()}',
+      'Accept': 'application/json',
+    };
+    final http.Response calendarResponse = await _httpClient.get(
+      Uri.parse(
+        'https://www.googleapis.com/calendar/v3/users/me/calendarList'
+        '?maxResults=1',
+      ),
+      headers: headers,
     );
-    if (response.statusCode < 200 || response.statusCode >= 300) {
-      return null;
+    _throwIfGooglePimPreflightFailed(
+      apiLabel: 'Google Calendar API',
+      enablementUrl:
+          'https://console.cloud.google.com/apis/library/calendar-json.googleapis.com',
+      response: calendarResponse,
+    );
+
+    final http.Response peopleResponse = await _httpClient.get(
+      Uri.parse(
+        'https://people.googleapis.com/v1/contactGroups?pageSize=1',
+      ),
+      headers: headers,
+    );
+    _throwIfGooglePimPreflightFailed(
+      apiLabel: 'People API',
+      enablementUrl:
+          'https://console.cloud.google.com/apis/library/people.googleapis.com',
+      response: peopleResponse,
+    );
+  }
+
+  static void _throwIfGooglePimPreflightFailed({
+    required String apiLabel,
+    required String enablementUrl,
+    required http.Response response,
+  }) {
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      return;
     }
-    final Object? decoded = jsonDecode(response.body);
-    if (decoded is! Map<Object?, Object?>) {
-      return null;
+    // 401 here is unexpected right after mint — surface body for diagnosis.
+    final _GoogleApiErrorParsed parsed = _GoogleApiErrorParsed.parse(
+      response.body,
+    );
+    if (response.statusCode == 403 && parsed.isServiceDisabled) {
+      throw StateError(
+        '$apiLabel is not enabled (or not usable) for the Google Cloud '
+        'project that owns Synesis\'s OAuth client.\n\n'
+        'Google reason: ${parsed.reason ?? 'SERVICE_DISABLED'}.\n'
+        '${parsed.message}\n\n'
+        'Operator checklist:\n'
+        '1. Open Google Cloud Console → select the project for '
+        'SYNESIS_GOOGLE_CLIENT_ID (oauth_local.json / dart-define).\n'
+        '2. APIs & Services → Library → enable $apiLabel:\n'
+        '   $enablementUrl\n'
+        '3. OAuth consent screen → add the People/Calendar scopes Synesis '
+        'requests; add your Google account as a Test user if Publishing '
+        'status is Testing.\n'
+        '4. Wait 1–2 minutes, full-restart Synesis, remove the account if '
+        'partially added, then Sign in with Google again.\n\n'
+        'This is not fixed by revoking third-party access alone (DEF-061).',
+      );
     }
-    final Object? scope = decoded['scope'];
-    if (scope is! String) {
-      return null;
+    if (response.statusCode == 403 && parsed.isInsufficientScopes) {
+      throw StateError(
+        '$apiLabel rejected the access token: insufficient authentication '
+        'scopes (DEF-061).\n\n'
+        'Google reason: ${parsed.reason ?? 'ACCESS_TOKEN_SCOPE_INSUFFICIENT'}.\n'
+        '${parsed.message}\n\n'
+        'On consent, enable every Contacts/People and Calendar checkbox, then '
+        'retry. If Google Account already lists those grants, remove Synesis '
+        'under Third-party access, full-restart, and sign in again.\n'
+        'Also confirm $apiLabel is enabled on the OAuth client\'s GCP project '
+        '($enablementUrl) — Google sometimes surfaces disabled APIs loosely.',
+      );
     }
-    final String trimmed = scope.trim();
-    return trimmed.isEmpty ? null : trimmed;
+    if (response.statusCode == 401 || response.statusCode == 403) {
+      throw StateError(
+        '$apiLabel preflight failed (${response.statusCode}): '
+        '${parsed.message}\n\n'
+        'status=${parsed.status ?? '(none)'} '
+        'reason=${parsed.reason ?? '(none)'}.\n'
+        'Enable $apiLabel at $enablementUrl if the body mentions the API is '
+        'disabled / accessNotConfigured.',
+      );
+    }
+    // Soft-fail other 5xx — scopes and enablement already look fine; SyncEngine
+    // will retry. Still log for dogfood.
+    assert(() {
+      developer.log(
+        'Google PIM preflight non-fatal ${response.statusCode} for $apiLabel: '
+        '${parsed.message}',
+        name: 'synesis.oauth',
+      );
+      return true;
+    }());
+  }
+
+  static void _logGoogleGrantedScopes(
+    String scopeHeader, {
+    required String phase,
+  }) {
+    assert(() {
+      final List<String> scopes =
+          GoogleAuthConfig.parseGrantedScopes(scopeHeader).toList()..sort();
+      developer.log(
+        'Google OAuth scopes ($phase): ${scopes.join(' ')}',
+        name: 'synesis.oauth',
+      );
+      return true;
+    }());
   }
 
   static Future<void> _defaultLaunchBrowser(Uri authorizationUrl) async {
@@ -1073,6 +1294,92 @@ class OAuthIdentityManager {
   static String _codeChallengeS256(String verifier) {
     final Digest digest = sha256.convert(utf8.encode(verifier));
     return base64UrlEncode(digest.bytes).replaceAll('=', '');
+  }
+}
+
+/// Parsed Google API JSON error body (Calendar / People 403 diagnostics).
+class _GoogleApiErrorParsed {
+  const _GoogleApiErrorParsed({
+    required this.message,
+    this.status,
+    this.reason,
+  });
+
+  final String message;
+  final String? status;
+  final String? reason;
+
+  bool get isInsufficientScopes {
+    final String haystack =
+        '${message.toLowerCase()} ${(reason ?? '').toLowerCase()} '
+        '${(status ?? '').toLowerCase()}';
+    return haystack.contains('insufficient authentication scopes') ||
+        haystack.contains('access_token_scope_insufficient');
+  }
+
+  bool get isServiceDisabled {
+    final String haystack =
+        '${message.toLowerCase()} ${(reason ?? '').toLowerCase()}';
+    return haystack.contains('service_disabled') ||
+        haystack.contains('accessnotconfigured') ||
+        haystack.contains('has not been used in project') ||
+        haystack.contains('is disabled');
+  }
+
+  static _GoogleApiErrorParsed parse(String body) {
+    String message = body.trim().isEmpty ? '(empty body)' : body.trim();
+    String? status;
+    String? reason;
+    try {
+      final Object? decoded = jsonDecode(body);
+      if (decoded is Map<Object?, Object?>) {
+        final Object? error = decoded['error'];
+        if (error is Map<Object?, Object?>) {
+          message = (error['message'] as String?)?.trim().isNotEmpty == true
+              ? (error['message'] as String).trim()
+              : message;
+          status = (error['status'] as String?)?.trim();
+          final Object? details = error['details'];
+          if (details is List<Object?>) {
+            for (final Object? detail in details) {
+              if (detail is! Map<Object?, Object?>) {
+                continue;
+              }
+              final String? detailReason = (detail['reason'] as String?)?.trim();
+              if (detailReason != null && detailReason.isNotEmpty) {
+                reason = detailReason;
+                break;
+              }
+            }
+          }
+          // Older error shape: error.errors[].reason
+          if (reason == null) {
+            final Object? errors = error['errors'];
+            if (errors is List<Object?>) {
+              for (final Object? entry in errors) {
+                if (entry is! Map<Object?, Object?>) {
+                  continue;
+                }
+                final String? entryReason = (entry['reason'] as String?)?.trim();
+                if (entryReason != null && entryReason.isNotEmpty) {
+                  reason = entryReason;
+                  break;
+                }
+              }
+            }
+          }
+        } else if (error is String && error.trim().isNotEmpty) {
+          message = error.trim();
+        }
+      }
+    } on FormatException {
+      // Keep raw body.
+    }
+    return _GoogleApiErrorParsed(
+      message: message,
+      status: status,
+      reason: reason,
+    );
   }
 }
 

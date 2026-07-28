@@ -342,6 +342,13 @@ void main() {
             'code': 403,
             'message': 'Request had insufficient authentication scopes.',
             'status': 'PERMISSION_DENIED',
+            'details': <Object>[
+              <String, Object>{
+                '@type': 'type.googleapis.com/google.rpc.ErrorInfo',
+                'reason': 'ACCESS_TOKEN_SCOPE_INSUFFICIENT',
+                'domain': 'googleapis.com',
+              },
+            ],
           },
         }),
         403,
@@ -369,8 +376,62 @@ void main() {
               'message',
               allOf(
                 contains('DEF-061'),
+                contains('ACCESS_TOKEN_SCOPE_INSUFFICIENT'),
                 contains('Third-party'),
                 contains('checkbox'),
+              ),
+            ),
+      ),
+    );
+  });
+
+  test('listCalendars maps 403 SERVICE_DISABLED to GCP enablement guidance', () async {
+    final http.Client client = MockClient((http.Request request) async {
+      return http.Response(
+        jsonEncode(<String, Object>{
+          'error': <String, Object>{
+            'code': 403,
+            'message':
+                'Google Calendar API has not been used in project 1 before '
+                'or it is disabled.',
+            'status': 'PERMISSION_DENIED',
+            'details': <Object>[
+              <String, Object>{
+                '@type': 'type.googleapis.com/google.rpc.ErrorInfo',
+                'reason': 'SERVICE_DISABLED',
+                'domain': 'googleapis.com',
+              },
+            ],
+          },
+        }),
+        403,
+        headers: const <String, String>{'content-type': 'application/json'},
+      );
+    });
+
+    final GooglePimProvider provider = GooglePimProvider(
+      () async => 'token',
+      client: client,
+    );
+    addTearDown(provider.dispose);
+
+    await expectLater(
+      provider.listCalendars(),
+      throwsA(
+        isA<ProtocolException>()
+            .having(
+              (ProtocolException e) => e.statusCode,
+              'statusCode',
+              403,
+            )
+            .having(
+              (ProtocolException e) => e.message,
+              'message',
+              allOf(
+                contains('DEF-061'),
+                contains('SERVICE_DISABLED'),
+                contains('APIs & Services'),
+                contains('SYNESIS_GOOGLE_CLIENT_ID'),
               ),
             ),
       ),

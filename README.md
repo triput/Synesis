@@ -116,7 +116,7 @@ Register OAuth clients in Google Cloud Console so Synesis can run authorization 
    - Configure an External (or Internal) consent screen
    - Add scopes: `openid`, `email`, `profile`, `https://mail.google.com/` *(Gmail IMAP/SMTP)*
    - Add PIM scopes *(Wave G)*: `https://www.googleapis.com/auth/contacts.readonly` *(People API — contact sync)* and `https://www.googleapis.com/auth/calendar` *(Calendar API — calendar/event sync; full `calendar`, not readonly, mirrors Graph `Calendars.ReadWrite` posture for future write-back)*
-   - Enable **People API** and **Google Calendar API** on the Google Cloud project
+   - **Enable APIs on the same project as the OAuth client** (DEF-061): **People API** + **Google Calendar API** under APIs & Services → Library (`people.googleapis.com`, `calendar-json.googleapis.com`). A token can list Calendar in Google Account while `calendars_*` still 403 if the API is disabled — Synesis now fails Sign-in with `SERVICE_DISABLED` guidance when preflight detects that.
    - Add test users while the app is in Testing
 
 2. **Credentials → Create credentials → OAuth client ID**
@@ -137,7 +137,7 @@ flutter run -d windows \
   --dart-define=SYNESIS_GOOGLE_CLIENT_SECRET=optional-if-required
 ```
 
-   **Re-consent:** Existing Google XOAUTH accounts signed in before Wave G only hold mail scopes. After upgrading to a Wave G+ build, **full-restart** the app, then **sign in again** (**Edit account → Re-authenticate with Google**) so a **new offline refresh token** includes People + Calendar scopes. On Google's granular consent UI, **enable every Contacts/People and Calendar checkbox**. If Google Account already lists Calendar for Synesis but Calendar sync still 403s, remove Synesis under Google Account → Third-party access and re-auth (stale refresh token — DEF-061).
+   **Re-consent:** Existing Google XOAUTH accounts signed in before Wave G only hold mail scopes. After upgrading to a Wave G+ build, **full-restart** the app, then **sign in again** (**Edit account → Re-authenticate with Google**) so a **new offline refresh token** includes People + Calendar scopes. On Google's granular consent UI, **enable every Contacts/People and Calendar checkbox**. If Calendar still 403s after revoke + re-add (DEF-061), first enable **Google Calendar API** + **People API** on the OAuth client's GCP project, then rebuild with the latest DEF-061 fix (sign-in preflight will name `SERVICE_DISABLED` vs missing scopes).
 
 Both Graph and Google can be set together:
 

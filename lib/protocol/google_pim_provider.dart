@@ -1039,37 +1039,42 @@ class GooglePimProvider extends GraphPimProvider {
       if (response.statusCode == 401) {
         throw const GraphAuthException();
       }
-      String message = response.body;
-      try {
-        final Object? decoded = jsonDecode(response.body);
-        if (decoded is Map<Object?, Object?>) {
-          final Object? error = decoded['error'];
-          if (error is Map<Object?, Object?>) {
-            message = error['message'] as String? ?? message;
-          }
-        }
-      } on FormatException {
-        // Keep raw body.
-      }
-      if (response.statusCode == 403 && _isInsufficientScopesMessage(message)) {
-        throw const ProtocolException(
-          'Google access token is missing People/Calendar scopes (DEF-061). '
-          'Often a stale pre-Wave-G refresh token: remove Synesis under '
-          'Google Account → Third-party access, full-restart the app, then '
-          'Edit account → Re-authenticate with Google (enable every '
-          'Contacts/Calendar checkbox). Also enable People + Calendar APIs '
-          'in Google Cloud.',
+      final _GoogleHttpErrorParsed parsed = _GoogleHttpErrorParsed.parse(
+        response.body,
+      );
+      if (response.statusCode == 403 && parsed.isServiceDisabled) {
+        throw ProtocolException(
+          'Google API is disabled for this OAuth client\'s Cloud project '
+          '(DEF-061). reason=${parsed.reason ?? 'SERVICE_DISABLED'} '
+          'status=${parsed.status ?? 'PERMISSION_DENIED'}. '
+          '${parsed.message} '
+          'Enable People API + Google Calendar API under APIs & Services → '
+          'Library on the same GCP project as SYNESIS_GOOGLE_CLIENT_ID, wait '
+          'a minute, full-restart Synesis, then Sign in with Google again. '
+          'Revoking third-party access alone will not fix this.',
           statusCode: 403,
         );
       }
-      throw ProtocolException(message, statusCode: response.statusCode);
+      if (response.statusCode == 403 && parsed.isInsufficientScopes) {
+        throw ProtocolException(
+          'Google access token is missing People/Calendar scopes (DEF-061). '
+          'reason=${parsed.reason ?? 'ACCESS_TOKEN_SCOPE_INSUFFICIENT'} '
+          'status=${parsed.status ?? 'PERMISSION_DENIED'}. '
+          '${parsed.message} '
+          'Often a stale refresh token or unchecked granular-consent boxes: '
+          'remove Synesis under Google Account → Third-party access, '
+          'full-restart the app, then Re-authenticate with Google (enable '
+          'every Contacts/Calendar checkbox). Also enable People + Calendar '
+          'APIs in Google Cloud for the OAuth client project — Google may '
+          'surface a disabled API with this same message.',
+          statusCode: 403,
+        );
+      }
+      throw ProtocolException(
+        parsed.message,
+        statusCode: response.statusCode,
+      );
     }
-  }
-
-  static bool _isInsufficientScopesMessage(String message) {
-    final String normalized = message.toLowerCase();
-    return normalized.contains('insufficient authentication scopes') ||
-        normalized.contains('access_token_scope_insufficient');
   }
 
   void _ensureNotDisposed() {
@@ -1078,6 +1083,92 @@ class GooglePimProvider extends GraphPimProvider {
         'This Google PIM provider has been disposed.',
       );
     }
+  }
+}
+
+/// Parsed Google JSON error for Calendar/People HTTP responses.
+class _GoogleHttpErrorParsed {
+  const _GoogleHttpErrorParsed({
+    required this.message,
+    this.status,
+    this.reason,
+  });
+
+  final String message;
+  final String? status;
+  final String? reason;
+
+  bool get isInsufficientScopes {
+    final String haystack =
+        '${message.toLowerCase()} ${(reason ?? '').toLowerCase()}';
+    return haystack.contains('insufficient authentication scopes') ||
+        haystack.contains('access_token_scope_insufficient');
+  }
+
+  bool get isServiceDisabled {
+    final String haystack =
+        '${message.toLowerCase()} ${(reason ?? '').toLowerCase()}';
+    return haystack.contains('service_disabled') ||
+        haystack.contains('accessnotconfigured') ||
+        haystack.contains('has not been used in project') ||
+        (haystack.contains('is disabled') &&
+            haystack.contains('api'));
+  }
+
+  static _GoogleHttpErrorParsed parse(String body) {
+    String message = body.trim().isEmpty ? '(empty body)' : body.trim();
+    String? status;
+    String? reason;
+    try {
+      final Object? decoded = jsonDecode(body);
+      if (decoded is Map<Object?, Object?>) {
+        final Object? error = decoded['error'];
+        if (error is Map<Object?, Object?>) {
+          final String? errorMessage = (error['message'] as String?)?.trim();
+          if (errorMessage != null && errorMessage.isNotEmpty) {
+            message = errorMessage;
+          }
+          status = (error['status'] as String?)?.trim();
+          final Object? details = error['details'];
+          if (details is List<Object?>) {
+            for (final Object? detail in details) {
+              if (detail is! Map<Object?, Object?>) {
+                continue;
+              }
+              final String? detailReason = (detail['reason'] as String?)?.trim();
+              if (detailReason != null && detailReason.isNotEmpty) {
+                reason = detailReason;
+                break;
+              }
+            }
+          }
+          if (reason == null) {
+            final Object? errors = error['errors'];
+            if (errors is List<Object?>) {
+              for (final Object? entry in errors) {
+                if (entry is! Map<Object?, Object?>) {
+                  continue;
+                }
+                final String? entryReason = (entry['reason'] as String?)?.trim();
+                if (entryReason != null && entryReason.isNotEmpty) {
+                  reason = entryReason;
+                  break;
+                }
+              }
+            }
+          }
+        } else if (error is String && error.trim().isNotEmpty) {
+          message = error.trim();
+        }
+      }
+    } on FormatException {
+      // Keep raw body.
+    }
+    return _GoogleHttpErrorParsed(
+      message: message,
+      status: status,
+      reason: reason,
+    );
   }
 }
 

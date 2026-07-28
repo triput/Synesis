@@ -417,6 +417,7 @@ void main() {
           address: 'casey@gmail.com',
           accent: const Color(0xFFEA4335),
           accessToken: '   ',
+          refreshToken: 'google-refresh',
         ),
         throwsArgumentError,
       );
