@@ -73,7 +73,7 @@ No Pri-1 defects found. Nothing added to `DEFECTS.md` for this wave.
 | Google Calendar events never persist a Calendar `syncToken` cursor | Info — accepted MVP | Windowed `singleEvents` pulls return `deltaLink: null` (API incompatibility documented on provider). Every events pull is a horizon full snapshot + missing soft-delete. Provider-level syncToken/cancelled tests remain for future incremental enablement. |
 | Contact-group member pull capped (`maxMembers: 1000`, batchGet slices) | Low | Large custom groups may truncate until a follow-up paging wave. My Contacts connections path paginates with syncToken. |
 | `addGoogleImapAccount` unit test does not assert PIM job type names | Low | Code enqueues PIM bootstrap; `updateGoogleCredentials` test asserts the three job types; engine tests cover job handlers. Optional tighten later. |
-| No automatic “missing People/Calendar scope” UI detector | Low | **DEF-061 (2026-07-27):** root cause was granular consent + mail-only grant validation — fixed (`requiredGrantedScopes` + 403 copy). Jobs-sheet needs-reauth CTA still open (share DEF-058). |
+| Google Calendar 403 insufficient scopes after re-auth | Pri-2 | **DEF-061 reopened (2026-07-27):** Trish confirmed explicit People/Calendar grant still 403s. `af9e06d` hardening incomplete. **Tesla owns** remaining fix (scope-token exact match / refresh overwrite / credentialsRef). |
 | Workspace dogfood not executed in this gate | Info | Operator script in checklist; does not block code GO (parity with Wave 4/5). |
 | Google write-back / RSVP out of scope | Accepted MVP | `respondToEvent` throws `UnsupportedError`; `events_push`/`contacts_push` remain no-ops. |
 
