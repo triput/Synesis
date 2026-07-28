@@ -11,6 +11,8 @@ import 'package:drift/drift.dart';
 import 'package:synesis/domain/pim.dart';
 import 'package:synesis/domain/pim_ids.dart';
 import 'package:synesis/repository/database.dart';
+import 'package:synesis/repository/drift/drift_mappers.dart';
+import 'package:uuid/uuid.dart';
 
 /// Thin PIM persistence facade (Wave 1 P0 — no provider adapters).
 ///
@@ -24,6 +26,7 @@ class DriftPimStore {
 
   final SynesisDatabase _database;
   final void Function() _notify;
+  final Uuid _uuid = const Uuid();
 
   /// Deterministic local primary key for a provider-scoped PIM row.
   ///
@@ -119,6 +122,35 @@ class DriftPimStore {
         }
       }
     });
+    _notify();
+  }
+
+  /// Partially updates local display preferences for a contact list.
+  /// Only non-null arguments are written; leaves other columns untouched.
+  Future<void> setContactListDisplayPrefs(
+    String listId, {
+    bool? isSelectedForDisplay,
+    int? sortIndex,
+    int? colorArgb,
+  }) async {
+    if (isSelectedForDisplay == null && sortIndex == null && colorArgb == null) {
+      return;
+    }
+    await (_database.update(
+      _database.contactLists,
+    )..where((ContactLists table) => table.id.equals(listId))).write(
+      ContactListsCompanion(
+        isSelectedForDisplay: isSelectedForDisplay == null
+            ? const Value.absent()
+            : Value<bool>(isSelectedForDisplay),
+        sortIndex: sortIndex == null
+            ? const Value.absent()
+            : Value<int?>(sortIndex),
+        colorArgb: colorArgb == null
+            ? const Value.absent()
+            : Value<int?>(colorArgb),
+      ),
+    );
     _notify();
   }
 
@@ -277,6 +309,137 @@ class DriftPimStore {
     _notify();
   }
 
+  /// Searches contacts by [query] against display name / company / notes
+  /// (via `contact_fts`) and email address (via `LIKE` on `contact_emails`,
+  /// which FTS does not index), merged and de-duplicated by contact id.
+  ///
+  /// Scopes to [listSelectedContactLists] when [selectedListsOnly] (default),
+  /// always excludes soft-deleted contacts, and caps results at [limit].
+  Future<List<ContactSearchHit>> searchContacts(
+    String query, {
+    String? accountId,
+    bool selectedListsOnly = true,
+    int limit = 25,
+  }) async {
+    final String trimmed = query.trim();
+    if (trimmed.isEmpty || limit <= 0) {
+      return const <ContactSearchHit>[];
+    }
+
+    Set<String>? allowedListIds;
+    if (selectedListsOnly) {
+      final List<ContactList> selected = await listSelectedContactLists(
+        accountId: accountId,
+      );
+      if (selected.isEmpty) {
+        return const <ContactSearchHit>[];
+      }
+      allowedListIds = selected.map((ContactList list) => list.id).toSet();
+    }
+
+    final List<String> ftsIds = await _ftsContactIds(trimmed);
+    final List<String> emailMatchIds = await _emailMatchContactIds(trimmed);
+    final Set<String> ftsIdSet = ftsIds.toSet();
+    final List<String> orderedCandidateIds = <String>[
+      ...ftsIds,
+      for (final String id in emailMatchIds)
+        if (!ftsIdSet.contains(id)) id,
+    ];
+    if (orderedCandidateIds.isEmpty) {
+      return const <ContactSearchHit>[];
+    }
+
+    final query2 = _database.select(_database.contacts)
+      ..where(
+        (Contacts table) =>
+            table.id.isIn(orderedCandidateIds) & table.deletedAt.isNull(),
+      );
+    if (accountId != null) {
+      query2.where((Contacts table) => table.accountId.equals(accountId));
+    }
+    final List<ContactRow> rows = await query2.get();
+    final Map<String, ContactRow> rowsById = <String, ContactRow>{
+      for (final ContactRow row in rows) row.id: row,
+    };
+
+    final List<ContactSearchHit> hits = <ContactSearchHit>[];
+    for (final String id in orderedCandidateIds) {
+      final ContactRow? row = rowsById[id];
+      if (row == null) {
+        continue;
+      }
+      if (allowedListIds != null &&
+          !allowedListIds.contains(row.contactListId)) {
+        continue;
+      }
+      final Contact contact = _contactFromRow(row);
+      final List<ContactEmail> emails = await listContactEmails(id);
+      ContactEmail? bestEmail;
+      for (final ContactEmail email in emails) {
+        if (email.isPrimary) {
+          bestEmail = email;
+          break;
+        }
+      }
+      bestEmail ??= emails.isNotEmpty ? emails.first : null;
+      hits.add(
+        ContactSearchHit(
+          contact: contact,
+          displayName: contact.displayName,
+          email: bestEmail?.address,
+        ),
+      );
+      if (hits.length >= limit) {
+        break;
+      }
+    }
+    return hits;
+  }
+
+  /// Contact ids ranked by FTS relevance (`bm25`) for [query].
+  Future<List<String>> _ftsContactIds(String query) async {
+    final String matchQuery = toFtsQuery(query);
+    if (matchQuery.isEmpty) {
+      return const <String>[];
+    }
+    final List<QueryRow> hits = await _database
+        .customSelect(
+          'SELECT contact_id FROM contact_fts WHERE contact_fts MATCH ? '
+          'ORDER BY bm25(contact_fts)',
+          variables: <Variable<Object>>[Variable<String>(matchQuery)],
+        )
+        .get();
+    return hits
+        .map((QueryRow row) => row.read<String>('contact_id'))
+        .toList(growable: false);
+  }
+
+  /// Contact ids whose email address contains [query] (case-insensitive
+  /// `LIKE`), in first-match order, de-duplicated.
+  Future<List<String>> _emailMatchContactIds(String query) async {
+    final String pattern = '%${_escapeLike(query)}%';
+    final List<ContactEmailRow> rows = await (_database.select(
+      _database.contactEmails,
+    )..where(
+          (ContactEmails table) =>
+              table.address.like(pattern, escapeChar: r'\'),
+        ))
+        .get();
+    final List<String> ids = <String>[];
+    final Set<String> seen = <String>{};
+    for (final ContactEmailRow row in rows) {
+      if (seen.add(row.contactId)) {
+        ids.add(row.contactId);
+      }
+    }
+    return ids;
+  }
+
+  static String _escapeLike(String value) => value
+      .replaceAll(r'\', r'\\')
+      .replaceAll('%', r'\%')
+      .replaceAll('_', r'\_');
+
   // ---------------------------------------------------------------------------
   // Calendars
   // ---------------------------------------------------------------------------
@@ -395,6 +558,37 @@ class DriftPimStore {
     _notify();
   }
 
+  /// Partially updates local display preferences for a calendar. Only
+  /// non-null arguments are written; leaves other columns untouched.
+  Future<void> setCalendarDisplayPrefs(
+    String calendarId, {
+    bool? isSelectedForDisplay,
+    int? sortIndex,
+    int? colorOverrideArgb,
+  }) async {
+    if (isSelectedForDisplay == null &&
+        sortIndex == null &&
+        colorOverrideArgb == null) {
+      return;
+    }
+    await (_database.update(
+      _database.calendars,
+    )..where((Calendars table) => table.id.equals(calendarId))).write(
+      CalendarsCompanion(
+        isSelectedForDisplay: isSelectedForDisplay == null
+            ? const Value.absent()
+            : Value<bool>(isSelectedForDisplay),
+        sortIndex: sortIndex == null
+            ? const Value.absent()
+            : Value<int?>(sortIndex),
+        colorOverrideArgb: colorOverrideArgb == null
+            ? const Value.absent()
+            : Value<int?>(colorOverrideArgb),
+      ),
+    );
+    _notify();
+  }
+
   // ---------------------------------------------------------------------------
   // Events
   // ---------------------------------------------------------------------------
@@ -442,6 +636,63 @@ class DriftPimStore {
     return events
         .where((CalendarEvent event) => calendarIds.contains(event.calendarId))
         .toList(growable: false);
+  }
+
+  /// Events overlapping `[startEpochMsInclusive, endEpochMsExclusive)`.
+  ///
+  /// Overlap uses the standard interval test: the event starts before the
+  /// range end AND ends after the range start. When [calendarIds] is `null`
+  /// and [selectedCalendarsOnly] is true (default), scopes to
+  /// [listSelectedCalendars]; pass an explicit (possibly empty) [calendarIds]
+  /// list to override that default.
+  Future<List<CalendarEvent>> listEventsInRange({
+    required int startEpochMsInclusive,
+    required int endEpochMsExclusive,
+    String? accountId,
+    List<String>? calendarIds,
+    bool selectedCalendarsOnly = true,
+    bool includeDeleted = false,
+  }) async {
+    Set<String>? allowedCalendarIds;
+    if (calendarIds != null) {
+      allowedCalendarIds = calendarIds.toSet();
+      if (allowedCalendarIds.isEmpty) {
+        return const <CalendarEvent>[];
+      }
+    } else if (selectedCalendarsOnly) {
+      final List<Calendar> selected = await listSelectedCalendars(
+        accountId: accountId,
+      );
+      if (selected.isEmpty) {
+        return const <CalendarEvent>[];
+      }
+      allowedCalendarIds = selected
+          .map((Calendar calendar) => calendar.id)
+          .toSet();
+    }
+
+    final query = _database.select(_database.events);
+    query.where((Events table) {
+      Expression<bool> predicate =
+          table.startEpochMs.isSmallerThanValue(endEpochMsExclusive) &
+          table.endEpochMs.isBiggerThanValue(startEpochMsInclusive);
+      if (accountId != null) {
+        predicate = predicate & table.accountId.equals(accountId);
+      }
+      final Set<String>? allowed = allowedCalendarIds;
+      if (allowed != null) {
+        predicate = predicate & table.calendarId.isIn(allowed);
+      }
+      if (!includeDeleted) {
+        predicate = predicate & table.deletedAt.isNull();
+      }
+      return predicate;
+    });
+    query.orderBy(<OrderingTerm Function(Events)>[
+      (Events table) => OrderingTerm.asc(table.startEpochMs),
+    ]);
+    final List<EventRow> rows = await query.get();
+    return rows.map(_eventFromRow).toList(growable: false);
   }
 
   /// Looks up an event by account + remote provider id.
@@ -492,6 +743,113 @@ class DriftPimStore {
             );
       }
     });
+    _notify();
+  }
+
+  /// Creates a **local-only** event (no sync job enqueued — callers that
+  /// need provider push must go through the sync/outbox layer separately).
+  ///
+  /// When [providerId] is omitted, generates `local:{uuid}` so the row still
+  /// has a stable `(accountId, providerId)` identity consistent with synced
+  /// rows. Defaults to [findDefaultCalendar] when [calendarId] is omitted;
+  /// throws [StateError] if the account has no calendars in either case.
+  Future<CalendarEvent> createLocalEvent({
+    required String accountId,
+    required String title,
+    required int startEpochMs,
+    required int endEpochMs,
+    String? calendarId,
+    String? body,
+    bool allDay = false,
+    String? location,
+    String? rrule,
+    int? reminderMinutes,
+    String? providerId,
+  }) async {
+    final String effectiveProviderId = providerId ?? 'local:${_uuid.v4()}';
+    String? targetCalendarId = calendarId;
+    if (targetCalendarId == null) {
+      final Calendar? defaultCalendar = await findDefaultCalendar(accountId);
+      if (defaultCalendar == null) {
+        throw StateError(
+          'createLocalEvent requires an explicit calendarId: account '
+          '"$accountId" has no calendars.',
+        );
+      }
+      targetCalendarId = defaultCalendar.id;
+    }
+    final CalendarEvent event = CalendarEvent(
+      id: stableLocalId(accountId, effectiveProviderId),
+      accountId: accountId,
+      calendarId: targetCalendarId,
+      providerId: effectiveProviderId,
+      title: title,
+      body: body,
+      startEpochMs: startEpochMs,
+      endEpochMs: endEpochMs,
+      allDay: allDay,
+      location: location,
+      rrule: rrule,
+      reminderMinutes: reminderMinutes,
+      updatedAt: DateTime.now().millisecondsSinceEpoch,
+    );
+    await _database
+        .into(_database.events)
+        .insert(
+          EventsCompanion.insert(
+            id: event.id,
+            accountId: event.accountId,
+            calendarId: event.calendarId,
+            providerId: event.providerId,
+            title: event.title,
+            body: Value<String?>(event.body),
+            startEpochMs: event.startEpochMs,
+            endEpochMs: event.endEpochMs,
+            allDay: Value<bool>(event.allDay),
+            location: Value<String?>(event.location),
+            rrule: Value<String?>(event.rrule),
+            reminderMinutes: Value<int?>(event.reminderMinutes),
+            updatedAt: event.updatedAt,
+          ),
+        );
+    _notify();
+    return event;
+  }
+
+  /// Overwrites all mutable fields of an existing event by [CalendarEvent.id]
+  /// (local-only write path — no sync job enqueued). Stamps `updatedAt` to
+  /// now regardless of the value on [event].
+  Future<void> updateLocalEvent(CalendarEvent event) async {
+    await (_database.update(
+      _database.events,
+    )..where((Events table) => table.id.equals(event.id))).write(
+      EventsCompanion(
+        calendarId: Value<String>(event.calendarId),
+        title: Value<String>(event.title),
+        body: Value<String?>(event.body),
+        startEpochMs: Value<int>(event.startEpochMs),
+        endEpochMs: Value<int>(event.endEpochMs),
+        allDay: Value<bool>(event.allDay),
+        location: Value<String?>(event.location),
+        rrule: Value<String?>(event.rrule),
+        reminderMinutes: Value<int?>(event.reminderMinutes),
+        etag: Value<String?>(event.etag),
+        updatedAt: Value<int>(DateTime.now().millisecondsSinceEpoch),
+        deletedAt: Value<int?>(event.deletedAt),
+      ),
+    );
+    _notify();
+  }
+
+  /// Marks an event deleted locally by stamping `deletedAt` (local-only —
+  /// no sync job enqueued).
+  Future<void> softDeleteEvent(String eventId) async {
+    final int now = DateTime.now().millisecondsSinceEpoch;
+    await (_database.update(
+      _database.events,
+    )..where((Events table) => table.id.equals(eventId))).write(
+      EventsCompanion(deletedAt: Value<int?>(now), updatedAt: Value<int>(now)),
+    );
     _notify();
   }
 

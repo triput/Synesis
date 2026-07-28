@@ -2,9 +2,9 @@
 // File: lib/ui/settings/settings_sections.dart
 // Description: UI-P21 functional-area section bodies for the Settings shell
 // Component: UI
-// Version: 1.1 (Gold Master)
+// Version: 1.2 (Gold Master)
 // Created: 2026-07-23
-// Last Update: 2026-07-23
+// Last Update: 2026-07-27
 // ==============================================================================
 
 import 'package:flutter/material.dart';
@@ -136,6 +136,34 @@ class AppearanceSettingsSection extends StatelessWidget {
               selected: <ViewDensity>{settings.density},
               onSelectionChanged: (Set<ViewDensity> value) =>
                   cubit.setDensity(value.first),
+            ),
+            const SizedBox(height: 18),
+            Text(
+              'Calendar view',
+              style: TextStyle(color: t.muted, fontSize: 12),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'How events from multiple selected calendars are laid out '
+              'in the Calendar module.',
+              style: TextStyle(color: t.muted, fontSize: 11),
+            ),
+            const SizedBox(height: 8),
+            SegmentedButton<CalendarViewMode>(
+              key: const Key('settings_calendar_view_mode'),
+              segments: const <ButtonSegment<CalendarViewMode>>[
+                ButtonSegment<CalendarViewMode>(
+                  value: CalendarViewMode.overlay,
+                  label: Text('Overlay'),
+                ),
+                ButtonSegment<CalendarViewMode>(
+                  value: CalendarViewMode.sideBySide,
+                  label: Text('Side-by-side'),
+                ),
+              ],
+              selected: <CalendarViewMode>{settings.calendarViewMode},
+              onSelectionChanged: (Set<CalendarViewMode> value) =>
+                  cubit.setCalendarViewMode(value.first),
             ),
           ],
         );

@@ -2,9 +2,9 @@
 // File: lib/ui/compose/compose_sheet.dart
 // Description: Unified ComposeDraft sheet — BCC, attach, signature, schedule, drafts.
 // Component: UI
-// Version: 2.1 (Gold Master)
+// Version: 2.2 (Gold Master)
 // Created: 2026-07-14
-// Last Update: 2026-07-24
+// Last Update: 2026-07-27
 // ==============================================================================
 
 import 'dart:async';
@@ -22,6 +22,7 @@ import 'package:synesis/theme/app_theme.dart';
 import 'package:synesis/theme/theme_tokens.dart';
 import 'package:synesis/ui/compose/compose_draft.dart';
 import 'package:synesis/ui/compose/compose_prefill.dart';
+import 'package:synesis/ui/compose/contact_picker.dart';
 import 'package:synesis/ui/mailbox/mailbox_cubit.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
@@ -706,10 +707,9 @@ class _ComposeSheetBodyState extends State<_ComposeSheetBody> {
                   },
             decoration: _fieldDecoration(t, labelText: 'From'),
           ),
-          TextField(
+          ContactRecipientField(
             controller: _toController,
-            style: TextStyle(color: t.text),
-            onChanged: (_) {
+            onChanged: () {
               if (_recipientError != null) {
                 setState(() => _recipientError = null);
               }
@@ -729,14 +729,12 @@ class _ComposeSheetBodyState extends State<_ComposeSheetBody> {
             ),
           ),
           if (_showCcBcc) ...<Widget>[
-            TextField(
+            ContactRecipientField(
               controller: _ccController,
-              style: TextStyle(color: t.text),
               decoration: _fieldDecoration(t, labelText: 'Cc'),
             ),
-            TextField(
+            ContactRecipientField(
               controller: _bccController,
-              style: TextStyle(color: t.text),
               decoration: _fieldDecoration(t, labelText: 'Bcc'),
             ),
           ],

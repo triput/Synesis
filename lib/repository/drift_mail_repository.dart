@@ -2,9 +2,9 @@
 // File: lib/repository/drift_mail_repository.dart
 // Description: Thin Drift-backed MailRepository façade over store modules.
 // Component: Repository / Data
-// Version: 1.1 (Gold Master)
+// Version: 1.2 (Gold Master)
 // Created: 2026-07-14
-// Last Update: 2026-07-18
+// Last Update: 2026-07-27
 // ==============================================================================
 
 import 'dart:async';
@@ -70,6 +70,11 @@ class DriftMailRepository implements MailRepository {
 
   @override
   Stream<void> watchChanges() => _changes.stream;
+
+  /// Fires [watchChanges] for writers outside the internal store modules
+  /// (Wave 5: [DriftPimStore] shares this stream so Calendar/People/compose
+  /// picker cubits refresh whenever a PIM row changes).
+  void notifyChanges() => _notifyChanged();
 
   Future<void> close() async {
     await _changes.close();

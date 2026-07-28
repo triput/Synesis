@@ -427,6 +427,35 @@ FILE_META: dict[str, dict[str, str]] = {
         "component": "UI / Shell",
         "platform": "All",
     },
+    # V2 Wave 5 / V2.0c — compose picker + Calendar/People UI (Renee delta 2026-07-27)
+    "calendar_cubit_test.dart": {
+        "wave": "V2-W5",
+        "tier_refs": "V2.0c;W5-2;W5-4",
+        "kind": "bloc",
+        "component": "PIM / Calendar",
+        "platform": "All",
+    },
+    "contact_picker_test.dart": {
+        "wave": "V2-W5",
+        "tier_refs": "V2.0c;W5-1",
+        "kind": "unit",
+        "component": "Compose / PIM",
+        "platform": "All",
+    },
+    "module_shell_test.dart": {
+        "wave": "V2-W5",
+        "tier_refs": "V2.0c;W5-3",
+        "kind": "widget",
+        "component": "UI / Shell",
+        "platform": "All",
+    },
+    "pim_store_test.dart": {
+        "wave": "V2-W1",
+        "tier_refs": "V2.0a;P0;W5-6",
+        "kind": "unit",
+        "component": "PIM / Data",
+        "platform": "All",
+    },
 }
 
 # Suite-level wave overrides from Renee inventory (file, group) -> wave.
@@ -464,6 +493,11 @@ GROUP_WAVE: dict[tuple[str, str], str] = {
     ("sync_profile_test.dart", "applyRetention account scope"): "W3",
     ("sync_profile_test.dart", "SyncEngine folder scope"): "W3",
     ("sync_profile_test.dart", "MessageBodyCache bodyPolicy"): "W3",
+    # V2 Wave 5 store/UI delta (Renee 2026-07-27)
+    ("pim_store_test.dart", "DriftPimStore.searchContacts"): "V2-W5",
+    ("pim_store_test.dart", "DriftPimStore.listEventsInRange"): "V2-W5",
+    ("pim_store_test.dart", "DriftPimStore display preference writers"): "V2-W5",
+    ("pim_store_test.dart", "DriftPimStore local event CRUD"): "V2-W5",
 }
 
 # Case-level wave overrides (file, test_name) -> wave.
@@ -638,8 +672,9 @@ def wave_sort_key(wave: str) -> tuple[int, str]:
         "W5": 6,
         "W6": 7,
         "W7": 8,
-        "X": 9,
-        "Unmapped": 10,
+        "V2-W5": 9,
+        "X": 10,
+        "Unmapped": 11,
     }
     return (order.get(wave, 99), wave)
 
@@ -854,7 +889,8 @@ def write_xlsx(rows: list[dict[str, str]]) -> None:
             "Foundation": "Pre-wave / milestone foundation",
             "X": "Cross-cutting (touches multiple waves)",
             "Unmapped": "Needs wave assignment",
-            "W5": "In progress — inventory refreshed from Renee suite overrides",
+            "W5": "V1 Windows desktop wave",
+            "V2-W5": "V2.0c compose picker + Calendar/People UI (Wave 5 exit 2026-07-27)",
             "W4": "Compose wave mostly pending; early outbox/send coverage present",
             "W7": "Theme polish / hardening samples",
         }.get(wave, "")

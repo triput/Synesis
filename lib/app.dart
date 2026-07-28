@@ -2,9 +2,9 @@
 // File: lib/app.dart
 // Description: Root MaterialApp with BLoC providers and theme binding
 // Component: UI
-// Version: 1.2 (Gold Master)
+// Version: 1.3 (Gold Master)
 // Created: 2026-07-14
-// Last Update: 2026-07-18
+// Last Update: 2026-07-27
 // ==============================================================================
 
 import 'dart:async';
@@ -22,6 +22,7 @@ import 'package:synesis/mailbox/message_body_cache.dart';
 import 'package:synesis/mime/eml_codec.dart';
 import 'package:synesis/notifications/app_foreground_tracker.dart';
 import 'package:synesis/pim/meeting_invite_service.dart';
+import 'package:synesis/repository/drift/drift_pim_store.dart';
 import 'package:synesis/repository/mail_repository.dart';
 import 'package:synesis/settings/app_settings_cubit.dart';
 import 'package:synesis/settings/app_settings_state.dart';
@@ -30,9 +31,11 @@ import 'package:synesis/sync/sync_engine.dart';
 import 'package:synesis/theme/app_theme.dart';
 import 'package:synesis/theme/custom_theme.dart';
 import 'package:synesis/theme/theme_tokens.dart';
+import 'package:synesis/ui/calendar/calendar_cubit.dart';
 import 'package:synesis/ui/mailbox/mailbox_cubit.dart';
+import 'package:synesis/ui/people/people_cubit.dart';
 import 'package:synesis/ui/shell/eml_preview_sheet.dart';
-import 'package:synesis/ui/shell/mail_workspace.dart';
+import 'package:synesis/ui/shell/module_shell.dart';
 
 class SynesisApp extends StatelessWidget {
   const SynesisApp({
@@ -43,6 +46,7 @@ class SynesisApp extends StatelessWidget {
     required this.accountService,
     required this.identityManager,
     required this.resolveProvider,
+    required this.pimStore,
     this.meetingInviteService,
     this.retentionService,
     this.settingsCubit,
@@ -66,6 +70,7 @@ class SynesisApp extends StatelessWidget {
   final DetachedMessageWindowController detachedMessageWindowController;
   final AppForegroundTracker? foregroundTracker;
   final String? launchEmlPath;
+  final DriftPimStore pimStore;
 
   @override
   Widget build(BuildContext context) {
@@ -78,6 +83,7 @@ class SynesisApp extends StatelessWidget {
         RepositoryProvider<RetentionService>.value(value: retention),
         RepositoryProvider<AccountService>.value(value: accountService),
         RepositoryProvider<OAuthIdentityManager>.value(value: identityManager),
+        RepositoryProvider<DriftPimStore>.value(value: pimStore),
         if (meetingInviteService != null)
           RepositoryProvider<MeetingInviteService>.value(
             value: meetingInviteService!,
@@ -117,6 +123,17 @@ class SynesisApp extends StatelessWidget {
               cubit.attachDbWatch();
               return cubit;
             },
+          ),
+          BlocProvider<CalendarCubit>(
+            create: (context) => CalendarCubit(
+              pimStore: pimStore,
+              repository: repository,
+              settingsCubit: context.read<AppSettingsCubit>(),
+            ),
+          ),
+          BlocProvider<PeopleCubit>(
+            create: (context) =>
+                PeopleCubit(pimStore: pimStore, repository: repository),
           ),
         ],
         child: BlocListener<AppSettingsCubit, AppSettingsState>(
@@ -323,5 +340,5 @@ class _LaunchHomeState extends State<_LaunchHome> {
   }
 
   @override
-  Widget build(BuildContext context) => const MailWorkspace();
+  Widget build(BuildContext context) => const ModuleShell();
 }

@@ -158,6 +158,20 @@ class CalendarEvent {
   final int? deletedAt;
 }
 
+/// Search result row combining a [Contact] with its best-match email
+/// (primary email preferred, else first known email, else `null`).
+class ContactSearchHit {
+  const ContactSearchHit({
+    required this.contact,
+    required this.displayName,
+    this.email,
+  });
+
+  final Contact contact;
+  final String displayName;
+  final String? email;
+}
+
 /// Attendee on a [CalendarEvent] (P2 meeting-mail bridge).
 class EventAttendee {
   const EventAttendee({

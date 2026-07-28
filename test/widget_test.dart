@@ -1,3 +1,4 @@
+import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -9,6 +10,9 @@ import 'package:synesis/compose/account_signature.dart';
 import 'package:synesis/domain/models.dart';
 import 'package:synesis/domain/sync_profile.dart';
 import 'package:synesis/query/message_query.dart';
+import 'package:synesis/repository/database.dart'
+    hide SyncProfile, CustomTheme, FocusRule;
+import 'package:synesis/repository/drift/drift_pim_store.dart';
 import 'package:synesis/repository/mail_repository.dart';
 import 'package:synesis/sync/sync_engine.dart';
 import 'package:synesis/theme/custom_theme.dart';
@@ -435,6 +439,13 @@ void main() {
       identityManager,
     );
 
+    // ModuleShell keeps Calendar/People workspaces alive in an IndexedStack
+    // alongside Mail, so their cubits need a real (in-memory) DriftPimStore
+    // even though this test only exercises the default Mail module.
+    final SynesisDatabase pimDatabase = SynesisDatabase(NativeDatabase.memory());
+    final DriftPimStore pimStore = DriftPimStore(pimDatabase, notify: () {});
+    addTearDown(pimDatabase.close);
+
     final view = tester.view;
     view.physicalSize = const Size(1400, 900);
     view.devicePixelRatio = 1.0;
@@ -449,6 +460,7 @@ void main() {
         accountService: accountService,
         identityManager: identityManager,
         resolveProvider: (_) async => null,
+        pimStore: pimStore,
       ),
     );
     await tester.pumpAndSettle();

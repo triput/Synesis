@@ -2,7 +2,7 @@
 
 | Field | Value |
 | --- | --- |
-| Status | **In progress** — **Wave 4 / V2.0b complete** (2026-07-27, `f2bd29b`, 556 tests); **Wave 5 / V2.0c next** (picker + Calendar UI). Wave 0 ✅; Wave H ✅; **Wave 1 / P0 ✅** (2026-07-27, `00ebdef`); **Wave 2 / P1 ✅** (2026-07-27, `b526e70`, 530 tests); **Wave 3 / P2 ✅** (2026-07-27, `7cbfdaa`, 551 tests, [V2_WAVE3_QA.md](V2_WAVE3_QA.md)). Wave 4 checklist: [V2_WAVE4_CHECKLIST.md](V2_WAVE4_CHECKLIST.md); Renee QA: [V2_WAVE4_QA.md](V2_WAVE4_QA.md) (**GO**). **Re-consent:** `Contacts.Read` + **`Calendars.ReadWrite`** in Graph OAuth scopes; existing accounts re-sign-in via Edit account → re-auth |
+| Status | **In progress** — **Wave 5 / V2.0c complete** (2026-07-27, exit SHA `pending`, **585 tests**); **Wave 6 next** (cross-account DnD copy). **Wave 4 / V2.0b complete** (2026-07-27, `f2bd29b`, 556 tests). Wave 0 ✅; Wave H ✅; **Wave 1 / P0 ✅** (2026-07-27, `00ebdef`); **Wave 2 / P1 ✅** (2026-07-27, `b526e70`, 530 tests); **Wave 3 / P2 ✅** (2026-07-27, `7cbfdaa`, 551 tests, [V2_WAVE3_QA.md](V2_WAVE3_QA.md)). Wave 4 checklist: [V2_WAVE4_CHECKLIST.md](V2_WAVE4_CHECKLIST.md); Renee QA: [V2_WAVE4_QA.md](V2_WAVE4_QA.md) (**GO**). Wave 5 checklist: [V2_WAVE5_CHECKLIST.md](V2_WAVE5_CHECKLIST.md) ✅; Renee QA: [V2_WAVE5_QA.md](V2_WAVE5_QA.md) (**GO**, 585 tests). **Re-consent:** `Contacts.Read` + **`Calendars.ReadWrite`** in Graph OAuth scopes; existing accounts re-sign-in via Edit account → re-auth |
 | Headline | Contacts & calendar (TD-A) — not a new phone OS |
 | Prerequisite | V1 exit signed off; **V1.5 complete** ([V1_5_PLAN.md](V1_5_PLAN.md)) |
 | Watch | **P3 → V2.1** (not V2.0 critical path) |
@@ -57,7 +57,7 @@ Local store is provider-agnostic (`contacts` / `events` + sync cursors), same ph
 
 Per-version hygiene after V1.5 freeze: toolchain + pub debt + native/plugin skew + docs SDK pins. Checklist: [WAVE_H_DEPENDENCY_HYGIENE.md](WAVE_H_DEPENDENCY_HYGIENE.md).
 
-**Sequence:** Wave 0 → **Wave H ✅** → **Wave 1 (P0) ✅** → **Wave 2 (P1) ✅** → **Wave 3 (P2) ✅** → **Wave 4 (P3–P4) ✅** → **Wave 5 (P5–P6) ← next** → Waves 6–7.
+**Sequence:** Wave 0 → **Wave H ✅** → **Wave 1 (P0) ✅** → **Wave 2 (P1) ✅** → **Wave 3 (P2) ✅** → **Wave 4 (P3–P4) ✅** → **Wave 5 (P5–P6) ✅** → **Wave 6 ← next** → Wave 7.
 
 | Batch | Scope | Notes |
 | --- | --- | --- |
@@ -71,7 +71,7 @@ Per-version hygiene after V1.5 freeze: toolchain + pub debt + native/plugin skew
 
 ## 5. Operator waves (working sequence)
 
-**Status:** **Wave 1 complete** (2026-07-27, `00ebdef`); **Wave 2 complete** (2026-07-27, `b526e70`); **Wave 3 complete** (2026-07-27, 551 tests); **Wave 4 complete** (2026-07-27, `f2bd29b`, 556 tests); **Wave 5 next** (picker + Calendar UI). V2.0a / V2.0b / V2.0c below remain **release buckets** for ship grouping; operator execution follows this table.
+**Status:** **Wave 1 complete** (2026-07-27, `00ebdef`); **Wave 2 complete** (2026-07-27, `b526e70`); **Wave 3 complete** (2026-07-27, 551 tests); **Wave 4 complete** (2026-07-27, `f2bd29b`, 556 tests); **Wave 5 complete** (2026-07-27, exit SHA `pending`, 585 tests); **Wave 6 next** (cross-account DnD copy). V2.0a / V2.0b / V2.0c below remain **release buckets** for ship grouping; operator execution follows this table.
 
 | Wave | Scope | Owner(s) | Maps to |
 | --- | --- | --- | --- |
@@ -81,11 +81,11 @@ Per-version hygiene after V1.5 freeze: toolchain + pub debt + native/plugin skew
 | **Wave 2** | P1 — Graph contacts + calendars (multi-list/cal sync) | Tesla | **V2.0a P1** ✅ **Complete** (2026-07-27, `b526e70`) |
 | **Wave 3** | P2 — meeting-mail bridge (ICS, RSVP, local `.ics` drafts) | Tesla + Jules | **V2.0a P2** ✅ **Complete** (2026-07-27, `7cbfdaa`, 551 tests) |
 | **Wave 4** | P3–P4 — CardDAV/CalDAV (Runbox; multi address-book / calendar discovery) | Tesla + Jules | V2.0b ✅ **Complete** (2026-07-27, `f2bd29b`, 556 tests) |
-| **Wave 5** | P5–P6 — compose contact picker (FTS across selected lists) + Calendar module UI (multi-select overlay / side-by-side) | Jules | V2.0c ← **next** |
-| **Wave 6** | Cross-account / cross-list **DnD copy** for events + contacts (local copy + push) | Jules + Tesla | Post-V2.0c polish |
+| **Wave 5** | P5–P6 — compose contact picker (FTS across selected lists) + Calendar module UI (multi-select overlay / side-by-side) | Jules + Tesla | V2.0c ✅ **Complete** (2026-07-27, exit SHA `pending`, 585 tests) |
+| **Wave 6** | Cross-account / cross-list **DnD copy** for events + contacts (local copy + push) | Jules + Tesla | Post-V2.0c ← **next** |
 | **Wave 7** | **Final polish / Trish extras** — UI niceties & enhancement backlog if time permits (resizable panes, list context menus, mobile nav polish, overflow sweeps, widget wishlist). **Not V2.0 critical path.** | Jules / Andi | Scope-creep parking lot |
 
-Checklists: [V2_0A_P0_CHECKLIST.md](V2_0A_P0_CHECKLIST.md) (Wave 1 exit); [V2_WAVE2_CHECKLIST.md](V2_WAVE2_CHECKLIST.md) (Wave 2 exit ✅); [V2_WAVE3_CHECKLIST.md](V2_WAVE3_CHECKLIST.md) (Wave 3 exit ✅); [V2_WAVE4_CHECKLIST.md](V2_WAVE4_CHECKLIST.md) (Wave 4 exit ✅, `f2bd29b`, 556 tests). Wave 4 QA: [V2_WAVE4_QA.md](V2_WAVE4_QA.md) (**GO**).
+Checklists: [V2_0A_P0_CHECKLIST.md](V2_0A_P0_CHECKLIST.md) (Wave 1 exit); [V2_WAVE2_CHECKLIST.md](V2_WAVE2_CHECKLIST.md) (Wave 2 exit ✅); [V2_WAVE3_CHECKLIST.md](V2_WAVE3_CHECKLIST.md) (Wave 3 exit ✅); [V2_WAVE4_CHECKLIST.md](V2_WAVE4_CHECKLIST.md) (Wave 4 exit ✅, `f2bd29b`, 556 tests); [V2_WAVE5_CHECKLIST.md](V2_WAVE5_CHECKLIST.md) (Wave 5 exit ✅, exit SHA `pending`, 585 tests). Wave 4 QA: [V2_WAVE4_QA.md](V2_WAVE4_QA.md) (**GO**). Wave 5 QA: [V2_WAVE5_QA.md](V2_WAVE5_QA.md) (**GO**).
 
 ### Wave 7 — Final polish / Trish extras (parking lot)
 
@@ -198,9 +198,28 @@ P6  Calendar module UI (month/week, CRUD) wired to local store
 
 **Residuals (accepted MVP):** full collection pulls with missing-resource soft-delete (no `sync-collection` REPORT / CTag skip); blank Edit field does not clear saved `dav.baseUrl`; sanitize DAV error bodies in a hardening follow-up. Not blockers for Wave 5.
 
-**Exit (Wave 4):** ✅ CardDAV and CalDAV read sync land in the provider-agnostic local PIM schema; Graph PIM and mail remain unaffected; no live credentials are in the repository. **Wave 5 (compose picker + Calendar UI) is next.**
+**Exit (Wave 4):** ✅ CardDAV and CalDAV read sync land in the provider-agnostic local PIM schema; Graph PIM and mail remain unaffected; no live credentials are in the repository. **Wave 5 (compose picker + Calendar UI) complete.**
 
-## 11. Release buckets (ship grouping)
+## 11. Wave 5 — V2.0c P5–P6 (compose picker + Calendar / People UI)
+
+**Status:** **Complete** (2026-07-27, exit SHA `pending`, **585 tests**). Checklist: [V2_WAVE5_CHECKLIST.md](V2_WAVE5_CHECKLIST.md). Renee QA: [V2_WAVE5_QA.md](V2_WAVE5_QA.md) (**GO**). Prior: [V2_WAVE4_QA.md](V2_WAVE4_QA.md) (**GO**). Wave 5 lands Outlook-style module shell, local-FTS compose contact picker, Calendar workspace (month + week/agenda, local CRUD), and People workspace — all UI reads/writes through local Drift; no widget-level network; `events_push` remains no-op.
+
+| Item | Scope | Notes |
+| --- | --- | --- |
+| **Store APIs** | `searchContacts`, `listEventsInRange`, display-pref writers | Jules + Tesla; DI for `DriftPimStore` in UI — **landed** |
+| **Module shell** | Mail (default) · Calendar · People | Module switcher; no mail regression — **landed** |
+| **Compose picker (P5)** | Local `contact_fts` across selected lists | No HTTP from widgets — **landed** |
+| **Calendar UI (P6)** | Month + week/agenda; local create/edit/delete | Multi-calendar `isSelectedForDisplay` + colors; `calendarViewMode` overlay vs side-by-side — **landed** |
+| **People workspace** | Contacts from selected lists | Read-only for remote-sourced rows in Wave 5 — **landed** |
+| **Settings** | `calendarViewMode` UI if missing | Existing `AppSettingsCubit` enum — **landed** |
+
+**Out of MVP:** Wave 6 DnD copy; CalDAV/CardDAV write-back; Galaxy Watch; remote push on local CRUD.
+
+**Residuals (accepted MVP):** Calendar create/edit/delete persist in Drift only; `events_push` / `contacts_push` remain no-op. Event editor may target a deselected calendar (event hidden from grid until re-selected) — polish backlog. Resume/deep-link module restore not implemented; Mail cold-start default verified.
+
+**Exit (Wave 5):** ✅ See [V2_WAVE5_CHECKLIST.md](V2_WAVE5_CHECKLIST.md). **Wave 6 (cross-account DnD copy) unblocked.**
+
+## 12. Release buckets (ship grouping)
 
 Operator waves 1–7 map into these buckets for release narrative:
 
@@ -221,22 +240,23 @@ Operator waves 1–7 map into these buckets for release narrative:
 | **Wave 2** | P1 — Graph contacts + calendars (multi-list/cal sync) | **Complete** (2026-07-27, `b526e70`) |
 | **Wave 3** | P2 — meeting-mail bridge (ICS, RSVP, local `.ics` drafts) | **Complete** (2026-07-27, `7cbfdaa`, 551 tests) |
 | **Wave 4** | P3–P4 — CardDAV/CalDAV (Runbox) | **Complete** (2026-07-27, `f2bd29b`, 556 tests) · [V2_WAVE4_CHECKLIST.md](V2_WAVE4_CHECKLIST.md) · [V2_WAVE4_QA.md](V2_WAVE4_QA.md) (**GO**) |
+| **Wave 5** | P5–P6 — picker + Calendar/People UI | **Complete** (2026-07-27, exit SHA `pending`, 585 tests) · [V2_WAVE5_CHECKLIST.md](V2_WAVE5_CHECKLIST.md) · [V2_WAVE5_QA.md](V2_WAVE5_QA.md) (**GO**) |
 
-## 12. Exit criteria (V2.0)
+## 13. Exit criteria (V2.0)
 
-- [ ] Contact picker in compose fed by local FTS (Graph and/or CardDAV sources)
-- [ ] CardDAV sync works against **Runbox** dogfood account
-- [ ] CalDAV sync works against **Runbox** dogfood account
-- [ ] Calendar module: month + week (or agenda); create / edit / delete events
+- [x] Contact picker in compose fed by local FTS (Graph and/or CardDAV sources)
+- [x] CardDAV sync works against **Runbox** dogfood account
+- [x] CalDAV sync works against **Runbox** dogfood account
+- [x] Calendar module: month + week (or agenda); create / edit / delete events *(local Drift only; `events_push` no-op)*
 - [x] Meeting invite actionable from mail body; `.ics` → event draft
-- [ ] Graph account: contacts + events sync without breaking mail
-- [ ] Mail remains default launch surface; Calendar/People reachable via module switcher
-- [ ] Multi-calendar display: select 1+ calendars; overlay or side-by-side; colored lanes
-- [ ] Multi-contact-list: select 1+ lists for picker and People views
+- [x] Graph account: contacts + events sync without breaking mail
+- [x] Mail remains default launch surface; Calendar/People reachable via module switcher
+- [x] Multi-calendar display: select 1+ calendars; overlay or side-by-side; colored lanes
+- [x] Multi-contact-list: select 1+ lists for picker and People views
 - [ ] Cross-account event + contact copy (DnD desktop / menu mobile) — Wave 6
 - [ ] Docs + E2E matrix rows for PIM; regression on V1/V1.5 mail paths
 
-## 13. Explicitly out of V2.0
+## 14. Explicitly out of V2.0
 
 | Item | Disposition |
 | --- | --- |
@@ -250,7 +270,7 @@ Operator waves 1–7 map into these buckets for release narrative:
 | Cross-account DnD copy (events + contacts) | **Wave 6** — after provider sync + Calendar/People UI |
 | UI niceties / operator enhancement backlog | **Wave 7 / Trish extras** — not V2.0 critical path |
 
-## 14. Forward-compat (from V1 / during V1.5)
+## 15. Forward-compat (from V1 / during V1.5)
 
 Do not expand V1.5 scope — only avoid painting corners:
 
@@ -259,7 +279,7 @@ Do not expand V1.5 scope — only avoid painting corners:
 - Compose recipients swappable from “recent headers” → contact FTS
 - Widget snapshot path reusable later for Watch (V2.1)
 
-## 15. Relationship to other docs
+## 16. Relationship to other docs
 
 | Doc | Role |
 | --- | --- |
@@ -271,6 +291,8 @@ Do not expand V1.5 scope — only avoid painting corners:
 | [V2_WAVE3_QA.md](V2_WAVE3_QA.md) | Wave 3 Renee QA — GO + Wave 4 handoff |
 | [V2_WAVE4_CHECKLIST.md](V2_WAVE4_CHECKLIST.md) | Wave 4 / V2.0b P3–P4 exit criteria ✅ |
 | [V2_WAVE4_QA.md](V2_WAVE4_QA.md) | Wave 4 Renee QA — GO + Wave 5 handoff |
+| [V2_WAVE5_CHECKLIST.md](V2_WAVE5_CHECKLIST.md) | Wave 5 / V2.0c P5–P6 exit criteria ✅ |
+| [V2_WAVE5_QA.md](V2_WAVE5_QA.md) | Wave 5 Renee QA — GO + Wave 6 handoff |
 | [WAVE_H_DEPENDENCY_HYGIENE.md](WAVE_H_DEPENDENCY_HYGIENE.md) | Wave H checklist (batches H1–H5, exit gate) |
 | [TIER_D_PLAN.md](TIER_D_PLAN.md) §4 TD-A | Horizon detail; dispositions updated to point here |
 | [V1_5_PLAN.md](V1_5_PLAN.md) | Immediate post-V1 ship before this plan executes |
@@ -280,4 +302,4 @@ Do not expand V1.5 scope — only avoid painting corners:
 
 ---
 
-*Wave 0 complete 2026-07-27. Wave H complete 2026-07-27. **Wave 1 / V2.0a P0 complete** 2026-07-27 (`00ebdef`). **Wave 2 / V2.0a P1 complete** 2026-07-27 (`b526e70`, 530 tests). **Wave 3 / V2.0a P2 complete** 2026-07-27 (`7cbfdaa`, 551 tests) — Renee GO [V2_WAVE3_QA.md](V2_WAVE3_QA.md); `Calendars.ReadWrite` re-consent; meeting-mail bridge. **Wave 4 / V2.0b complete** 2026-07-27 (`f2bd29b`, 556 tests; [V2_WAVE4_CHECKLIST.md](V2_WAVE4_CHECKLIST.md); Renee GO [V2_WAVE4_QA.md](V2_WAVE4_QA.md)). **Wave 5 (picker + Calendar UI) next.** **Wave 7 / Trish extras** parked for final polish if time permits.*
+*Wave 0 complete 2026-07-27. Wave H complete 2026-07-27. **Wave 1 / V2.0a P0 complete** 2026-07-27 (`00ebdef`). **Wave 2 / V2.0a P1 complete** 2026-07-27 (`b526e70`, 530 tests). **Wave 3 / V2.0a P2 complete** 2026-07-27 (`7cbfdaa`, 551 tests) — Renee GO [V2_WAVE3_QA.md](V2_WAVE3_QA.md); `Calendars.ReadWrite` re-consent; meeting-mail bridge. **Wave 4 / V2.0b complete** 2026-07-27 (`f2bd29b`, 556 tests; [V2_WAVE4_CHECKLIST.md](V2_WAVE4_CHECKLIST.md); Renee GO [V2_WAVE4_QA.md](V2_WAVE4_QA.md)). **Wave 5 / V2.0c complete** 2026-07-27 (exit SHA `pending`, 585 tests; [V2_WAVE5_CHECKLIST.md](V2_WAVE5_CHECKLIST.md); Renee GO [V2_WAVE5_QA.md](V2_WAVE5_QA.md)). **Wave 6** (cross-account DnD copy) is next. **Wave 7 / Trish extras** parked for final polish if time permits.*

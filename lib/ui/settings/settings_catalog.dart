@@ -3,9 +3,9 @@
 // Description: Section identifiers and searchable {label, keywords, sectionId}
 //   catalog backing the UI-P21 Settings shell search box
 // Component: UI
-// Version: 1.1 (Gold Master)
+// Version: 1.2 (Gold Master)
 // Created: 2026-07-23
-// Last Update: 2026-07-23
+// Last Update: 2026-07-27
 // ==============================================================================
 
 import 'package:flutter/material.dart';
@@ -129,6 +129,11 @@ const List<SettingsCatalogEntry> kSettingsCatalog = <SettingsCatalogEntry>[
     sectionId: SettingsSectionId.appearance,
     label: 'Density',
     keywords: <String>['calm', 'compact', 'spacing'],
+  ),
+  SettingsCatalogEntry(
+    sectionId: SettingsSectionId.appearance,
+    label: 'Calendar view',
+    keywords: <String>['overlay', 'side-by-side', 'calendar', 'multi-calendar'],
   ),
   SettingsCatalogEntry(
     sectionId: SettingsSectionId.readingAndMessageList,

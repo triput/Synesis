@@ -6,7 +6,7 @@
 
 This workspace runs a **Steve-orchestrated multi-agent team** inside Cursor: the human operator (Trish) works through **James** (sometimes *Jim*) as the session router, Steve coordinates discovery through delivery, and specialized subagents handle implementation, sync/API work, quality, and documentation. The stack is tuned for the Synesis Flutter/Dart local-first email and PIM client.
 
-**V2 status (2026-07-27):** Waves 0–4 complete (account identity, dependency hygiene, PIM P0–P4). **Wave 5** (compose picker + Calendar UI) is next — see [V2 Plan](docs/V2_PLAN.md).
+**V2 status (2026-07-27):** Waves 0–5 complete (account identity, dependency hygiene, PIM P0–P6 UI). **Wave 6** (cross-account DnD copy) is next — see [V2 Plan](docs/V2_PLAN.md).
 
 ---
 

@@ -2,7 +2,7 @@
 // File: lib/main.dart
 // Description: Application entrypoint; opens database and seeds demo mail
 // Component: UI
-// Version: 1.3 (Gold Master)
+// Version: 1.4 (Gold Master)
 // Created: 2026-07-14
 // Last Update: 2026-07-27
 // ==============================================================================
@@ -139,12 +139,12 @@ Future<void> main(List<String> args) async {
   // are assigned.
   late final NotificationService notificationService;
 
+  // Wave 5: share `repository`'s broadcast change stream so Calendar/People/
+  // compose-picker cubits (which watch `repository.watchChanges()`) refresh
+  // whenever a PIM row is written, without a second stream to keep in sync.
   final DriftPimStore pimStore = DriftPimStore(
     database,
-    notify: () {
-      // PIM writes notify via repository change stream when wired through
-      // shared DB; SyncEngine does not require UI fans-out here.
-    },
+    notify: repository.notifyChanges,
   );
 
   final SyncEngine syncEngine = SyncEngine(
@@ -230,6 +230,7 @@ Future<void> main(List<String> args) async {
       identityManager: identityManager,
       meetingInviteService: meetingInviteService,
       resolveProvider: providerRegistry.resolve,
+      pimStore: pimStore,
       settingsCubit: settingsCubit,
       desktopController: desktopController,
       detachedMessageWindowController: detachedWindowController,

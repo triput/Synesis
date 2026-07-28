@@ -416,4 +416,584 @@ void main() {
       expect(contacts.single.displayName, 'Alice Updated');
     });
   });
+
+  group('DriftPimStore.searchContacts', () {
+    Future<
+      (
+        SynesisDatabase database,
+        DriftPimStore store,
+        String listVisible,
+        String listHidden,
+      )
+    >
+    seedTwoLists() async {
+      final (SynesisDatabase database, DriftPimStore store) =
+          await _openPimStore();
+      await _seedAccount(database, 'work');
+      final String listVisible = _id('work', 'default');
+      final String listHidden = _id('work', 'archive');
+      await store.upsertContactLists(<ContactList>[
+        ContactList(
+          id: listVisible,
+          accountId: 'work',
+          providerId: 'default',
+          name: 'Contacts',
+          isDefault: true,
+        ),
+        ContactList(
+          id: listHidden,
+          accountId: 'work',
+          providerId: 'archive',
+          name: 'Archive',
+          isSelectedForDisplay: false,
+        ),
+      ]);
+      return (database, store, listVisible, listHidden);
+    }
+
+    test('finds contacts by display name via FTS', () async {
+      final (
+        SynesisDatabase database,
+        DriftPimStore store,
+        String listVisible,
+        _,
+      ) = await seedTwoLists();
+      addTearDown(database.close);
+
+      final String aliceId = _id('work', 'p1');
+      await store.upsertContacts(<Contact>[
+        Contact(
+          id: aliceId,
+          accountId: 'work',
+          contactListId: listVisible,
+          providerId: 'p1',
+          displayName: 'Alice Anderson',
+          updatedAt: 1,
+        ),
+        Contact(
+          id: _id('work', 'p2'),
+          accountId: 'work',
+          contactListId: listVisible,
+          providerId: 'p2',
+          displayName: 'Bob Brown',
+          updatedAt: 2,
+        ),
+      ]);
+
+      final List<ContactSearchHit> hits = await store.searchContacts('Alice');
+      expect(hits, hasLength(1));
+      expect(hits.single.contact.id, aliceId);
+      expect(hits.single.displayName, 'Alice Anderson');
+    });
+
+    test('finds contacts by email address via LIKE', () async {
+      final (
+        SynesisDatabase database,
+        DriftPimStore store,
+        String listVisible,
+        _,
+      ) = await seedTwoLists();
+      addTearDown(database.close);
+
+      final String contactId = _id('work', 'p1');
+      await store.upsertContacts(<Contact>[
+        Contact(
+          id: contactId,
+          accountId: 'work',
+          contactListId: listVisible,
+          providerId: 'p1',
+          displayName: 'Someone Else',
+          updatedAt: 1,
+        ),
+      ]);
+      await store.upsertContactEmails(<ContactEmail>[
+        ContactEmail(
+          id: 'email-primary',
+          contactId: contactId,
+          address: 'quicksilver@example.com',
+          isPrimary: true,
+        ),
+      ]);
+
+      final List<ContactSearchHit> hits = await store.searchContacts(
+        'quicksilver',
+      );
+      expect(hits, hasLength(1));
+      expect(hits.single.contact.id, contactId);
+      expect(hits.single.email, 'quicksilver@example.com');
+    });
+
+    test('selectedListsOnly excludes contacts in hidden lists', () async {
+      final (
+        SynesisDatabase database,
+        DriftPimStore store,
+        String listVisible,
+        String listHidden,
+      ) = await seedTwoLists();
+      addTearDown(database.close);
+
+      final String visibleContactId = _id('work', 'p1');
+      final String hiddenContactId = _id('work', 'p2');
+      await store.upsertContacts(<Contact>[
+        Contact(
+          id: visibleContactId,
+          accountId: 'work',
+          contactListId: listVisible,
+          providerId: 'p1',
+          displayName: 'Zephyr Visible',
+          updatedAt: 1,
+        ),
+        Contact(
+          id: hiddenContactId,
+          accountId: 'work',
+          contactListId: listHidden,
+          providerId: 'p2',
+          displayName: 'Zephyr Hidden',
+          updatedAt: 2,
+        ),
+      ]);
+
+      final List<ContactSearchHit> defaultHits = await store.searchContacts(
+        'Zephyr',
+      );
+      expect(
+        defaultHits.map((ContactSearchHit hit) => hit.contact.id).toSet(),
+        <String>{visibleContactId},
+      );
+
+      final List<ContactSearchHit> allHits = await store.searchContacts(
+        'Zephyr',
+        selectedListsOnly: false,
+      );
+      expect(
+        allHits.map((ContactSearchHit hit) => hit.contact.id).toSet(),
+        <String>{visibleContactId, hiddenContactId},
+      );
+    });
+
+    test('returns empty for blank query without touching the database', () async {
+      final (
+        SynesisDatabase database,
+        DriftPimStore store,
+        _,
+        _,
+      ) = await seedTwoLists();
+      addTearDown(database.close);
+
+      expect(await store.searchContacts('   '), isEmpty);
+    });
+  });
+
+  group('DriftPimStore.listEventsInRange', () {
+    test('overlap logic includes partial and excludes disjoint events', () async {
+      final (SynesisDatabase database, DriftPimStore store) =
+          await _openPimStore();
+      addTearDown(database.close);
+      await _seedAccount(database, 'work');
+
+      final String calId = _id('work', 'primary');
+      await store.upsertCalendars(<Calendar>[
+        Calendar(
+          id: calId,
+          accountId: 'work',
+          providerId: 'primary',
+          name: 'Work',
+          colorArgb: 0xFF112233,
+          isDefault: true,
+        ),
+      ]);
+
+      await store.upsertEvents(<CalendarEvent>[
+        CalendarEvent(
+          id: _id('work', 'before'),
+          accountId: 'work',
+          calendarId: calId,
+          providerId: 'before',
+          title: 'Before range',
+          startEpochMs: 0,
+          endEpochMs: 1000,
+          updatedAt: 1,
+        ),
+        CalendarEvent(
+          id: _id('work', 'overlap-start'),
+          accountId: 'work',
+          calendarId: calId,
+          providerId: 'overlap-start',
+          title: 'Overlaps range start',
+          startEpochMs: 1500,
+          endEpochMs: 2500,
+          updatedAt: 1,
+        ),
+        CalendarEvent(
+          id: _id('work', 'inside'),
+          accountId: 'work',
+          calendarId: calId,
+          providerId: 'inside',
+          title: 'Fully inside',
+          startEpochMs: 3000,
+          endEpochMs: 4000,
+          updatedAt: 1,
+        ),
+        CalendarEvent(
+          id: _id('work', 'overlap-end'),
+          accountId: 'work',
+          calendarId: calId,
+          providerId: 'overlap-end',
+          title: 'Overlaps range end',
+          startEpochMs: 4500,
+          endEpochMs: 5500,
+          updatedAt: 1,
+        ),
+        CalendarEvent(
+          id: _id('work', 'after'),
+          accountId: 'work',
+          calendarId: calId,
+          providerId: 'after',
+          title: 'After range',
+          startEpochMs: 6000,
+          endEpochMs: 7000,
+          updatedAt: 1,
+        ),
+      ]);
+
+      final List<CalendarEvent> inRange = await store.listEventsInRange(
+        startEpochMsInclusive: 2000,
+        endEpochMsExclusive: 5000,
+      );
+
+      expect(
+        inRange.map((CalendarEvent event) => event.title).toList(),
+        <String>['Overlaps range start', 'Fully inside', 'Overlaps range end'],
+      );
+    });
+
+    test('scopes to selected calendars by default', () async {
+      final (SynesisDatabase database, DriftPimStore store) =
+          await _openPimStore();
+      addTearDown(database.close);
+      await _seedAccount(database, 'work');
+
+      final String visibleCal = _id('work', 'primary');
+      final String hiddenCal = _id('work', 'archive');
+      await store.upsertCalendars(<Calendar>[
+        Calendar(
+          id: visibleCal,
+          accountId: 'work',
+          providerId: 'primary',
+          name: 'Work',
+          colorArgb: 0xFF112233,
+          isDefault: true,
+        ),
+        Calendar(
+          id: hiddenCal,
+          accountId: 'work',
+          providerId: 'archive',
+          name: 'Archive',
+          colorArgb: 0xFF445566,
+          isSelectedForDisplay: false,
+        ),
+      ]);
+
+      await store.upsertEvents(<CalendarEvent>[
+        CalendarEvent(
+          id: _id('work', 'ev-visible'),
+          accountId: 'work',
+          calendarId: visibleCal,
+          providerId: 'ev-visible',
+          title: 'Visible event',
+          startEpochMs: 1000,
+          endEpochMs: 2000,
+          updatedAt: 1,
+        ),
+        CalendarEvent(
+          id: _id('work', 'ev-hidden'),
+          accountId: 'work',
+          calendarId: hiddenCal,
+          providerId: 'ev-hidden',
+          title: 'Hidden event',
+          startEpochMs: 1000,
+          endEpochMs: 2000,
+          updatedAt: 1,
+        ),
+      ]);
+
+      final List<CalendarEvent> defaultScoped = await store.listEventsInRange(
+        startEpochMsInclusive: 0,
+        endEpochMsExclusive: 3000,
+      );
+      expect(
+        defaultScoped.map((CalendarEvent event) => event.title).toList(),
+        <String>['Visible event'],
+      );
+
+      final List<CalendarEvent> allCalendars = await store.listEventsInRange(
+        startEpochMsInclusive: 0,
+        endEpochMsExclusive: 3000,
+        selectedCalendarsOnly: false,
+      );
+      expect(
+        allCalendars.map((CalendarEvent event) => event.title).toSet(),
+        <String>{'Visible event', 'Hidden event'},
+      );
+
+      final List<CalendarEvent> explicitCalendars = await store
+          .listEventsInRange(
+            startEpochMsInclusive: 0,
+            endEpochMsExclusive: 3000,
+            calendarIds: <String>[hiddenCal],
+          );
+      expect(
+        explicitCalendars.map((CalendarEvent event) => event.title).toList(),
+        <String>['Hidden event'],
+      );
+    });
+  });
+
+  group('DriftPimStore display preference writers', () {
+    test('setContactListDisplayPrefs persists partial updates', () async {
+      final (SynesisDatabase database, DriftPimStore store) =
+          await _openPimStore();
+      addTearDown(database.close);
+      await _seedAccount(database, 'work');
+
+      final String listId = _id('work', 'default');
+      await store.upsertContactLists(<ContactList>[
+        ContactList(
+          id: listId,
+          accountId: 'work',
+          providerId: 'default',
+          name: 'Contacts',
+          isDefault: true,
+          sortIndex: 0,
+        ),
+      ]);
+
+      await store.setContactListDisplayPrefs(
+        listId,
+        isSelectedForDisplay: false,
+        sortIndex: 9,
+      );
+
+      ContactList reread = (await store.listContactLists(
+        accountId: 'work',
+      )).single;
+      expect(reread.isSelectedForDisplay, isFalse);
+      expect(reread.sortIndex, 9);
+      expect(reread.name, 'Contacts');
+
+      // Partial write of a single field must not clobber prior writes.
+      await store.setContactListDisplayPrefs(listId, colorArgb: 0xFF00FF00);
+      reread = (await store.listContactLists(accountId: 'work')).single;
+      expect(reread.colorArgb, 0xFF00FF00);
+      expect(reread.isSelectedForDisplay, isFalse);
+      expect(reread.sortIndex, 9);
+
+      // Display prefs (isSelectedForDisplay / sortIndex) survive a
+      // subsequent provider upsert (preserve-on-upsert contract); colorArgb
+      // is server metadata and is refreshed like name/isDefault.
+      await store.upsertContactLists(<ContactList>[
+        ContactList(
+          id: 'ignored-caller-id',
+          accountId: 'work',
+          providerId: 'default',
+          name: 'Renamed Contacts',
+          isDefault: true,
+        ),
+      ]);
+
+      reread = (await store.listContactLists(accountId: 'work')).single;
+      expect(reread.name, 'Renamed Contacts');
+      expect(reread.colorArgb, isNull);
+      expect(reread.isSelectedForDisplay, isFalse);
+      expect(reread.sortIndex, 9);
+    });
+
+    test('setCalendarDisplayPrefs persists partial updates', () async {
+      final (SynesisDatabase database, DriftPimStore store) =
+          await _openPimStore();
+      addTearDown(database.close);
+      await _seedAccount(database, 'work');
+
+      final String calId = _id('work', 'primary');
+      await store.upsertCalendars(<Calendar>[
+        Calendar(
+          id: calId,
+          accountId: 'work',
+          providerId: 'primary',
+          name: 'Work',
+          colorArgb: 0xFF112233,
+          isDefault: true,
+        ),
+      ]);
+
+      await store.setCalendarDisplayPrefs(
+        calId,
+        isSelectedForDisplay: false,
+        colorOverrideArgb: 0xFFABCDEF,
+      );
+
+      Calendar reread = (await store.listCalendars(accountId: 'work')).single;
+      expect(reread.isSelectedForDisplay, isFalse);
+      expect(reread.colorOverrideArgb, 0xFFABCDEF);
+
+      await store.setCalendarDisplayPrefs(calId, sortIndex: 4);
+      await store.upsertCalendars(<Calendar>[
+        Calendar(
+          id: 'ignored-caller-id',
+          accountId: 'work',
+          providerId: 'primary',
+          name: 'Work Renamed',
+          colorArgb: 0xFF445566,
+          isDefault: true,
+        ),
+      ]);
+
+      reread = (await store.listCalendars(accountId: 'work')).single;
+      expect(reread.name, 'Work Renamed');
+      expect(reread.isSelectedForDisplay, isFalse);
+      expect(reread.colorOverrideArgb, 0xFFABCDEF);
+      expect(reread.sortIndex, 4);
+    });
+  });
+
+  group('DriftPimStore local event CRUD', () {
+    test('createLocalEvent defaults to the default calendar', () async {
+      final (SynesisDatabase database, DriftPimStore store) =
+          await _openPimStore();
+      addTearDown(database.close);
+      await _seedAccount(database, 'work');
+
+      final String calId = _id('work', 'primary');
+      await store.upsertCalendars(<Calendar>[
+        Calendar(
+          id: calId,
+          accountId: 'work',
+          providerId: 'primary',
+          name: 'Work',
+          colorArgb: 0xFF112233,
+          isDefault: true,
+        ),
+      ]);
+
+      final CalendarEvent created = await store.createLocalEvent(
+        accountId: 'work',
+        title: 'Dentist',
+        startEpochMs: 1000,
+        endEpochMs: 2000,
+      );
+
+      expect(created.calendarId, calId);
+      expect(created.providerId, startsWith('local:'));
+      expect(created.id, _id('work', created.providerId));
+
+      final List<CalendarEvent> events = await store.listEvents(
+        accountId: 'work',
+      );
+      expect(events, hasLength(1));
+      expect(events.single.title, 'Dentist');
+    });
+
+    test('createLocalEvent throws when no calendar exists', () async {
+      final (SynesisDatabase database, DriftPimStore store) =
+          await _openPimStore();
+      addTearDown(database.close);
+      await _seedAccount(database, 'work');
+
+      expect(
+        () => store.createLocalEvent(
+          accountId: 'work',
+          title: 'Orphan',
+          startEpochMs: 1000,
+          endEpochMs: 2000,
+        ),
+        throwsA(isA<StateError>()),
+      );
+    });
+
+    test('updateLocalEvent overwrites mutable fields', () async {
+      final (SynesisDatabase database, DriftPimStore store) =
+          await _openPimStore();
+      addTearDown(database.close);
+      await _seedAccount(database, 'work');
+
+      final String calId = _id('work', 'primary');
+      await store.upsertCalendars(<Calendar>[
+        Calendar(
+          id: calId,
+          accountId: 'work',
+          providerId: 'primary',
+          name: 'Work',
+          colorArgb: 0xFF112233,
+          isDefault: true,
+        ),
+      ]);
+
+      final CalendarEvent created = await store.createLocalEvent(
+        accountId: 'work',
+        title: 'Original title',
+        startEpochMs: 1000,
+        endEpochMs: 2000,
+      );
+
+      final CalendarEvent updated = CalendarEvent(
+        id: created.id,
+        accountId: created.accountId,
+        calendarId: created.calendarId,
+        providerId: created.providerId,
+        title: 'Updated title',
+        body: 'New body',
+        startEpochMs: 5000,
+        endEpochMs: 6000,
+        location: 'Room 42',
+        updatedAt: created.updatedAt,
+      );
+      await store.updateLocalEvent(updated);
+
+      final CalendarEvent reread = (await store.listEvents(
+        accountId: 'work',
+      )).single;
+      expect(reread.title, 'Updated title');
+      expect(reread.body, 'New body');
+      expect(reread.startEpochMs, 5000);
+      expect(reread.endEpochMs, 6000);
+      expect(reread.location, 'Room 42');
+      expect(reread.updatedAt, greaterThanOrEqualTo(created.updatedAt));
+    });
+
+    test('softDeleteEvent stamps deletedAt and hides from default list', () async {
+      final (SynesisDatabase database, DriftPimStore store) =
+          await _openPimStore();
+      addTearDown(database.close);
+      await _seedAccount(database, 'work');
+
+      final String calId = _id('work', 'primary');
+      await store.upsertCalendars(<Calendar>[
+        Calendar(
+          id: calId,
+          accountId: 'work',
+          providerId: 'primary',
+          name: 'Work',
+          colorArgb: 0xFF112233,
+          isDefault: true,
+        ),
+      ]);
+
+      final CalendarEvent created = await store.createLocalEvent(
+        accountId: 'work',
+        title: 'To delete',
+        startEpochMs: 1000,
+        endEpochMs: 2000,
+      );
+
+      await store.softDeleteEvent(created.id);
+
+      expect(await store.listEvents(accountId: 'work'), isEmpty);
+      final List<CalendarEvent> withDeleted = await store.listEvents(
+        accountId: 'work',
+        includeDeleted: true,
+      );
+      expect(withDeleted, hasLength(1));
+      expect(withDeleted.single.deletedAt, isNotNull);
+    });
+  });
 }
