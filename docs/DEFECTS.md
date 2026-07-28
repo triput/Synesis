@@ -609,6 +609,36 @@ Enhancement for the next UI pass — not a defect. Pill outbox affordance stays;
 
 ---
 
+### DEF-062 — Calendar event chips lack translucent calendar-color backgrounds
+
+| Field | Value |
+| --- | --- |
+| Priority | **Pri-3** |
+| Status | **Partial** (event tint shipped 2026-07-27; color-override picker deferred) |
+| Area | `lib/ui/calendar/calendar_workspace.dart` (month chips + agenda rows); store already has `Calendar.colorArgb` / `colorOverrideArgb` |
+| Platforms | All |
+| Logged | 2026-07-27 |
+| Found by | Trish (enhancement request) |
+
+**Summary**  
+Operator wants calendar events/items highlighted with a **translucent calendar color** background (text accent acceptable as fallback). Sync already maps Graph/Google/DAV colors into `Calendar.colorArgb`; UI only showed small color dots on month chips and agenda leading indicators.
+
+**Investigation**  
+1. **Store/sync:** Present — Drift `calendars.color_argb` + `color_override_argb`; Graph/Google defaults + remote color mapping; DAV default blue; `Calendar.effectiveColorArgb`; cubit `setCalendarColorOverride` wired to store.  
+2. **UI before fix:** Color dots on month event rows, agenda tiles, side-by-side lane headers, and picker switches — no translucent event fill.  
+3. **Gap:** Painting only (not sync). User color override in picker is API-ready but has no UI.
+
+**Shipped (partial)**  
+Month grid event chips and agenda/day-sheet rows use left accent border + theme-aware translucent wash from `effectiveColorArgb`; body text stays `ThemeTokens.text` for contrast. Picker still shows color dots only.
+
+**Deferred**  
+Simple color override control in `showCalendarPickerSheet` (long-press / swatch) — cubit/store ready; not shipped this pass.
+
+**Notes**  
+Pri-3 polish; Tesla not needed (fields already exist).
+
+---
+
 ## Closed
 
 ### DEF-061 — Google Calendar PIM 403 after fresh revoke + re-add (tokeninfo fail-open / GCP API)

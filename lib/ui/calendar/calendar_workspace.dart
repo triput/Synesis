@@ -33,6 +33,21 @@ const List<String> _kWeekdayShortLabels = <String>[
   'Sun',
 ];
 
+/// Resolves the calendar accent for an event chip/row (override → sync → indigo).
+Color _calendarAccentColor(CalendarState state, String calendarId, ThemeTokens t) {
+  return Color(
+    state.calendarById(calendarId)?.effectiveColorArgb ?? t.indigo.toARGB32(),
+  );
+}
+
+/// Translucent fill from [accent] — dark themes use a slightly stronger wash
+/// so chips stay visible on [ThemeTokens.panel] without washing out [text].
+Color _calendarAccentWash(Color accent, ThemeTokens t) {
+  final double alpha =
+      t.brightness == Brightness.dark ? 0.28 : 0.18;
+  return accent.withValues(alpha: alpha);
+}
+
 String _monthLabel(DateTime month) {
   const List<String> names = <String>[
     'January',
@@ -350,6 +365,37 @@ class _MonthGridView extends StatelessWidget {
   }
 }
 
+class _CalendarEventChip extends StatelessWidget {
+  const _CalendarEventChip({
+    required this.title,
+    required this.accent,
+    required this.tokens,
+  });
+
+  final String title;
+  final Color accent;
+  final ThemeTokens tokens;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+      decoration: BoxDecoration(
+        color: _calendarAccentWash(accent, tokens),
+        borderRadius: BorderRadius.circular(4),
+        border: Border(left: BorderSide(color: accent, width: 2)),
+      ),
+      child: Text(
+        title,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: TextStyle(color: tokens.text, fontSize: 10),
+      ),
+    );
+  }
+}
+
 class _DayCell extends StatelessWidget {
   const _DayCell({
     required this.day,
@@ -397,31 +443,15 @@ class _DayCell extends StatelessWidget {
             const SizedBox(height: 2),
             for (final CalendarEvent event in visible)
               Padding(
-                padding: const EdgeInsets.only(bottom: 1),
-                child: Row(
-                  children: <Widget>[
-                    Container(
-                      width: 6,
-                      height: 6,
-                      margin: const EdgeInsets.only(right: 3),
-                      decoration: BoxDecoration(
-                        color: Color(
-                          state.calendarById(event.calendarId)
-                                  ?.effectiveColorArgb ??
-                              t.indigo.toARGB32(),
-                        ),
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                    Expanded(
-                      child: Text(
-                        event.title,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(color: t.text, fontSize: 10),
-                      ),
-                    ),
-                  ],
+                padding: const EdgeInsets.only(bottom: 2),
+                child: _CalendarEventChip(
+                  title: event.title,
+                  accent: _calendarAccentColor(
+                    state,
+                    event.calendarId,
+                    t,
+                  ),
+                  tokens: t,
                 ),
               ),
             if (overflow > 0)
@@ -599,29 +629,55 @@ class _AgendaEventTile extends StatelessWidget {
     final DateTime start = DateTime.fromMillisecondsSinceEpoch(
       event.startEpochMs,
     );
-    return ListTile(
-      key: ValueKey<String>('calendar_agenda_event_${event.id}'),
-      dense: dense,
-      leading: Container(
-        width: 10,
-        height: 10,
-        margin: const EdgeInsets.only(top: 4),
-        decoration: BoxDecoration(
-          color: Color(calendar?.effectiveColorArgb ?? t.indigo.toARGB32()),
-          shape: BoxShape.circle,
+    final Color accent = Color(
+      calendar?.effectiveColorArgb ?? t.indigo.toARGB32(),
+    );
+    return Padding(
+      padding: EdgeInsets.symmetric(
+        horizontal: dense ? 6 : 12,
+        vertical: dense ? 2 : 4,
+      ),
+      child: Material(
+        color: _calendarAccentWash(accent, t),
+        borderRadius: BorderRadius.circular(8),
+        child: InkWell(
+          key: ValueKey<String>('calendar_agenda_event_${event.id}'),
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(8),
+          child: Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(8),
+              border: Border(
+                left: BorderSide(color: accent, width: 3),
+              ),
+            ),
+            padding: EdgeInsets.symmetric(
+              horizontal: dense ? 10 : 12,
+              vertical: dense ? 8 : 10,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Text(
+                  event.title,
+                  style: TextStyle(
+                    color: t.text,
+                    fontWeight: FontWeight.w600,
+                    fontSize: dense ? 13 : 14,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  '${start.month}/${start.day} · ${_formatEventTimeRange(event)}'
+                  '${calendar == null ? '' : ' · ${calendar!.name}'}',
+                  style: TextStyle(color: t.muted, fontSize: 11),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
-      title: Text(
-        event.title,
-        style: TextStyle(color: t.text),
-        overflow: TextOverflow.ellipsis,
-      ),
-      subtitle: Text(
-        '${start.month}/${start.day} · ${_formatEventTimeRange(event)}'
-        '${calendar == null ? '' : ' · ${calendar!.name}'}',
-        style: TextStyle(color: t.muted, fontSize: 11),
-      ),
-      onTap: onTap,
     );
   }
 }
