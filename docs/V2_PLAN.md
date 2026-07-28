@@ -2,12 +2,12 @@
 
 | Field | Value |
 | --- | --- |
-| Status | **In progress** — **Wave 5 / V2.0c complete** (2026-07-27, `73c181d`, **585 tests**); **Wave 6 next** (cross-account DnD copy). **Wave 4 / V2.0b complete** (2026-07-27, `f2bd29b`, 556 tests). Wave 0 ✅; Wave H ✅; **Wave 1 / P0 ✅** (2026-07-27, `00ebdef`); **Wave 2 / P1 ✅** (2026-07-27, `b526e70`, 530 tests); **Wave 3 / P2 ✅** (2026-07-27, `7cbfdaa`, 551 tests, [V2_WAVE3_QA.md](V2_WAVE3_QA.md)). Wave 4 checklist: [V2_WAVE4_CHECKLIST.md](V2_WAVE4_CHECKLIST.md); Renee QA: [V2_WAVE4_QA.md](V2_WAVE4_QA.md) (**GO**). Wave 5 checklist: [V2_WAVE5_CHECKLIST.md](V2_WAVE5_CHECKLIST.md) ✅; Renee QA: [V2_WAVE5_QA.md](V2_WAVE5_QA.md) (**GO**, 585 tests). **Re-consent:** `Contacts.Read` + **`Calendars.ReadWrite`** in Graph OAuth scopes; existing accounts re-sign-in via Edit account → re-auth |
+| Status | **In progress** — **Wave 5 / V2.0c complete** (2026-07-27, `73c181d`, **585 tests**); **Wave G next** (Google People + Calendar API — **critical path**). **Wave 4 / V2.0b complete** (2026-07-27, `f2bd29b`, 556 tests). Wave 0 ✅; Wave H ✅; **Wave 1 / P0 ✅** (2026-07-27, `00ebdef`); **Wave 2 / P1 ✅** (2026-07-27, `b526e70`, 530 tests); **Wave 3 / P2 ✅** (2026-07-27, `7cbfdaa`, 551 tests, [V2_WAVE3_QA.md](V2_WAVE3_QA.md)). Wave 4 checklist: [V2_WAVE4_CHECKLIST.md](V2_WAVE4_CHECKLIST.md); Renee QA: [V2_WAVE4_QA.md](V2_WAVE4_QA.md) (**GO**). Wave 5 checklist: [V2_WAVE5_CHECKLIST.md](V2_WAVE5_CHECKLIST.md) ✅; Renee QA: [V2_WAVE5_QA.md](V2_WAVE5_QA.md) (**GO**, 585 tests). **Graph re-consent:** `Contacts.Read` + **`Calendars.ReadWrite`**; **Google Wave G re-consent:** People + Calendar API scopes on existing XOAUTH accounts via Edit account → re-auth |
 | Headline | Contacts & calendar (TD-A) — not a new phone OS |
 | Prerequisite | V1 exit signed off; **V1.5 complete** ([V1_5_PLAN.md](V1_5_PLAN.md)) |
 | Watch | **P3 → V2.1** (not V2.0 critical path) |
 | Enterprise crypto / shared mail / AI draft·summarize | **Maybe/Someday** — not V2.0 critical path unless demand appears |
-| Owners | Steve (orchestrate) · Tesla (Graph PIM / sync) · Jules (CardDAV spike + UI modules) · Renee (QA) · Page (docs) |
+| Owners | Steve (orchestrate) · Tesla (Graph + **Google PIM** / sync) · Jules (CardDAV spike + UI modules) · Renee (QA) · Page (docs) |
 | Last updated | 2026-07-27 |
 
 ## 1. Locked product decisions (2026-07-22)
@@ -26,7 +26,8 @@
 | 10 | Enterprise SKU (PGP/S/MIME, shared mailbox) + **AI draft/summarize** = **Maybe/Someday** until eval/paying need; if one is opted in later, treat the other as a paired companion |
 | 11 | CardDAV/CalDAV dogfood host = **Runbox** (`https://dav.runbox.com/` — app password if 2FA) |
 | 12 | **Multi-calendar + multi-contact-list** — first-class collections per account; select 1+ to display; Outlook-like overlay / side-by-side for calendars (P6 UI) |
-| 13 | **Cross-account copy** (events + contacts) via drag-and-drop UX (desktop) with mobile fallback menu — **Wave 6**; local-first duplicate + push to target collection |
+| 13 | **Cross-account copy** (events + contacts) via drag-and-drop UX (desktop) with mobile fallback menu — **Wave 6** (after Wave G); local-first duplicate + push to target collection |
+| 14 | **Google XOAUTH PIM** — People + Calendar API (not CardDAV/CalDAV); **Wave G** critical path before DnD; operator principal calendar is Google Workspace |
 
 ## 2. Account → PIM binding
 
@@ -57,7 +58,7 @@ Local store is provider-agnostic (`contacts` / `events` + sync cursors), same ph
 
 Per-version hygiene after V1.5 freeze: toolchain + pub debt + native/plugin skew + docs SDK pins. Checklist: [WAVE_H_DEPENDENCY_HYGIENE.md](WAVE_H_DEPENDENCY_HYGIENE.md).
 
-**Sequence:** Wave 0 → **Wave H ✅** → **Wave 1 (P0) ✅** → **Wave 2 (P1) ✅** → **Wave 3 (P2) ✅** → **Wave 4 (P3–P4) ✅** → **Wave 5 (P5–P6) ✅** → **Wave 6 ← next** → Wave 7.
+**Sequence:** Wave 0 → **Wave H ✅** → **Wave 1 (P0) ✅** → **Wave 2 (P1) ✅** → **Wave 3 (P2) ✅** → **Wave 4 (P3–P4) ✅** → **Wave 5 (P5–P6) ✅** → **Wave G ← next** (Google PIM) → Wave 6 (DnD) → Wave 7.
 
 | Batch | Scope | Notes |
 | --- | --- | --- |
@@ -71,7 +72,7 @@ Per-version hygiene after V1.5 freeze: toolchain + pub debt + native/plugin skew
 
 ## 5. Operator waves (working sequence)
 
-**Status:** **Wave 1 complete** (2026-07-27, `00ebdef`); **Wave 2 complete** (2026-07-27, `b526e70`); **Wave 3 complete** (2026-07-27, 551 tests); **Wave 4 complete** (2026-07-27, `f2bd29b`, 556 tests); **Wave 5 complete** (2026-07-27, `73c181d`, 585 tests); **Wave 6 next** (cross-account DnD copy). V2.0a / V2.0b / V2.0c below remain **release buckets** for ship grouping; operator execution follows this table.
+**Status:** **Wave 1 complete** (2026-07-27, `00ebdef`); **Wave 2 complete** (2026-07-27, `b526e70`); **Wave 3 complete** (2026-07-27, 551 tests); **Wave 4 complete** (2026-07-27, `f2bd29b`, 556 tests); **Wave 5 complete** (2026-07-27, `73c181d`, 585 tests); **Wave G next** (Google People + Calendar API — **critical path**). V2.0a / V2.0b / V2.0c below remain **release buckets** for ship grouping; operator execution follows this table.
 
 | Wave | Scope | Owner(s) | Maps to |
 | --- | --- | --- | --- |
@@ -82,10 +83,11 @@ Per-version hygiene after V1.5 freeze: toolchain + pub debt + native/plugin skew
 | **Wave 3** | P2 — meeting-mail bridge (ICS, RSVP, local `.ics` drafts) | Tesla + Jules | **V2.0a P2** ✅ **Complete** (2026-07-27, `7cbfdaa`, 551 tests) |
 | **Wave 4** | P3–P4 — CardDAV/CalDAV (Runbox; multi address-book / calendar discovery) | Tesla + Jules | V2.0b ✅ **Complete** (2026-07-27, `f2bd29b`, 556 tests) |
 | **Wave 5** | P5–P6 — compose contact picker (FTS across selected lists) + Calendar module UI (multi-select overlay / side-by-side) | Jules + Tesla | V2.0c ✅ **Complete** (2026-07-27, `73c181d`, 585 tests) |
-| **Wave 6** | Cross-account / cross-list **DnD copy** for events + contacts (local copy + push) | Jules + Tesla | Post-V2.0c ← **next** |
-| **Wave 7** | **Final polish / Trish extras** — UI niceties & enhancement backlog if time permits (resizable panes, list context menus, mobile nav polish, overflow sweeps, widget wishlist). **Not V2.0 critical path.** | Jules / Andi | Scope-creep parking lot |
+| **Wave G** | **Google People + Calendar API** for XOAUTH Google accounts (`GooglePimProvider` → `DriftPimStore`; no DAV) | Tesla | **V2.0d** ← **next (critical path)** |
+| **Wave 6** | Cross-account / cross-list **DnD copy** for events + contacts (local copy + push) | Jules + Tesla | Post-V2.0d |
+| **Wave 7** | **Final polish / Trish extras** — UI niceties & enhancement backlog if time permits (resizable panes, list context menus, mobile nav polish, overflow sweeps, widget wishlist). **Not V2.0 critical path.** | Jules / Andi | Scope-creep parking lot — **last** |
 
-Checklists: [V2_0A_P0_CHECKLIST.md](V2_0A_P0_CHECKLIST.md) (Wave 1 exit); [V2_WAVE2_CHECKLIST.md](V2_WAVE2_CHECKLIST.md) (Wave 2 exit ✅); [V2_WAVE3_CHECKLIST.md](V2_WAVE3_CHECKLIST.md) (Wave 3 exit ✅); [V2_WAVE4_CHECKLIST.md](V2_WAVE4_CHECKLIST.md) (Wave 4 exit ✅, `f2bd29b`, 556 tests); [V2_WAVE5_CHECKLIST.md](V2_WAVE5_CHECKLIST.md) (Wave 5 exit ✅, `73c181d`, 585 tests). Wave 4 QA: [V2_WAVE4_QA.md](V2_WAVE4_QA.md) (**GO**). Wave 5 QA: [V2_WAVE5_QA.md](V2_WAVE5_QA.md) (**GO**).
+Checklists: [V2_0A_P0_CHECKLIST.md](V2_0A_P0_CHECKLIST.md) (Wave 1 exit); [V2_WAVE2_CHECKLIST.md](V2_WAVE2_CHECKLIST.md) (Wave 2 exit ✅); [V2_WAVE3_CHECKLIST.md](V2_WAVE3_CHECKLIST.md) (Wave 3 exit ✅); [V2_WAVE4_CHECKLIST.md](V2_WAVE4_CHECKLIST.md) (Wave 4 exit ✅, `f2bd29b`, 556 tests); [V2_WAVE5_CHECKLIST.md](V2_WAVE5_CHECKLIST.md) (Wave 5 exit ✅, `73c181d`, 585 tests); [V2_WAVE_G_CHECKLIST.md](V2_WAVE_G_CHECKLIST.md) (Wave G kickoff). Wave 4 QA: [V2_WAVE4_QA.md](V2_WAVE4_QA.md) (**GO**). Wave 5 QA: [V2_WAVE5_QA.md](V2_WAVE5_QA.md) (**GO**).
 
 ### Wave 7 — Final polish / Trish extras (parking lot)
 
@@ -217,17 +219,37 @@ P6  Calendar module UI (month/week, CRUD) wired to local store
 
 **Residuals (accepted MVP):** Calendar create/edit/delete persist in Drift only; `events_push` / `contacts_push` remain no-op. Event editor may target a deselected calendar (event hidden from grid until re-selected) — polish backlog. Resume/deep-link module restore not implemented; Mail cold-start default verified.
 
-**Exit (Wave 5):** ✅ See [V2_WAVE5_CHECKLIST.md](V2_WAVE5_CHECKLIST.md). **Wave 6 (cross-account DnD copy) unblocked.**
+**Exit (Wave 5):** ✅ See [V2_WAVE5_CHECKLIST.md](V2_WAVE5_CHECKLIST.md). **Wave G (Google People + Calendar API) unblocked.**
 
-## 12. Release buckets (ship grouping)
+## 12. Wave G — Google People + Calendar API (Google PIM)
 
-Operator waves 1–7 map into these buckets for release narrative:
+**Status:** **Planned** — **next on critical path** (2026-07-27). Checklist: [V2_WAVE_G_CHECKLIST.md](V2_WAVE_G_CHECKLIST.md). Prior: [V2_WAVE5_QA.md](V2_WAVE5_QA.md) (**GO**). Wave 4 explicitly deferred Google PIM ([V2_WAVE4_CHECKLIST.md](V2_WAVE4_CHECKLIST.md) out-of-scope; [V2_WAVE4_QA.md](V2_WAVE4_QA.md) W4-3: no DAV for `google:` / `xoauth2` IMAP). Per §2 binding matrix, Google XOAUTH accounts use **People + Calendar API** — not CardDAV/CalDAV — to avoid double-sync.
+
+**Scheduling:** Operator principal work calendar is **Google Workspace**; Wave G is **critical path before Wave 6 DnD**. Any in-flight Calendar/People visibility polish may land in parallel or as a quick pre-kick fix — it does **not** block Wave G scheduling.
+
+| Item | Scope | Notes |
+| --- | --- | --- |
+| **OAuth scopes** | Extend `GoogleAuthConfig.scopes` | Add People API + Calendar API scopes (read for bootstrap; calendar write if local CRUD push is in scope — mirror Graph posture). **Re-consent:** Edit account → re-auth for existing Google XOAUTH accounts |
+| **`GooglePimProvider`** | People API + Calendar API → `DriftPimStore` | Contact lists, contacts, calendars, events; stable provider identity; 90d/365d event window; display prefs preserved on upsert |
+| **Provider registry** | Route `google:` / `xoauth2` refs to `GooglePimProvider` | **No DAV PIM** for Google XOAUTH (Wave 4 exclusion holds). Graph + password-auth IMAP+DAV unchanged |
+| **SyncEngine** | Bootstrap + incremental handlers | Per-list / per-calendar cursor keys; account-add enqueue; mail regression guard |
+| **Tests** | Fixtures + registry regression | Extend `provider_registry_google_test.dart`; stable id mapping; re-sync dedupe |
+| **Dogfood** | Google Workspace | Contacts + calendars in People/Calendar modules; compose picker FTS includes Google-sourced contacts |
+
+**Out of MVP:** DnD copy (**Wave 6**); Google write-back on local CRUD unless explicitly scoped; CardDAV/CalDAV fallback; Wave 7 polish.
+
+**Exit (Wave G):** Google XOAUTH PIM sync lands in local schema; People + Calendar UI + picker consume Google-sourced rows; Graph/DAV/mail unaffected; Workspace dogfood + Renee GO. **Wave 6 (DnD copy) unblocked.**
+
+## 13. Release buckets (ship grouping)
+
+Operator waves 1–7 + **G** map into these buckets for release narrative:
 
 | Bucket | Phases | Operator waves |
 | --- | --- | --- |
 | **V2.0a** | P0–P2 — schema, Graph PIM sync, meeting-mail bridge | Waves **1–3** |
 | **V2.0b** | P3–P4 — CardDAV/CalDAV (Runbox dogfood) | Wave **4** |
 | **V2.0c** | P5–P6 — picker + Calendar module UI (deep CRUD, multi-select display) | Wave **5** |
+| **V2.0d** | Google People + Calendar API (XOAUTH Google PIM) | Wave **G** |
 | **V2.0 +** | Cross-account DnD copy polish | Wave **6** |
 | **V2.0 ++** | Final polish / Trish extras (if time permits) | Wave **7** |
 | **V2.1** | Watch companion (P3); CalDAV depth / free-busy; Contacts polish | Post-V2.0 |
@@ -241,8 +263,9 @@ Operator waves 1–7 map into these buckets for release narrative:
 | **Wave 3** | P2 — meeting-mail bridge (ICS, RSVP, local `.ics` drafts) | **Complete** (2026-07-27, `7cbfdaa`, 551 tests) |
 | **Wave 4** | P3–P4 — CardDAV/CalDAV (Runbox) | **Complete** (2026-07-27, `f2bd29b`, 556 tests) · [V2_WAVE4_CHECKLIST.md](V2_WAVE4_CHECKLIST.md) · [V2_WAVE4_QA.md](V2_WAVE4_QA.md) (**GO**) |
 | **Wave 5** | P5–P6 — picker + Calendar/People UI | **Complete** (2026-07-27, `73c181d`, 585 tests) · [V2_WAVE5_CHECKLIST.md](V2_WAVE5_CHECKLIST.md) · [V2_WAVE5_QA.md](V2_WAVE5_QA.md) (**GO**) |
+| **Wave G** | Google People + Calendar API (XOAUTH Google PIM) | **Next (critical path)** · [V2_WAVE_G_CHECKLIST.md](V2_WAVE_G_CHECKLIST.md) |
 
-## 13. Exit criteria (V2.0)
+## 14. Exit criteria (V2.0)
 
 - [x] Contact picker in compose fed by local FTS (Graph and/or CardDAV sources)
 - [x] CardDAV sync works against **Runbox** dogfood account
@@ -250,13 +273,14 @@ Operator waves 1–7 map into these buckets for release narrative:
 - [x] Calendar module: month + week (or agenda); create / edit / delete events *(local Drift only; `events_push` no-op)*
 - [x] Meeting invite actionable from mail body; `.ics` → event draft
 - [x] Graph account: contacts + events sync without breaking mail
+- [ ] **Google XOAUTH account:** contacts + events sync via People + Calendar API (**Wave G**)
 - [x] Mail remains default launch surface; Calendar/People reachable via module switcher
 - [x] Multi-calendar display: select 1+ calendars; overlay or side-by-side; colored lanes
 - [x] Multi-contact-list: select 1+ lists for picker and People views
 - [ ] Cross-account event + contact copy (DnD desktop / menu mobile) — Wave 6
 - [ ] Docs + E2E matrix rows for PIM; regression on V1/V1.5 mail paths
 
-## 14. Explicitly out of V2.0
+## 15. Explicitly out of V2.0
 
 | Item | Disposition |
 | --- | --- |
@@ -267,19 +291,20 @@ Operator waves 1–7 map into these buckets for release narrative:
 | PST import | After V1.5; not V2 headline |
 | Rooms/resources, shared calendar ACLs, Teams deep links | Later calendar depth |
 | Avatar / monogram hover cards (Option C) | V-Next / late polish |
-| Cross-account DnD copy (events + contacts) | **Wave 6** — after provider sync + Calendar/People UI |
+| Cross-account DnD copy (events + contacts) | **Wave 6** — after Wave G Google PIM + provider sync + Calendar/People UI |
 | UI niceties / operator enhancement backlog | **Wave 7 / Trish extras** — not V2.0 critical path |
 
-## 15. Forward-compat (from V1 / during V1.5)
+## 16. Forward-compat (from V1 / during V1.5)
 
 Do not expand V1.5 scope — only avoid painting corners:
 
 - OAuth scope room for Contacts + Calendars (Graph) — **Wave 2 adds `Contacts.Read` + `Calendars.Read`; Wave 3 upgrades calendar access to `Calendars.ReadWrite`; re-consent required**
+- OAuth scope room for Google People + Calendar — **Wave G extends `GoogleAuthConfig.scopes`; re-consent via Edit account → re-auth**
 - Provider registry seam for CardDAV/CalDAV adapters
 - Compose recipients swappable from “recent headers” → contact FTS
 - Widget snapshot path reusable later for Watch (V2.1)
 
-## 16. Relationship to other docs
+## 17. Relationship to other docs
 
 | Doc | Role |
 | --- | --- |
@@ -292,7 +317,8 @@ Do not expand V1.5 scope — only avoid painting corners:
 | [V2_WAVE4_CHECKLIST.md](V2_WAVE4_CHECKLIST.md) | Wave 4 / V2.0b P3–P4 exit criteria ✅ |
 | [V2_WAVE4_QA.md](V2_WAVE4_QA.md) | Wave 4 Renee QA — GO + Wave 5 handoff |
 | [V2_WAVE5_CHECKLIST.md](V2_WAVE5_CHECKLIST.md) | Wave 5 / V2.0c P5–P6 exit criteria ✅ |
-| [V2_WAVE5_QA.md](V2_WAVE5_QA.md) | Wave 5 Renee QA — GO + Wave 6 handoff |
+| [V2_WAVE5_QA.md](V2_WAVE5_QA.md) | Wave 5 Renee QA — GO + Wave G handoff |
+| [V2_WAVE_G_CHECKLIST.md](V2_WAVE_G_CHECKLIST.md) | Wave G / Google PIM kickoff checklist |
 | [WAVE_H_DEPENDENCY_HYGIENE.md](WAVE_H_DEPENDENCY_HYGIENE.md) | Wave H checklist (batches H1–H5, exit gate) |
 | [TIER_D_PLAN.md](TIER_D_PLAN.md) §4 TD-A | Horizon detail; dispositions updated to point here |
 | [V1_5_PLAN.md](V1_5_PLAN.md) | Immediate post-V1 ship before this plan executes |
@@ -302,4 +328,4 @@ Do not expand V1.5 scope — only avoid painting corners:
 
 ---
 
-*Wave 0 complete 2026-07-27. Wave H complete 2026-07-27. **Wave 1 / V2.0a P0 complete** 2026-07-27 (`00ebdef`). **Wave 2 / V2.0a P1 complete** 2026-07-27 (`b526e70`, 530 tests). **Wave 3 / V2.0a P2 complete** 2026-07-27 (`7cbfdaa`, 551 tests) — Renee GO [V2_WAVE3_QA.md](V2_WAVE3_QA.md); `Calendars.ReadWrite` re-consent; meeting-mail bridge. **Wave 4 / V2.0b complete** 2026-07-27 (`f2bd29b`, 556 tests; [V2_WAVE4_CHECKLIST.md](V2_WAVE4_CHECKLIST.md); Renee GO [V2_WAVE4_QA.md](V2_WAVE4_QA.md)). **Wave 5 / V2.0c complete** 2026-07-27 (`73c181d`, 585 tests; [V2_WAVE5_CHECKLIST.md](V2_WAVE5_CHECKLIST.md); Renee GO [V2_WAVE5_QA.md](V2_WAVE5_QA.md)). **Wave 6** (cross-account DnD copy) is next. **Wave 7 / Trish extras** parked for final polish if time permits.*
+*Wave 0 complete 2026-07-27. Wave H complete 2026-07-27. **Wave 1 / V2.0a P0 complete** 2026-07-27 (`00ebdef`). **Wave 2 / V2.0a P1 complete** 2026-07-27 (`b526e70`, 530 tests). **Wave 3 / V2.0a P2 complete** 2026-07-27 (`7cbfdaa`, 551 tests) — Renee GO [V2_WAVE3_QA.md](V2_WAVE3_QA.md); `Calendars.ReadWrite` re-consent; meeting-mail bridge. **Wave 4 / V2.0b complete** 2026-07-27 (`f2bd29b`, 556 tests; [V2_WAVE4_CHECKLIST.md](V2_WAVE4_CHECKLIST.md); Renee GO [V2_WAVE4_QA.md](V2_WAVE4_QA.md)). **Wave 5 / V2.0c complete** 2026-07-27 (`73c181d`, 585 tests; [V2_WAVE5_CHECKLIST.md](V2_WAVE5_CHECKLIST.md); Renee GO [V2_WAVE5_QA.md](V2_WAVE5_QA.md)). **Wave G** (Google People + Calendar API) is **next on critical path** — [V2_WAVE_G_CHECKLIST.md](V2_WAVE_G_CHECKLIST.md). **Wave 6** (cross-account DnD copy) follows Wave G. **Wave 7 / Trish extras** parked last for final polish if time permits.*

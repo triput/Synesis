@@ -2,7 +2,7 @@
 
 
 
-> **Status:** **Complete** (2026-07-27, `73c181d`) — P5–P6: compose contact picker (local FTS), Calendar module (month + week/agenda, local CRUD), People workspace, module switcher. Renee QA **GO** — [V2_WAVE5_QA.md](V2_WAVE5_QA.md) (**585/585** tests). Parent plan: [V2_PLAN.md](V2_PLAN.md). Prior: [V2_WAVE4_QA.md](V2_WAVE4_QA.md) **GO**. **Next after exit:** Wave 6 (cross-account DnD copy).
+> **Status:** **Complete** (2026-07-27, `73c181d`) — P5–P6: compose contact picker (local FTS), Calendar module (month + week/agenda, local CRUD), People workspace, module switcher. Renee QA **GO** — [V2_WAVE5_QA.md](V2_WAVE5_QA.md) (**585/585** tests). Parent plan: [V2_PLAN.md](V2_PLAN.md). Prior: [V2_WAVE4_QA.md](V2_WAVE4_QA.md) **GO**. **Next after exit:** Wave G (Google People + Calendar API — critical path).
 
 
 
@@ -26,7 +26,9 @@ Wave 0 ✅ → Wave H ✅ → Wave 1 (P0) ✅
 
                          → Wave 5: picker + Calendar UI (P5–P6) ✅
 
-                         → ★ Wave 6: cross-account DnD copy ← next
+                         → ★ Wave G: Google People + Calendar API ← next (critical path)
+
+                         → Wave 6: cross-account DnD copy
 
 ```
 
@@ -182,7 +184,7 @@ Wave 0 ✅ → Wave H ✅ → Wave 1 (P0) ✅
 
 - [x] This checklist exit marked complete
 
-- [x] [V2_PLAN.md](V2_PLAN.md) / [ROADMAP.md](ROADMAP.md) — Wave 5 complete; Wave 6 next
+- [x] [V2_PLAN.md](V2_PLAN.md) / [ROADMAP.md](ROADMAP.md) — Wave 5 complete; Wave G next (Google PIM critical path)
 
 - [x] [V2_WAVE5_QA.md](V2_WAVE5_QA.md) — Renee **GO**
 
