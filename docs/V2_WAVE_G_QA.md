@@ -28,7 +28,7 @@ scope expansion, and local-first UI consumption without new module chrome.
 | Local-first UI / picker | **Pass** | Wave 5 Calendar/People/compose picker already read `DriftPimStore` only; Google rows share the same schema. No UI chrome change required; suite includes Wave 5 module/picker regression coverage. |
 | Graph / DAV / mail unaffected | **Pass** | Graph + DAV sync-engine suites green in the same 597 run; mail XOAUTH resolve tests still pass; Google path is additive (`resolvePim` early-return before DAV). |
 | Full regression | **Pass** | **597/597** independently executed. Net **+12** vs Wave 5 (585). |
-| Workspace dogfood | **Operator-pending** | Checklist script remains for Trish Workspace principal; not a code Pri-1. |
+| Workspace dogfood | **Pass** | Trish dogfood GO (2026-07-27): Google Calendar + People sync confirmed after enabling **Google Calendar API** + **People API** on the OAuth client's GCP project (see DEF-061 closure). |
 | Wave G exit | **GO** | No Pri-1 / data-safety blockers. |
 | Wave 6 handoff | **GO** | Cross-account DnD copy unblocked; may build on local store surface (Wave 5 + G). |
 
@@ -46,7 +46,7 @@ No Pri-1 defects found. Nothing added to `DEFECTS.md` for this wave.
 | Re-consent documented; scope expansion on existing accounts | Pass | `GoogleAuthConfig` doc + Edit account UX + `updateGoogleCredentials` test; README + QUICK_START Google scopes (Page 2026-07-27) |
 | People + Calendar UI + compose picker consume Google rows | Pass | Local-first store path (Wave 5 architecture); no Google HTTP in UI layers |
 | Graph PIM, DAV PIM, mail unaffected; suite green | Pass | 597/597 incl. `graph_pim_*`, `dav_pim_*`, mail/XOAUTH registry |
-| Workspace dogfood notes; inventory refresh | Partial | Dogfood operator-pending; inventory regenerated (Page 2026-07-27) |
+| Workspace dogfood notes; inventory refresh | Pass | Dogfood GO (2026-07-27); GCP Calendar + People APIs required on OAuth client project; inventory regenerated (Page 2026-07-27) |
 
 ---
 
@@ -73,8 +73,8 @@ No Pri-1 defects found. Nothing added to `DEFECTS.md` for this wave.
 | Google Calendar events never persist a Calendar `syncToken` cursor | Info — accepted MVP | Windowed `singleEvents` pulls return `deltaLink: null` (API incompatibility documented on provider). Every events pull is a horizon full snapshot + missing soft-delete. Provider-level syncToken/cancelled tests remain for future incremental enablement. |
 | Contact-group member pull capped (`maxMembers: 1000`, batchGet slices) | Low | Large custom groups may truncate until a follow-up paging wave. My Contacts connections path paginates with syncToken. |
 | `addGoogleImapAccount` unit test does not assert PIM job type names | Low | Code enqueues PIM bootstrap; `updateGoogleCredentials` test asserts the three job types; engine tests cover job handlers. Optional tighten later. |
-| Google Calendar 403 insufficient scopes after re-auth | Pri-2 | **DEF-061 reopen + round-2 fix (2026-07-27):** `9015452` stale-RT hardening insufficient after full revoke/re-add. Round 2: fail-closed tokeninfo (POST), Calendar/People preflight at sign-in, refresh tokeninfo, 403 `reason` parsing (`SERVICE_DISABLED` vs `ACCESS_TOKEN_SCOPE_INSUFFICIENT`), GCP enablement checklist. Dogfood: enable Calendar + People APIs on OAuth client project, full restart, re-add — sign-in should surface API/scope errors immediately. |
-| Workspace dogfood not executed in this gate | Info | Operator script in checklist; does not block code GO (parity with Wave 4/5). |
+| Google Calendar 403 insufficient scopes after re-auth | **Closed** | **DEF-061 closed (2026-07-27):** Primary cause — Calendar/People APIs not enabled on OAuth client GCP project (scope-flavored 403s). App fixes: `9015452` stale RT, `cee24c3` fail-closed tokeninfo + preflight + distinct `SERVICE_DISABLED` vs `ACCESS_TOKEN_SCOPE_INSUFFICIENT`. Dogfood GO after API enablement. |
+| Workspace dogfood not executed in this gate | **Resolved** | Trish dogfood GO (2026-07-27); requires **Google Calendar API** + **People API** enabled on the OAuth client's GCP project before sign-in. |
 | Google write-back / RSVP out of scope | Accepted MVP | `respondToEvent` throws `UnsupportedError`; `events_push`/`contacts_push` remain no-ops. |
 
 ---
@@ -120,7 +120,7 @@ Patch or regenerate `docs/V1_AUTOMATED_TEST_INVENTORY.csv` via `tool/generate_te
 
 - **Wave 6:** **GO.** Cross-account/cross-list DnD copy can proceed on the shared local `DriftPimStore` surface (Graph + DAV + Google rows).
 - **Page:** Inventory refresh from this delta ✅; README/QUICK_START Google consent scopes + re-auth note ✅; checklist status finalized (operator dogfood remains post-land).
-- **Operators:** Existing Google XOAUTH accounts must **Edit account → Re-authenticate with Google** after Wave G so tokens include People + Calendar scopes; enable APIs on the Google Cloud project.
+- **Operators:** Existing Google XOAUTH accounts must **Edit account → Re-authenticate with Google** after Wave G so tokens include People + Calendar scopes. **Dogfood GO requires** **Google Calendar API** + **People API** enabled on the OAuth client's GCP project (`calendar-json.googleapis.com`, `people.googleapis.com`) — see closed DEF-061.
 - **Polish (non-blocking):** Persist Calendar incremental sync when a non-`singleEvents` strategy is product-approved; page large contact groups beyond 1000 members; optional missing-scope CTA.
 
 *Renee — Quality Engineering · 2026-07-27*

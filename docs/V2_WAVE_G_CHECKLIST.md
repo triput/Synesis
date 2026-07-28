@@ -47,7 +47,7 @@ Wave 0 ✅ → Wave H ✅ → Wave 1 (P0) ✅
 - [x] People + Calendar UI + compose picker consume Google-sourced local rows
 - [x] Graph PIM, DAV PIM, and mail unaffected; full suite green *(597/597)*
 - [x] Renee QA **GO**; inventory refresh *(Page 2026-07-27)*; docs + plan/roadmap updated
-- [ ] Workspace dogfood *(operator — post-land script below; not a code Pri-1)*
+- [x] Workspace dogfood *(Trish GO 2026-07-27 — requires Calendar + People APIs enabled on OAuth client GCP project; see DEF-061)*
 
 ## Team routing
 
@@ -61,8 +61,11 @@ Wave 0 ✅ → Wave H ✅ → Wave 1 (P0) ✅
 
 ## Workspace dogfood (operator — post-land)
 
-1. Google Cloud → OAuth consent screen: add People + Calendar scopes to the existing Synesis client.
-2. Add or re-auth Google Workspace account (Edit account → re-auth after scope expansion).
-3. Trigger sync; confirm `contact_lists`, `calendars`, contacts, and events in People + Calendar modules.
-4. Verify compose picker finds Google-sourced contacts via FTS.
-5. Re-sync without duplicate collections or records. Log issues without credentials or raw PII.
+**Status:** **GO** (Trish, 2026-07-27). **Prerequisite:** enable **Google Calendar API** + **People API** on the GCP project that owns the Synesis OAuth client — dogfood fails with scope-flavored 403s if either API is disabled or stale (DEF-061).
+
+1. Google Cloud → **APIs & Services → Library** — enable **Google Calendar API** (`calendar-json.googleapis.com`) and **People API** (`people.googleapis.com`) on the OAuth client project.
+2. Google Cloud → OAuth consent screen: add People + Calendar scopes to the existing Synesis client.
+3. Add or re-auth Google Workspace account (Edit account → re-auth after scope expansion).
+4. Trigger sync; confirm `contact_lists`, `calendars`, contacts, and events in People + Calendar modules.
+5. Verify compose picker finds Google-sourced contacts via FTS.
+6. Re-sync without duplicate collections or records. Log issues without credentials or raw PII.
