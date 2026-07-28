@@ -3,6 +3,7 @@
 | Field | Value |
 | --- | --- |
 | Reviewed | 2026-07-27 |
+| Commits | `f4c21b0` (wave land) |
 | Checklist | [V2_WAVE_G_CHECKLIST.md](V2_WAVE_G_CHECKLIST.md) |
 | Prior gate | [V2_WAVE5_QA.md](V2_WAVE5_QA.md) **GO** (585 tests) |
 | Tests | **597/597 passed** (`flutter test`, verified independently by Renee) |
