@@ -1,10 +1,10 @@
 # Wave G — Google PIM Checklist (People + Calendar API)
 
-> **Status:** **Planned** — critical-path operator wave inserted after Wave 5 (2026-07-27). Parent plan: [V2_PLAN.md](V2_PLAN.md). Prior: [V2_WAVE5_QA.md](V2_WAVE5_QA.md) **GO**. **Next after exit:** Wave 6 (cross-account DnD copy).
+> **Status:** **Complete** (2026-07-27, **597 tests**) — Renee [V2_WAVE_G_QA.md](V2_WAVE_G_QA.md) **GO**; inventory + README Google scopes landed (Page). Commit SHA pending Steve wave land. Parent plan: [V2_PLAN.md](V2_PLAN.md). Prior: [V2_WAVE5_QA.md](V2_WAVE5_QA.md) **GO**. **Next:** Wave 6 (cross-account DnD copy).
 
 Wave G delivers **Google People + Calendar API** sync for **Google XOAUTH IMAP** accounts into the existing provider-agnostic `DriftPimStore`. Per [V2_PLAN.md §2](V2_PLAN.md#2-account--pim-binding) and Wave 4 W4-3, Google accounts **do not** use CardDAV/CalDAV — API-only binding. Operator dogfood target: **Google Workspace** (Trish principal calendar).
 
-**Scheduling note:** Wave G is **next on the critical path**. Any in-flight Calendar/People **visibility polish** (empty-state / display-pref UX) may land in parallel or as a quick pre-kick fix — it does **not** block Wave G scheduling or discovery.
+**Scheduling note:** Wave G exit cleared 2026-07-27. Any in-flight Calendar/People **visibility polish** (empty-state / display-pref UX) may continue in parallel — it does **not** block Wave 6.
 
 ## Sequence
 
@@ -14,8 +14,8 @@ Wave 0 ✅ → Wave H ✅ → Wave 1 (P0) ✅
                          → Wave 3: meeting-mail bridge (P2) ✅
                          → Wave 4: CardDAV/CalDAV (P3–P4) ✅
                          → Wave 5: picker + Calendar UI (P5–P6) ✅
-                         → ★ Wave G: Google People + Calendar API ← next (critical path)
-                         → Wave 6: cross-account DnD copy
+                         → Wave G: Google People + Calendar API ✅
+                         → ★ Wave 6: cross-account DnD copy ← next
                          → Wave 7: Trish extras (last)
 ```
 
@@ -40,13 +40,14 @@ Wave 0 ✅ → Wave H ✅ → Wave 1 (P0) ✅
 
 ## Wave G exit criteria (gate)
 
-- [ ] Google XOAUTH account: contact lists + contacts sync into local schema
-- [ ] Google XOAUTH account: calendars + events sync (90d past / 365d future)
-- [ ] Provider registry: Google resolves `GooglePimProvider`; no DAV PIM for `google:` refs
-- [ ] Re-consent path documented; scope expansion tested on existing account
-- [ ] People + Calendar UI + compose picker consume Google-sourced local rows
-- [ ] Graph PIM, DAV PIM, and mail unaffected; full suite green
-- [ ] Workspace dogfood notes (operator); Renee QA GO; inventory refresh
+- [x] Google XOAUTH account: contact lists + contacts sync into local schema
+- [x] Google XOAUTH account: calendars + events sync (90d past / 365d future)
+- [x] Provider registry: Google resolves `GooglePimProvider`; no DAV PIM for `google:` refs
+- [x] Re-consent path documented; scope expansion tested on existing account *(README + QUICK_START Google scopes + Edit account → re-auth — Page 2026-07-27)*
+- [x] People + Calendar UI + compose picker consume Google-sourced local rows
+- [x] Graph PIM, DAV PIM, and mail unaffected; full suite green *(597/597)*
+- [x] Renee QA **GO**; inventory refresh *(Page 2026-07-27)*; docs + plan/roadmap updated
+- [ ] Workspace dogfood *(operator — post-land script below; not a code Pri-1)*
 
 ## Team routing
 

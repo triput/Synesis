@@ -25,7 +25,7 @@ flutter run -d android
 flutter run -d windows --dart-define=SYNESIS_GRAPH_CLIENT_ID=YOUR_CLIENT_ID
 ```
 
-**Google Gmail:** pass your OAuth client ID (optional secret if required):
+**Google Gmail:** pass your OAuth client ID (optional secret if required). Wave G+ PIM requires **`contacts.readonly`** and **`calendar`** on your Google Cloud OAuth consent screen (plus enabled People + Calendar APIs). Existing accounts must **re-sign in** through **Edit account → Re-authenticate with Google** after upgrade. See [README](../README.md#google-oauth-setup).
 
 ```bash
 flutter run -d windows --dart-define=SYNESIS_GOOGLE_CLIENT_ID=YOUR_CLIENT_ID

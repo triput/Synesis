@@ -80,8 +80,14 @@ class _EditAccountFormState extends State<_EditAccountForm> {
       widget.account.providerType == 'graph' ||
       widget.account.providerType == 'microsoft';
 
+  bool get _isGoogle =>
+      (widget.account.credentialsRef ?? '').startsWith('google:');
+
   bool get _graphConfigured =>
       context.read<OAuthIdentityManager>().config.isConfigured;
+
+  bool get _googleConfigured =>
+      context.read<OAuthIdentityManager>().googleConfig.isConfigured;
 
   bool get _showPasteToken => !_graphConfigured || kDebugMode;
 
@@ -154,6 +160,9 @@ class _EditAccountFormState extends State<_EditAccountForm> {
   }
 
   String _providerLabel() {
+    if (_isGoogle) {
+      return 'Google (IMAP / OAuth)';
+    }
     switch (widget.account.providerType) {
       case 'graph':
       case 'microsoft':
@@ -194,6 +203,50 @@ class _EditAccountFormState extends State<_EditAccountForm> {
       });
       messenger.showSnackBar(
         const SnackBar(content: Text('Microsoft credentials updated')),
+      );
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _error = e.toString();
+          _busy = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _reauthenticateGoogle() async {
+    final OAuthIdentityManager identity = context.read<OAuthIdentityManager>();
+    final AccountService service = context.read<AccountService>();
+    final SyncEngine syncEngine = context.read<SyncEngine>();
+    final MailboxCubit mailbox = context.read<MailboxCubit>();
+    final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
+    setState(() {
+      _busy = true;
+      _error = null;
+    });
+    try {
+      final GoogleSignInResult result = await identity.signInGoogle();
+      await service.updateGoogleCredentials(
+        account: widget.account,
+        accessToken: result.accessToken,
+        refreshToken: result.refreshToken,
+        expiresAt: result.expiresAt,
+      );
+      _reauthenticated = true;
+      await syncEngine.kick();
+      await mailbox.refresh();
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _busy = false;
+      });
+      messenger.showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Google credentials updated (mail + People + Calendar)',
+          ),
+        ),
       );
     } catch (e) {
       if (mounted) {
@@ -421,13 +474,17 @@ class _EditAccountFormState extends State<_EditAccountForm> {
                   ),
                 const SizedBox(height: 12),
                 Text(
-                  _isGraph
+                  _isGraph || _isGoogle
                       ? 'Re-authenticate (optional)'
                       : 'Update credentials (optional)',
                   style: TextStyle(color: t.muted, fontSize: 12),
                 ),
                 const SizedBox(height: 8),
-                ...(_isGraph ? _graphFields() : _imapFields()),
+                ...(_isGraph
+                    ? _graphFields()
+                    : _isGoogle
+                    ? _googleFields()
+                    : _imapFields()),
               ],
             ),
           ),
@@ -459,6 +516,34 @@ class _EditAccountFormState extends State<_EditAccountForm> {
         ],
       ),
     );
+  }
+
+  List<Widget> _googleFields() {
+    if (!_googleConfigured) {
+      return <Widget>[
+        Text(
+          'Google OAuth is not configured in this build. Configure '
+          'SYNESIS_GOOGLE_CLIENT_ID (README) then re-auth to grant People + '
+          'Calendar scopes for PIM sync.',
+          style: TextStyle(color: tokensOf(context).muted, fontSize: 12),
+        ),
+      ];
+    }
+    return <Widget>[
+      Text(
+        'Re-auth refreshes mail XOAUTH and grants People + Calendar API '
+        'access for contacts and events sync.',
+        style: TextStyle(color: tokensOf(context).muted, fontSize: 12),
+      ),
+      const SizedBox(height: 8),
+      FilledButton.icon(
+        onPressed: _busy ? null : _reauthenticateGoogle,
+        icon: const Icon(Icons.login),
+        label: Text(
+          _busy ? 'Signing in…' : 'Re-authenticate with Google',
+        ),
+      ),
+    ];
   }
 
   List<Widget> _graphFields() {

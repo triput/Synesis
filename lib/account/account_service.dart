@@ -68,7 +68,7 @@ class AccountService {
       accountId: id,
       type: 'bootstrap',
     );
-    await _enqueueGraphPimBootstrap(id);
+    await _enqueuePimBootstrap(id);
     return account;
   }
 
@@ -253,6 +253,7 @@ class AccountService {
       ),
     ]);
     await _repository.enqueueSyncJob(accountId: id, type: 'bootstrap');
+    await _enqueuePimBootstrap(id);
     return account;
   }
 
@@ -335,12 +336,46 @@ class AccountService {
         accountId: account.id,
         type: 'bootstrap',
       );
-      await _enqueueGraphPimBootstrap(account.id);
+      await _enqueuePimBootstrap(account.id);
     }
   }
 
-  /// Enqueues Graph contact-list + calendar bootstrap jobs (Wave 2 PIM).
-  Future<void> _enqueueGraphPimBootstrap(String accountId) async {
+  /// Replaces Google OAuth tokens for an existing XOAUTH account.
+  ///
+  /// Used after Edit account → Re-authenticate with Google (Wave G scope
+  /// expansion). Enqueues mail + PIM bootstrap when [enqueueBootstrap] is true.
+  Future<void> updateGoogleCredentials({
+    required MailAccount account,
+    required String accessToken,
+    String? refreshToken,
+    DateTime? expiresAt,
+    bool enqueueBootstrap = true,
+  }) async {
+    if (accessToken.trim().isEmpty) {
+      throw ArgumentError.value(
+        accessToken,
+        'accessToken',
+        'Must not be empty.',
+      );
+    }
+    final String ref = account.credentialsRef ?? 'google:${account.id}';
+    await _identityManager.saveGoogleToken(
+      ref,
+      accessToken,
+      refreshToken,
+      expiresAt,
+    );
+    if (enqueueBootstrap) {
+      await _repository.enqueueSyncJob(
+        accountId: account.id,
+        type: 'bootstrap',
+      );
+      await _enqueuePimBootstrap(account.id);
+    }
+  }
+
+  /// Enqueues contact-list + calendar bootstrap jobs (Graph / Google / DAV PIM).
+  Future<void> _enqueuePimBootstrap(String accountId) async {
     await _repository.enqueueSyncJob(
       accountId: accountId,
       type: PimSyncJobs.contactListsBootstrap,
@@ -532,16 +567,8 @@ class AccountService {
     return dav != null || DavDiscovery.isRunboxHint(account.address, host);
   }
 
-  Future<void> _enqueueDavPimBootstrap(String accountId) async {
-    await _repository.enqueueSyncJob(
-      accountId: accountId,
-      type: PimSyncJobs.contactListsBootstrap,
-    );
-    await _repository.enqueueSyncJob(
-      accountId: accountId,
-      type: PimSyncJobs.calendarsBootstrap,
-    );
-  }
+  Future<void> _enqueueDavPimBootstrap(String accountId) =>
+      _enqueuePimBootstrap(accountId);
 
   static String? _davBaseUrl(
     String? value, {

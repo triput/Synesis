@@ -19,6 +19,7 @@ import 'package:synesis/focus/focus.dart';
 import 'package:synesis/mime/outgoing_envelope.dart';
 import 'package:synesis/protocol/graph_mail_provider.dart';
 import 'package:synesis/protocol/graph_pim_provider.dart';
+import 'package:synesis/protocol/google_pim_provider.dart';
 import 'package:synesis/protocol/dav_pim_provider.dart';
 import 'package:synesis/protocol/mail_provider.dart';
 import 'package:synesis/protocol/thread_id.dart';
@@ -35,7 +36,7 @@ import 'package:flutter/foundation.dart'
 
 typedef ProviderResolver = Future<MailProvider?> Function(String accountId);
 
-/// Resolves a Graph PIM adapter for Microsoft accounts (null for IMAP).
+/// Resolves a PIM adapter (Graph, Google, or DAV) for an account; null if none.
 typedef GraphPimResolver = Future<GraphPimProvider?> Function(String accountId);
 
 /// Invoked when newly inserted unread inbox messages arrive (non-bootstrap sync).
@@ -226,7 +227,7 @@ class SyncEngine {
     await enqueuePimIncremental(accountId);
   }
 
-  /// Enqueues PIM collection incremental jobs for Graph or DAV accounts.
+  /// Enqueues PIM collection incremental jobs for Graph, Google, or DAV accounts.
   Future<void> enqueuePimIncremental(String accountId) async {
     if (!await _isPimAccount(accountId)) {
       return;
@@ -564,7 +565,14 @@ class SyncEngine {
         await store.upsertContactPhones(phones);
       }
 
-      if (provider is DavPimProvider) {
+      // DAV always returns a full snapshot. Google full pulls (no syncToken
+      // cursor) do the same; incremental Google People syncToken pages use
+      // removedProviderIds instead and must not soft-delete the rest.
+      final bool fullSnapshotSoftDelete =
+          provider is DavPimProvider ||
+          (provider is GooglePimProvider &&
+              (deltaLink == null || deltaLink.isEmpty));
+      if (fullSnapshotSoftDelete) {
         final Set<String> remoteIds = result.changed
             .map((GraphContactBundle bundle) => bundle.contact.providerId)
             .toSet();
@@ -754,7 +762,13 @@ class SyncEngine {
         await store.upsertEventAttendees(attendees);
       }
 
-      if (provider is DavPimProvider) {
+      // DAV and Google windowed event pulls are full snapshots within the
+      // sync horizon; soft-delete locals missing from the remote set.
+      final bool fullSnapshotSoftDelete =
+          provider is DavPimProvider ||
+          (provider is GooglePimProvider &&
+              (deltaLink == null || deltaLink.isEmpty));
+      if (fullSnapshotSoftDelete) {
         final Set<String> remoteIds = result.changed
             .map((GraphEventBundle bundle) => bundle.event.providerId)
             .toSet();

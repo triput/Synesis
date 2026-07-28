@@ -12,6 +12,7 @@ import 'package:synesis/auth/secure_credential_store.dart';
 import 'package:synesis/domain/models.dart';
 import 'package:synesis/protocol/graph_mail_provider.dart';
 import 'package:synesis/protocol/graph_pim_provider.dart';
+import 'package:synesis/protocol/google_pim_provider.dart';
 import 'package:synesis/protocol/dav/dav_discovery.dart';
 import 'package:synesis/protocol/dav_pim_provider.dart';
 import 'package:synesis/protocol/imap_smtp_mail_provider.dart';
@@ -156,7 +157,10 @@ class ProviderRegistry {
     return null;
   }
 
-  /// Resolves a [GraphPimProvider] for Microsoft Graph accounts; otherwise null.
+  /// Resolves a PIM provider for Graph, Google XOAUTH, or password IMAP+DAV.
+  ///
+  /// Google `google:` / `xoauth2` refs use [GooglePimProvider] (People +
+  /// Calendar API) — never CardDAV/CalDAV (Wave 4 W4-3 / Wave G).
   Future<GraphPimProvider?> resolvePim(String accountId) async {
     final MailAccount? account = await _accountFor(accountId);
     if (account == null) {
@@ -172,9 +176,20 @@ class ProviderRegistry {
         credentialsRef: credentialsRef,
         name: 'imap.auth',
       );
-      if ((auth ?? 'password').trim().toLowerCase() == 'xoauth2' ||
-          credentialsRef.startsWith('google:')) {
-        return null;
+      final bool isGoogleXoauth =
+          credentialsRef.startsWith('google:') ||
+          (auth ?? 'password').trim().toLowerCase() == 'xoauth2';
+      if (isGoogleXoauth) {
+        return GooglePimProvider(
+          () => _identityManager.getValidGoogleAccessToken(credentialsRef),
+          client: _httpClient,
+          onUnauthorized: () async {
+            await _identityManager.getValidGoogleAccessToken(
+              credentialsRef,
+              forceRefresh: true,
+            );
+          },
+        );
       }
       final String? password = await _credentialStore.readSecret(
         credentialsRef: credentialsRef,

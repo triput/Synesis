@@ -114,7 +114,9 @@ Register OAuth clients in Google Cloud Console so Synesis can run authorization 
 
 1. **Google Cloud Console → APIs & Services → OAuth consent screen**
    - Configure an External (or Internal) consent screen
-   - Add scopes: `openid`, `email`, `profile`, `https://mail.google.com/`
+   - Add scopes: `openid`, `email`, `profile`, `https://mail.google.com/` *(Gmail IMAP/SMTP)*
+   - Add PIM scopes *(Wave G)*: `https://www.googleapis.com/auth/contacts.readonly` *(People API — contact sync)* and `https://www.googleapis.com/auth/calendar` *(Calendar API — calendar/event sync; full `calendar`, not readonly, mirrors Graph `Calendars.ReadWrite` posture for future write-back)*
+   - Enable **People API** and **Google Calendar API** on the Google Cloud project
    - Add test users while the app is in Testing
 
 2. **Credentials → Create credentials → OAuth client ID**
@@ -134,6 +136,8 @@ flutter run -d windows \
   --dart-define=SYNESIS_GOOGLE_CLIENT_ID=xxxxxxxx.apps.googleusercontent.com \
   --dart-define=SYNESIS_GOOGLE_CLIENT_SECRET=optional-if-required
 ```
+
+   **Re-consent:** Existing Google XOAUTH accounts signed in before Wave G only hold mail scopes. After upgrading to a Wave G+ build, users must **sign in again** (**Edit account → Re-authenticate with Google**) so the consent screen includes People + Calendar scopes for contact and calendar sync. Mail-only tokens cannot call People or Calendar APIs until re-consent.
 
 Both Graph and Google can be set together:
 

@@ -10,6 +10,9 @@
 import 'package:synesis/auth/oauth_identity_manager.dart';
 import 'package:synesis/auth/secure_credential_store.dart';
 import 'package:synesis/domain/models.dart';
+import 'package:synesis/protocol/dav_pim_provider.dart';
+import 'package:synesis/protocol/google_pim_provider.dart';
+import 'package:synesis/protocol/graph_pim_provider.dart';
 import 'package:synesis/protocol/imap_smtp_mail_provider.dart';
 import 'package:synesis/protocol/mail_provider.dart';
 import 'package:synesis/repository/mail_repository.dart';
@@ -64,7 +67,10 @@ class _StubIdentity extends OAuthIdentityManager {
       );
 
   @override
-  Future<String> getValidGoogleAccessToken(String credentialsRef) async {
+  Future<String> getValidGoogleAccessToken(
+    String credentialsRef, {
+    bool forceRefresh = false,
+  }) async {
     return 'ya29.token-for-$credentialsRef';
   }
 }
@@ -101,6 +107,56 @@ void main() {
       expect(imap.password, 'ya29.token-for-google:acct-1');
     },
   );
+
+  test('resolvePim returns GooglePimProvider for google: refs', () async {
+    final _MemoryCredentials store = _MemoryCredentials();
+    final ProviderRegistry registry = ProviderRegistry(
+      repository: _StubRepo(<MailAccount>[
+        const MailAccount(
+          id: 'acct-1',
+          label: 'Gmail',
+          address: 'trish@gmail.com',
+          accent: Color(0xFFEA4335),
+          providerType: 'imap',
+          credentialsRef: 'google:acct-1',
+        ),
+      ]),
+      credentialStore: store,
+      identityManager: _StubIdentity(store),
+    );
+
+    final GraphPimProvider? pim = await registry.resolvePim('acct-1');
+    expect(pim, isA<GooglePimProvider>());
+    await pim?.dispose();
+  });
+
+  test('resolvePim returns GooglePimProvider for xoauth2 auth mode', () async {
+    final _MemoryCredentials store = _MemoryCredentials();
+    await store.writeSecret(
+      credentialsRef: 'imap:xo',
+      name: 'imap.auth',
+      value: 'xoauth2',
+    );
+    final ProviderRegistry registry = ProviderRegistry(
+      repository: _StubRepo(<MailAccount>[
+        const MailAccount(
+          id: 'xo',
+          label: 'XO',
+          address: 'user@example.com',
+          accent: Color(0xFFEA4335),
+          providerType: 'imap',
+          credentialsRef: 'imap:xo',
+        ),
+      ]),
+      credentialStore: store,
+      identityManager: _StubIdentity(store),
+    );
+
+    final GraphPimProvider? pim = await registry.resolvePim('xo');
+    expect(pim, isA<GooglePimProvider>());
+    expect(pim, isNot(isA<DavPimProvider>()));
+    await pim?.dispose();
+  });
 
   test(
     'recovers google:\$id when credentialsRef is missing on a Gmail account',

@@ -6,13 +6,13 @@ Synesis tracks **automated** unit, widget, and BLoC tests in a versionable inven
 
 | Artifact | Role |
 | --- | --- |
-| [`V1_AUTOMATED_TEST_INVENTORY.csv`](V1_AUTOMATED_TEST_INVENTORY.csv) | **Canonical** git-tracked source (**585 cases** / 82 files as of Wave 5 exit 2026-07-27). Diff-friendly; edit or regenerate. |
+| [`V1_AUTOMATED_TEST_INVENTORY.csv`](V1_AUTOMATED_TEST_INVENTORY.csv) | **Canonical** git-tracked source (**597 cases** / 84 files as of Wave G exit 2026-07-27). Diff-friendly; edit or regenerate. |
 | [`V1_AUTOMATED_TEST_INVENTORY.xlsx`](V1_AUTOMATED_TEST_INVENTORY.xlsx) | Operator workbook (Automated, By_File, Wave_Summary, Coverage_Gaps, Readme sheets). Regenerated from CSV. |
 | [`../tool/generate_test_inventory.py`](../tool/generate_test_inventory.py) | Scanner/regenerator for both artifacts. |
 
 **Not in scope:** [`V1_MANUAL_E2E_MATRIX.csv`](V1_MANUAL_E2E_MATRIX.csv) (ROADMAP **FW-5**) — planned manual E2E matrix; separate from this automated catalog.
 
-Suite/case wave and kind overrides (from Renee inventory handoffs) live in `tool/generate_test_inventory.py` (`GROUP_WAVE`, `CASE_WAVE`, `GROUP_KIND`, `CASE_KIND`). V2 operator waves use `V2-W*` labels (e.g. `V2-W5` = 29 cases from Wave 5 exit 2026-07-27).
+Suite/case wave and kind overrides (from Renee inventory handoffs) live in `tool/generate_test_inventory.py` (`GROUP_WAVE`, `CASE_WAVE`, `GROUP_KIND`, `CASE_KIND`). V2 operator waves use `V2-W*` labels (e.g. `V2-W5` = Wave 5 UI; `V2-WG` = Wave G Google PIM exit 2026-07-27).
 
 ## Regenerate
 

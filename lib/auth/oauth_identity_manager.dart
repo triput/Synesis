@@ -109,12 +109,21 @@ class GoogleAuthConfig {
     return 'com.googleusercontent.apps.$prefix:/oauth2redirect';
   }
 
-  /// Full mail scope for classic IMAP/SMTP XOAUTH2, plus OpenID profile claims.
+  /// Gmail IMAP/SMTP XOAUTH2 plus People + Calendar API (Wave G).
+  ///
+  /// **Re-consent:** existing Google XOAUTH accounts signed in before Wave G's
+  /// People/Calendar scopes must use **Edit account → Re-authenticate with
+  /// Google** so the refresh token is issued with the expanded scope set.
+  /// Mail-only tokens cannot call People or Calendar APIs until re-consent.
+  /// Calendar uses full `calendar` (not readonly) to mirror Graph
+  /// `Calendars.ReadWrite` and avoid a later re-consent for write-back.
   static const List<String> scopes = <String>[
     'openid',
     'email',
     'profile',
     'https://mail.google.com/',
+    'https://www.googleapis.com/auth/contacts.readonly',
+    'https://www.googleapis.com/auth/calendar',
   ];
 
   /// Desktop / default Google OAuth client ID.
@@ -416,7 +425,13 @@ class OAuthIdentityManager {
   }
 
   /// Returns a usable Google access token, refreshing when expiry is within skew.
-  Future<String> getValidGoogleAccessToken(String credentialsRef) async {
+  ///
+  /// When [forceRefresh] is true, always exchanges the refresh token when one
+  /// is available (used after Google APIs return HTTP 401).
+  Future<String> getValidGoogleAccessToken(
+    String credentialsRef, {
+    bool forceRefresh = false,
+  }) async {
     final String? storedAccessToken = await _credentials.readSecret(
       credentialsRef: credentialsRef,
       name: _googleAccessTokenName,
@@ -431,6 +446,7 @@ class OAuthIdentityManager {
     );
     final DateTime refreshDeadline = _clock().toUtc().add(_accessTokenSkew);
     final bool needsRefresh =
+        forceRefresh ||
         accessToken == null ||
         expiresAt == null ||
         !expiresAt.isAfter(refreshDeadline);

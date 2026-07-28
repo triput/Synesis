@@ -109,6 +109,7 @@ class _FakeRepository implements MailRepository {
   final List<MailAccount> accounts;
   final List<String> wipedAccountIds = <String>[];
   final List<String> bootstrapAccountIds = <String>[];
+  final List<String> enqueuedTypes = <String>[];
   int listMessagesCalls = 0;
 
   _FakeRepository(this.accounts);
@@ -138,6 +139,7 @@ class _FakeRepository implements MailRepository {
     required String type,
     String? payloadJson,
   }) async {
+    enqueuedTypes.add(type);
     if (type == 'bootstrap') {
       bootstrapAccountIds.add(accountId);
     }
@@ -466,6 +468,41 @@ void main() {
         throwsArgumentError,
       );
       expect(repo.bootstrapAccountIds, isEmpty);
+    });
+  });
+
+  group('AccountService.updateGoogleCredentials', () {
+    test('saves token and enqueues mail + PIM bootstrap', () async {
+      final _FakeRepository repo = _FakeRepository(<MailAccount>[
+        const MailAccount(
+          id: 'g1',
+          label: 'G',
+          address: 'casey@gmail.com',
+          accent: Color(0xFFEA4335),
+          providerType: 'imap',
+          credentialsRef: 'google:g1',
+        ),
+      ]);
+      final _FakeCredentialStore store = _FakeCredentialStore();
+      final _FakeIdentityManager identity = _FakeIdentityManager(store);
+      final AccountService service = AccountService(repo, store, identity);
+
+      await service.updateGoogleCredentials(
+        account: repo.accounts.first,
+        accessToken: 'google-access-2',
+        refreshToken: 'google-refresh-2',
+      );
+
+      expect(identity.savedGoogleRefs, <String>['google:g1']);
+      expect(repo.bootstrapAccountIds, <String>['g1']);
+      expect(
+        repo.enqueuedTypes,
+        containsAll(<String>[
+          'bootstrap',
+          'contact_lists_bootstrap',
+          'calendars_bootstrap',
+        ]),
+      );
     });
   });
 

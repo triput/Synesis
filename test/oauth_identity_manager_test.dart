@@ -103,6 +103,14 @@ void main() {
         'com.googleusercontent.apps.000000000000-example:/oauth2redirect',
       );
       expect(GoogleAuthConfig.scopes, contains('https://mail.google.com/'));
+      expect(
+        GoogleAuthConfig.scopes,
+        contains('https://www.googleapis.com/auth/contacts.readonly'),
+      );
+      expect(
+        GoogleAuthConfig.scopes,
+        contains('https://www.googleapis.com/auth/calendar'),
+      );
     });
   });
 

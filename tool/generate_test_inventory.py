@@ -449,6 +449,28 @@ FILE_META: dict[str, dict[str, str]] = {
         "component": "UI / Shell",
         "platform": "All",
     },
+    # V2 Wave G / V2.0d — Google People + Calendar API (Renee delta 2026-07-27)
+    "google_pim_provider_test.dart": {
+        "wave": "V2-WG",
+        "tier_refs": "V2.0d;Wave G",
+        "kind": "unit",
+        "component": "PIM / Google",
+        "platform": "All",
+    },
+    "google_pim_sync_engine_test.dart": {
+        "wave": "V2-WG",
+        "tier_refs": "V2.0d;Wave G",
+        "kind": "integration",
+        "component": "Sync / PIM",
+        "platform": "All",
+    },
+    "provider_registry_google_test.dart": {
+        "wave": "W0",
+        "tier_refs": "TA-0;V2.0d",
+        "kind": "unit",
+        "component": "Sync / Registry",
+        "platform": "All",
+    },
     "pim_store_test.dart": {
         "wave": "V2-W1",
         "tier_refs": "V2.0a;P0;W5-6",
@@ -498,6 +520,7 @@ GROUP_WAVE: dict[tuple[str, str], str] = {
     ("pim_store_test.dart", "DriftPimStore.listEventsInRange"): "V2-W5",
     ("pim_store_test.dart", "DriftPimStore display preference writers"): "V2-W5",
     ("pim_store_test.dart", "DriftPimStore local event CRUD"): "V2-W5",
+    ("account_service_test.dart", "AccountService.updateGoogleCredentials"): "V2-WG",
 }
 
 # Case-level wave overrides (file, test_name) -> wave.
@@ -511,6 +534,8 @@ CASE_WAVE: dict[tuple[str, str], str] = {
     ("mailbox_cubit_test.dart", "snoozeSelected hides message until expiry then refresh shows it"): "W2",
     ("mailbox_cubit_test.dart", "markFocusBucket upserts sender rule and updates message"): "Foundation",
     ("mailbox_cubit_test.dart", "markFocusBucket domain scope upserts domain rule"): "Foundation",
+    ("provider_registry_google_test.dart", "resolvePim returns GooglePimProvider for google: refs"): "V2-WG",
+    ("provider_registry_google_test.dart", "resolvePim returns GooglePimProvider for xoauth2 auth mode"): "V2-WG",
 }
 
 # Case-level kind overrides (file, test_name) -> kind.
@@ -673,7 +698,8 @@ def wave_sort_key(wave: str) -> tuple[int, str]:
         "W6": 7,
         "W7": 8,
         "V2-W5": 9,
-        "X": 10,
+        "V2-WG": 10,
+        "X": 11,
         "Unmapped": 11,
     }
     return (order.get(wave, 99), wave)
@@ -891,6 +917,7 @@ def write_xlsx(rows: list[dict[str, str]]) -> None:
             "Unmapped": "Needs wave assignment",
             "W5": "V1 Windows desktop wave",
             "V2-W5": "V2.0c compose picker + Calendar/People UI (Wave 5 exit 2026-07-27)",
+            "V2-WG": "V2.0d Google People + Calendar API (Wave G exit 2026-07-27)",
             "W4": "Compose wave mostly pending; early outbox/send coverage present",
             "W7": "Theme polish / hardening samples",
         }.get(wave, "")
