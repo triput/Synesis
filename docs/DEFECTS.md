@@ -290,7 +290,7 @@ Jobs sheet shows **Retry**; no in-sheet re-sign-in CTA.
 No “Sign in again” from failed job or account-health row. Re-auth exists only under Appearance → Manage accounts → Edit account → **Re-authenticate with Microsoft**.
 
 **Related UX friction (separate defect)**  
-Operator also saw the Edit-account **Re-authenticate with Microsoft** control clipped/overflowed in layout — worsens the only dogfood recovery path. Layout fix is **out of scope for DEF-058**; track/fix as the next open ID (Andi; likely DEF-059). Do not conflate with token-endpoint mapping work here.
+Operator also saw the Edit-account **Re-authenticate with Microsoft** control clipped/overflowed in layout — worsens the only dogfood recovery path. Tracked/fixed as **[DEF-059](#def-059--edit-account-re-authenticate-button-vertically-clipped)** (layout only; do not conflate with token-endpoint mapping work here).
 
 **Dogfood workaround**  
 Appearance → Manage accounts → Edit account for the Graph account → **Re-authenticate with Microsoft** → consent new scopes → Sync / Retry once tokens are rotated.
@@ -553,32 +553,7 @@ Dialog content is constrained to the available width/height and scrolls when nee
 Layout overflows the confirmation dialog chrome.
 
 **Notes**  
-Defer to a post-dogfood UI overflow sweep with DEF-040 and related shell polish. **Target wave: Wave 7 / Trish extras.** Not blocking daily use.
-
----
-
-### DEF-040 — Edit Account sheet overflows
-
-| Field | Value |
-| --- | --- |
-| Priority | **Pri-3** |
-| Status | Open |
-| Target wave | **Wave 7 / Trish extras** |
-| Area | `lib/ui/account/edit_account_sheet.dart` |
-| Platforms | Android (likely all narrow widths) |
-| Logged | 2026-07-23 |
-
-**Summary**  
-Yellow/black Flutter overflow stripes appear on the Edit Account screen (dogfood on Android). Non-blocking for continued dogfood.
-
-**Expected**  
-Sheet content fits the viewport or scrolls when the keyboard/small height requires it; no overflow indicators.
-
-**Actual**  
-Layout overflows on the Edit Account UI.
-
-**Notes**  
-Bundle with DEF-039 in a later UI overflow sweep after more dogfood. **Target wave: Wave 7 / Trish extras.**
+Defer to a post-dogfood UI overflow sweep (DEF-040 Edit Account overflow closed with DEF-059 scroll fix). **Target wave: Wave 7 / Trish extras.** Not blocking daily use.
 
 ---
 
@@ -635,6 +610,54 @@ Enhancement for the next UI pass — not a defect. Pill outbox affordance stays;
 ---
 
 ## Closed
+
+### DEF-059 — Edit Account Re-authenticate button vertically clipped
+
+| Field | Value |
+| --- | --- |
+| Priority | **Pri-2** |
+| Status | **Closed** (2026-07-27) |
+| Fixed | 2026-07-27 |
+| Area | `lib/ui/account/edit_account_sheet.dart` |
+| Platforms | All (Graph edit; dogfood screenshot Windows) |
+| Logged | 2026-07-27 |
+| Found by | Trish (dogfood); noted under DEF-058 |
+
+**Summary**  
+On Graph **Edit account**, the filled **Re-authenticate with Microsoft** button showed only its bottom half — visually swallowed under the **Use profile retention** switch. Label **Re-authenticate (optional)** remained visible; Manage signatures / templates / Save below looked fine.
+
+**Root cause**  
+Fixed `Column` kept sync profile + retention (and the re-auth *label*) outside an `Expanded` → `ListView` that held only the credential controls. Tall chrome above left a tiny `Expanded` viewport that clipped the re-auth `FilledButton`.
+
+**Fix**  
+Put metadata + credential fields in one scrollable `Expanded` `ListView`; keep signatures / templates / Save as a sticky footer. Also addresses general Edit Account overflow from [DEF-040](#def-040--edit-account-sheet-overflows). Separate from DEF-058 (`invalid_grant` / Jobs Retry UX).
+
+---
+
+### DEF-040 — Edit Account sheet overflows
+
+| Field | Value |
+| --- | --- |
+| Priority | **Pri-3** |
+| Status | **Closed** (2026-07-27) |
+| Fixed | 2026-07-27 |
+| Area | `lib/ui/account/edit_account_sheet.dart` |
+| Platforms | Android (likely all narrow widths) |
+| Logged | 2026-07-23 |
+
+**Summary**  
+Yellow/black Flutter overflow stripes appear on the Edit Account screen (dogfood on Android). Non-blocking for continued dogfood.
+
+**Expected**  
+Sheet content fits the viewport or scrolls when the keyboard/small height requires it; no overflow indicators.
+
+**Actual**  
+Layout overflows on the Edit Account UI.
+
+**Resolution**  
+Same scroll restructure as **DEF-059**: form body scrolls inside `Expanded` `ListView`; action buttons stay sticky. DEF-039 (Remove Account dialog) remains open.
+
+---
 
 ### DEF-049 — Graph reply send fails: In-Reply-To not allowed on internetMessageHeaders
 

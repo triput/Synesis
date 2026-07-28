@@ -312,6 +312,10 @@ class _EditAccountFormState extends State<_EditAccountForm> {
   @override
   Widget build(BuildContext context) {
     final t = tokensOf(context);
+    // Scroll metadata + credential controls together. Previously only the
+    // re-auth / IMAP fields lived in Expanded>ListView while sync profile and
+    // retention stayed fixed above — on typical heights that left a ~half-button
+    // viewport and clipped "Re-authenticate with Microsoft" under the switch.
     return SizedBox(
       height: MediaQuery.sizeOf(context).height * 0.85,
       child: Column(
@@ -319,106 +323,112 @@ class _EditAccountFormState extends State<_EditAccountForm> {
         children: [
           Text('Edit account', style: Theme.of(context).textTheme.titleLarge),
           const SizedBox(height: 8),
-          Align(
-            alignment: Alignment.centerLeft,
-            child: Chip(
-              label: Text(_providerLabel()),
-              visualDensity: VisualDensity.compact,
-            ),
-          ),
-          const SizedBox(height: 8),
-          InputDecorator(
-            decoration: const InputDecoration(
-              labelText: 'Email address',
-            ),
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: Text(widget.account.address),
-            ),
-          ),
-          TextField(
-            controller: _label,
-            decoration: const InputDecoration(
-              labelText: 'Display name',
-              hintText: 'Personal name for this account',
-              helperText: 'Address stays unchanged below the rail / chips',
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text('Accent color', style: TextStyle(color: t.muted, fontSize: 12)),
-          const SizedBox(height: 6),
-          AccountColorPicker(
-            value: _accent,
-            onChanged: (Color color) => setState(() => _accent = color),
-          ),
-          const SizedBox(height: 12),
-          ListTile(
-            contentPadding: EdgeInsets.zero,
-            title: const Text('Sync profile'),
-            subtitle: Text(
-              'Controls retention, folder scope, and body policy',
-              style: TextStyle(color: t.muted, fontSize: 12),
-            ),
-            trailing: DropdownButton<String>(
-              value: _syncProfileId,
-              underline: const SizedBox.shrink(),
-              items: <DropdownMenuItem<String>>[
-                for (final SyncProfile profile in _profiles)
-                  DropdownMenuItem<String>(
-                    value: profile.id,
-                    child: Text(
-                      profile.isDefault
-                          ? '${profile.name} (default)'
-                          : profile.name,
-                    ),
-                  ),
-                if (_profiles.isEmpty)
-                  const DropdownMenuItem<String>(
-                    value: 'default',
-                    child: Text('Default'),
-                  ),
-              ],
-              onChanged: _busy
-                  ? null
-                  : (String? next) {
-                      if (next != null) {
-                        setState(() => _syncProfileId = next);
-                      }
-                    },
-            ),
-          ),
-          SwitchListTile(
-            contentPadding: EdgeInsets.zero,
-            title: const Text('Use profile retention'),
-            subtitle: Text(
-              'Off to set a per-account day override',
-              style: TextStyle(color: t.muted, fontSize: 12),
-            ),
-            value: _useProfileRetention,
-            onChanged: _busy
-                ? null
-                : (bool value) => setState(() => _useProfileRetention = value),
-          ),
-          if (!_useProfileRetention)
-            TextField(
-              controller: _retentionOverride,
-              decoration: const InputDecoration(
-                labelText: 'Retention override (days)',
-              ),
-              keyboardType: TextInputType.number,
-              enabled: !_busy,
-            ),
-          const SizedBox(height: 12),
-          Text(
-            _isGraph
-                ? 'Re-authenticate (optional)'
-                : 'Update credentials (optional)',
-            style: TextStyle(color: t.muted, fontSize: 12),
-          ),
-          const SizedBox(height: 8),
           Expanded(
             child: ListView(
-              children: _isGraph ? _graphFields() : _imapFields(),
+              children: <Widget>[
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Chip(
+                    label: Text(_providerLabel()),
+                    visualDensity: VisualDensity.compact,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                InputDecorator(
+                  decoration: const InputDecoration(
+                    labelText: 'Email address',
+                  ),
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(widget.account.address),
+                  ),
+                ),
+                TextField(
+                  controller: _label,
+                  decoration: const InputDecoration(
+                    labelText: 'Display name',
+                    hintText: 'Personal name for this account',
+                    helperText: 'Address stays unchanged below the rail / chips',
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Accent color',
+                  style: TextStyle(color: t.muted, fontSize: 12),
+                ),
+                const SizedBox(height: 6),
+                AccountColorPicker(
+                  value: _accent,
+                  onChanged: (Color color) => setState(() => _accent = color),
+                ),
+                const SizedBox(height: 12),
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: const Text('Sync profile'),
+                  subtitle: Text(
+                    'Controls retention, folder scope, and body policy',
+                    style: TextStyle(color: t.muted, fontSize: 12),
+                  ),
+                  trailing: DropdownButton<String>(
+                    value: _syncProfileId,
+                    underline: const SizedBox.shrink(),
+                    items: <DropdownMenuItem<String>>[
+                      for (final SyncProfile profile in _profiles)
+                        DropdownMenuItem<String>(
+                          value: profile.id,
+                          child: Text(
+                            profile.isDefault
+                                ? '${profile.name} (default)'
+                                : profile.name,
+                          ),
+                        ),
+                      if (_profiles.isEmpty)
+                        const DropdownMenuItem<String>(
+                          value: 'default',
+                          child: Text('Default'),
+                        ),
+                    ],
+                    onChanged: _busy
+                        ? null
+                        : (String? next) {
+                            if (next != null) {
+                              setState(() => _syncProfileId = next);
+                            }
+                          },
+                  ),
+                ),
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: const Text('Use profile retention'),
+                  subtitle: Text(
+                    'Off to set a per-account day override',
+                    style: TextStyle(color: t.muted, fontSize: 12),
+                  ),
+                  value: _useProfileRetention,
+                  onChanged: _busy
+                      ? null
+                      : (bool value) =>
+                            setState(() => _useProfileRetention = value),
+                ),
+                if (!_useProfileRetention)
+                  TextField(
+                    controller: _retentionOverride,
+                    decoration: const InputDecoration(
+                      labelText: 'Retention override (days)',
+                    ),
+                    keyboardType: TextInputType.number,
+                    enabled: !_busy,
+                  ),
+                const SizedBox(height: 12),
+                Text(
+                  _isGraph
+                      ? 'Re-authenticate (optional)'
+                      : 'Update credentials (optional)',
+                  style: TextStyle(color: t.muted, fontSize: 12),
+                ),
+                const SizedBox(height: 8),
+                ...(_isGraph ? _graphFields() : _imapFields()),
+              ],
             ),
           ),
           if (_error != null) ...[
