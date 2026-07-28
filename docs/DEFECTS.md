@@ -257,6 +257,59 @@ Windows debug → open Settings → click rail sections rapidly and/or open drop
 
 ---
 
+### DEF-058 — Graph `invalid_grant` on token refresh surfaces as failed job with useless Retry
+
+| Field | Value |
+| --- | --- |
+| Priority | **Pri-2** |
+| Status | Open |
+| Area | `lib/auth/oauth_identity_manager.dart` (`_postToken`, `getValidAccessToken`); `lib/sync/sync_engine.dart` (`_processJobSafely`); `lib/ui/sync/sync_status_sheet.dart`; `lib/protocol/graph_mail_provider.dart` (`GraphAuthException`) |
+| Platforms | All Graph / Microsoft accounts |
+| Logged | 2026-07-27 |
+| Found by | Trish (dogfood, Jobs sheet); Renee (triage) |
+
+**Summary**  
+After V2 Graph scope expansion (`Contacts.Read`, then `Calendars.ReadWrite`), a Microsoft account (`tputnam@cctplays.org`) failed `full_folder` with:
+
+`Bad state: Microsoft token endpoint failed (400): {"error":"invalid_grant",…}`
+
+Jobs sheet shows **Retry**; no in-sheet re-sign-in CTA.
+
+**Root cause**  
+1. `OAuthIdentityManager._postToken` throws a raw `StateError` on non-2xx token responses, including AAD `invalid_grant` during refresh-token exchange (`getValidAccessToken` → `_exchangeGraphRefreshToken`).  
+2. `SyncEngine._processJobSafely` persists `error.toString()` as the job `lastError` — no classification for auth-terminal failures.  
+3. `GraphAuthException` only covers Graph API HTTP 401 after bearer reject (`graph_mail_provider` / `graph_pim_provider`); refresh-endpoint `invalid_grant` never becomes that type.  
+4. Jobs **Retry** only requeues + `kick()` — same dead refresh token → same 400 loop.
+
+**Expected vs actual (dogfood)**  
+- **Expected after V2 scope bumps:** existing Graph accounts need interactive re-consent (`Edit account → Re-authenticate with Microsoft`). Documented in README / QUICK_START / V2_PLAN / Wave 2–3 QA residuals.  
+- **`invalid_grant` specifically:** refresh grant revoked/expired or AAD requiring interaction — not fixed by silent refresh or job Retry. Scope expansion alone more often yields Graph **403 insufficient privileges** on PIM calls while refresh still works; either path needs re-auth.  
+- **Actual:** opaque `Bad state: …` job error + Retry that cannot succeed until credentials rotate.
+
+**UX gap**  
+No “Sign in again” from failed job or account-health row. Re-auth exists only under Appearance → Manage accounts → Edit account → **Re-authenticate with Microsoft**.
+
+**Dogfood workaround**  
+Appearance → Manage accounts → Edit account for the Graph account → **Re-authenticate with Microsoft** → consent new scopes → Sync / Retry once tokens are rotated.
+
+**Disposition**  
+Not docs-only: file as product gap. Immediate operator path is re-auth (above). Code follow-up (schedule soon / Wave 7 polish or auth hardening):
+
+1. Parse token-endpoint JSON; map `invalid_grant` / `interaction_required` / `consent_required` to a dedicated auth-failure type (extend or parallel `GraphAuthException`).  
+2. SyncEngine (and Jobs / account health UI) surface **needs re-auth** copy + CTA to Edit account / launch re-auth instead of (or beside) Retry.  
+3. Optionally suppress Retry or label it ineffective when `lastError` is auth-terminal.
+
+Related: Wave 2 QA residual “No automatic UI when token lacks PIM scopes”; closed DEF-005 (job error surfacing); SPEC account/auth “force re-auth with clear UI”.
+
+**Repro**  
+1. Graph account signed in before Wave 2/3 scopes (or with revoked refresh).  
+2. Upgrade to Wave 4/5+ build; trigger folder sync (`full_folder`).  
+3. Observe failed job with `Microsoft token endpoint failed (400)` / `invalid_grant`.  
+4. Tap Retry → fails again with the same error.  
+5. Edit account → re-auth → sync succeeds.
+
+---
+
 ### DEF-011 — IMAP edit ignores host/port/user changes without a new password
 
 | Field | Value |
