@@ -10,6 +10,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'dart:async';
 import 'package:uuid/uuid.dart';
 import 'package:synesis/account/account_display.dart';
 import 'package:synesis/account/account_service.dart';
@@ -138,7 +139,7 @@ class _AddAccountFormState extends State<_AddAccountForm>
         refreshToken: result.refreshToken,
         expiresAt: result.expiresAt,
       );
-      await syncEngine.kick();
+      unawaited(syncEngine.kick());
       mailbox.setSidebarVisible(true);
       await mailbox.selectAccount(id);
       if (!mounted) {
@@ -181,7 +182,7 @@ class _AddAccountFormState extends State<_AddAccountForm>
         refreshToken: result.refreshToken,
         expiresAt: result.expiresAt,
       );
-      await syncEngine.kick();
+      unawaited(syncEngine.kick());
       mailbox.setSidebarVisible(true);
       await mailbox.selectAccount(id);
       if (!mounted) {
@@ -225,7 +226,7 @@ class _AddAccountFormState extends State<_AddAccountForm>
         accent: _accent,
         accessToken: token,
       );
-      await syncEngine.kick();
+      unawaited(syncEngine.kick());
       await mailbox.refresh();
       if (!mounted) {
         return;
@@ -400,7 +401,7 @@ class _AddAccountFormState extends State<_AddAccountForm>
             ? null
             : _davBaseUrl.text.trim(),
       );
-      await syncEngine.kick();
+      unawaited(syncEngine.kick());
       await mailbox.refresh();
       if (!mounted) {
         return;

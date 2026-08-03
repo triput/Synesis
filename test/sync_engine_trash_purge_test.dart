@@ -122,6 +122,7 @@ class _TrashPurgeRepo implements MailRepository {
   final List<String> hardDeletedIds = <String>[];
   final List<Map<String, Object?>> completedJobs = <Map<String, Object?>>[];
   int enqueueTrashPurgeCount = 0;
+  int reclaimRunningCalls = 0;
   int nextJobId = 1;
 
   @override
@@ -199,7 +200,10 @@ class _TrashPurgeRepo implements MailRepository {
   }
 
   @override
-  Future<int> reclaimRunningJobs() async => 0;
+  Future<int> reclaimRunningJobs() async {
+    reclaimRunningCalls += 1;
+    return 0;
+  }
 
   @override
   Future<int> reclaimSendingOutbox() async => 0;
@@ -282,12 +286,14 @@ void main() {
 
       await engine.kickFresh();
       expect(repo.enqueueTrashPurgeCount, 1);
+      expect(repo.reclaimRunningCalls, greaterThan(0));
       expect(repo.completedJobs, isNotEmpty);
       expect(repo.completedJobs.first['success'], isTrue);
 
       repo.hasIncomplete = false;
       await engine.kickFresh();
       expect(repo.enqueueTrashPurgeCount, 2);
+      expect(repo.reclaimRunningCalls, greaterThan(1));
     });
 
     test(

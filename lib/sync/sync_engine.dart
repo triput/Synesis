@@ -29,6 +29,7 @@ import 'package:synesis/outbox/send_error_messages.dart';
 import 'package:synesis/sync/imap_idle_service.dart';
 import 'package:synesis/sync/network_sync_policy.dart';
 import 'package:synesis/sync/pim_sync_jobs.dart';
+import 'package:synesis/sync/sync_activity.dart';
 import 'package:synesis/widgets/widget_snapshot_service.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/foundation.dart'
@@ -112,6 +113,7 @@ class SyncEngine {
   String? _folderListSoftError;
   FocusOverrideRegistry? _focusOverrides;
   bool _networkWatcherStarted = false;
+  SyncActivity? _syncActivity;
 
   static bool _detectDesktop() {
     if (kIsWeb) {
@@ -132,6 +134,29 @@ class SyncEngine {
   /// Resolves the live mail provider for [accountId] (attachments, etc.).
   Future<MailProvider?> resolveMailProvider(String accountId) {
     return _resolveProvider(accountId);
+  }
+
+  /// Binds Wave 6P [SyncActivity] for kick lifecycle notifications.
+  void attachSyncActivity(SyncActivity activity) {
+    _syncActivity = activity;
+  }
+
+  /// Whether a kick batch is currently executing on this engine instance.
+  bool get isKickInFlight => _activeKick != null;
+
+  /// Starts job processing without blocking the caller (Wave 6P UI contract).
+  void kickNonBlocking() {
+    unawaited(kick());
+  }
+
+  /// Reclaim + enqueue trash purge, then kick without blocking the caller.
+  Future<void> kickFreshNonBlocking() async {
+    _kickGeneration++;
+    _activeKick = null;
+    await _repository.reclaimRunningJobs();
+    await _repository.reclaimSendingOutbox();
+    await _enqueueTrashPurgeIfNeeded();
+    kickNonBlocking();
   }
 
   /// Begins connectivity listening so reconnect kicks and IDLE policy refresh.
@@ -203,12 +228,14 @@ class SyncEngine {
       return activeKick;
     }
     final int generation = _kickGeneration;
+    _syncActivity?.onKickStarted();
     final Future<void> run = _processPendingJobs(generation);
     _activeKick = run;
     return run.whenComplete(() {
       if (identical(_activeKick, run)) {
         _activeKick = null;
       }
+      _syncActivity?.onKickEnded();
     });
   }
 
@@ -278,7 +305,6 @@ class SyncEngine {
         'remoteId': remoteId,
       }),
     );
-    await kick();
   }
 
   Future<void> dispose() async {

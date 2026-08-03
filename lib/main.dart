@@ -33,6 +33,7 @@ import 'package:synesis/repository/drift_mail_repository.dart';
 import 'package:synesis/settings/app_settings_cubit.dart';
 import 'package:synesis/sync/provider_registry.dart';
 import 'package:synesis/sync/retention_service.dart';
+import 'package:synesis/sync/sync_activity.dart';
 import 'package:synesis/sync/sync_engine.dart';
 import 'package:synesis/widgets/widget_snapshot_service.dart';
 import 'package:desktop_multi_window/desktop_multi_window.dart';
@@ -147,6 +148,9 @@ Future<void> main(List<String> args) async {
     notify: repository.notifyChanges,
   );
 
+  final SyncActivity syncActivity = SyncActivity(repository: repository);
+  syncActivity.start();
+
   final SyncEngine syncEngine = SyncEngine(
     repository: repository,
     resolveProvider: providerRegistry.resolve,
@@ -158,6 +162,7 @@ Future<void> main(List<String> args) async {
     onNewUnread: (List<MailMessage> messages) =>
         notificationService.onNewMail(messages),
   );
+  syncEngine.attachSyncActivity(syncActivity);
   final MeetingInviteService meetingInviteService = MeetingInviteService(
     pimStore: pimStore,
     repository: repository,
@@ -225,6 +230,7 @@ Future<void> main(List<String> args) async {
       prefs: prefs,
       repository: repository,
       syncEngine: syncEngine,
+      syncActivity: syncActivity,
       retentionService: retentionService,
       accountService: accountService,
       identityManager: identityManager,

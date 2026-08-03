@@ -56,6 +56,7 @@ class MailboxCubit extends Cubit<MailboxState> {
   StreamSubscription<Object?>? _dbSub;
   StreamSubscription<AppSettingsState>? _settingsSub;
   Timer? _snoozeResurfaceTimer;
+  bool _initialLoadPending = true;
 
   /// When set (typically by the workspace UI), missing trash/junk/archive
   /// folders can be created after user confirmation.
@@ -75,7 +76,9 @@ class MailboxCubit extends Cubit<MailboxState> {
     if (isClosed) {
       return;
     }
-    emit(state.copyWith(isLoading: true, clearError: true));
+    if (_initialLoadPending) {
+      emit(state.copyWith(isLoading: true, clearError: true));
+    }
     try {
       await _actions.resurfaceExpiredSnoozes();
       await _repository.recountUnreadCounts();
@@ -108,6 +111,7 @@ class MailboxCubit extends Cubit<MailboxState> {
           threadDisplayMode: _settingsCubit.state.threadDisplayMode,
         ),
       );
+      _initialLoadPending = false;
       final MailMessage? selected = state.selectedMessage;
       if (selected != null) {
         unawaited(_ensureBodyCached(selected.id));
@@ -118,6 +122,7 @@ class MailboxCubit extends Cubit<MailboxState> {
         return;
       }
       emit(state.copyWith(isLoading: false, errorMessage: e.toString()));
+      _initialLoadPending = false;
     }
   }
 
@@ -684,29 +689,35 @@ class MailboxCubit extends Cubit<MailboxState> {
     );
   }
 
-  /// Enqueues a folder (or unified) sync, then refreshes local state.
+  /// Pull-to-refresh: local recount only (Wave 6P — remote kick is async).
   ///
-  /// Used by pull-to-refresh so [RefreshIndicator] awaits visible feedback.
-  /// Unified inbox kicks incremental sync for every account; a single folder
-  /// reuses [_syncSelectedFolder]. Always ends with [refresh].
+  /// [RefreshIndicator] awaits this for fast local feedback; remote sync
+  /// continues in the background via [SyncActivity].
   Future<void> syncCurrentFolder() async {
-    final SyncEngine? engine = _syncEngine;
-    if (engine != null) {
-      if (state.unified) {
-        for (final MailAccount account in state.accounts) {
-          await engine.enqueueIncremental(account.id);
-        }
-        if (state.accounts.isNotEmpty) {
-          await engine.kick();
-        }
-      } else {
-        await _syncSelectedFolder();
-      }
-    }
+    unawaited(_kickRemoteSyncNonBlocking());
     await refresh();
   }
 
-  Future<void> _syncSelectedFolder() async {
+  /// Enqueues remote sync for the current view without blocking the UI.
+  Future<void> _kickRemoteSyncNonBlocking() async {
+    final SyncEngine? engine = _syncEngine;
+    if (engine == null) {
+      return;
+    }
+    if (state.unified) {
+      for (final MailAccount account in state.accounts) {
+        await engine.enqueueIncremental(account.id);
+      }
+      if (state.accounts.isNotEmpty) {
+        engine.kickNonBlocking();
+      }
+      return;
+    }
+    await _enqueueSelectedFolderSync();
+    engine.kickNonBlocking();
+  }
+
+  Future<void> _enqueueSelectedFolderSync() async {
     final SyncEngine? engine = _syncEngine;
     final String? accountId = state.accountId;
     final String? folderId = state.folderId;
@@ -726,6 +737,11 @@ class MailboxCubit extends Cubit<MailboxState> {
       folderId: folderId,
       remoteId: remoteId,
     );
+  }
+
+  Future<void> _syncSelectedFolder() async {
+    await _enqueueSelectedFolderSync();
+    _syncEngine?.kickNonBlocking();
   }
 
   bool _isJunkFolderName(String? name) {

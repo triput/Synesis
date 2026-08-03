@@ -14,6 +14,7 @@ import 'package:synesis/repository/database.dart'
     hide SyncProfile, CustomTheme, FocusRule;
 import 'package:synesis/repository/drift/drift_pim_store.dart';
 import 'package:synesis/repository/mail_repository.dart';
+import 'package:synesis/sync/sync_activity.dart';
 import 'package:synesis/sync/sync_engine.dart';
 import 'package:synesis/theme/custom_theme.dart';
 
@@ -85,6 +86,10 @@ class _FakeRepo implements MailRepository {
 
   @override
   Future<int> countFailedOutbox() async => 0;
+
+  @override
+  Future<({int running, int pending})> countSyncJobActivity() async =>
+      (running: 0, pending: 0);
 
   @override
   Future<int> reclassifyFocusBuckets(
@@ -429,6 +434,10 @@ void main() {
       repository: repo,
       resolveProvider: (_) async => null,
     );
+    final SyncActivity syncActivity = SyncActivity(repository: repo);
+    syncActivity.start();
+    syncEngine.attachSyncActivity(syncActivity);
+    addTearDown(syncActivity.dispose);
     final SecureCredentialStore credentialStore = SecureCredentialStore();
     final OAuthIdentityManager identityManager = OAuthIdentityManager(
       credentialStore,
@@ -457,6 +466,7 @@ void main() {
         prefs: prefs,
         repository: repo,
         syncEngine: syncEngine,
+        syncActivity: syncActivity,
         accountService: accountService,
         identityManager: identityManager,
         resolveProvider: (_) async => null,

@@ -122,6 +122,10 @@ class DriftMailRepository implements MailRepository {
   Future<String> syncStatusLabel() => _jobs.syncStatusLabel();
 
   @override
+  Future<({int running, int pending})> countSyncJobActivity() =>
+      _jobs.countSyncJobActivity();
+
+  @override
   Future<void> upsertAccount(
     MailAccount account, {
     required String providerType,

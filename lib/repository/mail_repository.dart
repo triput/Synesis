@@ -144,6 +144,11 @@ abstract class MailRepository {
   /// Counts outbox rows in `failed`.
   Future<int> countFailedOutbox();
   Future<String> syncStatusLabel();
+
+  /// Running + pending durable sync job counts (Wave 6P [SyncActivity]).
+  Future<({int running, int pending})> countSyncJobActivity() async =>
+      (running: 0, pending: 0);
+
   Stream<void> watchChanges();
   Future<void> upsertAccount(
     MailAccount account, {

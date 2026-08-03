@@ -478,6 +478,21 @@ FILE_META: dict[str, dict[str, str]] = {
         "component": "PIM / Data",
         "platform": "All",
     },
+    # V2 Wave 6P — Performance UX / Sync Honesty (Renee delta 2026-08-03)
+    "sync_activity_test.dart": {
+        "wave": "V2-W6P",
+        "tier_refs": "V2.0;Wave 6P;6P-1;6P-7;DEF-006",
+        "kind": "unit",
+        "component": "Sync / Activity",
+        "platform": "All",
+    },
+    "sync_engine_kick_lifecycle_test.dart": {
+        "wave": "V2-W6P",
+        "tier_refs": "V2.0;Wave 6P;6P-7;DEF-006;E6",
+        "kind": "integration",
+        "component": "Sync / Engine",
+        "platform": "All",
+    },
 }
 
 # Suite-level wave overrides from Renee inventory (file, group) -> wave.
@@ -521,6 +536,8 @@ GROUP_WAVE: dict[tuple[str, str], str] = {
     ("pim_store_test.dart", "DriftPimStore display preference writers"): "V2-W5",
     ("pim_store_test.dart", "DriftPimStore local event CRUD"): "V2-W5",
     ("account_service_test.dart", "AccountService.updateGoogleCredentials"): "V2-WG",
+    # V2 Wave 6P sync honesty (Renee 2026-08-03)
+    ("mailbox_cubit_test.dart", "MailboxCubit Wave 6P sync honesty"): "V2-W6P",
 }
 
 # Case-level wave overrides (file, test_name) -> wave.
@@ -536,6 +553,10 @@ CASE_WAVE: dict[tuple[str, str], str] = {
     ("mailbox_cubit_test.dart", "markFocusBucket domain scope upserts domain rule"): "Foundation",
     ("provider_registry_google_test.dart", "resolvePim returns GooglePimProvider for google: refs"): "V2-WG",
     ("provider_registry_google_test.dart", "resolvePim returns GooglePimProvider for xoauth2 auth mode"): "V2-WG",
+    (
+        "sync_engine_trash_purge_test.dart",
+        "kickFresh enqueues trash_purge once when none pending",
+    ): "V2-W6P",
 }
 
 # Case-level kind overrides (file, test_name) -> kind.
@@ -699,8 +720,9 @@ def wave_sort_key(wave: str) -> tuple[int, str]:
         "W7": 8,
         "V2-W5": 9,
         "V2-WG": 10,
-        "X": 11,
-        "Unmapped": 11,
+        "V2-W6P": 11,
+        "X": 12,
+        "Unmapped": 12,
     }
     return (order.get(wave, 99), wave)
 
@@ -918,6 +940,7 @@ def write_xlsx(rows: list[dict[str, str]]) -> None:
             "W5": "V1 Windows desktop wave",
             "V2-W5": "V2.0c compose picker + Calendar/People UI (Wave 5 exit 2026-07-27)",
             "V2-WG": "V2.0d Google People + Calendar API (Wave G exit 2026-07-27)",
+            "V2-W6P": "Wave 6P Performance UX / Sync Honesty P0 (Renee E6 GO 2026-08-03, 626 tests)",
             "W4": "Compose wave mostly pending; early outbox/send coverage present",
             "W7": "Theme polish / hardening samples",
         }.get(wave, "")

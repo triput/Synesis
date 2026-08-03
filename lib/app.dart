@@ -27,6 +27,7 @@ import 'package:synesis/repository/mail_repository.dart';
 import 'package:synesis/settings/app_settings_cubit.dart';
 import 'package:synesis/settings/app_settings_state.dart';
 import 'package:synesis/sync/retention_service.dart';
+import 'package:synesis/sync/sync_activity.dart';
 import 'package:synesis/sync/sync_engine.dart';
 import 'package:synesis/theme/app_theme.dart';
 import 'package:synesis/theme/custom_theme.dart';
@@ -43,6 +44,7 @@ class SynesisApp extends StatelessWidget {
     required this.prefs,
     required this.repository,
     required this.syncEngine,
+    required this.syncActivity,
     required this.accountService,
     required this.identityManager,
     required this.resolveProvider,
@@ -60,6 +62,7 @@ class SynesisApp extends StatelessWidget {
   final SharedPreferences prefs;
   final MailRepository repository;
   final SyncEngine syncEngine;
+  final SyncActivity syncActivity;
   final AccountService accountService;
   final OAuthIdentityManager identityManager;
   final ProviderResolver resolveProvider;
@@ -80,6 +83,7 @@ class SynesisApp extends StatelessWidget {
       providers: [
         RepositoryProvider<MailRepository>.value(value: repository),
         RepositoryProvider<SyncEngine>.value(value: syncEngine),
+        RepositoryProvider<SyncActivity>.value(value: syncActivity),
         RepositoryProvider<RetentionService>.value(value: retention),
         RepositoryProvider<AccountService>.value(value: accountService),
         RepositoryProvider<OAuthIdentityManager>.value(value: identityManager),

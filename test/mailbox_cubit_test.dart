@@ -19,11 +19,22 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class _RecordingRepo implements MailRepository {
-  _RecordingRepo({List<MailMessage>? messages, List<MailFolder>? folders})
-    : _messages = List<MailMessage>.from(messages ?? <MailMessage>[message]),
-      _folders = List<MailFolder>.from(
-        folders ?? <MailFolder>[inbox, archive, trash, junk],
-      );
+  _RecordingRepo({
+    List<MailMessage>? messages,
+    List<MailFolder>? folders,
+    StreamController<void>? changes,
+  }) : _messages = List<MailMessage>.from(messages ?? <MailMessage>[message]),
+       _folders = List<MailFolder>.from(
+         folders ?? <MailFolder>[inbox, archive, trash, junk],
+       ),
+       _changes = changes;
+
+  final StreamController<void>? _changes;
+
+  /// When set, [claimPendingJobs] awaits this before returning (Wave 6P hang).
+  Completer<void>? claimGate;
+  int reclaimRunningCalls = 0;
+  int claimPendingCalls = 0;
 
   bool throwOnSetUnreadBulk = false;
   int setUnreadBulkCalls = 0;
@@ -186,10 +197,20 @@ class _RecordingRepo implements MailRepository {
       const <AccountSyncHealth>[];
 
   @override
-  Future<List<SyncJob>> claimPendingJobs({int limit = 10}) async => const [];
+  Future<List<SyncJob>> claimPendingJobs({int limit = 10}) async {
+    claimPendingCalls += 1;
+    final Completer<void>? gate = claimGate;
+    if (gate != null) {
+      await gate.future;
+    }
+    return const <SyncJob>[];
+  }
 
   @override
-  Future<int> reclaimRunningJobs() async => 0;
+  Future<int> reclaimRunningJobs() async {
+    reclaimRunningCalls += 1;
+    return 0;
+  }
 
   @override
   Future<int> reclaimSendingOutbox() async => 0;
@@ -207,6 +228,10 @@ class _RecordingRepo implements MailRepository {
 
   @override
   Future<int> countFailedOutbox() async => 0;
+
+  @override
+  Future<({int running, int pending})> countSyncJobActivity() async =>
+      (running: 0, pending: 0);
 
   @override
   Future<int> reclassifyFocusBuckets(
@@ -622,7 +647,8 @@ class _RecordingRepo implements MailRepository {
   ) async {}
 
   @override
-  Stream<void> watchChanges() => const Stream<void>.empty();
+  Stream<void> watchChanges() =>
+      _changes?.stream ?? const Stream<void>.empty();
 
   @override
   Future<void> wipeAccount(String accountId) async {}
@@ -959,6 +985,7 @@ Future<MailboxCubit> _buildCubit({
   required SharedPreferences prefs,
   ProviderResolver? resolveProvider,
   SystemFolderConfirm? onConfirmCreateSystemFolder,
+  SyncEngine? syncEngine,
 }) async {
   final ProviderResolver resolver = resolveProvider ?? (_) async => null;
   final MessageActionService actions = MessageActionService(
@@ -975,6 +1002,7 @@ Future<MailboxCubit> _buildCubit({
     settingsCubit: AppSettingsCubit(prefs),
     actions: actions,
     bodyCache: bodyCache,
+    syncEngine: syncEngine,
     onConfirmCreateSystemFolder: onConfirmCreateSystemFolder,
   );
   await Future<void>.delayed(Duration.zero);
@@ -2184,6 +2212,164 @@ void main() {
       expect(cubit.state, same(before));
       await cubit.close();
     });
+  });
+
+  group('MailboxCubit Wave 6P sync honesty', () {
+    late SharedPreferences prefs;
+
+    setUp(() async {
+      SharedPreferences.setMockInitialValues(<String, Object>{});
+      prefs = await SharedPreferences.getInstance();
+    });
+
+    test('initial attach sets isLoading then clears it', () async {
+      final _RecordingRepo repo = _RecordingRepo();
+      final ProviderResolver resolver = (_) async => null;
+      final MailboxCubit cubit = MailboxCubit(
+        repository: repo,
+        settingsCubit: AppSettingsCubit(prefs),
+        actions: MessageActionService(
+          repository: repo,
+          resolveProvider: resolver,
+        ),
+        bodyCache: MessageBodyCache(
+          repository: repo,
+          resolveProvider: resolver,
+        ),
+      );
+
+      expect(cubit.state.isLoading, isTrue);
+
+      await Future<void>.delayed(Duration.zero);
+      await Future<void>.delayed(Duration.zero);
+
+      expect(cubit.state.isLoading, isFalse);
+      await cubit.close();
+    });
+
+    test(
+      'refresh after initial load does not set isLoading for recounts',
+      () async {
+        final _RecordingRepo repo = _RecordingRepo();
+        final MailboxCubit cubit = await _buildCubit(repo: repo, prefs: prefs);
+        expect(cubit.state.isLoading, isFalse);
+
+        final List<bool> loadingFlags = <bool>[];
+        final StreamSubscription<MailboxState> sub = cubit.stream.listen(
+          (MailboxState state) => loadingFlags.add(state.isLoading),
+        );
+        addTearDown(sub.cancel);
+
+        await cubit.refresh();
+        await cubit.refresh();
+
+        expect(loadingFlags, isNot(contains(true)));
+        expect(cubit.state.isLoading, isFalse);
+        await cubit.close();
+      },
+    );
+
+    test(
+      'DB-watch style recount via attachDbWatch does not flip isLoading',
+      () async {
+        final StreamController<void> changes =
+            StreamController<void>.broadcast();
+        addTearDown(changes.close);
+        final _RecordingRepo repo = _RecordingRepo(changes: changes);
+        final MailboxCubit cubit = await _buildCubit(repo: repo, prefs: prefs);
+        expect(cubit.state.isLoading, isFalse);
+
+        await cubit.attachDbWatch();
+
+        final List<bool> loadingFlags = <bool>[];
+        final StreamSubscription<MailboxState> sub = cubit.stream.listen(
+          (MailboxState state) => loadingFlags.add(state.isLoading),
+        );
+        addTearDown(sub.cancel);
+
+        changes.add(null);
+        await Future<void>.delayed(Duration.zero);
+        await Future<void>.delayed(Duration.zero);
+
+        expect(loadingFlags, isNot(contains(true)));
+        expect(cubit.state.isLoading, isFalse);
+        await cubit.close();
+      },
+    );
+
+    test(
+      'syncCurrentFolder completes local refresh without awaiting hung kick',
+      () async {
+        final Completer<void> claimGate = Completer<void>();
+        final _RecordingRepo repo = _RecordingRepo()..claimGate = claimGate;
+        final SyncEngine engine = SyncEngine(
+          repository: repo,
+          resolveProvider: (_) async => null,
+        );
+        final MailboxCubit cubit = await _buildCubit(
+          repo: repo,
+          prefs: prefs,
+          syncEngine: engine,
+        );
+
+        final Stopwatch stopwatch = Stopwatch()..start();
+        await cubit.syncCurrentFolder();
+        stopwatch.stop();
+
+        expect(stopwatch.elapsedMilliseconds, lessThan(500));
+        expect(cubit.state.isLoading, isFalse);
+        expect(
+          repo.enqueuedJobs.any(
+            (Map<String, String?> job) => job['type'] == 'incremental',
+          ),
+          isTrue,
+        );
+        expect(engine.isKickInFlight, isTrue);
+
+        claimGate.complete();
+        await engine.kick();
+        expect(engine.isKickInFlight, isFalse);
+        await cubit.close();
+        await engine.dispose();
+      },
+    );
+
+    test(
+      'rapid double syncCurrentFolder stays non-blocking and keeps isLoading false',
+      () async {
+        final Completer<void> claimGate = Completer<void>();
+        final _RecordingRepo repo = _RecordingRepo()..claimGate = claimGate;
+        final SyncEngine engine = SyncEngine(
+          repository: repo,
+          resolveProvider: (_) async => null,
+        );
+        final MailboxCubit cubit = await _buildCubit(
+          repo: repo,
+          prefs: prefs,
+          syncEngine: engine,
+        );
+
+        final Future<void> first = cubit.syncCurrentFolder();
+        final Future<void> second = cubit.syncCurrentFolder();
+        await Future.wait(<Future<void>>[first, second]);
+
+        expect(cubit.state.isLoading, isFalse);
+        expect(
+          repo.enqueuedJobs
+              .where(
+                (Map<String, String?> job) => job['type'] == 'incremental',
+              )
+              .length,
+          greaterThanOrEqualTo(2),
+        );
+        expect(engine.isKickInFlight, isTrue);
+
+        claimGate.complete();
+        await engine.kick();
+        await cubit.close();
+        await engine.dispose();
+      },
+    );
   });
 
   group('MessageActionService ID-targeted actions (D6-8 toast wiring)', () {

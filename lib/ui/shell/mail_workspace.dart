@@ -44,6 +44,7 @@ import 'package:synesis/ui/compose/compose_sheet.dart';
 import 'package:synesis/ui/outbox/outbox_sheet.dart';
 import 'package:synesis/ui/search/search_sheet.dart';
 import 'package:synesis/ui/sync/sync_status_sheet.dart';
+import 'package:synesis/sync/sync_activity.dart';
 import 'package:synesis/sync/sync_engine.dart';
 
 class MailWorkspace extends StatefulWidget {
@@ -58,7 +59,8 @@ class _MailWorkspaceState extends State<MailWorkspace> {
     debugLabel: 'SynesisWorkspace',
   );
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-  bool _syncBusy = false;
+  SyncActivitySnapshot _syncActivity = const SyncActivitySnapshot.idle();
+  StreamSubscription<SyncActivitySnapshot>? _syncActivitySub;
   bool _findInMessageRequested = false;
 
   /// Last non-null mailbox account id for folder-picker under Unified/virtual.
@@ -76,11 +78,21 @@ class _MailWorkspaceState extends State<MailWorkspace> {
       }
       context.read<MailboxCubit>().onConfirmCreateSystemFolder =
           _confirmCreateSystemFolder;
+      final SyncActivity activity = context.read<SyncActivity>();
+      _syncActivity = activity.value;
+      _syncActivitySub = activity.stream.listen((
+        SyncActivitySnapshot snapshot,
+      ) {
+        if (mounted) {
+          setState(() => _syncActivity = snapshot);
+        }
+      });
     });
   }
 
   @override
   void dispose() {
+    unawaited(_syncActivitySub?.cancel());
     HardwareKeyboard.instance.removeHandler(_onHardwareKey);
     _workspaceFocus.dispose();
     super.dispose();
@@ -158,10 +170,6 @@ class _MailWorkspaceState extends State<MailWorkspace> {
   }
 
   Future<void> _runManualSync() async {
-    if (_syncBusy) {
-      return;
-    }
-    setState(() => _syncBusy = true);
     final SyncEngine engine = context.read<SyncEngine>();
     final MailboxCubit cubit = context.read<MailboxCubit>();
     try {
@@ -183,22 +191,17 @@ class _MailWorkspaceState extends State<MailWorkspace> {
       for (final MailAccount account in linked) {
         await engine.enqueueIncremental(account.id);
       }
-      await engine.kickFresh();
-      await cubit.refresh();
+      unawaited(engine.kickFreshNonBlocking());
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(cubit.state.syncStatusLabel)));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Sync started')),
+        );
       }
     } catch (error) {
       if (mounted) {
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(SnackBar(content: Text('Sync error: $error')));
-      }
-    } finally {
-      if (mounted) {
-        setState(() => _syncBusy = false);
       }
     }
   }
@@ -451,7 +454,7 @@ class _MailWorkspaceState extends State<MailWorkspace> {
                         syncLabel: mailbox.syncStatusLabel,
                         queued: mailbox.queuedOutboxCount,
                         failed: mailbox.failedOutboxCount,
-                        syncing: _syncBusy || mailbox.isLoading,
+                        syncing: _syncActivity.isRemoteSyncInFlight,
                         compact: portraitMobile,
                         // Edge swipe opens the drawer; hamburger stays for a11y.
                         onOpenDrawer: portraitMobile && !readingFullBleed
@@ -994,7 +997,7 @@ class _TitleBar extends StatelessWidget {
               ),
             ],
             IconButton(
-              onPressed: syncing ? null : onSync,
+              onPressed: onSync,
               style: IconButton.styleFrom(foregroundColor: t.muted),
               icon: syncing
                   ? SizedBox(
@@ -1079,7 +1082,7 @@ class _TitleBar extends StatelessWidget {
                 ),
               ),
             IconButton(
-              onPressed: syncing ? null : onSync,
+              onPressed: onSync,
               style: IconButton.styleFrom(foregroundColor: t.muted),
               icon: syncing
                   ? SizedBox(

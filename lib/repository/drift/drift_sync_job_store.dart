@@ -28,6 +28,26 @@ class DriftSyncJobStore {
   final Future<int> Function() _countQueuedOutbox;
   final Uuid _uuid = const Uuid();
 
+  /// Counts durable jobs currently pending or running (Wave 6P sync honesty).
+  Future<({int running, int pending})> countSyncJobActivity() async {
+    final Expression<int> runningCount = _database.jobs.id.count();
+    final TypedResult running =
+        await (_database.selectOnly(_database.jobs)
+              ..addColumns(<Expression<Object>>[runningCount])
+              ..where(_database.jobs.status.equals('running')))
+            .getSingle();
+    final Expression<int> pendingCount = _database.jobs.id.count();
+    final TypedResult pending =
+        await (_database.selectOnly(_database.jobs)
+              ..addColumns(<Expression<Object>>[pendingCount])
+              ..where(_database.jobs.status.equals('pending')))
+            .getSingle();
+    return (
+      running: running.read(runningCount) ?? 0,
+      pending: pending.read(pendingCount) ?? 0,
+    );
+  }
+
   Future<String> syncStatusLabel() async {
     final Expression<int> runningCount = _database.jobs.id.count();
     final TypedResult running =

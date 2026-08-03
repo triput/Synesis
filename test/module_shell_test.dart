@@ -18,6 +18,7 @@ import 'package:synesis/auth/secure_credential_store.dart';
 import 'package:synesis/repository/database.dart';
 import 'package:synesis/repository/drift/drift_pim_store.dart';
 import 'package:synesis/repository/drift_mail_repository.dart';
+import 'package:synesis/sync/sync_activity.dart';
 import 'package:synesis/sync/sync_engine.dart';
 import 'package:synesis/ui/shell/module_shell.dart';
 
@@ -38,6 +39,10 @@ void main() {
       repository: repo,
       resolveProvider: (_) async => null,
     );
+    final SyncActivity syncActivity = SyncActivity(repository: repo);
+    syncActivity.start();
+    syncEngine.attachSyncActivity(syncActivity);
+    addTearDown(syncActivity.dispose);
     final SecureCredentialStore credentialStore = SecureCredentialStore();
     final OAuthIdentityManager identityManager = OAuthIdentityManager(
       credentialStore,
@@ -61,6 +66,7 @@ void main() {
         prefs: prefs,
         repository: repo,
         syncEngine: syncEngine,
+        syncActivity: syncActivity,
         accountService: accountService,
         identityManager: identityManager,
         resolveProvider: (_) async => null,

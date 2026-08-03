@@ -1,6 +1,6 @@
 # Wave 6P — Performance UX (Sync Honesty) Checklist
 
-> **Status:** **Planned / next** (2026-08-03) — operator decisions locked via Jim. Parent plan: [V2_PLAN.md](V2_PLAN.md). Prior: [V2_WAVE_G_QA.md](V2_WAVE_G_QA.md) **GO** (`f4c21b0`, **597 tests**). **Next after exit:** Wave 6 (cross-account DnD copy).
+> **Status:** **P0 code + tests landed** (2026-08-03) — E1–E6 ✅; Renee **GO** on E6 (**626 tests**). **E7** Android operator dogfood pending. P1/P2 open. Parent plan: [V2_PLAN.md](V2_PLAN.md). Prior: [V2_WAVE_G_QA.md](V2_WAVE_G_QA.md) **GO** (`f4c21b0`, **597 tests**). **Next after full 6P exit:** Wave 6 (cross-account DnD copy).
 
 Wave 6P delivers **honest sync UX** — decouple local SQLite refresh from remote sync-in-flight indicators, stop blocking the UI on `await kick()` / `kickFresh()`, and land targeted polish (UI-P11, UI-P9 partial, DEF-015, DEF-007). **P2** (Tesla SyncEngine isolate work) is **committed** if post-P0 profiling confirms frame jank on operator hardware.
 
@@ -20,7 +20,7 @@ Wave 0 ✅ → Wave H ✅ → Wave 1 (P0) ✅
                          → Wave 4: CardDAV/CalDAV (P3–P4) ✅
                          → Wave 5: picker + Calendar UI (P5–P6) ✅
                          → Wave G: Google People + Calendar API ✅
-                         → ★ Wave 6P: Performance UX (Sync Honesty) ← next
+                         → ★ Wave 6P: Performance UX (Sync Honesty) ← P0 landed; E7 dogfood pending
                          → Wave 6: cross-account DnD copy
                          → Wave 7: Trish extras (last)
 ```
@@ -50,15 +50,15 @@ Wave 0 ✅ → Wave H ✅ → Wave 1 (P0) ✅
 
 ## Work breakdown
 
-| ID | Task | Slice | Owner | Primary files |
-| --- | --- | --- | --- | --- |
-| **6P-1** | Sync activity observable (`isRemoteSyncInFlight`, job count stream/notifier) | P0 | Tesla → Jules | `sync_engine.dart`, `drift_sync_job_store.dart`, DI |
-| **6P-2** | Decouple `MailboxCubit.refresh()` — stop using `isLoading` for local recount | P0 | Jules | `mailbox_cubit.dart`, `mailbox_state.dart` |
-| **6P-3** | Title bar / toolbar honesty — bind `syncing:` to SyncActivity only | P0 | Andi | `mail_workspace.dart` |
-| **6P-4** | Manual sync fire-and-forget — `_runManualSync` without await on kick | P0 | Jules | `mail_workspace.dart` |
-| **6P-5** | Pull-to-refresh non-blocking — local `refresh()` only in `RefreshIndicator` | P0 | Andi | `mailbox_cubit.dart` |
-| **6P-6** | Add-account unblocked — remove `await syncEngine.kick()` save paths | P0 | Andi | `add_account_sheet.dart` |
-| **6P-7** | Renee test delta — state separation, DEF-006 reclaim regression, double-tap manual sync | P0 | Renee | `test/` |
+| ID | Task | Slice | Owner | Primary files | Status |
+| --- | --- | --- | --- | --- | --- |
+| **6P-1** | Sync activity observable (`isRemoteSyncInFlight`, job count stream/notifier) | P0 | Tesla → Jules | `sync_engine.dart`, `drift_sync_job_store.dart`, DI | ✅ |
+| **6P-2** | Decouple `MailboxCubit.refresh()` — stop using `isLoading` for local recount | P0 | Jules | `mailbox_cubit.dart`, `mailbox_state.dart` | ✅ |
+| **6P-3** | Title bar / toolbar honesty — bind `syncing:` to SyncActivity only | P0 | Andi | `mail_workspace.dart` | ✅ |
+| **6P-4** | Manual sync fire-and-forget — `_runManualSync` without await on kick | P0 | Jules | `mail_workspace.dart` | ✅ |
+| **6P-5** | Pull-to-refresh non-blocking — local `refresh()` only in `RefreshIndicator` | P0 | Andi | `mailbox_cubit.dart` | ✅ |
+| **6P-6** | Add-account unblocked — remove `await syncEngine.kick()` save paths | P0 | Andi | `add_account_sheet.dart` | ✅ |
+| **6P-7** | Renee test delta — state separation, DEF-006 reclaim regression, double-tap manual sync | P0 | Renee | `test/` | ✅ **GO** (626 tests, E6) |
 | **6P-8** | UI-P11 sync status polish — chip + sidebar + sheet consistency | P1 | Jules/Andi | Title bar, `sync_status_sheet.dart`, `folder_sidebar.dart` |
 | **6P-9** | UI-P9 partial — body fetch skeleton in reading pane | P1 | Andi | `reading_pane.dart` |
 | **6P-10** | DEF-015 per-message header loading / error scope | P1 | Jules | `mailbox_cubit.dart`, `message_headers_sheet.dart` |
@@ -83,12 +83,12 @@ Wave 0 ✅ → Wave H ✅ → Wave 1 (P0) ✅
 
 ### P0 gate (required)
 
-- [ ] **E1** — No title-bar spinner on mere local refresh (DB watch / mark-read recount does not flip global “syncing” chrome)
-- [ ] **E2** — Pull-to-refresh non-blocking (`RefreshIndicator` completes ≤500 ms local; remote kick continues in background)
-- [ ] **E3** — Manual sync non-blocking (toolbar enqueue + kick; UI immediately interactive; completion via snackbar / sync sheet)
-- [ ] **E4** — Add-account closes promptly (no `await kick()`; background sync visible in Sync Status sheet)
-- [ ] **E5** — Sync indicator reflects reality (idle \| syncing (N jobs) \| error from job store — **not** `mailbox.isLoading`)
-- [ ] **E6** — Automated tests for separated states; DEF-006 reclaim regression guard
+- [x] **E1** — No title-bar spinner on mere local refresh (DB watch / mark-read recount does not flip global “syncing” chrome)
+- [x] **E2** — Pull-to-refresh non-blocking (`RefreshIndicator` completes ≤500 ms local; remote kick continues in background)
+- [x] **E3** — Manual sync non-blocking (toolbar enqueue + kick; UI immediately interactive; completion via snackbar / sync sheet)
+- [x] **E4** — Add-account closes promptly (no `await kick()`; background sync visible in Sync Status sheet)
+- [x] **E5** — Sync indicator reflects reality (idle \| syncing (N jobs) \| error from job store — **not** `mailbox.isLoading`)
+- [x] **E6** — Automated tests for separated states; DEF-006 reclaim regression guard — Renee **GO**, **626 tests** (`sync_activity_test.dart`, `sync_engine_kick_lifecycle_test.dart`, `mailbox_cubit_test.dart` Wave 6P group, `sync_engine_trash_purge_test.dart` reclaim assert)
 - [ ] **E7** — Android operator dogfood script (below) — no “stuck checking remote” perception
 
 ### P1 gate (required for full wave exit)

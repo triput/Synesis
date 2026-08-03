@@ -11,7 +11,7 @@
 | Exit checklist | [V1_EXIT_CHECKLIST.md](V1_EXIT_CHECKLIST.md) — **signed off** |
 | Product | Synesis |
 | Platforms (v1) | Windows, Android |
-| Last updated | 2026-08-03 (V2 Wave G complete — Google People + Calendar API, `f4c21b0`, **597 tests**; **Wave 6P next** — Performance UX / Sync Honesty) |
+| Last updated | 2026-08-03 (V2 Wave 6P **P0 code + tests landed** — E1–E6 ✅, **626 tests**; **E7 Android dogfood pending** — [V2_WAVE_6P_CHECKLIST.md](V2_WAVE_6P_CHECKLIST.md)) |
 
 This roadmap tracks implementation milestones. Requirements live in the SPEC; this file tracks status and exit criteria.
 
@@ -98,7 +98,7 @@ V2.0a / V2.0b / V2.0c remain **release buckets**; operator execution follows thi
 | **Wave 4** | P3–P4 — CardDAV/CalDAV (Runbox) | **Complete** (2026-07-27, `f2bd29b`, 556 tests) | V2.0b |
 | **Wave 5** | P5–P6 — compose picker + Calendar UI (multi-select overlay / side-by-side) | **Complete** (2026-07-27, `73c181d`, 585 tests) | V2.0c |
 | **Wave G** | Google People + Calendar API (XOAUTH Google PIM) | **Complete** (2026-07-27, `f4c21b0`, **597 tests**) | V2.0d |
-| **Wave 6P** | Performance UX (Sync Honesty) — honest spinners, non-blocking kick, UI-P11/P9 partial, DEF-007/015 | **Next** | Pre–Wave 6 gate — [V2_WAVE_6P_CHECKLIST.md](V2_WAVE_6P_CHECKLIST.md) |
+| **Wave 6P** | Performance UX (Sync Honesty) — honest spinners, non-blocking kick, UI-P11/P9 partial, DEF-007/015 | **In progress** — P0 E1–E6 ✅ (**626 tests**); E7 dogfood pending | Pre–Wave 6 gate — [V2_WAVE_6P_CHECKLIST.md](V2_WAVE_6P_CHECKLIST.md) |
 | **Wave 6** | Cross-account DnD copy (events + contacts) | Planned after 6P | Post-V2.0d |
 | **Wave 7** | **Final polish / Trish extras** — UI niceties if time permits ([DEF-054](DEFECTS.md), [DEF-050](DEFECTS.md), [DEF-055](DEFECTS.md), [DEF-056](DEFECTS.md), [DEF-046](DEFECTS.md), overflow sweep, widget wishlist) | Planned — **last** | Not V2.0 critical path |
 

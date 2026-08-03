@@ -172,6 +172,10 @@ class _SheetRepo implements MailRepository {
   Future<int> countFailedOutbox() async => 0;
 
   @override
+  Future<({int running, int pending})> countSyncJobActivity() async =>
+      (running: 0, pending: 0);
+
+  @override
   Future<int> reclassifyFocusBuckets(
     FocusBucket Function(MailMessage message) score,
   ) async =>
