@@ -11,7 +11,7 @@
 | Exit checklist | [V1_EXIT_CHECKLIST.md](V1_EXIT_CHECKLIST.md) — **signed off** |
 | Product | Synesis |
 | Platforms (v1) | Windows, Android |
-| Last updated | 2026-07-27 (V2 Wave G complete — Google People + Calendar API, `f4c21b0`, **597 tests**; **Wave 6 next** — cross-account DnD copy) |
+| Last updated | 2026-08-03 (V2 Wave G complete — Google People + Calendar API, `f4c21b0`, **597 tests**; **Wave 6P next** — Performance UX / Sync Honesty) |
 
 This roadmap tracks implementation milestones. Requirements live in the SPEC; this file tracks status and exit criteria.
 
@@ -69,14 +69,14 @@ flutter test
 
 ## Post-v1 & Tier D ([plan](TIER_D_PLAN.md))
 
-Horizon backlog with promotion framework (V1.1 → V2 → enterprise). **V1.5 complete 2026-07-27** — see [V1_5_PLAN.md](V1_5_PLAN.md) §5. **V2 Wave 0 complete**; **Wave H complete**; **Wave 1 / V2.0a P0 complete** (2026-07-27, `00ebdef`); **Wave 2 complete** (2026-07-27, `b526e70`, 530 tests); **Wave 3 complete** (2026-07-27, 551 tests); **Wave 4 / V2.0b complete** (2026-07-27, `f2bd29b`, 556 tests) — [V2_WAVE4_CHECKLIST.md](V2_WAVE4_CHECKLIST.md), [V2_WAVE4_QA.md](V2_WAVE4_QA.md) (**GO**). **Wave 5 / V2.0c complete** (2026-07-27, `73c181d`, 585 tests) — [V2_WAVE5_CHECKLIST.md](V2_WAVE5_CHECKLIST.md), [V2_WAVE5_QA.md](V2_WAVE5_QA.md) (**GO**). **Wave G / V2.0d complete** (2026-07-27, `f4c21b0`, **597 tests**) — [V2_WAVE_G_CHECKLIST.md](V2_WAVE_G_CHECKLIST.md), [V2_WAVE_G_QA.md](V2_WAVE_G_QA.md) (**GO**). **Wave 6 next** (cross-account DnD copy).
+Horizon backlog with promotion framework (V1.1 → V2 → enterprise). **V1.5 complete 2026-07-27** — see [V1_5_PLAN.md](V1_5_PLAN.md) §5. **V2 Wave 0 complete**; **Wave H complete**; **Wave 1 / V2.0a P0 complete** (2026-07-27, `00ebdef`); **Wave 2 complete** (2026-07-27, `b526e70`, 530 tests); **Wave 3 complete** (2026-07-27, 551 tests); **Wave 4 / V2.0b complete** (2026-07-27, `f2bd29b`, 556 tests) — [V2_WAVE4_CHECKLIST.md](V2_WAVE4_CHECKLIST.md), [V2_WAVE4_QA.md](V2_WAVE4_QA.md) (**GO**). **Wave 5 / V2.0c complete** (2026-07-27, `73c181d`, 585 tests) — [V2_WAVE5_CHECKLIST.md](V2_WAVE5_CHECKLIST.md), [V2_WAVE5_QA.md](V2_WAVE5_QA.md) (**GO**). **Wave G / V2.0d complete** (2026-07-27, `f4c21b0`, **597 tests**) — [V2_WAVE_G_CHECKLIST.md](V2_WAVE_G_CHECKLIST.md), [V2_WAVE_G_QA.md](V2_WAVE_G_QA.md) (**GO**). **Wave 6P next** (Performance UX / Sync Honesty — [V2_WAVE_6P_CHECKLIST.md](V2_WAVE_6P_CHECKLIST.md)).
 
 ### Locked Tier D decisions
 
 | # | Decision |
 | --- | --- |
 | 1 | **First post-V1 ship = V1.5** (full D6 ex-V1.1+V1.2 + dogfood UI; no shared mailbox) — *2026-07-22; supersedes “V1.1 = D6 only”* — [V1_5_PLAN.md](V1_5_PLAN.md) |
-| 2 | **V2 headline = PIM** — Outlook-style modules; CardDAV/CalDAV day-one (Runbox); Graph-first order — [V2_PLAN.md](V2_PLAN.md). **Wave 0 complete**; **Wave H complete**; **Wave 1 complete**; **Wave 2 complete**; **Wave 3 complete**; **Wave 4 complete** (2026-07-27, `f2bd29b`, 556 tests); **Wave 5 complete** (2026-07-27, `73c181d`, 585 tests); **Wave G complete** (2026-07-27, `f4c21b0`, **597 tests**); **Wave 6 next** |
+| 2 | **V2 headline = PIM** — Outlook-style modules; CardDAV/CalDAV day-one (Runbox); Graph-first order — [V2_PLAN.md](V2_PLAN.md). **Wave 0 complete**; **Wave H complete**; **Wave 1 complete**; **Wave 2 complete**; **Wave 3 complete**; **Wave 4 complete** (2026-07-27, `f2bd29b`, 556 tests); **Wave 5 complete** (2026-07-27, `73c181d`, 585 tests); **Wave G complete** (2026-07-27, `f4c21b0`, **597 tests**); **Wave 6P next** (Performance UX / Sync Honesty) |
 | 3 | **Enterprise crypto / shared mail / AI draft·summarize** — **Maybe/Someday** (not V2.0 critical path; AI paired with enterprise crypto if either is opted in) |
 | 4 | **PST import** after V1.5 unless migration is acquisition channel |
 | 5 | **Galaxy Watch** — **P3 / V2.1** (not V2.0 critical path) |
@@ -84,7 +84,7 @@ Horizon backlog with promotion framework (V1.1 → V2 → enterprise). **V1.5 co
 
 ### V2 operator waves (2026-07-27)
 
-**Status:** **Wave G complete** (2026-07-27, `f4c21b0`, **597 tests**) — [V2_WAVE_G_CHECKLIST.md](V2_WAVE_G_CHECKLIST.md), [V2_WAVE_G_QA.md](V2_WAVE_G_QA.md) (**GO**). **Wave 6 next** (cross-account DnD copy). **Wave 5 complete** (2026-07-27, `73c181d`, 585 tests) — [V2_WAVE5_CHECKLIST.md](V2_WAVE5_CHECKLIST.md), [V2_WAVE5_QA.md](V2_WAVE5_QA.md) (**GO**). **Wave 4 complete** (2026-07-27, `f2bd29b`, 556 tests) — [V2_WAVE4_CHECKLIST.md](V2_WAVE4_CHECKLIST.md). Renee QA: [V2_WAVE4_QA.md](V2_WAVE4_QA.md) (**GO**). Wave 3 complete (2026-07-27, `7cbfdaa`, 551 tests); Renee QA **GO** — [V2_WAVE3_QA.md](V2_WAVE3_QA.md). Wave 2 complete (2026-07-27, `b526e70`); [V2_WAVE2_QA.md](V2_WAVE2_QA.md). Wave 1 complete (2026-07-27, `00ebdef`); [V2_0A_P0_QA.md](V2_0A_P0_QA.md). Full plan: [V2_PLAN.md](V2_PLAN.md).
+**Status:** **Wave G complete** (2026-07-27, `f4c21b0`, **597 tests**) — [V2_WAVE_G_CHECKLIST.md](V2_WAVE_G_CHECKLIST.md), [V2_WAVE_G_QA.md](V2_WAVE_G_QA.md) (**GO**). **Wave 6P next** (Performance UX / Sync Honesty — [V2_WAVE_6P_CHECKLIST.md](V2_WAVE_6P_CHECKLIST.md)). **Wave 5 complete** (2026-07-27, `73c181d`, 585 tests) — [V2_WAVE5_CHECKLIST.md](V2_WAVE5_CHECKLIST.md), [V2_WAVE5_QA.md](V2_WAVE5_QA.md) (**GO**). **Wave 4 complete** (2026-07-27, `f2bd29b`, 556 tests) — [V2_WAVE4_CHECKLIST.md](V2_WAVE4_CHECKLIST.md). Renee QA: [V2_WAVE4_QA.md](V2_WAVE4_QA.md) (**GO**). Wave 3 complete (2026-07-27, `7cbfdaa`, 551 tests); Renee QA **GO** — [V2_WAVE3_QA.md](V2_WAVE3_QA.md). Wave 2 complete (2026-07-27, `b526e70`); [V2_WAVE2_QA.md](V2_WAVE2_QA.md). Wave 1 complete (2026-07-27, `00ebdef`); [V2_0A_P0_QA.md](V2_0A_P0_QA.md). Full plan: [V2_PLAN.md](V2_PLAN.md).
 
 V2.0a / V2.0b / V2.0c remain **release buckets**; operator execution follows this sequence:
 
@@ -98,10 +98,11 @@ V2.0a / V2.0b / V2.0c remain **release buckets**; operator execution follows thi
 | **Wave 4** | P3–P4 — CardDAV/CalDAV (Runbox) | **Complete** (2026-07-27, `f2bd29b`, 556 tests) | V2.0b |
 | **Wave 5** | P5–P6 — compose picker + Calendar UI (multi-select overlay / side-by-side) | **Complete** (2026-07-27, `73c181d`, 585 tests) | V2.0c |
 | **Wave G** | Google People + Calendar API (XOAUTH Google PIM) | **Complete** (2026-07-27, `f4c21b0`, **597 tests**) | V2.0d |
-| **Wave 6** | Cross-account DnD copy (events + contacts) | **Next** | Post-V2.0d |
+| **Wave 6P** | Performance UX (Sync Honesty) — honest spinners, non-blocking kick, UI-P11/P9 partial, DEF-007/015 | **Next** | Pre–Wave 6 gate — [V2_WAVE_6P_CHECKLIST.md](V2_WAVE_6P_CHECKLIST.md) |
+| **Wave 6** | Cross-account DnD copy (events + contacts) | Planned after 6P | Post-V2.0d |
 | **Wave 7** | **Final polish / Trish extras** — UI niceties if time permits ([DEF-054](DEFECTS.md), [DEF-050](DEFECTS.md), [DEF-055](DEFECTS.md), [DEF-056](DEFECTS.md), [DEF-046](DEFECTS.md), overflow sweep, widget wishlist) | Planned — **last** | Not V2.0 critical path |
 
-**Locked PIM product requirements (operator):** multi-calendar and multi-contact-list across accounts; select 1+ to display; Outlook-like calendar overlay / side-by-side (Wave 5 UI); **Google Workspace PIM via People + Calendar API (Wave G — complete)**; cross-account copy via DnD (**Wave 6 — next**).
+**Locked PIM product requirements (operator):** multi-calendar and multi-contact-list across accounts; select 1+ to display; Outlook-like calendar overlay / side-by-side (Wave 5 UI); **Google Workspace PIM via People + Calendar API (Wave G — complete)**; cross-account copy via DnD (**Wave 6 — after 6P**).
 
 ### Confirmed post-V1 (from V1 + Tier D → V1.5)
 
@@ -234,7 +235,7 @@ Visual polish & mailbox interaction backlog — **active; add items in [§7 Back
 | **Pri-2** | Read-row dimming | **Landed** (W2) | **W2** |
 | **Pri-2** | Theme token polish (5 packs + `content`) | **Landed** (2026-07-16) | — | [UI-L8](UI_ENHANCEMENT_SWEEP.md), [DEF-019](DEFECTS.md) |
 | **Pri-2** | [DEF-001](DEFECTS.md) shortcuts | **Closed** (W5, 2026-07-17) | **W5** |
-| **Pri-2** | [DEF-007](DEFECTS.md) read-state sync flicker | Open | W2/W3 |
+| **Pri-2** | [DEF-007](DEFECTS.md) read-state sync flicker | Scheduled — Wave 6P | Wave 6P P1 |
 | **Pri-3** | Density/spacing pass | **Landed** (W7) | **W7** |
 | **Pri-3** | Empty states, loading skeletons, widget themes | **Partial** (W7) — empty states + widget theme tokens; skeletons deferred | **W7** |
 | **Pri-2** | Custom themes (multiple, fork built-ins) | **Landed** (W7) | **W7** | [UI-P16](UI_ENHANCEMENT_SWEEP.md) |
@@ -318,11 +319,11 @@ Competitive gap closure per [COMPETITIVE_ANALYSIS.md](COMPETITIVE_ANALYSIS.md). 
 | Track | Examples | Default |
 | --- | --- | --- |
 | **V1.5 (D6 + dogfood UI)** | Multi-window+, image whitelist, large Graph attachments, PDF, snooze, trackers, toast actions, UI-P28–P30/P21 | **Complete** (2026-07-27) — [V1_5_PLAN.md](V1_5_PLAN.md) |
-| **V2.0 (TD-A)** | **Wave 0:** account identity — **complete**. **Wave H:** dependency hygiene — **complete**. **Wave 1:** P0 schema — **complete** (2026-07-27). **Wave 2 complete:** Graph PIM; **Wave 3 complete:** meeting-mail bridge (551 tests); **Wave 4 complete:** CardDAV/CalDAV (556 tests); **Wave 5 complete:** picker + Calendar/People UI (585 tests); **Wave G complete:** Google People + Calendar API (`f4c21b0`, **597 tests**); **Wave 6 next** (DnD copy) | Major version — [V2_PLAN.md](V2_PLAN.md) |
+| **V2.0 (TD-A)** | **Wave 0:** account identity — **complete**. **Wave H:** dependency hygiene — **complete**. **Wave 1:** P0 schema — **complete** (2026-07-27). **Wave 2 complete:** Graph PIM; **Wave 3 complete:** meeting-mail bridge (551 tests); **Wave 4 complete:** CardDAV/CalDAV (556 tests); **Wave 5 complete:** picker + Calendar/People UI (585 tests); **Wave G complete:** Google People + Calendar API (`f4c21b0`, **597 tests**); **Wave 6P next** (Sync Honesty); **Wave 6** (DnD copy) after 6P | Major version — [V2_PLAN.md](V2_PLAN.md) |
 | **V2.1** | Galaxy Watch (P3), PIM polish | After V2.0 |
 | **Defer** | Enterprise crypto/shared mail, AI draft/summarize, Maybe/Someday (§16) | Unplanned radar |
 
-**Locked:** V1.5 adjacency · V2.0 = PIM (+ CardDAV/CalDAV + **Google PIM Wave G**) · **Wave 0 complete · Wave H complete · Wave 1 complete · Wave 2 complete · Wave 3 complete · Wave 4 complete (556 tests) · Wave 5 complete (585 tests) · Wave G complete (`f4c21b0`, 597 tests) · Wave 6 next** · Watch = V2.1 P3 · Enterprise + AI = Maybe/Someday · D6-3 must-ship.
+**Locked:** V1.5 adjacency · V2.0 = PIM (+ CardDAV/CalDAV + **Google PIM Wave G**) · **Wave 0 complete · Wave H complete · Wave 1 complete · Wave 2 complete · Wave 3 complete · Wave 4 complete (556 tests) · Wave 5 complete (585 tests) · Wave G complete (`f4c21b0`, 597 tests) · Wave 6P next · Wave 6 after 6P** · Watch = V2.1 P3 · Enterprise + AI = Maybe/Someday · D6-3 must-ship.
 
 ## Planned backlog (post-foundation)
 
@@ -347,7 +348,7 @@ Feature work captured for scheduling. Requirements baseline in [SPEC.md](SPEC.md
 | **Pri-2** | **Android focus track** (**Post-V1**) | **Not a V1 blocker** (battery is the headline concern, still scheduled post-ship). Battery life (sync / IDLE / push / wakelocks / Doze), visual/UX density vs Windows, leftover widget / deep-link polish. Device + AVD matrix spreadsheet-backed (extends the Pri-3 smoke matrix above). Distinct from Final-wave branding wire-up and FW-5 E2E smoke. |
 | **Pri-3** | **Project health dashboard** (**Adjacent tooling** / Post-V1) | **Not a product feature — reusable meta tooling.** Docs-only idea for now; spin up after V1 while operator dogfoods. Surfaces wave/todo progress, test-inventory CSV signals, future perf-suite metrics, and related health. Reusable beyond Synesis. Stub: **[POST_V1_HEALTH_DASHBOARD.md](POST_V1_HEALTH_DASHBOARD.md)**. Not a V1 or Final-wave deliverable. |
 
-**Suggested sequencing:** account edit/remove (Pri-1, landed) → header details (Pri-3, landed) → junk filter (Pri-2, landed W1) → per-account retention (Pri-2, landed W3) → desktop reading-pane layout (Pri-2, landed W5) → **attachments + signatures (Pri-1/Pri-2, landed W4)** → **W7 hardening (landed)** → **Final wave** (branding + filter system + FW-1…FW-6). Encryption at rest shipped in W7; Android emulator QA continues into Final-wave E2E. **V1.5 complete (2026-07-27).** **V2 Wave 1 complete** — see [V2_PLAN.md](V2_PLAN.md), [V2_0A_P0_CHECKLIST.md](V2_0A_P0_CHECKLIST.md), and [WAVE_H_DEPENDENCY_HYGIENE.md](WAVE_H_DEPENDENCY_HYGIENE.md). **Wave 2 (Graph PIM) complete** (2026-07-27, `b526e70`, 530 tests) — [V2_WAVE2_CHECKLIST.md](V2_WAVE2_CHECKLIST.md). **Wave 3 (meeting-mail bridge) complete** (2026-07-27, 551 tests) — [V2_WAVE3_CHECKLIST.md](V2_WAVE3_CHECKLIST.md). **Wave 4 (CardDAV/CalDAV) complete** (2026-07-27, `f2bd29b`, 556 tests) — [V2_WAVE4_CHECKLIST.md](V2_WAVE4_CHECKLIST.md); Renee GO [V2_WAVE4_QA.md](V2_WAVE4_QA.md). **Wave 5 complete** (2026-07-27, `73c181d`, 585 tests) — [V2_WAVE5_CHECKLIST.md](V2_WAVE5_CHECKLIST.md); Renee GO [V2_WAVE5_QA.md](V2_WAVE5_QA.md). **Wave G complete** (2026-07-27, `f4c21b0`, **597 tests**) — [V2_WAVE_G_CHECKLIST.md](V2_WAVE_G_CHECKLIST.md); Renee GO [V2_WAVE_G_QA.md](V2_WAVE_G_QA.md). **Wave 6 next** (cross-account DnD copy). **Post-V1:** performance test suite + Android focus track (Pri-2). **Adjacent tooling (Pri-3):** project health dashboard — [POST_V1_HEALTH_DASHBOARD.md](POST_V1_HEALTH_DASHBOARD.md).
+**Suggested sequencing:** account edit/remove (Pri-1, landed) → header details (Pri-3, landed) → junk filter (Pri-2, landed W1) → per-account retention (Pri-2, landed W3) → desktop reading-pane layout (Pri-2, landed W5) → **attachments + signatures (Pri-1/Pri-2, landed W4)** → **W7 hardening (landed)** → **Final wave** (branding + filter system + FW-1…FW-6). Encryption at rest shipped in W7; Android emulator QA continues into Final-wave E2E. **V1.5 complete (2026-07-27).** **V2 Wave 1 complete** — see [V2_PLAN.md](V2_PLAN.md), [V2_0A_P0_CHECKLIST.md](V2_0A_P0_CHECKLIST.md), and [WAVE_H_DEPENDENCY_HYGIENE.md](WAVE_H_DEPENDENCY_HYGIENE.md). **Wave 2 (Graph PIM) complete** (2026-07-27, `b526e70`, 530 tests) — [V2_WAVE2_CHECKLIST.md](V2_WAVE2_CHECKLIST.md). **Wave 3 (meeting-mail bridge) complete** (2026-07-27, 551 tests) — [V2_WAVE3_CHECKLIST.md](V2_WAVE3_CHECKLIST.md). **Wave 4 (CardDAV/CalDAV) complete** (2026-07-27, `f2bd29b`, 556 tests) — [V2_WAVE4_CHECKLIST.md](V2_WAVE4_CHECKLIST.md); Renee GO [V2_WAVE4_QA.md](V2_WAVE4_QA.md). **Wave 5 complete** (2026-07-27, `73c181d`, 585 tests) — [V2_WAVE5_CHECKLIST.md](V2_WAVE5_CHECKLIST.md); Renee GO [V2_WAVE5_QA.md](V2_WAVE5_QA.md). **Wave G complete** (2026-07-27, `f4c21b0`, **597 tests**) — [V2_WAVE_G_CHECKLIST.md](V2_WAVE_G_CHECKLIST.md); Renee GO [V2_WAVE_G_QA.md](V2_WAVE_G_QA.md). **Wave 6P next** (Performance UX / Sync Honesty — [V2_WAVE_6P_CHECKLIST.md](V2_WAVE_6P_CHECKLIST.md)). **Wave 6** (cross-account DnD copy) after 6P. **Post-V1:** performance test suite + Android focus track (Pri-2). **Adjacent tooling (Pri-3):** project health dashboard — [POST_V1_HEALTH_DASHBOARD.md](POST_V1_HEALTH_DASHBOARD.md).
 
 ## Final wave (V1 exit / release readiness)
 

@@ -1,6 +1,6 @@
 # Wave G — Google PIM Checklist (People + Calendar API)
 
-> **Status:** **Complete** (2026-07-27, `f4c21b0`, **597 tests**) — Renee [V2_WAVE_G_QA.md](V2_WAVE_G_QA.md) **GO**; inventory + README Google scopes landed (Page). Parent plan: [V2_PLAN.md](V2_PLAN.md). Prior: [V2_WAVE5_QA.md](V2_WAVE5_QA.md) **GO**. **Next:** Wave 6 (cross-account DnD copy).
+> **Status:** **Complete** (2026-07-27, `f4c21b0`, **597 tests**) — Renee [V2_WAVE_G_QA.md](V2_WAVE_G_QA.md) **GO**; inventory + README Google scopes landed (Page). Parent plan: [V2_PLAN.md](V2_PLAN.md). Prior: [V2_WAVE5_QA.md](V2_WAVE5_QA.md) **GO**. **Next:** Wave 6P (Performance UX / Sync Honesty) — [V2_WAVE_6P_CHECKLIST.md](V2_WAVE_6P_CHECKLIST.md).
 
 Wave G delivers **Google People + Calendar API** sync for **Google XOAUTH IMAP** accounts into the existing provider-agnostic `DriftPimStore`. Per [V2_PLAN.md §2](V2_PLAN.md#2-account--pim-binding) and Wave 4 W4-3, Google accounts **do not** use CardDAV/CalDAV — API-only binding. Operator dogfood target: **Google Workspace** (Trish principal calendar).
 
@@ -15,7 +15,8 @@ Wave 0 ✅ → Wave H ✅ → Wave 1 (P0) ✅
                          → Wave 4: CardDAV/CalDAV (P3–P4) ✅
                          → Wave 5: picker + Calendar UI (P5–P6) ✅
                          → Wave G: Google People + Calendar API ✅
-                         → ★ Wave 6: cross-account DnD copy ← next
+                         → ★ Wave 6P: Performance UX (Sync Honesty) ← next
+                         → Wave 6: cross-account DnD copy
                          → Wave 7: Trish extras (last)
 ```
 

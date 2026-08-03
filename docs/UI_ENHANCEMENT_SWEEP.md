@@ -6,7 +6,7 @@
 | Purpose | Visual polish & mailbox interaction pass after foundation (M0–M12) |
 | V1 delivery | **W2**, **W5**, **W7**, plus **W4** (outbound font, signature images) |
 | Related | [ROADMAP.md](ROADMAP.md), [DEFECTS.md](DEFECTS.md), [TIER_B_PLAN.md §16](TIER_B_PLAN.md#16-tb-14--list-visual-polish) (TB-14) |
-| Last updated | 2026-07-23 (UI-P21/P22/P23 landed in code — V1.5 Wave B) |
+| Last updated | 2026-08-03 (Wave 6P scheduling — UI-P9/P11/DEF-007 absorption) |
 
 The UI enhancement sweep is the **catch-all for polish and look-and-feel settings** that makes Synesis feel like a finished client. Theme packs landed in M8; **built-in palette refresh + `content` token landed 2026-07-16** ([UI-L8](#3-landed-reference--do-not-re-implement)). **W2 list polish landed 2026-07-17** (UI-P1/P2/P7/P12 → UI-L9–L12). **Custom themes**, fonts, and export remain **W7** ([§6](#6-look--feel-extensions-user-backlog)).
 
@@ -67,12 +67,12 @@ Sweep ───┼── W5: desktop focus & chrome
 | Pri | ID | Item | Status | V1 wave | Primary files | Notes |
 | --- | --- | --- | --- | --- | --- | --- |
 | **Pri-2** | UI-P3 | **[DEF-001](DEFECTS.md)** — Ctrl shortcuts without Quick Reply focus | **Landed** (W5, 2026-07-17) | **W5** | `mail_workspace.dart`, `keyboard_intents.dart`, `mailbox_shortcuts.dart` | TC-9 keymap pass complete with W5 land |
-| **Pri-2** | UI-P5 | **[DEF-007](DEFECTS.md)** — sync overwrites local read state | Open | W2/W3 | `sync_engine.dart`, `drift_mail_repository.dart` | UI flicker on refresh; merge policy |
+| **Pri-2** | UI-P5 | **[DEF-007](DEFECTS.md)** — sync overwrites local read state | Scheduled — Wave 6P | **Wave 6P** P1 | `sync_engine.dart`, `drift_mail_repository.dart` | Merge policy bundled into [V2_WAVE_6P_CHECKLIST.md](V2_WAVE_6P_CHECKLIST.md) (Trish 2026-08-03) |
 | **Pri-3** | UI-P6 | **Density/spacing consistency** | **Landed** (W7) | **W7** | Shell panes, `density.dart` | Calm vs Compact metrics + empty-state sizes |
 | **Pri-3** | UI-P8 | **Empty states** | **Landed** (W7) | **W7** | List, reading pane, search, no accounts | Shared `EmptyState` + CTAs |
-| **Pri-3** | UI-P9 | **Loading / error skeletons** | Not started | W2/W7 | `reading_pane.dart`, list | Body fetch, sync-in-progress |
+| **Pri-3** | UI-P9 | **Loading / error skeletons** | Scheduled — Wave 6P (partial) | **Wave 6P** P1 | `reading_pane.dart`, list | Body fetch skeleton in reading pane only; list/search remainder deferred |
 | **Pri-3** | UI-P10 | **Android widget theme tokens** | Not started | **W7** | `widget_snapshot_service`, Kotlin | SPEC open Q9 — all five themes vs Dark+Black |
-| **Pri-3** | UI-P11 | **Sync status indicator polish** | Not started | W3/W7 | Title bar / sidebar | Clear syncing vs error vs idle |
+| **Pri-3** | UI-P11 | **Sync status indicator polish** | Scheduled — Wave 6P | **Wave 6P** P0/P1 | Title bar / sidebar | Primary absorption — honest idle/syncing/error (Trish 2026-08-03) |
 | **Pri-3** | UI-P13 | **Search sheet UX** | Not started | W7 | `search_sheet.dart` | Remote search progress, empty results |
 | **Pri-3** | UI-P14 | **Folder sidebar density** | Not started | W7 | `folder_sidebar.dart` | Unread badge alignment, collapse animation |
 | **Pri-3** | UI-P15 | **Account nicknames in chrome** | Not started | W7 | `EditAccountSheet` label → sidebar | Outlook-style display name vs address |
@@ -203,7 +203,7 @@ Sweep is **complete for V1** when:
 - [x] UI-P1 unread recount shipped (W2 — 2026-07-17, [UI-L12](UI_ENHANCEMENT_SWEEP.md))
 - [x] UI-P6 density consistency pass (W7)
 - [x] UI-P8 empty states for main panes (W7)
-- [ ] UI-P5 DEF-007 read-merge fixed or documented workaround
+- [ ] UI-P5 DEF-007 read-merge — **Wave 6P P1** (bundled; see [V2_WAVE_6P_CHECKLIST.md](V2_WAVE_6P_CHECKLIST.md))
 - [x] UI-P27 / [DEF-034](DEFECTS.md) auto-mark 5s shipped (V1; not W5 blocker)
 - [ ] All **Pri-1** rows in §4 and §6 resolved or explicitly deferred with reason
 - [x] UI-P16–P18 shipped (W7); UI-P19/P20 tracked with W4 (partial / code landed)
@@ -237,6 +237,7 @@ Sweep is **complete for V1** when:
 | 2026-07-18 | UI-P21 notes clarified: **tabs / section navigation** (desktop tabs or rail; mobile section pages; not one endless scroll); status confirmed **post-V1** (operator dogfood) |
 | 2026-07-22 | V1.5 Wave A: UI-P28, UI-P29, UI-P30 landed in code (Jules) — see status notes on each row; Renee QA pass pending |
 | 2026-07-23 | V1.5 Wave B: UI-P21, UI-P22, UI-P23 landed in code (Jules) — sectioned `SettingsShell` replaces `appearance_sheet.dart`; search results show datetime; folder sidebar gained right-click/long-press mark-all read/unread — see status notes on each row; Renee QA pass / full `flutter test` run pending |
+| 2026-08-03 | Wave 6P scheduling (Trish via Jim): UI-P5/DEF-007, UI-P11, UI-P9 partial absorbed into [V2_WAVE_6P_CHECKLIST.md](V2_WAVE_6P_CHECKLIST.md); Wave 6P before Wave 6 DnD |
 
 ---
 
