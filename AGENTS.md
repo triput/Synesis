@@ -107,3 +107,21 @@ When a request is submitted to **Steve**, the workflow advances through five seq
 *   **System Updates:** Always update the workspace `README.md`, internal architecture documentation, or roadmap logs when implementing major foundational features to ensure Page's records match reality.
 *   **Automated test inventory:** `docs/V1_AUTOMATED_TEST_INVENTORY.csv` is the canonical catalog of automated coverage (~389 cases / 56 files). Wave checklists ([W5](docs/W5_WINDOWS_CHECKLIST.md), [W6](docs/W6_NOTIFICATIONS_CHECKLIST.md), [W4](docs/W4_COMPOSE_CHECKLIST.md), [W7](docs/W7_HARDENING_CHECKLIST.md), etc.) and tier docs link by `test_id` / `wave` filter — see [TEST_INVENTORY.md](docs/TEST_INVENTORY.md). Manual E2E (`docs/V1_MANUAL_E2E_MATRIX.csv`, FW-5) stays separate.
 *   **Final wave system prompt (FW-6):** At V1 Final wave close, capture the team workflow into `docs/MULTI_AGENT_SYSTEM_PROMPT.md` — a portable multi-agent playbook for future projects.
+
+---
+
+## Cursor Cloud specific instructions
+
+This is a Flutter/Dart app (`pubspec.yaml`, `name: synesis`). Ship targets are **Windows + Android** only (`android/`, `windows/`), but the Cloud VM is headless **Linux x64**. Flutter (pinned `3.44.6` / Dart `3.12.2`, from `.metadata`) is pre-installed at `~/flutter` and on `PATH` via `~/.bashrc`; the startup script runs `flutter pub get`. Generated Drift code (`lib/repository/database.g.dart`) is committed, so `build_runner` is not needed for a normal run.
+
+**Standard commands** (see `README.md` "Run"): the daily loop is `flutter analyze`, `flutter test`, `flutter run`.
+
+* **Lint:** `flutter analyze` — baseline is clean of *errors*; it reports ~72 pre-existing `info`/`warning` lints. Don't treat those as regressions.
+* **Test:** `flutter test` — full suite is ~499 cases / 65 files and passes headlessly on Linux (Drift tests use the host `sqlite3` bundled by Dart, no server needed).
+
+**Running the GUI on this headless Linux VM (non-obvious):** the repo has no `linux/` runner and Linux isn't a real target, but `lib/main.dart` has Noop fallbacks for non-Windows/Android desktops, so it runs fine on Flutter Linux desktop for smoke-testing the real UI. This is **not** covered by the startup script — do it manually when you need the GUI:
+  1. System build deps are already installed in the VM image: `ninja-build`, `libgtk-3-dev`, `pkg-config`, `libnotify-dev` (for `local_notifier`), `libayatana-appindicator3-dev` (for `tray_manager`), `libsecret-1-dev` (for `flutter_secure_storage`), plus `g++`/`libstdc++-14-dev` (clang selects the GCC-14 toolchain and needs its `libstdc++.so`). Re-`apt-get install` them only if a fresh VM lacks them.
+  2. Generate the Linux runner (regenerates `linux/`, and edits `.metadata`/`pubspec.lock` — revert those two tracked files afterward, do not commit them or `linux/`): `flutter config --enable-linux-desktop && flutter create --platforms=linux .`
+  3. Run against the VM display: `DISPLAY=:1 flutter run -d linux`.
+* **Expected headless noise (not bugs):** `connectivity_plus` throws a D-Bus `org.freedesktop.NetworkManager` error (no NetworkManager), `libEGL`/DRI3 warns and falls back to software rendering, and the UI shows a persistent `Sync failed: keyring_locked … no configured mail provider` banner — the secret keyring is locked and no real accounts are configured. None block local-first UI work (compose/read/star/archive against seeded demo mail all work); actual **send/sync needs real OAuth/IMAP credentials** (`SYNESIS_GRAPH_CLIENT_ID` / `SYNESIS_GOOGLE_CLIENT_ID`, see `README.md`), so a bare compose→send fails with `AccountNotConnected` here.
+* On first launch `repository.seedDemoDataIfEmpty()` populates demo mail, so the app is usable with zero external services.
