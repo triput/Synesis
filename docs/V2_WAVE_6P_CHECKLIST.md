@@ -1,6 +1,6 @@
 # Wave 6P — Performance UX (Sync Honesty) Checklist
 
-> **Status:** **P0 code + tests landed** (2026-08-03) — E1–E6 ✅; Renee **GO** on E6 (**626 tests**). **E7** Android operator dogfood pending. P1/P2 open. Parent plan: [V2_PLAN.md](V2_PLAN.md). Prior: [V2_WAVE_G_QA.md](V2_WAVE_G_QA.md) **GO** (`f4c21b0`, **597 tests**). **Next after full 6P exit:** Wave 6 (cross-account DnD copy).
+> **Status:** **P0 gate complete** (2026-08-03) — E1–E7 ✅; Renee **GO** on E6 (**626 tests**); Trish **GO** on E7 Android dogfood (`87ec66a`). P1/P2 open. Parent plan: [V2_PLAN.md](V2_PLAN.md). Prior: [V2_WAVE_G_QA.md](V2_WAVE_G_QA.md) **GO** (`f4c21b0`, **597 tests**). **Next after full 6P exit:** Wave 6 (cross-account DnD copy).
 
 Wave 6P delivers **honest sync UX** — decouple local SQLite refresh from remote sync-in-flight indicators, stop blocking the UI on `await kick()` / `kickFresh()`, and land targeted polish (UI-P11, UI-P9 partial, DEF-015, DEF-007). **P2** (Tesla SyncEngine isolate work) is **committed** if post-P0 profiling confirms frame jank on operator hardware.
 
@@ -20,7 +20,7 @@ Wave 0 ✅ → Wave H ✅ → Wave 1 (P0) ✅
                          → Wave 4: CardDAV/CalDAV (P3–P4) ✅
                          → Wave 5: picker + Calendar UI (P5–P6) ✅
                          → Wave G: Google People + Calendar API ✅
-                         → ★ Wave 6P: Performance UX (Sync Honesty) ← P0 landed; E7 dogfood pending
+                         → ★ Wave 6P: Performance UX (Sync Honesty) ← P0 gate complete; P1 open
                          → Wave 6: cross-account DnD copy
                          → Wave 7: Trish extras (last)
 ```
@@ -89,7 +89,7 @@ Wave 0 ✅ → Wave H ✅ → Wave 1 (P0) ✅
 - [x] **E4** — Add-account closes promptly (no `await kick()`; background sync visible in Sync Status sheet)
 - [x] **E5** — Sync indicator reflects reality (idle \| syncing (N jobs) \| error from job store — **not** `mailbox.isLoading`)
 - [x] **E6** — Automated tests for separated states; DEF-006 reclaim regression guard — Renee **GO**, **626 tests** (`sync_activity_test.dart`, `sync_engine_kick_lifecycle_test.dart`, `mailbox_cubit_test.dart` Wave 6P group, `sync_engine_trash_purge_test.dart` reclaim assert)
-- [ ] **E7** — Android operator dogfood script (below) — no “stuck checking remote” perception
+- [x] **E7** — Android operator dogfood script (below) — Trish **GO** (2026-08-03, `87ec66a`); no “stuck checking remote” perception
 
 ### P1 gate (required for full wave exit)
 

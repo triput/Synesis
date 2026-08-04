@@ -51,7 +51,7 @@ Pri-2 **V-Next** — not Wave 6P/6 critical path. Keep desktop love; fix phone p
 | Field | Value |
 | --- | --- |
 | Priority | **Pri-1** |
-| Status | **Open** (fix landed 2026-08-03 — awaiting dogfood) |
+| Status | **Closed** (2026-08-03) — Trish dogfood GO (`87ec66a`) |
 | Area | `lib/ui/calendar/calendar_workspace.dart` (`_EventEditorForm` calendar `DropdownButtonFormField`) |
 | Platforms | Android (phone); any narrow width |
 | Logged | 2026-08-03 |
@@ -128,7 +128,7 @@ Pri-3 Wave 7 Trish extras — honest scope creep; not V2.0 critical path.
 | Field | Value |
 | --- | --- |
 | Priority | **Pri-1** |
-| Status | **Open** (fix landed 2026-08-03 — awaiting dogfood) |
+| Status | **Closed** (2026-08-03) — Trish dogfood GO (`87ec66a`) |
 | Area | `lib/ui/calendar/calendar_workspace.dart` (`showDayEventsSheet`, `showEventEditorSheet`) |
 | Platforms | Android |
 | Logged | 2026-08-03 |
@@ -151,7 +151,7 @@ Capture `viewPadding.bottom` from the **caller** context (modal sheet MediaQuery
 | Field | Value |
 | --- | --- |
 | Priority | **Pri-1** |
-| Status | **Open** (fix landed 2026-08-03 — awaiting dogfood) |
+| Status | **Closed** (2026-08-03) — Trish dogfood GO (`87ec66a`) |
 | Area | `lib/protocol/graph_mail_provider.dart` (`listAttachments`) |
 | Platforms | Graph / Exchange accounts (Android dogfood + all) |
 | Logged | 2026-08-03 |
@@ -176,7 +176,7 @@ Use OData cast: `microsoft.graph.fileAttachment/contentId` (`kGraphAttachmentLis
 | Field | Value |
 | --- | --- |
 | Priority | **Pri-1** |
-| Status | **Open** (fix landed 2026-08-03 — awaiting dogfood) |
+| Status | **Closed** (2026-08-03) — Trish dogfood GO (`87ec66a`) |
 | Area | `lib/ui/people/people_workspace.dart` (`_PeopleListOnly`, `_ContactDetailPage`), `PeopleCubit.selectContact` |
 | Platforms | Android (phone / narrow) |
 | Logged | 2026-08-03 |
@@ -226,7 +226,7 @@ Enhancement backlog — dogfood UX preference, not a layout defect. Parked **V-S
 | Field | Value |
 | --- | --- |
 | Priority | **Pri-1** |
-| Status | **Open** (fix landed 2026-08-03 — awaiting dogfood) |
+| Status | **Closed** (2026-08-03) — Trish dogfood GO (`87ec66a`) |
 | Area | `lib/ui/calendar/calendar_workspace.dart` (`_CalendarHeader`, `_DayCell`, `_MonthGridView`) |
 | Platforms | Android (phone) |
 | Logged | 2026-08-03 |
@@ -250,7 +250,7 @@ Narrow (&lt;520dp) header stacks month nav / Today+toggle; month label `Expanded
 | Field | Value |
 | --- | --- |
 | Priority | **Pri-1** |
-| Status | **Open** (fix landed 2026-08-03 — awaiting dogfood) |
+| Status | **Closed** (2026-08-03) — Trish dogfood GO (`87ec66a`) |
 | Area | `lib/ui/shell/message_body_view.dart`, `lib/ui/shell/message_attachments_panel.dart` (`QuickReplyBar`) |
 | Platforms | Android |
 | Logged | 2026-08-03 |
@@ -274,7 +274,7 @@ Stack / `Flexible` banner layout under ~420 dp; raise banner height budget to 96
 | Field | Value |
 | --- | --- |
 | Priority | **Pri-1** |
-| Status | **Open** (fix landed 2026-08-03 — awaiting dogfood) |
+| Status | **Closed** (2026-08-03) — Trish dogfood GO (`87ec66a`) |
 | Area | `lib/ui/account/add_account_sheet.dart` |
 | Platforms | Android |
 | Logged | 2026-08-03 |
