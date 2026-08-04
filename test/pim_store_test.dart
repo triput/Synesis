@@ -4,7 +4,7 @@
 // Component: Test
 // Version: 1.0 (Gold Master)
 // Created: 2026-07-27
-// Last Update: 2026-07-27
+// Last Update: 2026-08-04
 // ==============================================================================
 
 import 'package:drift/native.dart';
@@ -994,6 +994,200 @@ void main() {
       );
       expect(withDeleted, hasLength(1));
       expect(withDeleted.single.deletedAt, isNotNull);
+    });
+  });
+
+  group('DriftPimStore Wave 6 copy helpers', () {
+    test('duplicateEventToCalendar clones fields, strips rrule, attendees',
+        () async {
+      final (SynesisDatabase database, DriftPimStore store) =
+          await _openPimStore();
+      addTearDown(database.close);
+      await _seedAccount(database, 'work');
+      await _seedAccount(database, 'personal');
+
+      final String sourceCal = _id('work', 'primary');
+      final String targetCal = _id('personal', 'primary');
+      await store.upsertCalendars(<Calendar>[
+        Calendar(
+          id: sourceCal,
+          accountId: 'work',
+          providerId: 'primary',
+          name: 'Work',
+          colorArgb: 0xFF112233,
+          isDefault: true,
+        ),
+        Calendar(
+          id: targetCal,
+          accountId: 'personal',
+          providerId: 'primary',
+          name: 'Personal',
+          colorArgb: 0xFF445566,
+          isDefault: true,
+        ),
+      ]);
+
+      final CalendarEvent source = await store.createLocalEvent(
+        accountId: 'work',
+        calendarId: sourceCal,
+        title: 'Series stub',
+        body: 'Notes',
+        startEpochMs: 1000,
+        endEpochMs: 2000,
+        location: 'HQ',
+        rrule: 'FREQ=WEEKLY',
+        reminderMinutes: 15,
+        providerId: 'remote-ev-1',
+      );
+      await store.upsertEventAttendees(<EventAttendee>[
+        EventAttendee(
+          id: _id(source.id, 'attendee:a@byte.io'),
+          eventId: source.id,
+          email: 'a@byte.io',
+          displayName: 'Ada',
+          responseStatus: 'accepted',
+          isOrganizer: true,
+        ),
+      ]);
+
+      final CalendarEvent copy = await store.duplicateEventToCalendar(
+        sourceEventId: source.id,
+        targetAccountId: 'personal',
+        targetCalendarId: targetCal,
+      );
+
+      expect(copy.accountId, 'personal');
+      expect(copy.calendarId, targetCal);
+      expect(copy.title, 'Series stub');
+      expect(copy.body, 'Notes');
+      expect(copy.location, 'HQ');
+      expect(copy.reminderMinutes, 15);
+      expect(copy.rrule, isNull);
+      expect(copy.providerId, startsWith('local:'));
+      expect(copy.id, isNot(source.id));
+
+      final List<EventAttendee> attendees = await store.listEventAttendees(
+        copy.id,
+      );
+      expect(attendees, hasLength(1));
+      expect(attendees.single.email, 'a@byte.io');
+      expect(attendees.single.isOrganizer, isFalse);
+    });
+
+    test('createLocalContact + duplicateContactToList copies emails/phones',
+        () async {
+      final (SynesisDatabase database, DriftPimStore store) =
+          await _openPimStore();
+      addTearDown(database.close);
+      await _seedAccount(database, 'work');
+      await _seedAccount(database, 'personal');
+
+      final String sourceList = _id('work', 'default');
+      final String targetList = _id('personal', 'default');
+      await store.upsertContactLists(<ContactList>[
+        ContactList(
+          id: sourceList,
+          accountId: 'work',
+          providerId: 'default',
+          name: 'Work',
+          isDefault: true,
+        ),
+        ContactList(
+          id: targetList,
+          accountId: 'personal',
+          providerId: 'default',
+          name: 'Personal',
+          isDefault: true,
+        ),
+      ]);
+
+      final Contact source = await store.createLocalContact(
+        accountId: 'work',
+        contactListId: sourceList,
+        displayName: 'Ada Lovelace',
+        givenName: 'Ada',
+        familyName: 'Lovelace',
+        company: 'Analytical',
+        emails: const <ContactEmail>[
+          ContactEmail(
+            id: 'tmp-email',
+            contactId: 'tmp',
+            address: 'ada@byte.io',
+            type: 'work',
+            isPrimary: true,
+          ),
+        ],
+        phones: const <ContactPhone>[
+          ContactPhone(
+            id: 'tmp-phone',
+            contactId: 'tmp',
+            number: '+1-555-0100',
+            type: 'mobile',
+          ),
+        ],
+      );
+
+      final Contact copy = await store.duplicateContactToList(
+        sourceContactId: source.id,
+        targetAccountId: 'personal',
+        targetContactListId: targetList,
+      );
+
+      expect(copy.accountId, 'personal');
+      expect(copy.contactListId, targetList);
+      expect(copy.displayName, 'Ada Lovelace');
+      expect(copy.givenName, 'Ada');
+      expect(copy.company, 'Analytical');
+      expect(copy.providerId, startsWith('local:'));
+
+      final List<ContactEmail> emails = await store.listContactEmails(copy.id);
+      final List<ContactPhone> phones = await store.listContactPhones(copy.id);
+      expect(emails, hasLength(1));
+      expect(emails.single.address, 'ada@byte.io');
+      expect(phones.single.number, '+1-555-0100');
+    });
+
+    test('rewriteEventProviderId keeps local id stable', () async {
+      final (SynesisDatabase database, DriftPimStore store) =
+          await _openPimStore();
+      addTearDown(database.close);
+      await _seedAccount(database, 'work');
+
+      final String calId = _id('work', 'primary');
+      await store.upsertCalendars(<Calendar>[
+        Calendar(
+          id: calId,
+          accountId: 'work',
+          providerId: 'primary',
+          name: 'Work',
+          colorArgb: 0xFF112233,
+          isDefault: true,
+        ),
+      ]);
+      final CalendarEvent created = await store.createLocalEvent(
+        accountId: 'work',
+        title: 'Push me',
+        startEpochMs: 1000,
+        endEpochMs: 2000,
+      );
+      final String localId = created.id;
+      await store.rewriteEventProviderId(
+        eventId: localId,
+        providerId: 'graph-remote-99',
+        etag: 'W/"etag"',
+      );
+      final CalendarEvent? reread = await store.getEvent(localId);
+      expect(reread, isNotNull);
+      expect(reread!.id, localId);
+      expect(reread.providerId, 'graph-remote-99');
+      expect(reread.etag, 'W/"etag"');
+      expect(
+        await store.findEventByProviderId(
+          accountId: 'work',
+          providerId: 'graph-remote-99',
+        ),
+        isNotNull,
+      );
     });
   });
 }

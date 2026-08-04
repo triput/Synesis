@@ -1,6 +1,6 @@
 # Wave 6 — Cross-Account DnD Copy Checklist
 
-> **Status:** **Planning** (2026-08-04) — discovery open; implementation **not started**. **645 tests** at Wave 6P exit. Parent plan: [V2_PLAN.md](V2_PLAN.md). Prior: [V2_WAVE_6P_CHECKLIST.md](V2_WAVE_6P_CHECKLIST.md) (**complete**).
+> **Status:** **In progress** (2026-08-04) — D1 locked; Tesla D2–D4 design + P1 data plane. **645 tests** at Wave 6P exit. Parent plan: [V2_PLAN.md](V2_PLAN.md). Prior: [V2_WAVE_6P_CHECKLIST.md](V2_WAVE_6P_CHECKLIST.md) (**complete**). Design: [V2_WAVE_6_TESLA_DESIGN.md](V2_WAVE_6_TESLA_DESIGN.md).
 
 Wave 6 delivers **cross-account / cross-list copy** for **calendar events** and **contacts** — Outlook-style drag-and-drop on desktop, long-press → “Copy to…” sheet on mobile. Pattern is **local-first**: duplicate row in SQLite under the target account/collection, then enqueue **`events_copy`** / **`contacts_copy`** sync jobs for remote push. UI never blocks on network.
 
@@ -67,18 +67,18 @@ Wave 0 ✅ → Wave H ✅ → Wave 1 (P0) ✅
 | ID | Task | Exit |
 | --- | --- | --- |
 | **D1** | **Provider matrix** — Graph↔Graph / Graph↔Google / Google↔Google MVP; DAV → Wave 6b | **Locked** 2026-08-04 — § Provider matrix |
-| **D2** | **Job payload schema** — `events_copy` / `contacts_copy` JSON in job metadata (source id, target accountId, target collection id, optional field overrides) | Draft in Tesla design note or inline here |
-| **D3** | **Provider create APIs** — Graph POST event/contact; Google Calendar + People insert; error mapping → BLoC | API surface list + failure modes |
-| **D4** | **Idempotency** — new local `providerId` on copy; map remote id on push success; retry-safe | Design signed by Tesla |
+| **D2** | **Job payload schema** — `events_copy` / `contacts_copy` JSON in job metadata (source id, target accountId, target collection id, optional field overrides) | **Done** — [V2_WAVE_6_TESLA_DESIGN.md](V2_WAVE_6_TESLA_DESIGN.md) § D2 (`localEventId` / `localContactId` + target collection ids; DAV = no enqueue) |
+| **D3** | **Provider create APIs** — Graph POST event/contact; Google Calendar + People insert; error mapping → BLoC | **Done** — design § D3 (`createEvent` / `createContact` → `PimRemoteCreateResult`; ProtocolException / GraphAuthException → job failed) |
+| **D4** | **Idempotency** — new local `providerId` on copy; map remote id on push success; retry-safe | **Done** — design § D4 (`local:{uuid}` → in-place rewrite; skip `local:*` on full-pull soft-delete) |
 
 ### P1 — Data plane (Tesla + Jules)
 
 | ID | Task | Exit |
 | --- | --- | --- |
-| **E1** | `DriftPimStore.duplicateEventToCalendar` — clone event + attendees (strip organizer-only fields per W6-5) | Unit tests |
-| **E2** | `DriftPimStore.createLocalContact` + `duplicateContactToList` — emails/phones copied | Unit tests |
-| **E3** | `SyncEngine` `_handleCopyEvent` / `_handleCopyContact` — resolve provider, POST, upsert returned providerId | Integration tests with fakes |
-| **E4** | Enqueue copy jobs from cubit/service layer; surface copy-in-progress / error in UI state | Jobs visible in sync sheet |
+| **E1** | `DriftPimStore.duplicateEventToCalendar` — clone event + attendees (strip organizer-only fields per W6-5) | **Done** (Tesla) — strips RRULE; attendees `isOrganizer: false`; `test/pim_store_test.dart` |
+| **E2** | `DriftPimStore.createLocalContact` + `duplicateContactToList` — emails/phones copied | **Done** (Tesla) — + `rewrite*ProviderId` / `getEvent`/`getContact` |
+| **E3** | `SyncEngine` `_handleCopyEvent` / `_handleCopyContact` — resolve provider, POST, upsert returned providerId | **Done** (Tesla) — Graph/Google create; DAV no-op; `local:*` soft-delete guard; `test/pim_copy_sync_engine_test.dart` |
+| **E4** | Enqueue copy jobs from cubit/service layer; surface copy-in-progress / error in UI state | **Partial** — [`PimCopyService`](../lib/sync/pim_copy_service.dart) ready for Jules; cubit/DnD UI + sync-sheet copy labels → P2 |
 
 ### P2 — Desktop DnD (Jules + Andi)
 
@@ -179,9 +179,10 @@ Wave 0 ✅ → Wave H ✅ → Wave 1 (P0) ✅
 | --- | --- |
 | [V2_PLAN.md](V2_PLAN.md) | Parent plan §3 events/contacts copy |
 | [V2_WAVE_6P_CHECKLIST.md](V2_WAVE_6P_CHECKLIST.md) | Prior wave (complete) |
+| [V2_WAVE_6_TESLA_DESIGN.md](V2_WAVE_6_TESLA_DESIGN.md) | Tesla D2–D4 job payload, create APIs, idempotency, soft-delete race |
 | [V2_WAVE_6_QA.md](V2_WAVE_6_QA.md) | Renee QA stub — create at P4 |
 | [DEFECTS.md](../DEFECTS.md) | New defects logged during implementation |
 
 ---
 
-*Planning opened 2026-08-04 after Wave 6P exit (`6b0f3d7`, **645 tests**). **D1 locked** (Graph + Google MVP; DAV → 6b). Implementation may start on Tesla D2–D4.*
+*Planning opened 2026-08-04 after Wave 6P exit (`6b0f3d7`, **645 tests**). **D1 locked** (Graph + Google MVP; DAV → 6b). Tesla design signed 2026-08-04; P1 data plane in flight.*

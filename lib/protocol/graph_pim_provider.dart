@@ -4,7 +4,7 @@
 // Component: Protocol / Integration
 // Version: 1.0 (Gold Master)
 // Created: 2026-07-27
-// Last Update: 2026-07-27
+// Last Update: 2026-08-04
 // ==============================================================================
 
 import 'dart:async';
@@ -90,6 +90,20 @@ class GraphEventBundle {
 
   final CalendarEvent event;
   final List<EventAttendee> attendees;
+}
+
+/// Result of a remote PIM create (Wave 6 copy push).
+class PimRemoteCreateResult {
+  const PimRemoteCreateResult({
+    required this.providerId,
+    this.etag,
+  });
+
+  /// Remote object id (Graph `id`, Google `id` / `resourceName`).
+  final String providerId;
+
+  /// Opaque etag when the create response includes one.
+  final String? etag;
 }
 
 /// Polling Microsoft Graph adapter for contacts and calendars.
@@ -378,6 +392,120 @@ class GraphPimProvider {
       '/me/events/${Uri.encodeComponent(id)}/$action',
       <String, Object?>{'sendResponse': sendResponse},
     );
+  }
+
+  /// Creates a calendar event on the remote calendar (Wave 6 copy push).
+  ///
+  /// Attendees and RRULE are intentionally omitted from the POST body to avoid
+  /// invite fan-out and series semantics (W6-5 / Wave 6c).
+  Future<PimRemoteCreateResult> createEvent({
+    required String calendarProviderId,
+    required CalendarEvent event,
+  }) async {
+    final String calendarId = calendarProviderId.trim();
+    if (calendarId.isEmpty) {
+      throw ArgumentError.value(
+        calendarProviderId,
+        'calendarProviderId',
+        'Must not be empty.',
+      );
+    }
+    final Map<String, Object?> body = <String, Object?>{
+      'subject': event.title,
+      'isAllDay': event.allDay,
+      'start': _graphDateTimePayload(
+        event.startEpochMs,
+        allDay: event.allDay,
+      ),
+      'end': _graphDateTimePayload(event.endEpochMs, allDay: event.allDay),
+    };
+    final String? bodyText = _nonEmpty(event.body);
+    if (bodyText != null) {
+      body['body'] = <String, Object?>{'contentType': 'text', 'content': bodyText};
+    }
+    final String? location = _nonEmpty(event.location);
+    if (location != null) {
+      body['location'] = <String, Object?>{'displayName': location};
+    }
+    final int? reminder = event.reminderMinutes;
+    if (reminder != null) {
+      body['reminderMinutesBeforeStart'] = reminder;
+      body['isReminderOn'] = true;
+    }
+    final Map<String, Object?> created = await _postObject(
+      '/me/calendars/${Uri.encodeComponent(calendarId)}/events',
+      body,
+    );
+    return _createResultFromJson(created);
+  }
+
+  /// Creates a contact in the remote folder (Wave 6 copy push).
+  Future<PimRemoteCreateResult> createContact({
+    required String folderProviderId,
+    required Contact contact,
+    List<ContactEmail> emails = const <ContactEmail>[],
+    List<ContactPhone> phones = const <ContactPhone>[],
+  }) async {
+    final Map<String, Object?> body = <String, Object?>{
+      'displayName': contact.displayName,
+    };
+    final String? given = _nonEmpty(contact.givenName);
+    if (given != null) {
+      body['givenName'] = given;
+    }
+    final String? family = _nonEmpty(contact.familyName);
+    if (family != null) {
+      body['surname'] = family;
+    }
+    final String? company = _nonEmpty(contact.company);
+    if (company != null) {
+      body['companyName'] = company;
+    }
+    final String? notes = _nonEmpty(contact.notes);
+    if (notes != null) {
+      body['personalNotes'] = notes;
+    }
+    if (emails.isNotEmpty) {
+      body['emailAddresses'] = emails
+          .map(
+            (ContactEmail email) => <String, Object?>{
+              'address': email.address,
+              'name': contact.displayName,
+              if (email.type.isNotEmpty) 'type': email.type,
+            },
+          )
+          .toList(growable: false);
+    }
+    final List<String> business = <String>[];
+    final List<String> home = <String>[];
+    String? mobile;
+    for (final ContactPhone phone in phones) {
+      final String type = phone.type.toLowerCase();
+      if (type == 'mobile' || type == 'cell') {
+        mobile ??= phone.number;
+      } else if (type == 'home') {
+        home.add(phone.number);
+      } else {
+        business.add(phone.number);
+      }
+    }
+    if (business.isNotEmpty) {
+      body['businessPhones'] = business;
+    }
+    if (home.isNotEmpty) {
+      body['homePhones'] = home;
+    }
+    if (mobile != null) {
+      body['mobilePhone'] = mobile;
+    }
+
+    final bool useDefault = _isDefaultContactsFolder(folderProviderId);
+    final String path = useDefault
+        ? '/me/contacts'
+        : '/me/contactFolders/'
+              '${Uri.encodeComponent(folderProviderId.trim())}/contacts';
+    final Map<String, Object?> created = await _postObject(path, body);
+    return _createResultFromJson(created);
   }
 
   /// Loads the event associated with a Graph meeting message, if one exists.
@@ -850,6 +978,45 @@ class GraphPimProvider {
   static bool _isDefaultContactsFolder(String folderProviderId) {
     final String id = folderProviderId.trim().toLowerCase();
     return id.isEmpty || id == 'contacts' || id == 'default';
+  }
+
+  static Map<String, Object?> _graphDateTimePayload(
+    int epochMs, {
+    required bool allDay,
+  }) {
+    final DateTime utc = DateTime.fromMillisecondsSinceEpoch(
+      epochMs,
+      isUtc: true,
+    );
+    if (allDay) {
+      final String y = utc.year.toString().padLeft(4, '0');
+      final String m = utc.month.toString().padLeft(2, '0');
+      final String d = utc.day.toString().padLeft(2, '0');
+      return <String, Object?>{'date': '$y-$m-$d'};
+    }
+    final String iso = utc.toIso8601String();
+    // Graph prefers dateTime without fractional seconds when timeZone is set.
+    final String dateTime = iso.endsWith('Z')
+        ? iso.replaceFirst(RegExp(r'\.\d{3}Z$'), '')
+        : iso;
+    return <String, Object?>{'dateTime': dateTime, 'timeZone': 'UTC'};
+  }
+
+  static PimRemoteCreateResult _createResultFromJson(
+    Map<String, Object?> json,
+  ) {
+    final String? id = _nonEmpty(json['id'] as String?);
+    if (id == null) {
+      throw const ProtocolException(
+        'Graph create response did not include an id.',
+      );
+    }
+    return PimRemoteCreateResult(
+      providerId: id,
+      etag:
+          _nonEmpty(json['@odata.etag'] as String?) ??
+          _nonEmpty(json['odata.etag'] as String?),
+    );
   }
 
   static int? _parseGraphColor(String? hex) {

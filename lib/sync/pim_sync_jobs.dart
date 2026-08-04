@@ -4,18 +4,20 @@
 // Component: Sync
 // Version: 1.0 (Gold Master)
 // Created: 2026-07-27
-// Last Update: 2026-07-27
+// Last Update: 2026-08-04
 // ==============================================================================
 
 /// String job types for contacts / calendars sync.
 ///
-/// Bootstrap and incremental types are handled by [SyncEngine] for Graph
-/// accounts (Wave 2). Push/copy remain no-ops until CRUD / Wave 6.
+/// Bootstrap and incremental types are handled by [SyncEngine] for Graph,
+/// Google, and DAV accounts. Wave 6 implements [contactsCopy] / [eventsCopy]
+/// for Graph + Google remote create after a local Drift duplicate.
 ///
 /// **Naming scheme:** `{collection}_{action}` where action is
 /// `bootstrap` | `incremental` | `push` | `copy`.
-/// Reserved push/copy names (`contacts_push`, `contacts_copy`, `events_push`,
-/// `events_copy`) are also no-ops until CRUD / cross-collection copy waves.
+/// Reserved push names (`contacts_push`, `events_push`) remain no-ops until
+/// ordinary local CRUD write-back. Copy jobs are live for Graph/Google targets;
+/// DAV targets do not enqueue copy jobs (local-only until Wave 6b).
 ///
 /// ## Per-collection sync cursor keys
 ///
@@ -44,13 +46,13 @@ abstract final class PimSyncJobs {
   /// Reserved: push local contact creates/updates (Wave 2+ / CRUD).
   static const String contactsPush = 'contacts_push';
 
-  /// Reserved: cross-list / cross-account contact copy (Wave 6 DnD).
+  /// Cross-list / cross-account contact copy push (Wave 6; Graph/Google).
   static const String contactsCopy = 'contacts_copy';
 
   /// Reserved: push local event creates/updates (Wave 2+ / CRUD).
   static const String eventsPush = 'events_push';
 
-  /// Reserved: cross-calendar / cross-account event copy (Wave 6 DnD).
+  /// Cross-calendar / cross-account event copy push (Wave 6; Graph/Google).
   static const String eventsCopy = 'events_copy';
 
   /// All job types that [SyncEngine] must accept without throwing.

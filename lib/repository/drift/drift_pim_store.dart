@@ -4,7 +4,7 @@
 // Component: Repository / Data
 // Version: 1.0 (Gold Master)
 // Created: 2026-07-27
-// Last Update: 2026-07-27
+// Last Update: 2026-08-04
 // ==============================================================================
 
 import 'package:drift/drift.dart';
@@ -215,6 +215,23 @@ class DriftPimStore {
     return row == null ? null : _contactFromRow(row);
   }
 
+  /// Looks up a contact by local primary key.
+  Future<Contact?> getContact(String contactId) async {
+    final ContactRow? row = await (_database.select(
+      _database.contacts,
+    )..where((Contacts table) => table.id.equals(contactId))).getSingleOrNull();
+    return row == null ? null : _contactFromRow(row);
+  }
+
+  /// Looks up a contact list by local primary key.
+  Future<ContactList?> getContactList(String contactListId) async {
+    final ContactListRow? row =
+        await (_database.select(_database.contactLists)
+              ..where((ContactLists table) => table.id.equals(contactListId)))
+            .getSingleOrNull();
+    return row == null ? null : _contactListFromRow(row);
+  }
+
   /// Upserts contacts by `(accountId, providerId)`. New rows use [stableLocalId].
   Future<void> upsertContacts(List<Contact> contacts) async {
     if (contacts.isEmpty) {
@@ -306,6 +323,170 @@ class DriftPimStore {
             );
       }
     });
+    _notify();
+  }
+
+  /// Creates a **local-only** contact (no sync job). When [providerId] is
+  /// omitted, generates `local:{uuid}`.
+  Future<Contact> createLocalContact({
+    required String accountId,
+    required String contactListId,
+    required String displayName,
+    String? givenName,
+    String? familyName,
+    String? company,
+    String? notes,
+    String? providerId,
+    List<ContactEmail> emails = const <ContactEmail>[],
+    List<ContactPhone> phones = const <ContactPhone>[],
+  }) async {
+    final String effectiveProviderId = providerId ?? 'local:${_uuid.v4()}';
+    final int now = DateTime.now().millisecondsSinceEpoch;
+    final Contact contact = Contact(
+      id: stableLocalId(accountId, effectiveProviderId),
+      accountId: accountId,
+      contactListId: contactListId,
+      providerId: effectiveProviderId,
+      displayName: displayName,
+      givenName: givenName,
+      familyName: familyName,
+      company: company,
+      notes: notes,
+      updatedAt: now,
+    );
+    await _database.transaction(() async {
+      await _database
+          .into(_database.contacts)
+          .insert(
+            ContactsCompanion.insert(
+              id: contact.id,
+              accountId: contact.accountId,
+              contactListId: contact.contactListId,
+              providerId: contact.providerId,
+              displayName: contact.displayName,
+              givenName: Value<String?>(contact.givenName),
+              familyName: Value<String?>(contact.familyName),
+              company: Value<String?>(contact.company),
+              notes: Value<String?>(contact.notes),
+              updatedAt: contact.updatedAt,
+            ),
+          );
+      for (final ContactEmail email in emails) {
+        final ContactEmail remapped = ContactEmail(
+          id: stableLocalId(
+            contact.id,
+            'email:${email.address.toLowerCase()}',
+          ),
+          contactId: contact.id,
+          address: email.address,
+          type: email.type,
+          isPrimary: email.isPrimary,
+        );
+        await _database
+            .into(_database.contactEmails)
+            .insertOnConflictUpdate(
+              ContactEmailsCompanion.insert(
+                id: remapped.id,
+                contactId: remapped.contactId,
+                address: remapped.address,
+                type: Value<String>(remapped.type),
+                isPrimary: Value<bool>(remapped.isPrimary),
+              ),
+            );
+      }
+      for (final ContactPhone phone in phones) {
+        final ContactPhone remapped = ContactPhone(
+          id: stableLocalId(
+            contact.id,
+            'phone:${phone.type}:${phone.number}',
+          ),
+          contactId: contact.id,
+          number: phone.number,
+          type: phone.type,
+        );
+        await _database
+            .into(_database.contactPhones)
+            .insertOnConflictUpdate(
+              ContactPhonesCompanion.insert(
+                id: remapped.id,
+                contactId: remapped.contactId,
+                number: remapped.number,
+                type: Value<String>(remapped.type),
+              ),
+            );
+      }
+    });
+    _notify();
+    return contact;
+  }
+
+  /// Duplicates [sourceContactId] into [targetContactListId] under
+  /// [targetAccountId] with a fresh `local:{uuid}` provider id (Wave 6 copy).
+  Future<Contact> duplicateContactToList({
+    required String sourceContactId,
+    required String targetAccountId,
+    required String targetContactListId,
+  }) async {
+    final Contact? source = await getContact(sourceContactId);
+    if (source == null) {
+      throw StateError(
+        'duplicateContactToList: source contact "$sourceContactId" not found.',
+      );
+    }
+    final ContactList? targetList = await getContactList(targetContactListId);
+    if (targetList == null) {
+      throw StateError(
+        'duplicateContactToList: target list "$targetContactListId" not found.',
+      );
+    }
+    if (targetList.accountId != targetAccountId) {
+      throw StateError(
+        'duplicateContactToList: target list account '
+        '"${targetList.accountId}" does not match "$targetAccountId".',
+      );
+    }
+    final List<ContactEmail> emails = await listContactEmails(sourceContactId);
+    final List<ContactPhone> phones = await listContactPhones(sourceContactId);
+    return createLocalContact(
+      accountId: targetAccountId,
+      contactListId: targetContactListId,
+      displayName: source.displayName,
+      givenName: source.givenName,
+      familyName: source.familyName,
+      company: source.company,
+      notes: source.notes,
+      emails: emails,
+      phones: phones,
+    );
+  }
+
+  /// Rewrites [contactId]'s provider identity after a successful remote create.
+  /// Keeps the local primary key stable for UI bindings.
+  Future<void> rewriteContactProviderId({
+    required String contactId,
+    required String providerId,
+    String? etag,
+  }) async {
+    final String trimmed = providerId.trim();
+    if (trimmed.isEmpty) {
+      throw ArgumentError.value(providerId, 'providerId', 'Must not be empty.');
+    }
+    final int now = DateTime.now().millisecondsSinceEpoch;
+    final int changed =
+        await (_database.update(
+          _database.contacts,
+        )..where((Contacts table) => table.id.equals(contactId))).write(
+          ContactsCompanion(
+            providerId: Value<String>(trimmed),
+            etag: Value<String?>(etag),
+            updatedAt: Value<int>(now),
+          ),
+        );
+    if (changed == 0) {
+      throw StateError(
+        'rewriteContactProviderId: contact "$contactId" not found.',
+      );
+    }
     _notify();
   }
 
@@ -707,6 +888,23 @@ class DriftPimStore {
     return row == null ? null : _eventFromRow(row);
   }
 
+  /// Looks up an event by local primary key.
+  Future<CalendarEvent?> getEvent(String eventId) async {
+    final EventRow? row = await (_database.select(
+      _database.events,
+    )..where((Events table) => table.id.equals(eventId))).getSingleOrNull();
+    return row == null ? null : _eventFromRow(row);
+  }
+
+  /// Looks up a calendar by local primary key.
+  Future<Calendar?> getCalendar(String calendarId) async {
+    final CalendarRow? row =
+        await (_database.select(_database.calendars)
+              ..where((Calendars table) => table.id.equals(calendarId)))
+            .getSingleOrNull();
+    return row == null ? null : _calendarFromRow(row);
+  }
+
   /// Upserts events by `(accountId, providerId)`. New rows use [stableLocalId].
   Future<void> upsertEvents(List<CalendarEvent> events) async {
     if (events.isEmpty) {
@@ -850,6 +1048,100 @@ class DriftPimStore {
     )..where((Events table) => table.id.equals(eventId))).write(
       EventsCompanion(deletedAt: Value<int?>(now), updatedAt: Value<int>(now)),
     );
+    _notify();
+  }
+
+  /// Duplicates [sourceEventId] onto [targetCalendarId] under
+  /// [targetAccountId] with a fresh `local:{uuid}` provider id (Wave 6 copy).
+  ///
+  /// Strips [CalendarEvent.rrule] (Wave 6c series copy is out of scope).
+  /// Copies attendees with [EventAttendee.isOrganizer] forced to `false`.
+  Future<CalendarEvent> duplicateEventToCalendar({
+    required String sourceEventId,
+    required String targetAccountId,
+    required String targetCalendarId,
+  }) async {
+    final CalendarEvent? source = await getEvent(sourceEventId);
+    if (source == null) {
+      throw StateError(
+        'duplicateEventToCalendar: source event "$sourceEventId" not found.',
+      );
+    }
+    final Calendar? targetCalendar = await getCalendar(targetCalendarId);
+    if (targetCalendar == null) {
+      throw StateError(
+        'duplicateEventToCalendar: target calendar "$targetCalendarId" '
+        'not found.',
+      );
+    }
+    if (targetCalendar.accountId != targetAccountId) {
+      throw StateError(
+        'duplicateEventToCalendar: target calendar account '
+        '"${targetCalendar.accountId}" does not match "$targetAccountId".',
+      );
+    }
+    final CalendarEvent created = await createLocalEvent(
+      accountId: targetAccountId,
+      calendarId: targetCalendarId,
+      title: source.title,
+      body: source.body,
+      startEpochMs: source.startEpochMs,
+      endEpochMs: source.endEpochMs,
+      allDay: source.allDay,
+      location: source.location,
+      // Wave 6c owns series semantics — copy as a single independent event.
+      rrule: null,
+      reminderMinutes: source.reminderMinutes,
+    );
+    final List<EventAttendee> sourceAttendees = await listEventAttendees(
+      sourceEventId,
+    );
+    if (sourceAttendees.isNotEmpty) {
+      final List<EventAttendee> copied = sourceAttendees
+          .map(
+            (EventAttendee attendee) => EventAttendee(
+              id: stableLocalId(
+                created.id,
+                'attendee:${attendee.email.toLowerCase()}',
+              ),
+              eventId: created.id,
+              email: attendee.email,
+              displayName: attendee.displayName,
+              responseStatus: attendee.responseStatus,
+              isOrganizer: false,
+            ),
+          )
+          .toList(growable: false);
+      await upsertEventAttendees(copied);
+    }
+    return created;
+  }
+
+  /// Rewrites [eventId]'s provider identity after a successful remote create.
+  /// Keeps the local primary key stable for UI bindings.
+  Future<void> rewriteEventProviderId({
+    required String eventId,
+    required String providerId,
+    String? etag,
+  }) async {
+    final String trimmed = providerId.trim();
+    if (trimmed.isEmpty) {
+      throw ArgumentError.value(providerId, 'providerId', 'Must not be empty.');
+    }
+    final int now = DateTime.now().millisecondsSinceEpoch;
+    final int changed =
+        await (_database.update(
+          _database.events,
+        )..where((Events table) => table.id.equals(eventId))).write(
+          EventsCompanion(
+            providerId: Value<String>(trimmed),
+            etag: Value<String?>(etag),
+            updatedAt: Value<int>(now),
+          ),
+        );
+    if (changed == 0) {
+      throw StateError('rewriteEventProviderId: event "$eventId" not found.');
+    }
     _notify();
   }
 

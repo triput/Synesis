@@ -4,7 +4,7 @@
 // Component: Protocol / Integration
 // Version: 1.0 (Gold Master)
 // Created: 2026-07-27
-// Last Update: 2026-07-27
+// Last Update: 2026-08-04
 // ==============================================================================
 
 import 'dart:async';
@@ -53,9 +53,9 @@ const String kGoogleMyContactsGroupId = 'contactGroups/myContacts';
 /// Full pulls (no cursor) return an empty removed list; SyncEngine applies
 /// DAV-style missing soft-delete for [GooglePimProvider] on those snapshots.
 ///
-/// ## Out of scope (Wave G)
+/// ## Write-back (Wave 6)
 ///
-/// RSVP / write-back (`respondToEvent`, contacts/events push) remain unsupported.
+/// [createEvent] / [createContact] support copy push. RSVP remains unsupported.
 class GooglePimProvider extends GraphPimProvider {
   GooglePimProvider(
     Future<String> Function() accessToken, {
@@ -318,6 +318,140 @@ class GooglePimProvider extends GraphPimProvider {
   }) async {
     throw UnsupportedError(
       'Google Calendar RSVP is out of Wave G scope.',
+    );
+  }
+
+  @override
+  Future<PimRemoteCreateResult> createEvent({
+    required String calendarProviderId,
+    required CalendarEvent event,
+  }) async {
+    final String calendarId = calendarProviderId.trim();
+    if (calendarId.isEmpty) {
+      throw ArgumentError.value(
+        calendarProviderId,
+        'calendarProviderId',
+        'Must not be empty.',
+      );
+    }
+    final Map<String, Object?> body = <String, Object?>{
+      'summary': event.title,
+      'start': _googleDateTimePayload(
+        event.startEpochMs,
+        allDay: event.allDay,
+      ),
+      'end': _googleDateTimePayload(event.endEpochMs, allDay: event.allDay),
+    };
+    final String? description = _nonEmpty(event.body);
+    if (description != null) {
+      body['description'] = description;
+    }
+    final String? location = _nonEmpty(event.location);
+    if (location != null) {
+      body['location'] = location;
+    }
+    final int? reminder = event.reminderMinutes;
+    if (reminder != null) {
+      body['reminders'] = <String, Object?>{
+        'useDefault': false,
+        'overrides': <Map<String, Object?>>[
+          <String, Object?>{'method': 'popup', 'minutes': reminder},
+        ],
+      };
+    }
+    final Map<String, Object?> created = await _postCalendar(
+      '/calendars/${Uri.encodeComponent(calendarId)}/events',
+      body,
+    );
+    final String? id = _nonEmpty(created['id'] as String?);
+    if (id == null) {
+      throw const ProtocolException(
+        'Google Calendar create response did not include an id.',
+      );
+    }
+    return PimRemoteCreateResult(
+      providerId: id,
+      etag: _nonEmpty(created['etag'] as String?),
+    );
+  }
+
+  @override
+  Future<PimRemoteCreateResult> createContact({
+    required String folderProviderId,
+    required Contact contact,
+    List<ContactEmail> emails = const <ContactEmail>[],
+    List<ContactPhone> phones = const <ContactPhone>[],
+  }) async {
+    final Map<String, Object?> body = <String, Object?>{};
+    final Map<String, Object?> name = <String, Object?>{
+      'displayName': contact.displayName,
+    };
+    final String? given = _nonEmpty(contact.givenName);
+    if (given != null) {
+      name['givenName'] = given;
+    }
+    final String? family = _nonEmpty(contact.familyName);
+    if (family != null) {
+      name['familyName'] = family;
+    }
+    body['names'] = <Map<String, Object?>>[name];
+    final String? company = _nonEmpty(contact.company);
+    if (company != null) {
+      body['organizations'] = <Map<String, Object?>>[
+        <String, Object?>{'name': company},
+      ];
+    }
+    final String? notes = _nonEmpty(contact.notes);
+    if (notes != null) {
+      body['biographies'] = <Map<String, Object?>>[
+        <String, Object?>{'value': notes, 'contentType': 'TEXT_PLAIN'},
+      ];
+    }
+    if (emails.isNotEmpty) {
+      body['emailAddresses'] = emails
+          .map(
+            (ContactEmail email) => <String, Object?>{
+              'value': email.address,
+              if (email.type.isNotEmpty) 'type': email.type,
+            },
+          )
+          .toList(growable: false);
+    }
+    if (phones.isNotEmpty) {
+      body['phoneNumbers'] = phones
+          .map(
+            (ContactPhone phone) => <String, Object?>{
+              'value': phone.number,
+              if (phone.type.isNotEmpty) 'type': phone.type,
+            },
+          )
+          .toList(growable: false);
+    }
+    final String groupResource = _contactGroupResourceName(folderProviderId);
+    body['memberships'] = <Map<String, Object?>>[
+      <String, Object?>{
+        'contactGroupMembership': <String, Object?>{
+          'contactGroupResourceName': groupResource,
+        },
+      },
+    ];
+
+    final Map<String, Object?> created = await _postPeople(
+      '/people:createContact',
+      body,
+      queryParameters: const <String, String>{
+        'personFields': _personFields,
+      },
+    );
+    final String? resourceName = _nonEmpty(created['resourceName'] as String?);
+    if (resourceName == null) {
+      throw const ProtocolException(
+        'Google People createContact response did not include resourceName.',
+      );
+    }
+    return PimRemoteCreateResult(
+      providerId: resourceName,
+      etag: _nonEmpty(created['etag'] as String?),
     );
   }
 
@@ -965,6 +1099,86 @@ class GooglePimProvider extends GraphPimProvider {
       (Map<String, String> headers) => _client.get(uri, headers: headers),
     );
     return _decodeObjectResponse(response);
+  }
+
+  Future<Map<String, Object?>> _postCalendar(
+    String path,
+    Map<String, Object?> body, {
+    Map<String, String> queryParameters = const <String, String>{},
+  }) async {
+    final Uri uri = _buildUri(
+      _calendarBaseUri,
+      path,
+      queryParameters: queryParameters,
+    );
+    final http.Response response = await _sendAuthorized(
+      (Map<String, String> headers) => _client.post(
+        uri,
+        headers: <String, String>{
+          ...headers,
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode(body),
+      ),
+    );
+    return _decodeObjectResponse(response);
+  }
+
+  Future<Map<String, Object?>> _postPeople(
+    String path,
+    Map<String, Object?> body, {
+    Map<String, String> queryParameters = const <String, String>{},
+  }) async {
+    final Uri uri = _buildUri(
+      _peopleBaseUri,
+      path,
+      queryParameters: queryParameters,
+    );
+    final http.Response response = await _sendAuthorized(
+      (Map<String, String> headers) => _client.post(
+        uri,
+        headers: <String, String>{
+          ...headers,
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode(body),
+      ),
+    );
+    return _decodeObjectResponse(response);
+  }
+
+  static String _contactGroupResourceName(String folderProviderId) {
+    final String id = folderProviderId.trim();
+    if (id.isEmpty ||
+        id == 'myContacts' ||
+        id == 'contacts' ||
+        id == 'default') {
+      return kGoogleMyContactsGroupId;
+    }
+    if (id.startsWith('contactGroups/')) {
+      return id;
+    }
+    return 'contactGroups/$id';
+  }
+
+  static Map<String, Object?> _googleDateTimePayload(
+    int epochMs, {
+    required bool allDay,
+  }) {
+    final DateTime utc = DateTime.fromMillisecondsSinceEpoch(
+      epochMs,
+      isUtc: true,
+    );
+    if (allDay) {
+      final String y = utc.year.toString().padLeft(4, '0');
+      final String m = utc.month.toString().padLeft(2, '0');
+      final String d = utc.day.toString().padLeft(2, '0');
+      return <String, Object?>{'date': '$y-$m-$d'};
+    }
+    return <String, Object?>{
+      'dateTime': utc.toIso8601String(),
+      'timeZone': 'UTC',
+    };
   }
 
   Uri _buildUri(

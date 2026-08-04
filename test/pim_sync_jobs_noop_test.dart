@@ -1,10 +1,10 @@
 // ==============================================================================
 // File: test/pim_sync_jobs_noop_test.dart
-// Description: PIM sync job types dispatch successfully in SyncEngine (push/copy no-op; bootstrap/incremental no-op without Graph PIM wiring).
+// Description: PIM sync job types dispatch successfully in SyncEngine (push no-op; copy soft no-op without payload; bootstrap/incremental no-op without PIM wiring).
 // Component: Test
-// Version: 1.1 (Gold Master)
+// Version: 1.2 (Gold Master)
 // Created: 2026-07-27
-// Last Update: 2026-07-27
+// Last Update: 2026-08-04
 // ==============================================================================
 
 import 'package:connectivity_plus/connectivity_plus.dart';

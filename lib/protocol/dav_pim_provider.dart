@@ -1,10 +1,10 @@
 // ==============================================================================
 // File: lib/protocol/dav_pim_provider.dart
-// Description: Read-only CardDAV and CalDAV adapter for PIM synchronization.
+// Description: CardDAV/CalDAV PIM adapter (read sync; create deferred to Wave 6b).
 // Component: Protocol / Integration
 // Version: 1.0 (Gold Master)
 // Created: 2026-07-27
-// Last Update: 2026-07-27
+// Last Update: 2026-08-04
 // ==============================================================================
 
 import 'package:http/http.dart' as http;
@@ -38,6 +38,30 @@ class DavPimProvider extends GraphPimProvider {
   final String? caldavBaseUrl;
   final String? imapHost;
   final http.Client? _httpClient;
+
+  @override
+  Future<PimRemoteCreateResult> createEvent({
+    required String calendarProviderId,
+    required CalendarEvent event,
+  }) async {
+    throw UnsupportedError(
+      'CalDAV event create is Wave 6b — DAV is a local-only copy target in '
+      'Wave 6.',
+    );
+  }
+
+  @override
+  Future<PimRemoteCreateResult> createContact({
+    required String folderProviderId,
+    required Contact contact,
+    List<ContactEmail> emails = const <ContactEmail>[],
+    List<ContactPhone> phones = const <ContactPhone>[],
+  }) async {
+    throw UnsupportedError(
+      'CardDAV contact create is Wave 6b — DAV is a local-only copy target in '
+      'Wave 6.',
+    );
+  }
 
   @override
   Future<List<GraphContactFolder>> listContactFolders() async {

@@ -4,7 +4,7 @@
 // Component: Sync
 // Version: 1.4 (Gold Master)
 // Created: 2026-07-14
-// Last Update: 2026-07-27
+// Last Update: 2026-08-04
 // ==============================================================================
 
 import 'dart:async';
@@ -431,10 +431,14 @@ class SyncEngine {
         await _syncEvents(job, bootstrap: false);
         return null;
       case PimSyncJobs.contactsPush:
-      case PimSyncJobs.contactsCopy:
       case PimSyncJobs.eventsPush:
+        // Reserved until ordinary local CRUD write-back.
+        return null;
+      case PimSyncJobs.contactsCopy:
+        await _copyContact(job);
+        return null;
       case PimSyncJobs.eventsCopy:
-        // Reserved until CRUD / Wave 6 DnD copy.
+        await _copyEvent(job);
         return null;
       default:
         throw ArgumentError.value(
@@ -609,7 +613,9 @@ class SyncEngine {
                   contactListId: contactListId,
                 ))
                 .where(
-                  (Contact contact) => !remoteIds.contains(contact.providerId),
+                  (Contact contact) =>
+                      !PimIds.isLocalProviderId(contact.providerId) &&
+                      !remoteIds.contains(contact.providerId),
                 )
                 .map(
                   (Contact contact) => Contact(
@@ -806,6 +812,7 @@ class SyncEngine {
                 ))
                 .where(
                   (CalendarEvent event) =>
+                      !PimIds.isLocalProviderId(event.providerId) &&
                       !remoteIds.contains(event.providerId),
                 )
                 .map(
@@ -883,6 +890,111 @@ class SyncEngine {
       if (link != null && link.isNotEmpty) {
         await _repository.setCursor(job.accountId, calendarId, cursorKey, link);
       }
+    } finally {
+      await provider.dispose();
+    }
+  }
+
+  /// Pushes a locally duplicated event to Graph/Google (Wave 6).
+  ///
+  /// Payload: `localEventId`, `targetCalendarId`, `targetCalendarProviderId`.
+  /// DAV targets should not enqueue this job (see [PimCopyService]).
+  Future<void> _copyEvent(SyncJob job) async {
+    final DriftPimStore? store = _pimStore;
+    final GraphPimProvider? provider = await _pimProvider(job.accountId);
+    if (store == null || provider == null) {
+      return;
+    }
+    try {
+      if (provider is DavPimProvider) {
+        // Local duplicate is already done; Wave 6b owns DAV write-back.
+        return;
+      }
+      final Map<String, Object?> payload = _decodePayload(job.payloadJson);
+      final String? localEventId = payload['localEventId'] as String?;
+      final String? targetCalendarProviderId =
+          payload['targetCalendarProviderId'] as String?;
+      if (localEventId == null ||
+          localEventId.isEmpty ||
+          targetCalendarProviderId == null ||
+          targetCalendarProviderId.isEmpty) {
+        // Soft no-op when payload absent (registered-job smoke / mis-enqueue).
+        return;
+      }
+      final CalendarEvent? event = await store.getEvent(localEventId);
+      if (event == null) {
+        throw StateError(
+          'events_copy: local event "$localEventId" not found.',
+        );
+      }
+      if (!PimIds.isLocalProviderId(event.providerId)) {
+        // Prior attempt already rewrote the remote id — retry-safe no-op.
+        return;
+      }
+      final PimRemoteCreateResult created = await provider.createEvent(
+        calendarProviderId: targetCalendarProviderId,
+        event: event,
+      );
+      await store.rewriteEventProviderId(
+        eventId: localEventId,
+        providerId: created.providerId,
+        etag: created.etag,
+      );
+    } finally {
+      await provider.dispose();
+    }
+  }
+
+  /// Pushes a locally duplicated contact to Graph/Google (Wave 6).
+  ///
+  /// Payload: `localContactId`, `targetContactListId`,
+  /// `targetContactListProviderId`.
+  Future<void> _copyContact(SyncJob job) async {
+    final DriftPimStore? store = _pimStore;
+    final GraphPimProvider? provider = await _pimProvider(job.accountId);
+    if (store == null || provider == null) {
+      return;
+    }
+    try {
+      if (provider is DavPimProvider) {
+        return;
+      }
+      final Map<String, Object?> payload = _decodePayload(job.payloadJson);
+      final String? localContactId = payload['localContactId'] as String?;
+      final String? targetContactListProviderId =
+          payload['targetContactListProviderId'] as String?;
+      if (localContactId == null ||
+          localContactId.isEmpty ||
+          targetContactListProviderId == null ||
+          targetContactListProviderId.isEmpty) {
+        return;
+      }
+      final Contact? contact = await store.getContact(localContactId);
+      if (contact == null) {
+        throw StateError(
+          'contacts_copy: local contact "$localContactId" not found.',
+        );
+      }
+      if (!PimIds.isLocalProviderId(contact.providerId)) {
+        return;
+      }
+      final List<ContactEmail> emails = await store.listContactEmails(
+        localContactId,
+      );
+      final List<ContactPhone> phones = await store.listContactPhones(
+        localContactId,
+      );
+      final PimRemoteCreateResult created = await provider.createContact(
+        folderProviderId: targetContactListProviderId,
+        contact: contact,
+        emails: emails,
+        phones: phones,
+      );
+      await store.rewriteContactProviderId(
+        contactId: localContactId,
+        providerId: created.providerId,
+        etag: created.etag,
+      );
     } finally {
       await provider.dispose();
     }
