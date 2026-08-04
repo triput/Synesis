@@ -95,8 +95,8 @@ String contactCopySuccessMessage({
       'Not synced yet — CardDAV write arrives in a future update.';
 }
 
-/// Shows a snackbar after a successful event copy; optional Undo removes the
-/// duplicate locally (remote push may still complete async).
+/// Shows a snackbar after a successful event copy; optional Undo soft-deletes
+/// the duplicate locally. Pending `events_copy` jobs skip soft-deleted rows.
 void showEventCopyResultSnackBar({
   required BuildContext context,
   required String calendarName,

@@ -1,6 +1,6 @@
 # Wave 6 — Cross-Account DnD Copy Checklist
 
-> **Status:** **In progress** (2026-08-04) — D1 locked; Tesla D2–D4 design + P1 data plane. **645 tests** at Wave 6P exit. Parent plan: [V2_PLAN.md](V2_PLAN.md). Prior: [V2_WAVE_6P_CHECKLIST.md](V2_WAVE_6P_CHECKLIST.md) (**complete**). Design: [V2_WAVE_6_TESLA_DESIGN.md](V2_WAVE_6_TESLA_DESIGN.md).
+> **Status:** **E10 GO** (2026-08-04) — P0–P3 landed; Renee QA **659/659**. Awaiting E11 operator dogfood + Page inventory. Parent plan: [V2_PLAN.md](V2_PLAN.md). Prior: [V2_WAVE_6P_CHECKLIST.md](V2_WAVE_6P_CHECKLIST.md) (**complete**). Design: [V2_WAVE_6_TESLA_DESIGN.md](V2_WAVE_6_TESLA_DESIGN.md). QA: [V2_WAVE_6_QA.md](V2_WAVE_6_QA.md).
 
 Wave 6 delivers **cross-account / cross-list copy** for **calendar events** and **contacts** — Outlook-style drag-and-drop on desktop, long-press → “Copy to…” sheet on mobile. Pattern is **local-first**: duplicate row in SQLite under the target account/collection, then enqueue **`events_copy`** / **`contacts_copy`** sync jobs for remote push. UI never blocks on network.
 
@@ -84,23 +84,23 @@ Wave 0 ✅ → Wave H ✅ → Wave 1 (P0) ✅
 
 | ID | Task | Exit |
 | --- | --- | --- |
-| **E5** | Calendar: draggable event in month/week/agenda; drop targets on calendar lanes (respect `isSelectedForDisplay`) | Widget tests + Windows manual |
-| **E6** | People: draggable contact row; drop on contact list header/lane | Widget tests + Windows manual |
-| **E7** | Cross-account visual feedback — drag avatar, invalid-target affordance, undo snackbar optional | Operator acceptable |
+| **E5** | Calendar: draggable event in month/week/agenda; drop targets on calendar lanes (respect `isSelectedForDisplay`) | **Done** (widget tests) — Windows manual → E11 |
+| **E6** | People: draggable contact row; drop on contact list header/lane | **Done** (widget tests) — Windows manual → E11 |
+| **E7** | Cross-account visual feedback — drag avatar, invalid-target affordance, undo snackbar optional | **Done** (lanes + reject affordance + event Undo) — E11 polish OK |
 
 ### P3 — Mobile fallback (Andi)
 
 | ID | Task | Exit |
 | --- | --- | --- |
-| **E8** | Event long-press → “Copy to calendar…” sheet (account + calendar picker) | Android manual |
-| **E9** | Contact long-press → “Copy to list…” sheet | Android manual |
+| **E8** | Event long-press → “Copy to calendar…” sheet (account + calendar picker) | **Done** (widget tests) — Android manual → E11 |
+| **E9** | Contact long-press → “Copy to list…” sheet | **Done** (widget tests) — Android manual → E11 |
 
 ### P4 — QA & docs (Renee + Page)
 
 | ID | Task | Exit |
 | --- | --- | --- |
-| **E10** | Renee QA pass — [V2_WAVE_6_QA.md](V2_WAVE_6_QA.md) (**GO** / NO-GO) | Test delta → Page inventory |
-| **E11** | Operator dogfood — Trish cross-account copy on principal Google + Graph calendars/contacts | **GO** logged in QA doc |
+| **E10** | Renee QA pass — [V2_WAVE_6_QA.md](V2_WAVE_6_QA.md) (**GO** / NO-GO) | **GO** — **659/659**; test delta → Page inventory |
+| **E11** | Operator dogfood — Trish cross-account copy on principal Google + Graph calendars/contacts | Pending — matrix in QA doc |
 
 ## Provider matrix (D1 — **locked** 2026-08-04)
 
@@ -180,9 +180,9 @@ Wave 0 ✅ → Wave H ✅ → Wave 1 (P0) ✅
 | [V2_PLAN.md](V2_PLAN.md) | Parent plan §3 events/contacts copy |
 | [V2_WAVE_6P_CHECKLIST.md](V2_WAVE_6P_CHECKLIST.md) | Prior wave (complete) |
 | [V2_WAVE_6_TESLA_DESIGN.md](V2_WAVE_6_TESLA_DESIGN.md) | Tesla D2–D4 job payload, create APIs, idempotency, soft-delete race |
-| [V2_WAVE_6_QA.md](V2_WAVE_6_QA.md) | Renee QA stub — create at P4 |
+| [V2_WAVE_6_QA.md](V2_WAVE_6_QA.md) | Renee E10 QA — **GO** (2026-08-04) |
 | [DEFECTS.md](../DEFECTS.md) | New defects logged during implementation |
 
 ---
 
-*Planning opened 2026-08-04 after Wave 6P exit (`6b0f3d7`, **645 tests**). **D1 locked** (Graph + Google MVP; DAV → 6b). Tesla design signed 2026-08-04; P1 data plane in flight.*
+*Planning opened 2026-08-04 after Wave 6P exit (`6b0f3d7`, **645 tests**). **D1 locked** (Graph + Google MVP; DAV → 6b). Tesla design signed 2026-08-04. P0–P3 landed; **E10 GO** at **659 tests** (2026-08-04). Awaiting E11 + Page inventory.*

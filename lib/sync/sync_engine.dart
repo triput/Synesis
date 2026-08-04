@@ -927,6 +927,10 @@ class SyncEngine {
           'events_copy: local event "$localEventId" not found.',
         );
       }
+      if (event.deletedAt != null) {
+        // Undo / local soft-delete before push — do not create remote.
+        return;
+      }
       if (!PimIds.isLocalProviderId(event.providerId)) {
         // Prior attempt already rewrote the remote id — retry-safe no-op.
         return;
@@ -974,6 +978,10 @@ class SyncEngine {
         throw StateError(
           'contacts_copy: local contact "$localContactId" not found.',
         );
+      }
+      if (contact.deletedAt != null) {
+        // Local soft-delete before push — do not create remote.
+        return;
       }
       if (!PimIds.isLocalProviderId(contact.providerId)) {
         return;

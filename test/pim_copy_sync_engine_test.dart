@@ -283,6 +283,78 @@ void main() {
       expect(postCount, 0);
       expect((await pim.getEvent(local.id))?.providerId, 'already-remote');
     });
+
+    test('events_copy skips soft-deleted local row (undo before push)', () async {
+      final SynesisDatabase database = SynesisDatabase(NativeDatabase.memory());
+      addTearDown(database.close);
+      final DriftMailRepository repo = DriftMailRepository(database);
+      final DriftPimStore pim = DriftPimStore(database, notify: () {});
+
+      await repo.upsertAccount(
+        const MailAccount(
+          id: 'work',
+          label: 'Work',
+          address: 'work@contoso.com',
+          accent: Color(0xFF0078D4),
+          providerType: 'graph',
+        ),
+        providerType: 'graph',
+      );
+      final String calId = PimIds.stableLocalId('work', 'cal-1');
+      await pim.upsertCalendars(<Calendar>[
+        Calendar(
+          id: calId,
+          accountId: 'work',
+          providerId: 'cal-1',
+          name: 'Calendar',
+          colorArgb: 0xFF0078D4,
+          isDefault: true,
+        ),
+      ]);
+      final CalendarEvent local = await pim.createLocalEvent(
+        accountId: 'work',
+        calendarId: calId,
+        title: 'Undo me',
+        startEpochMs: 1000,
+        endEpochMs: 2000,
+      );
+      await pim.softDeleteEvent(local.id);
+
+      var postCount = 0;
+      final http.Client client = MockClient((http.Request request) async {
+        postCount++;
+        fail('Should not POST soft-deleted copy: ${request.url}');
+      });
+
+      final SyncEngine engine = SyncEngine(
+        repository: repo,
+        resolveProvider: (_) async => null,
+        pimStore: pim,
+        resolvePim: (_) async => GraphPimProvider(
+          () async => 'token',
+          client: client,
+        ),
+        readConnectivity: () async =>
+            const <ConnectivityResult>[ConnectivityResult.wifi],
+        networkPolicy: const NetworkSyncPolicy(isDesktop: true),
+      );
+
+      await repo.enqueueSyncJob(
+        accountId: 'work',
+        type: PimSyncJobs.eventsCopy,
+        payloadJson: jsonEncode(<String, String>{
+          'localEventId': local.id,
+          'targetCalendarId': calId,
+          'targetCalendarProviderId': 'cal-1',
+        }),
+      );
+      await engine.kick();
+      expect(postCount, 0);
+      expect(
+        (await pim.getEvent(local.id))?.providerId,
+        startsWith('local:'),
+      );
+    });
   });
 
   group('PimCopyService', () {
