@@ -1298,17 +1298,7 @@ class _ReadingPaneContent extends StatelessWidget {
                         ),
                       ),
                       if (showQuickReply)
-                        Padding(
-                          padding: EdgeInsets.only(
-                            bottom: math.max(
-                              0,
-                              MediaQuery.viewInsetsOf(context).bottom > 0
-                                  ? 4
-                                  : pad.bottom,
-                            ),
-                          ),
-                          child: QuickReplyBar(message: msg),
-                        ),
+                        QuickReplyBar(message: msg),
                     ],
                   ),
                 ),

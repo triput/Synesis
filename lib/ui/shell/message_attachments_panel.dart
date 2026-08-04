@@ -4,7 +4,7 @@
 // Component: UI
 // Version: 1.0 (Gold Master)
 // Created: 2026-07-17
-// Last Update: 2026-07-27
+// Last Update: 2026-08-03
 // ==============================================================================
 
 import 'dart:async';
@@ -333,51 +333,91 @@ class _QuickReplyBarState extends State<QuickReplyBar> {
   @override
   Widget build(BuildContext context) {
     final ThemeTokens t = tokensOf(context);
+    final MediaQueryData mq = MediaQuery.of(context);
+    // Keyboard only. Scaffold + ModuleNavigationBar already own system nav /
+    // viewPadding — adding viewPadding.bottom here double-counted insets and
+    // overflowed the reading pane (~33px, DEF-066 regression).
+    final double bottomInset = mq.viewInsets.bottom;
+    final InputDecoration fieldDecoration = InputDecoration(
+      hintText: 'Quick reply…',
+      hintStyle: TextStyle(color: t.muted),
+      isDense: true,
+      filled: true,
+      fillColor: t.panel2.withValues(alpha: 0.55),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(10),
+        borderSide: BorderSide(color: t.line),
+      ),
+    );
+    final Widget sendButton = FilledButton(
+      onPressed: _busy ? null : () => unawaited(_send()),
+      child: Text(_busy ? '…' : 'Send'),
+    );
+    final Widget fullReplyButton = IconButton(
+      tooltip: 'Full reply',
+      onPressed: () {
+        unawaited(
+          showComposeSheet(
+            context,
+            prefill: ComposePrefill.reply(widget.message),
+          ),
+        );
+      },
+      style: IconButton.styleFrom(
+        foregroundColor: t.teal,
+        backgroundColor: t.teal.withValues(alpha: 0.12),
+      ),
+      icon: const Icon(Icons.open_in_full_rounded, size: 22),
+    );
     return Padding(
-      padding: const EdgeInsets.only(top: 8),
-      child: Row(
-        children: <Widget>[
-          Expanded(
-            child: TextField(
-              controller: _controller,
-              minLines: 1,
-              maxLines: 3,
-              style: TextStyle(color: t.text),
-              decoration: InputDecoration(
-                hintText: 'Quick reply…',
-                hintStyle: TextStyle(color: t.muted),
-                isDense: true,
-                filled: true,
-                fillColor: t.panel2.withValues(alpha: 0.55),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                  borderSide: BorderSide(color: t.line),
+      padding: EdgeInsets.only(top: 8, bottom: bottomInset),
+      child: LayoutBuilder(
+        builder: (BuildContext context, BoxConstraints constraints) {
+          final bool stackActions = constraints.maxWidth < 360;
+          if (stackActions) {
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: <Widget>[
+                TextField(
+                  controller: _controller,
+                  minLines: 1,
+                  maxLines: 3,
+                  style: TextStyle(color: t.text),
+                  textInputAction: TextInputAction.send,
+                  onSubmitted: (_) => unawaited(_send()),
+                  decoration: fieldDecoration,
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: <Widget>[
+                    fullReplyButton,
+                    const SizedBox(width: 8),
+                    sendButton,
+                  ],
+                ),
+              ],
+            );
+          }
+          return Row(
+            children: <Widget>[
+              Expanded(
+                child: TextField(
+                  controller: _controller,
+                  minLines: 1,
+                  maxLines: 3,
+                  style: TextStyle(color: t.text),
+                  textInputAction: TextInputAction.send,
+                  onSubmitted: (_) => unawaited(_send()),
+                  decoration: fieldDecoration,
                 ),
               ),
-            ),
-          ),
-          const SizedBox(width: 8),
-          IconButton(
-            tooltip: 'Full reply',
-            onPressed: () {
-              unawaited(
-                showComposeSheet(
-                  context,
-                  prefill: ComposePrefill.reply(widget.message),
-                ),
-              );
-            },
-            style: IconButton.styleFrom(
-              foregroundColor: t.teal,
-              backgroundColor: t.teal.withValues(alpha: 0.12),
-            ),
-            icon: const Icon(Icons.add_rounded, size: 26),
-          ),
-          FilledButton(
-            onPressed: _busy ? null : () => unawaited(_send()),
-            child: Text(_busy ? '…' : 'Send'),
-          ),
-        ],
+              const SizedBox(width: 8),
+              fullReplyButton,
+              sendButton,
+            ],
+          );
+        },
       ),
     );
   }

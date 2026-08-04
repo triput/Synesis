@@ -5,12 +5,13 @@
 // Component: UI
 // Version: 1.0 (Gold Master)
 // Created: 2026-07-23
-// Last Update: 2026-07-23
+// Last Update: 2026-08-03
 // ==============================================================================
 
 import 'package:flutter/material.dart';
 import 'package:synesis/theme/app_theme.dart';
 import 'package:synesis/theme/theme_tokens.dart';
+import 'package:synesis/ui/account/manage_accounts_sheet.dart';
 import 'package:synesis/ui/settings/settings_catalog.dart';
 import 'package:synesis/ui/settings/settings_sections.dart';
 
@@ -180,14 +181,34 @@ class _SettingsWideLayout extends StatelessWidget {
         Expanded(
           child: Padding(
             padding: const EdgeInsets.fromLTRB(24, 20, 24, 20),
-            child: SingleChildScrollView(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 640),
-                child: _SettingsSectionBody(
-                  sectionId: selected,
-                  onNavigateToSection: onSelect,
-                ),
-              ),
+            child: LayoutBuilder(
+              builder: (BuildContext context, BoxConstraints constraints) {
+                if (selected == SettingsSectionId.accounts &&
+                    constraints.maxHeight.isFinite) {
+                  // Tight height so primaryScroll Expanded has a real bound.
+                  return SizedBox(
+                    height: constraints.maxHeight,
+                    child: Align(
+                      alignment: Alignment.topLeft,
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 640),
+                        child: const ManageAccountsSheetBody(
+                          primaryScroll: true,
+                        ),
+                      ),
+                    ),
+                  );
+                }
+                return SingleChildScrollView(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 640),
+                    child: _SettingsSectionBody(
+                      sectionId: selected,
+                      onNavigateToSection: onSelect,
+                    ),
+                  ),
+                );
+              },
             ),
           ),
         ),
@@ -226,6 +247,20 @@ class _SettingsSectionPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (sectionId == SettingsSectionId.accounts) {
+      // Bounded body + internal ListView scroll (DEF-063). Parent
+      // SingleChildScrollView + shrink-wrap ListView still overflowed on
+      // Android when account cards + footer exceeded the viewport.
+      return Scaffold(
+        appBar: AppBar(title: Text(sectionId.label)),
+        body: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 12, 20, 12),
+            child: const ManageAccountsSheetBody(primaryScroll: true),
+          ),
+        ),
+      );
+    }
     return Scaffold(
       appBar: AppBar(title: Text(sectionId.label)),
       body: SafeArea(

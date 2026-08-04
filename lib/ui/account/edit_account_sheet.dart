@@ -4,7 +4,7 @@
 // Component: UI
 // Version: 1.0 (Gold Master)
 // Created: 2026-07-14
-// Last Update: 2026-07-27
+// Last Update: 2026-08-03
 // ==============================================================================
 
 import 'package:flutter/foundation.dart';
@@ -34,29 +34,52 @@ Future<void> showEditAccountSheet(
     backgroundColor: t.panel,
     showDragHandle: true,
     builder: (sheetContext) {
+      final MediaQueryData mq = MediaQuery.of(sheetContext);
+      // Keyboard via viewInsets only. SafeArea owns system nav. Size to the
+      // sheet's max constraint — never a fixed fraction of full screen that
+      // can exceed SafeArea (yellow/black ribbon, DEF-063).
       return Padding(
-        padding: EdgeInsets.only(
-          left: 20,
-          right: 20,
-          top: 8,
-          bottom: MediaQuery.viewInsetsOf(sheetContext).bottom + 24,
+        padding: EdgeInsets.only(bottom: mq.viewInsets.bottom),
+        child: SafeArea(
+          child: LayoutBuilder(
+            builder: (BuildContext context, BoxConstraints constraints) {
+              // Tight height from SafeArea's max — never a fixed fraction of
+              // the full screen (overshoots SafeArea + drag-handle inset).
+              final double maxH = constraints.maxHeight.isFinite
+                  ? constraints.maxHeight
+                  : (mq.size.height -
+                        mq.padding.vertical -
+                        mq.viewInsets.vertical)
+                      .clamp(240.0, mq.size.height);
+              return SizedBox(
+                height: maxH * 0.95,
+                width: double.infinity,
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 8, 20, 12),
+                  child: EditAccountForm(account: account),
+                ),
+              );
+            },
+          ),
         ),
-        child: _EditAccountForm(account: account),
       );
     },
   );
 }
 
-class _EditAccountForm extends StatefulWidget {
-  const _EditAccountForm({required this.account});
+/// Edit-account form body (metadata, sync profile, re-auth, sticky Save).
+///
+/// Public for phone-size overflow widget tests (DEF-063).
+class EditAccountForm extends StatefulWidget {
+  const EditAccountForm({required this.account, super.key});
 
   final MailAccount account;
 
   @override
-  State<_EditAccountForm> createState() => _EditAccountFormState();
+  State<EditAccountForm> createState() => _EditAccountFormState();
 }
 
-class _EditAccountFormState extends State<_EditAccountForm> {
+class _EditAccountFormState extends State<EditAccountForm> {
   late final TextEditingController _label;
   late Color _accent;
   final TextEditingController _graphToken = TextEditingController();
@@ -365,156 +388,163 @@ class _EditAccountFormState extends State<_EditAccountForm> {
   @override
   Widget build(BuildContext context) {
     final t = tokensOf(context);
-    // Scroll metadata + credential controls together. Previously only the
-    // re-auth / IMAP fields lived in Expanded>ListView while sync profile and
-    // retention stayed fixed above — on typical heights that left a ~half-button
-    // viewport and clipped "Re-authenticate with Microsoft" under the switch.
-    return SizedBox(
-      height: MediaQuery.sizeOf(context).height * 0.85,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text('Edit account', style: Theme.of(context).textTheme.titleLarge),
-          const SizedBox(height: 8),
-          Expanded(
-            child: ListView(
-              children: <Widget>[
-                Align(
+    // Parent ConstrainedBox / Settings body supplies bounded height. Fill it
+    // with Expanded ListView — do not invent a taller SizedBox than the parent
+    // (that was the yellow/black ribbon).
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        Text('Edit account', style: Theme.of(context).textTheme.titleLarge),
+        const SizedBox(height: 8),
+        Expanded(
+          child: ListView(
+            children: <Widget>[
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Chip(
+                  label: Text(_providerLabel()),
+                  visualDensity: VisualDensity.compact,
+                ),
+              ),
+              const SizedBox(height: 8),
+              InputDecorator(
+                decoration: const InputDecoration(
+                  labelText: 'Email address',
+                ),
+                child: Align(
                   alignment: Alignment.centerLeft,
-                  child: Chip(
-                    label: Text(_providerLabel()),
-                    visualDensity: VisualDensity.compact,
+                  child: Text(
+                    widget.account.address,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
-                const SizedBox(height: 8),
-                InputDecorator(
-                  decoration: const InputDecoration(
-                    labelText: 'Email address',
-                  ),
-                  child: Align(
-                    alignment: Alignment.centerLeft,
-                    child: Text(widget.account.address),
-                  ),
+              ),
+              TextField(
+                controller: _label,
+                decoration: const InputDecoration(
+                  labelText: 'Display name',
+                  hintText: 'Personal name for this account',
+                  helperText: 'Address stays unchanged below the rail / chips',
                 ),
-                TextField(
-                  controller: _label,
-                  decoration: const InputDecoration(
-                    labelText: 'Display name',
-                    hintText: 'Personal name for this account',
-                    helperText: 'Address stays unchanged below the rail / chips',
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Accent color',
-                  style: TextStyle(color: t.muted, fontSize: 12),
-                ),
-                const SizedBox(height: 6),
-                AccountColorPicker(
-                  value: _accent,
-                  onChanged: (Color color) => setState(() => _accent = color),
-                ),
-                const SizedBox(height: 12),
-                ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: const Text('Sync profile'),
-                  subtitle: Text(
-                    'Controls retention, folder scope, and body policy',
-                    style: TextStyle(color: t.muted, fontSize: 12),
-                  ),
-                  trailing: DropdownButton<String>(
-                    value: _syncProfileId,
-                    underline: const SizedBox.shrink(),
-                    items: <DropdownMenuItem<String>>[
-                      for (final SyncProfile profile in _profiles)
-                        DropdownMenuItem<String>(
-                          value: profile.id,
-                          child: Text(
-                            profile.isDefault
-                                ? '${profile.name} (default)'
-                                : profile.name,
-                          ),
-                        ),
-                      if (_profiles.isEmpty)
-                        const DropdownMenuItem<String>(
-                          value: 'default',
-                          child: Text('Default'),
-                        ),
-                    ],
-                    onChanged: _busy
-                        ? null
-                        : (String? next) {
-                            if (next != null) {
-                              setState(() => _syncProfileId = next);
-                            }
-                          },
-                  ),
-                ),
-                SwitchListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: const Text('Use profile retention'),
-                  subtitle: Text(
-                    'Off to set a per-account day override',
-                    style: TextStyle(color: t.muted, fontSize: 12),
-                  ),
-                  value: _useProfileRetention,
-                  onChanged: _busy
-                      ? null
-                      : (bool value) =>
-                            setState(() => _useProfileRetention = value),
-                ),
-                if (!_useProfileRetention)
-                  TextField(
-                    controller: _retentionOverride,
-                    decoration: const InputDecoration(
-                      labelText: 'Retention override (days)',
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Accent color',
+                style: TextStyle(color: t.muted, fontSize: 12),
+              ),
+              const SizedBox(height: 6),
+              AccountColorPicker(
+                value: _accent,
+                onChanged: (Color color) => setState(() => _accent = color),
+              ),
+              const SizedBox(height: 12),
+              // Column layout — ListTile+trailing Dropdown overflows ~360dp.
+              Text(
+                'Sync profile',
+                style: Theme.of(context).textTheme.titleSmall,
+              ),
+              const SizedBox(height: 2),
+              Text(
+                'Controls retention, folder scope, and body policy',
+                style: TextStyle(color: t.muted, fontSize: 12),
+              ),
+              const SizedBox(height: 4),
+              DropdownButtonFormField<String>(
+                value: _syncProfileId,
+                isExpanded: true,
+                items: <DropdownMenuItem<String>>[
+                  for (final SyncProfile profile in _profiles)
+                    DropdownMenuItem<String>(
+                      value: profile.id,
+                      child: Text(
+                        profile.isDefault
+                            ? '${profile.name} (default)'
+                            : profile.name,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
-                    keyboardType: TextInputType.number,
-                    enabled: !_busy,
-                  ),
-                const SizedBox(height: 12),
-                Text(
-                  _isGraph || _isGoogle
-                      ? 'Re-authenticate (optional)'
-                      : 'Update credentials (optional)',
+                  if (_profiles.isEmpty)
+                    const DropdownMenuItem<String>(
+                      value: 'default',
+                      child: Text('Default'),
+                    ),
+                ],
+                onChanged: _busy
+                    ? null
+                    : (String? next) {
+                        if (next != null) {
+                          setState(() => _syncProfileId = next);
+                        }
+                      },
+              ),
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                title: const Text('Use profile retention'),
+                subtitle: Text(
+                  'Off to set a per-account day override',
                   style: TextStyle(color: t.muted, fontSize: 12),
                 ),
-                const SizedBox(height: 8),
-                ...(_isGraph
-                    ? _graphFields()
-                    : _isGoogle
-                    ? _googleFields()
-                    : _imapFields()),
-              ],
-            ),
+                value: _useProfileRetention,
+                onChanged: _busy
+                    ? null
+                    : (bool value) =>
+                          setState(() => _useProfileRetention = value),
+              ),
+              if (!_useProfileRetention)
+                TextField(
+                  controller: _retentionOverride,
+                  decoration: const InputDecoration(
+                    labelText: 'Retention override (days)',
+                  ),
+                  keyboardType: TextInputType.number,
+                  enabled: !_busy,
+                ),
+              const SizedBox(height: 12),
+              Text(
+                _isGraph || _isGoogle
+                    ? 'Re-authenticate (optional)'
+                    : 'Update credentials (optional)',
+                style: TextStyle(color: t.muted, fontSize: 12),
+              ),
+              const SizedBox(height: 8),
+              ...(_isGraph
+                  ? _graphFields()
+                  : _isGoogle
+                  ? _googleFields()
+                  : _imapFields()),
+              // Secondary actions scroll with the form so short phones /
+              // open keyboards do not blow the sticky footer budget (DEF-063).
+              const SizedBox(height: 16),
+              OutlinedButton.icon(
+                onPressed: _busy
+                    ? null
+                    : () => showSignaturesSheet(context, widget.account),
+                icon: const Icon(Icons.draw_outlined),
+                label: const Text('Manage signatures'),
+              ),
+              const SizedBox(height: 8),
+              OutlinedButton.icon(
+                onPressed: _busy
+                    ? null
+                    : () => showTemplatesSheet(context, widget.account),
+                icon: const Icon(Icons.article_outlined),
+                label: const Text('Manage templates'),
+              ),
+              const SizedBox(height: 8),
+            ],
           ),
-          if (_error != null) ...[
-            const SizedBox(height: 8),
-            Text(_error!, style: TextStyle(color: t.coral, fontSize: 13)),
-          ],
-          const SizedBox(height: 12),
-          OutlinedButton.icon(
-            onPressed: _busy
-                ? null
-                : () => showSignaturesSheet(context, widget.account),
-            icon: const Icon(Icons.draw_outlined),
-            label: const Text('Manage signatures'),
-          ),
+        ),
+        if (_error != null) ...[
           const SizedBox(height: 8),
-          OutlinedButton.icon(
-            onPressed: _busy
-                ? null
-                : () => showTemplatesSheet(context, widget.account),
-            icon: const Icon(Icons.article_outlined),
-            label: const Text('Manage templates'),
-          ),
-          const SizedBox(height: 12),
-          FilledButton(
-            onPressed: _busy ? null : _save,
-            child: Text(_busy ? 'Saving…' : 'Save changes'),
-          ),
+          Text(_error!, style: TextStyle(color: t.coral, fontSize: 13)),
         ],
-      ),
+        const SizedBox(height: 12),
+        FilledButton(
+          onPressed: _busy ? null : _save,
+          child: Text(_busy ? 'Saving…' : 'Save changes'),
+        ),
+      ],
     );
   }
 
@@ -544,6 +574,8 @@ class _EditAccountFormState extends State<_EditAccountForm> {
         icon: const Icon(Icons.login),
         label: Text(
           _busy ? 'Signing in…' : 'Re-authenticate with Google',
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
         ),
       ),
     ];
@@ -558,6 +590,8 @@ class _EditAccountFormState extends State<_EditAccountForm> {
           icon: const Icon(Icons.login),
           label: Text(
             _busy ? 'Signing in…' : 'Re-authenticate with Microsoft',
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
         ),
       );

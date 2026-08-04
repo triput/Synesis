@@ -4,7 +4,7 @@
 // Component: Protocol / Integration
 // Version: 1.1 (Gold Master)
 // Created: 2026-07-14
-// Last Update: 2026-07-27
+// Last Update: 2026-08-03
 // ==============================================================================
 
 import 'dart:async';
@@ -29,6 +29,14 @@ const int kGraphInlineAttachmentMaxBytes = 3 * 1024 * 1024;
 /// session. Microsoft recommends chunk sizes that are a multiple of 320 KiB;
 /// this is 10 * 320 KiB (~3.125 MiB) to balance request count vs. memory use.
 const int kGraphUploadChunkSizeBytes = 320 * 1024 * 10;
+
+/// `$select` for [GraphMailProvider.listAttachments].
+///
+/// `contentId` lives on `microsoft.graph.fileAttachment`, not the polymorphic
+/// base `attachment`. Unqualified `contentId` makes Graph return HTTP 400
+/// (`Could not find a property named 'contentId'`) — DEF-073.
+const String kGraphAttachmentListSelect =
+    'id,name,contentType,size,isInline,microsoft.graph.fileAttachment/contentId';
 
 /// MAPI `PR_IN_REPLY_TO_ID` — RFC `In-Reply-To` via Graph extended properties.
 ///
@@ -815,7 +823,7 @@ class GraphMailProvider extends MailProvider {
     final Map<String, Object?> document = await _getCollection(
       '/me/messages/${Uri.encodeComponent(providerMessageId)}/attachments',
       queryParameters: <String, String>{
-        r'$select': 'id,name,contentType,size,isInline,contentId',
+        r'$select': kGraphAttachmentListSelect,
         r'$top': '100',
       },
     );

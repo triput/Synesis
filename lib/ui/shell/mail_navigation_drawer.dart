@@ -4,7 +4,7 @@
 // Component: UI
 // Version: 1.1 (Gold Master)
 // Created: 2026-07-23
-// Last Update: 2026-07-24
+// Last Update: 2026-08-03
 // ==============================================================================
 
 import 'package:flutter/material.dart';
@@ -33,6 +33,7 @@ class MailNavigationDrawer extends StatelessWidget {
     required this.onCompose,
     required this.onOpenOutbox,
     required this.onAddAccount,
+    required this.onManageAccounts,
     required this.onOpenSettings,
     required this.onOpenSyncStatus,
     this.onOpenNotifications,
@@ -50,6 +51,7 @@ class MailNavigationDrawer extends StatelessWidget {
   final VoidCallback onCompose;
   final VoidCallback onOpenOutbox;
   final VoidCallback onAddAccount;
+  final VoidCallback onManageAccounts;
   final VoidCallback onOpenSettings;
   final VoidCallback onOpenSyncStatus;
   final VoidCallback? onOpenNotifications;
@@ -174,6 +176,18 @@ class MailNavigationDrawer extends StatelessWidget {
                           )
                         : null,
                     onTap: () => _closeThen(context, onOpenOutbox),
+                  ),
+                  ListTile(
+                    dense: true,
+                    leading: Icon(
+                      Icons.manage_accounts_outlined,
+                      color: t.muted,
+                    ),
+                    title: Text(
+                      'Manage accounts',
+                      style: TextStyle(color: t.text),
+                    ),
+                    onTap: () => _closeThen(context, onManageAccounts),
                   ),
                   ListTile(
                     dense: true,

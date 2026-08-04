@@ -4,7 +4,7 @@
 // Component: UI
 // Version: 1.4 (Gold Master)
 // Created: 2026-07-14
-// Last Update: 2026-07-23
+// Last Update: 2026-08-03
 // ==============================================================================
 
 import 'package:flutter/material.dart';
@@ -210,12 +210,11 @@ class _MessageBodyViewState extends State<MessageBodyView> {
       final bool showTrackersBlockedBanner =
           !showImagesBlockedBanner && trackerPolicy.blockedTrackers;
 
-      // WebView owns scrolling; must fill the expanded reading pane.
-      // When the pane is extremely short (split/visual-focus), skip the banner
-      // so the Column does not overflow its tight max height.
+      // Banner can be ~90px when the load-images action wraps; budget must
+      // leave room for HtmlEmailBody or the Column overflows (~33px dogfood).
       return LayoutBuilder(
         builder: (BuildContext context, BoxConstraints constraints) {
-          const double bannerBudget = 72;
+          const double bannerBudget = 96;
           const double minHtmlHeight = 48;
           final bool hasBannerRoom = constraints.hasBoundedHeight &&
               constraints.maxHeight >= bannerBudget + minHtmlHeight;
@@ -387,21 +386,44 @@ class _RemoteImagesBlockedBanner extends StatelessWidget {
         borderRadius: BorderRadius.circular(8),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          child: Row(
-            children: <Widget>[
-              Icon(Icons.hide_image_outlined, size: 18, color: muted),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  'Remote images blocked',
-                  style: TextStyle(color: muted, fontSize: 13),
-                ),
-              ),
-              TextButton(
+          child: LayoutBuilder(
+            builder: (BuildContext context, BoxConstraints constraints) {
+              final bool stack = constraints.maxWidth < 420;
+              final Widget label = Text(
+                'Remote images blocked',
+                style: TextStyle(color: muted, fontSize: 13),
+              );
+              final Widget action = TextButton(
                 onPressed: onLoadImages,
                 child: const Text('Load images for this message'),
-              ),
-            ],
+              );
+              if (stack) {
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: <Widget>[
+                    Row(
+                      children: <Widget>[
+                        Icon(Icons.hide_image_outlined, size: 18, color: muted),
+                        const SizedBox(width: 8),
+                        Expanded(child: label),
+                      ],
+                    ),
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: action,
+                    ),
+                  ],
+                );
+              }
+              return Row(
+                children: <Widget>[
+                  Icon(Icons.hide_image_outlined, size: 18, color: muted),
+                  const SizedBox(width: 8),
+                  Expanded(child: label),
+                  Flexible(child: action),
+                ],
+              );
+            },
           ),
         ),
       ),

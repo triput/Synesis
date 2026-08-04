@@ -347,6 +347,7 @@ void main() {
                 onCompose: () {},
                 onOpenOutbox: () {},
                 onAddAccount: () {},
+                onManageAccounts: () {},
                 onOpenSettings: () {},
                 onOpenSyncStatus: () {},
               ),
@@ -398,6 +399,7 @@ void main() {
                 onCompose: () {},
                 onOpenOutbox: () {},
                 onAddAccount: () {},
+                onManageAccounts: () {},
                 onOpenSettings: () {},
                 onOpenSyncStatus: () {},
               ),
@@ -506,6 +508,97 @@ void main() {
       expect(selectedFolderId, 'sent-acc-1');
       expect(find.text('Folders'), findsNothing);
     });
+  });
+
+  group('MailNavigationDrawer overflow (DEF-063)', () {
+    testWidgets(
+      'drawer with full footer no overflow at short phone height',
+      (WidgetTester tester) async {
+        final List<FlutterErrorDetails> errors = <FlutterErrorDetails>[];
+        final void Function(FlutterErrorDetails)? oldOnError =
+            FlutterError.onError;
+        FlutterError.onError = (FlutterErrorDetails details) {
+          errors.add(details);
+          oldOnError?.call(details);
+        };
+        addTearDown(() {
+          FlutterError.onError = oldOnError;
+        });
+
+        final GlobalKey<ScaffoldState> scaffoldKey = GlobalKey<ScaffoldState>();
+        await tester.pumpWidget(
+          _themeWrap(
+            MediaQuery(
+              data: const MediaQueryData(
+                size: Size(360, 640),
+                padding: EdgeInsets.only(top: 24, bottom: 48),
+                viewPadding: EdgeInsets.only(top: 24, bottom: 48),
+              ),
+              child: Scaffold(
+                key: scaffoldKey,
+                drawer: MailNavigationDrawer(
+                  state: _multiAccountMailboxState(
+                    accountId: 'acc-1',
+                    folderId: 'inbox-acc-1',
+                  ),
+                  settings: const AppSettingsState(),
+                  onCollapseAll: () {},
+                  onSelectUnified: () {},
+                  onSelectVirtualView: (_) {},
+                  onToggleAccountExpanded: (_) {},
+                  onSelectAccount: (_) {},
+                  onSelectFolder: (String a, String f) {},
+                  onMarkFolderUnread: (String a, String f, bool u) {},
+                  onCompose: () {},
+                  onOpenOutbox: () {},
+                  onAddAccount: () {},
+                  onManageAccounts: () {},
+                  onOpenSettings: () {},
+                  onOpenSyncStatus: () {},
+                  onOpenNotifications: () {},
+                ),
+                body: const Center(child: Text('main')),
+                bottomNavigationBar: NavigationBar(
+                  destinations: const <NavigationDestination>[
+                    NavigationDestination(
+                      icon: Icon(Icons.mail_outline),
+                      label: 'Mail',
+                    ),
+                    NavigationDestination(
+                      icon: Icon(Icons.calendar_today_outlined),
+                      label: 'Calendar',
+                    ),
+                    NavigationDestination(
+                      icon: Icon(Icons.people_outline),
+                      label: 'People',
+                    ),
+                  ],
+                  selectedIndex: 0,
+                  onDestinationSelected: (_) {},
+                ),
+              ),
+            ),
+          ),
+        );
+
+        scaffoldKey.currentState!.openDrawer();
+        await tester.pumpAndSettle();
+
+        expect(find.text('Compose'), findsOneWidget);
+        expect(find.text('Settings'), findsOneWidget);
+        expect(find.text('Unified Inbox'), findsOneWidget);
+        // May need a flick if footer is tall — prove MAIL section scrolls.
+        await tester.drag(find.text('Unified Inbox'), const Offset(0, -120));
+        await tester.pumpAndSettle();
+        expect(find.text('Snoozed'), findsOneWidget);
+        final bool overflow = errors.any(
+          (FlutterErrorDetails e) =>
+              e.toString().contains('overflowed') ||
+              e.toString().contains('BOTTOM OVERFLOWED'),
+        );
+        expect(overflow, isFalse, reason: errors.join('\n'));
+      },
+    );
   });
 
   group('isPortraitMobileLayout', () {

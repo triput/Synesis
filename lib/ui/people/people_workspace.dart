@@ -4,8 +4,10 @@
 // Component: UI
 // Version: 1.0 (Gold Master)
 // Created: 2026-07-27
-// Last Update: 2026-07-27
+// Last Update: 2026-08-03
 // ==============================================================================
+
+import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -207,10 +209,38 @@ class _PeopleListOnly extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final Contact? selected = state.selectedContact;
-    if (selected != null) {
-      return _ContactDetailPage(contact: selected, state: state, cubit: cubit);
-    }
-    return _PeopleList(state: state, cubit: cubit);
+    final ThemeTokens t = tokensOf(context);
+    // Declarative nested stack: Back must pop a page. Swapping widgets via
+    // selectedContact alone left the detail screen stuck (DEF-072).
+    return Navigator(
+      key: const Key('people_mobile_navigator'),
+      pages: <Page<void>>[
+        MaterialPage<void>(
+          key: const ValueKey<String>('people-list'),
+          child: Material(
+            color: t.ink,
+            child: _PeopleList(state: state, cubit: cubit),
+          ),
+        ),
+        if (selected != null)
+          MaterialPage<void>(
+            key: ValueKey<String>('people-detail-${selected.id}'),
+            child: _ContactDetailPage(
+              contact: selected,
+              state: state,
+              cubit: cubit,
+            ),
+          ),
+      ],
+      onDidRemovePage: (Page<Object?> page) {
+        if (page.key == const ValueKey<String>('people-list')) {
+          return;
+        }
+        if (cubit.state.selectedContactId != null) {
+          unawaited(cubit.selectContact(null));
+        }
+      },
+    );
   }
 }
 
@@ -225,21 +255,43 @@ class _ContactDetailPage extends StatelessWidget {
   final PeopleState state;
   final PeopleCubit cubit;
 
+  void _goBack() {
+    // Pages are driven by selectedContactId — clearing rebuilds the nested
+    // Navigator without the detail page (DEF-072).
+    unawaited(cubit.selectContact(null));
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: <Widget>[
-        Padding(
-          padding: const EdgeInsets.all(8),
-          child: TextButton.icon(
-            onPressed: () => cubit.selectContact(null),
-            icon: const Icon(Icons.arrow_back, size: 18),
-            label: const Text('Back to contacts'),
-          ),
+    final ThemeTokens t = tokensOf(context);
+    return PopScope(
+      canPop: cubit.state.selectedContactId == null,
+      onPopInvokedWithResult: (bool didPop, Object? result) {
+        if (!didPop) {
+          unawaited(cubit.selectContact(null));
+        }
+      },
+      child: Material(
+        color: t.ink,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: <Widget>[
+            Padding(
+              padding: const EdgeInsets.all(8),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: TextButton.icon(
+                  key: const Key('people_back_to_contacts'),
+                  onPressed: _goBack,
+                  icon: const Icon(Icons.arrow_back, size: 18),
+                  label: const Text('Back to contacts'),
+                ),
+              ),
+            ),
+            Expanded(child: _ContactDetailPane(contact: contact, state: state)),
+          ],
         ),
-        Expanded(child: _ContactDetailPane(contact: contact, state: state)),
-      ],
+      ),
     );
   }
 }

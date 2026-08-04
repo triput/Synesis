@@ -100,7 +100,7 @@ V2.0a / V2.0b / V2.0c remain **release buckets**; operator execution follows thi
 | **Wave G** | Google People + Calendar API (XOAUTH Google PIM) | **Complete** (2026-07-27, `f4c21b0`, **597 tests**) | V2.0d |
 | **Wave 6P** | Performance UX (Sync Honesty) — honest spinners, non-blocking kick, UI-P11/P9 partial, DEF-007/015 | **In progress** — P0 E1–E6 ✅ (**626 tests**); E7 dogfood pending | Pre–Wave 6 gate — [V2_WAVE_6P_CHECKLIST.md](V2_WAVE_6P_CHECKLIST.md) |
 | **Wave 6** | Cross-account DnD copy (events + contacts) | Planned after 6P | Post-V2.0d |
-| **Wave 7** | **Final polish / Trish extras** — UI niceties if time permits ([DEF-054](DEFECTS.md), [DEF-050](DEFECTS.md), [DEF-055](DEFECTS.md), [DEF-056](DEFECTS.md), [DEF-046](DEFECTS.md), overflow sweep, widget wishlist) | Planned — **last** | Not V2.0 critical path |
+| **Wave 7** | **Final polish / Trish extras** — UI niceties if time permits ([DEF-054](DEFECTS.md), [DEF-050](DEFECTS.md), [DEF-055](DEFECTS.md), [DEF-056](DEFECTS.md), [DEF-046](DEFECTS.md), overflow sweep; **Trish calendar:** [DEF-075](DEFECTS.md) Week/Weekdays, [DEF-076](DEFECTS.md) DOY/WOY; optional pull-forward [DEF-071](DEFECTS.md) Calendar→Today). **Widgets:** [DEF-044](DEFECTS.md) moved to **V-Next**. | Planned — **last** | Not V2.0 critical path |
 
 **Locked PIM product requirements (operator):** multi-calendar and multi-contact-list across accounts; select 1+ to display; Outlook-like calendar overlay / side-by-side (Wave 5 UI); **Google Workspace PIM via People + Calendar API (Wave G — complete)**; cross-account copy via DnD (**Wave 6 — after 6P**).
 
@@ -250,7 +250,11 @@ Visual polish & mailbox interaction backlog — **active; add items in [§7 Back
 | **Pri-3** | [DEF-054](DEFECTS.md) resizable mail panes on Windows (drag vertical splitters) | Open | **Wave 7 / Trish extras** |
 | **Pri-3** | [DEF-046](DEFECTS.md) hamburger → folders-only sheet (swipe keeps full drawer) | Open (enhancement) | **Wave 7 / Trish extras** |
 | **Pri-3** | [DEF-039](DEFECTS.md) / [DEF-040](DEFECTS.md) account dialog overflow sweep | Open | **Wave 7 / Trish extras** |
-| **Pri-3** | [DEF-044](DEFECTS.md) configurable home-screen list widget + tap-through | Open | **Wave 7 / Trish extras** |
+| **Pri-2.5** | [DEF-071](DEFECTS.md) Calendar defaults to Today (Agenda / day-first) | Open (enhancement) | **V-Soon / V-Next** (Wave 7 optional pull-forward) |
+| **Pri-2** | [DEF-078](DEFECTS.md) Phone Quick Reply density + settings toggle (**Trish**) | Open (enhancement) | **V-Next** |
+| **Pri-2** | [DEF-044](DEFECTS.md) per-account home-screen list widget + open in app (**Trish** / AquaMail bar) | Open (enhancement) | **V-Next** (bumped from Wave 7 Pri-3) |
+| **Pri-3** | [DEF-075](DEFECTS.md) Calendar Week + Weekdays views (**Trish**) | Open (enhancement) | **Wave 7 / Trish extras** |
+| **Pri-3** | [DEF-076](DEFECTS.md) Calendar day-of-year + week-of-year (**Trish**) | Open (enhancement) | **Wave 7 / Trish extras** |
 
 Full inventory + backlog template: **[UI_ENHANCEMENT_SWEEP.md](UI_ENHANCEMENT_SWEEP.md)**.
 

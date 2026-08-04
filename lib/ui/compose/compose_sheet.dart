@@ -4,7 +4,7 @@
 // Component: UI
 // Version: 2.2 (Gold Master)
 // Created: 2026-07-14
-// Last Update: 2026-07-27
+// Last Update: 2026-08-03
 // ==============================================================================
 
 import 'dart:async';
@@ -59,18 +59,28 @@ Future<void> showComposeSheet(
     isScrollControlled: true,
     backgroundColor: t.panel,
     showDragHandle: true,
-    builder: (BuildContext context) {
-      return Padding(
-        padding: EdgeInsets.only(
-          left: 20,
-          right: 20,
-          top: 8,
-          bottom: MediaQuery.viewInsetsOf(context).bottom + 24,
-        ),
-        child: _ComposeSheetBody(
-          accounts: accounts,
-          mailboxAccountId: mailbox.accountId,
-          initial: initial,
+    builder: (BuildContext sheetContext) {
+      final MediaQueryData mq = MediaQuery.of(sheetContext);
+      final double maxHeight =
+          mq.size.height * 0.92 - mq.viewPadding.top;
+      final double bottomInset = mq.viewInsets.bottom + mq.viewPadding.bottom;
+      return SafeArea(
+        top: false,
+        child: Padding(
+          padding: EdgeInsets.only(
+            left: 20,
+            right: 20,
+            top: 8,
+            bottom: bottomInset + 12,
+          ),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(maxHeight: maxHeight),
+            child: _ComposeSheetBody(
+              accounts: accounts,
+              mailboxAccountId: mailbox.accountId,
+              initial: initial,
+            ),
+          ),
         ),
       );
     },
@@ -681,245 +691,259 @@ class _ComposeSheetBodyState extends State<_ComposeSheetBody> {
   @override
   Widget build(BuildContext context) {
     final ThemeTokens t = tokensOf(context);
-    return SingleChildScrollView(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: <Widget>[
-          Text(
-            _composeTitle(widget.initial.mode),
-            style: Theme.of(context).textTheme.titleLarge,
-          ),
-          const SizedBox(height: 12),
-          DropdownButtonFormField<String>(
-            initialValue: _accountId,
-            items: <DropdownMenuItem<String>>[
-              for (final MailAccount a in widget.accounts)
-                DropdownMenuItem<String>(value: a.id, child: Text(a.address)),
-            ],
-            onChanged: _lockAccount
-                ? null
-                : (String? value) {
-                    if (value != null) {
-                      setState(() => _accountId = value);
-                      unawaited(_loadComposeAssets());
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        Expanded(
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: <Widget>[
+                Text(
+                  _composeTitle(widget.initial.mode),
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+                const SizedBox(height: 12),
+                DropdownButtonFormField<String>(
+                  initialValue: _accountId,
+                  items: <DropdownMenuItem<String>>[
+                    for (final MailAccount a in widget.accounts)
+                      DropdownMenuItem<String>(
+                        value: a.id,
+                        child: Text(a.address),
+                      ),
+                  ],
+                  onChanged: _lockAccount
+                      ? null
+                      : (String? value) {
+                          if (value != null) {
+                            setState(() => _accountId = value);
+                            unawaited(_loadComposeAssets());
+                          }
+                        },
+                  decoration: _fieldDecoration(t, labelText: 'From'),
+                ),
+                ContactRecipientField(
+                  controller: _toController,
+                  onChanged: () {
+                    if (_recipientError != null) {
+                      setState(() => _recipientError = null);
                     }
                   },
-            decoration: _fieldDecoration(t, labelText: 'From'),
-          ),
-          ContactRecipientField(
-            controller: _toController,
-            onChanged: () {
-              if (_recipientError != null) {
-                setState(() => _recipientError = null);
-              }
-            },
-            decoration: _fieldDecoration(
-              t,
-              labelText: 'To',
-              errorText: _recipientError,
-              suffixIcon: IconButton(
-                tooltip: _showCcBcc ? 'Hide Cc/Bcc' : 'Show Cc/Bcc',
-                onPressed: () => setState(() => _showCcBcc = !_showCcBcc),
-                icon: Icon(
-                  _showCcBcc ? Icons.expand_less : Icons.expand_more,
-                  color: t.muted,
+                  decoration: _fieldDecoration(
+                    t,
+                    labelText: 'To',
+                    errorText: _recipientError,
+                    suffixIcon: IconButton(
+                      tooltip: _showCcBcc ? 'Hide Cc/Bcc' : 'Show Cc/Bcc',
+                      onPressed: () =>
+                          setState(() => _showCcBcc = !_showCcBcc),
+                      icon: Icon(
+                        _showCcBcc ? Icons.expand_less : Icons.expand_more,
+                        color: t.muted,
+                      ),
+                    ),
+                  ),
                 ),
-              ),
-            ),
-          ),
-          if (_showCcBcc) ...<Widget>[
-            ContactRecipientField(
-              controller: _ccController,
-              decoration: _fieldDecoration(t, labelText: 'Cc'),
-            ),
-            ContactRecipientField(
-              controller: _bccController,
-              decoration: _fieldDecoration(t, labelText: 'Bcc'),
-            ),
-          ],
-          TextField(
-            controller: _subjectController,
-            style: TextStyle(color: t.text),
-            decoration: _fieldDecoration(t, labelText: 'Subject'),
-          ),
-          Row(
-            children: <Widget>[
-              Flexible(
-                child: SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: <Widget>[
-                      IconButton(
-                        tooltip: 'Bold',
-                        onPressed: () => _wrapSelection('**', '**'),
-                        icon: Icon(Icons.format_bold, color: t.muted),
-                      ),
-                      IconButton(
-                        tooltip: 'Italic',
-                        onPressed: () => _wrapSelection('_', '_'),
-                        icon: Icon(Icons.format_italic, color: t.muted),
-                      ),
-                      IconButton(
-                        tooltip: 'Link',
-                        onPressed: () => _wrapSelection('[', '](https://)'),
-                        icon: Icon(Icons.link, color: t.muted),
-                      ),
-                      IconButton(
-                        tooltip: 'Attach',
-                        onPressed: _attaching ? null : _pickAttachments,
-                        icon: Icon(
-                          Icons.attach_file,
-                          color: _attaching ? t.muted : t.teal,
-                        ),
-                      ),
-                      if (_templates.isNotEmpty)
-                        PopupMenuButton<MailTemplate>(
-                          tooltip: 'Insert template',
-                          icon: Icon(Icons.article_outlined, color: t.muted),
-                          onSelected: _insertTemplate,
-                          itemBuilder: (BuildContext context) =>
-                              <PopupMenuEntry<MailTemplate>>[
-                            for (final MailTemplate tpl in _templates)
-                              PopupMenuItem<MailTemplate>(
-                                value: tpl,
-                                child: Text(tpl.name),
+                if (_showCcBcc) ...<Widget>[
+                  ContactRecipientField(
+                    controller: _ccController,
+                    decoration: _fieldDecoration(t, labelText: 'Cc'),
+                  ),
+                  ContactRecipientField(
+                    controller: _bccController,
+                    decoration: _fieldDecoration(t, labelText: 'Bcc'),
+                  ),
+                ],
+                TextField(
+                  controller: _subjectController,
+                  style: TextStyle(color: t.text),
+                  decoration: _fieldDecoration(t, labelText: 'Subject'),
+                ),
+                Row(
+                  children: <Widget>[
+                    Flexible(
+                      child: SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: <Widget>[
+                            IconButton(
+                              tooltip: 'Bold',
+                              onPressed: () => _wrapSelection('**', '**'),
+                              icon: Icon(Icons.format_bold, color: t.muted),
+                            ),
+                            IconButton(
+                              tooltip: 'Italic',
+                              onPressed: () => _wrapSelection('_', '_'),
+                              icon: Icon(Icons.format_italic, color: t.muted),
+                            ),
+                            IconButton(
+                              tooltip: 'Link',
+                              onPressed: () => _wrapSelection('[', '](https://)'),
+                              icon: Icon(Icons.link, color: t.muted),
+                            ),
+                            IconButton(
+                              tooltip: 'Attach',
+                              onPressed: _attaching ? null : _pickAttachments,
+                              icon: Icon(
+                                Icons.attach_file,
+                                color: _attaching ? t.muted : t.teal,
+                              ),
+                            ),
+                            if (_templates.isNotEmpty)
+                              PopupMenuButton<MailTemplate>(
+                                tooltip: 'Insert template',
+                                icon: Icon(
+                                  Icons.article_outlined,
+                                  color: t.muted,
+                                ),
+                                onSelected: _insertTemplate,
+                                itemBuilder: (BuildContext context) =>
+                                    <PopupMenuEntry<MailTemplate>>[
+                                  for (final MailTemplate tpl in _templates)
+                                    PopupMenuItem<MailTemplate>(
+                                      value: tpl,
+                                      child: Text(tpl.name),
+                                    ),
+                                ],
                               ),
                           ],
                         ),
-                    ],
-                  ),
-                ),
-              ),
-              TextButton.icon(
-                onPressed: _pickSchedule,
-                icon: Icon(Icons.schedule, size: 18, color: t.teal),
-                label: Text(
-                  _sendAfterMs == null
-                      ? 'Schedule'
-                      : _formatSendAfter(_sendAfterMs!),
-                  style: TextStyle(color: t.teal),
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-              if (_sendAfterMs != null)
-                IconButton(
-                  tooltip: 'Clear schedule',
-                  onPressed: () {
-                    setState(() => _sendAfterMs = null);
-                    _scheduleAutosave();
-                  },
-                  icon: Icon(Icons.clear, color: t.muted, size: 18),
-                ),
-            ],
-          ),
-          if (_signatures.isNotEmpty)
-            DropdownButtonFormField<String?>(
-              initialValue: _signatureId,
-              items: <DropdownMenuItem<String?>>[
-                const DropdownMenuItem<String?>(
-                  value: null,
-                  child: Text('No signature'),
-                ),
-                for (final MailSignature s in _signatures)
-                  DropdownMenuItem<String?>(
-                    value: s.id,
-                    child: Text(s.name),
-                  ),
-              ],
-              onChanged: (String? value) {
-                setState(() => _signatureId = value);
-                _scheduleAutosave();
-              },
-              decoration: _fieldDecoration(t, labelText: 'Signature'),
-            ),
-          if (_attachments.isNotEmpty)
-            Wrap(
-              spacing: 8,
-              runSpacing: 4,
-              children: <Widget>[
-                for (final LocalAttachmentRef a in _attachments)
-                  InputChip(
-                    label: Text(
-                      '${a.fileName} (${_formatBytes(a.sizeBytes)})',
-                    ),
-                    onDeleted: () {
-                      setState(() {
-                        _attachments = _attachments
-                            .where(
-                              (LocalAttachmentRef x) => x.blobId != a.blobId,
-                            )
-                            .toList(growable: false);
-                      });
-                      unawaited(
-                        context.read<MailRepository>().deleteAttachmentBlob(
-                              a.blobId,
-                            ),
-                      );
-                      _scheduleAutosave();
-                    },
-                  ),
-              ],
-            ),
-          TextField(
-            controller: _bodyController,
-            minLines: 6,
-            maxLines: 14,
-            style: TextStyle(color: t.text),
-            cursorColor: t.teal,
-            decoration: _bodyDecoration(t),
-          ),
-          if (_sendError != null) ...<Widget>[
-            const SizedBox(height: 12),
-            Material(
-              color: t.coral.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(10),
-              child: Padding(
-                padding: const EdgeInsets.all(12),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    Icon(Icons.error_outline, color: t.coral, size: 20),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        _sendError!,
-                        style: TextStyle(color: t.text, height: 1.35),
                       ),
                     ),
+                    TextButton.icon(
+                      onPressed: _pickSchedule,
+                      icon: Icon(Icons.schedule, size: 18, color: t.teal),
+                      label: Text(
+                        _sendAfterMs == null
+                            ? 'Schedule'
+                            : _formatSendAfter(_sendAfterMs!),
+                        style: TextStyle(color: t.teal),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    if (_sendAfterMs != null)
+                      IconButton(
+                        tooltip: 'Clear schedule',
+                        onPressed: () {
+                          setState(() => _sendAfterMs = null);
+                          _scheduleAutosave();
+                        },
+                        icon: Icon(Icons.clear, color: t.muted, size: 18),
+                      ),
                   ],
                 ),
+                if (_signatures.isNotEmpty)
+                  DropdownButtonFormField<String?>(
+                    initialValue: _signatureId,
+                    items: <DropdownMenuItem<String?>>[
+                      const DropdownMenuItem<String?>(
+                        value: null,
+                        child: Text('No signature'),
+                      ),
+                      for (final MailSignature s in _signatures)
+                        DropdownMenuItem<String?>(
+                          value: s.id,
+                          child: Text(s.name),
+                        ),
+                    ],
+                    onChanged: (String? value) {
+                      setState(() => _signatureId = value);
+                      _scheduleAutosave();
+                    },
+                    decoration: _fieldDecoration(t, labelText: 'Signature'),
+                  ),
+                if (_attachments.isNotEmpty)
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 4,
+                    children: <Widget>[
+                      for (final LocalAttachmentRef a in _attachments)
+                        InputChip(
+                          label: Text(
+                            '${a.fileName} (${_formatBytes(a.sizeBytes)})',
+                          ),
+                          onDeleted: () {
+                            setState(() {
+                              _attachments = _attachments
+                                  .where(
+                                    (LocalAttachmentRef x) =>
+                                        x.blobId != a.blobId,
+                                  )
+                                  .toList(growable: false);
+                            });
+                            unawaited(
+                              context
+                                  .read<MailRepository>()
+                                  .deleteAttachmentBlob(a.blobId),
+                            );
+                            _scheduleAutosave();
+                          },
+                        ),
+                    ],
+                  ),
+                TextField(
+                  controller: _bodyController,
+                  minLines: 6,
+                  maxLines: 14,
+                  style: TextStyle(color: t.text),
+                  cursorColor: t.teal,
+                  decoration: _bodyDecoration(t),
+                ),
+              ],
+            ),
+          ),
+        ),
+        if (_sendError != null) ...<Widget>[
+          const SizedBox(height: 12),
+          Material(
+            color: t.coral.withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(10),
+            child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Icon(Icons.error_outline, color: t.coral, size: 20),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      _sendError!,
+                      style: TextStyle(color: t.text, height: 1.35),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+        const SizedBox(height: 12),
+        Row(
+          children: <Widget>[
+            OutlinedButton(
+              onPressed: _busy
+                  ? null
+                  : () async {
+                      await _autosaveDraft();
+                      if (mounted) {
+                        Navigator.pop(context);
+                      }
+                    },
+              child: const Text('Save draft'),
+            ),
+            const Spacer(),
+            FilledButton(
+              onPressed: _busy ? null : () => _queueSend(),
+              child: Text(
+                _busy
+                    ? 'Sending…'
+                    : (_sendAfterMs != null ? 'Schedule send' : 'Send'),
               ),
             ),
           ],
-          const SizedBox(height: 12),
-          Row(
-            children: <Widget>[
-              OutlinedButton(
-                onPressed: _busy
-                    ? null
-                    : () async {
-                        await _autosaveDraft();
-                        if (mounted) {
-                          Navigator.pop(context);
-                        }
-                      },
-                child: const Text('Save draft'),
-              ),
-              const Spacer(),
-              FilledButton(
-                onPressed: _busy ? null : () => _queueSend(),
-                child: Text(
-                  _busy
-                      ? 'Sending…'
-                      : (_sendAfterMs != null ? 'Schedule send' : 'Send'),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }

@@ -12,7 +12,435 @@
 
 > Android dogfood folder/drawer polish (2026-07-27): account chips, folder-picker sheet, title-bar **Show folders** → sheet.
 >
-> **V2 Wave 7 / Trish extras parking lot** (2026-07-27): operator enhancement backlog (Pri-2 / Pri-2.5 / Pri-3) parked for **Wave 7 — Final polish / Trish extras** — last if time permits; not V2.0 critical path. See [V2_PLAN.md](V2_PLAN.md) § Wave 7.
+> **V2 Wave 7 / Trish extras parking lot** (2026-07-27): operator enhancement backlog (Pri-2 / Pri-2.5 / Pri-3) parked for **Wave 7 — Final polish / Trish extras** — last if time permits; not V2.0 critical path. See [V2_PLAN.md](V2_PLAN.md) § Wave 7. **Trish calendar asks (2026-08-03):** [DEF-075](#def-075--calendar-week--weekdays-views) week/weekdays views; [DEF-076](#def-076--calendar-show-day-of-year--week-of-year) day-of-year + week-of-year. **Trish V-Next (2026-08-03):** [DEF-078](#def-078--phone-quick-reply-density--settings-toggle) phone Quick Reply; [DEF-044](#def-044--home-screen-list-widget-per-account-mail--open-in-app-aquamail-bar) per-account list widgets (AquaMail bar) — **Pri-2**.
+
+### DEF-078 — Phone Quick Reply: reclaim reading space + settings toggle
+
+| Field | Value |
+| --- | --- |
+| Priority | **Pri-2** |
+| Status | Open (enhancement) |
+| Target | **V-Next** |
+| Area | `lib/ui/shell/reading_pane.dart`, `QuickReplyBar` (`message_attachments_panel.dart`), `AppSettingsCubit` / settings UI |
+| Platforms | Phone / narrow (desktop Quick Reply stays valuable) |
+| Logged | 2026-08-03 |
+| Found by | **Trish** (Wave 6P E7 dogfood) |
+| Related | [DEF-069](#def-069--reading-pane-remote-images-banner--quick-reply-overflow-33px), closed [DEF-066](#def-066--quick-reply-send-clipped--horizontal-overflow-on-android) |
+
+**Summary**  
+**Trish:** On phone (e.g. Galaxy S26 Ultra), Quick Reply + Send eat too much reading pane — often ~6 lines of body visible. Desktop Quick Reply is fine and should stay.
+
+1. **Density / placement** — Whether Quick Reply is on or off, the compose chrome must sit farther down so substantially more message body is readable on first paint (toolbar + attachments already compete; QR must not dominate).
+2. **Settings toggle** — User-facing setting to enable/disable Quick Reply. When **off**, reclaim that vertical space entirely for reading (no empty QR slab).
+
+**Expected**  
+- Setting (e.g. “Show Quick Reply”) persisted via app settings; default can stay on for desktop, prefer off or compact on phone (product decision at implement).
+- Phone reading pane prioritizes body height; QR is compact or collapsed when enabled.
+- Desktop behavior remains the current always-useful strip unless the same setting hides it.
+
+**Actual**  
+`showQuickReply` is layout/policy only (not trash, etc.) — no settings flag; QR bar is a persistent bottom chunk on phone reading.
+
+**Notes**  
+Pri-2 **V-Next** — not Wave 6P/6 critical path. Keep desktop love; fix phone pain.
+
+---
+
+### DEF-077 — New event Calendar dropdown overflows long account labels (~286px)
+
+| Field | Value |
+| --- | --- |
+| Priority | **Pri-1** |
+| Status | **Open** (fix landed 2026-08-03 — awaiting dogfood) |
+| Area | `lib/ui/calendar/calendar_workspace.dart` (`_EventEditorForm` calendar `DropdownButtonFormField`) |
+| Platforms | Android (phone); any narrow width |
+| Logged | 2026-08-03 |
+| Found by | Trish (Wave 6P E7 dogfood screenshot) |
+| Related | [DEF-074](#def-074--calendar-day-sheet-add-event-clipped-by-android-system-nav), closed Edit-account dropdown overflow pattern |
+
+**Summary**  
+New event sheet: Calendar field shows yellowjacket `OVERFLOWED BY ~286 PIXELS` when calendar name + account label is long (e.g. `trish@trishputnam.com (TP@T…)`).
+
+**Root cause**  
+`DropdownButtonFormField` without `isExpanded: true` — selected-item `Text` ellipsis never gets a bounded width.
+
+**Fix**  
+`isExpanded: true` + `maxLines: 1` / `TextOverflow.ellipsis` on item labels (same pattern as Edit account).
+
+---
+
+### DEF-076 — Calendar: show day-of-year and week-of-year
+
+| Field | Value |
+| --- | --- |
+| Priority | **Pri-3** |
+| Status | Open (enhancement) |
+| Target wave | **Wave 7 / Trish extras** |
+| Area | `lib/ui/calendar/calendar_workspace.dart` (header / day chrome) |
+| Platforms | All |
+| Logged | 2026-08-03 |
+| Found by | **Trish** (product ask during Wave 6P dogfood) |
+| Related | [DEF-075](#def-075--calendar-week--weekdays-views), [DEF-071](#def-071--calendar-module-should-default-to-today) |
+
+**Summary**  
+**Trish:** Surface **day of the year** (1–365/366) and **week of the year** (ISO week preferred unless product picks locale week) in Calendar chrome — e.g. near the month/week label or on the focused day. Operator actually uses these numbers in daily work.
+
+**Expected**  
+Visible ordinals for the focused date (and optionally today): `Day 216` / `Week 32` (exact copy TBD). Update when navigating months/weeks/days.
+
+**Actual**  
+Calendar shows month name + year (and Agenda) only — no DOY / WOY.
+
+**Notes**  
+Pri-3 polish, but **operator-used** — keep on Wave 7 Trish bullet list; don’t silently drop.
+
+---
+
+### DEF-075 — Calendar: Week and Weekdays views
+
+| Field | Value |
+| --- | --- |
+| Priority | **Pri-3** |
+| Status | Open (enhancement) |
+| Target wave | **Wave 7 / Trish extras** |
+| Area | `lib/ui/calendar/calendar_workspace.dart`, `CalendarCubit` / `CalendarState` (view toggle beyond Month/Agenda) |
+| Platforms | All |
+| Logged | 2026-08-03 |
+| Found by | **Trish** (product ask during Wave 6P dogfood) |
+| Related | [DEF-071](#def-071--calendar-module-should-default-to-today), [DEF-076](#def-076--calendar-show-day-of-year--week-of-year) |
+
+**Summary**  
+**Trish:** Add Calendar view options for **Week** (7-day) and **Weekdays** (Mon–Fri) alongside existing Month and Agenda.
+
+**Expected**  
+View switcher (or equivalent) offers Month / Week / Weekdays / Agenda; Week and Weekdays show timed events in a usable column layout; navigation advances by week.
+
+**Actual**  
+Only **Month** and **Agenda** (`showAgenda` toggle). Wave 5 shipped “month + week/agenda” in the plan sense of Agenda, not a true week grid.
+
+**Notes**  
+Pri-3 Wave 7 Trish extras — honest scope creep; not V2.0 critical path.
+
+---
+
+### DEF-074 — Calendar day sheet “Add event” clipped by Android system nav
+
+| Field | Value |
+| --- | --- |
+| Priority | **Pri-1** |
+| Status | **Open** (fix landed 2026-08-03 — awaiting dogfood) |
+| Area | `lib/ui/calendar/calendar_workspace.dart` (`showDayEventsSheet`, `showEventEditorSheet`) |
+| Platforms | Android |
+| Logged | 2026-08-03 |
+| Found by | Trish (Wave 6P E7 dogfood screenshot) |
+| Related | Closed [DEF-065](#def-065--compose--full-reply-send-clipped-by-android-system-navigation-bar), [DEF-070](#def-070--calendar-month-view-header-right-overflow--day-cell-bottom-overflow) |
+
+**Summary**  
+Day-events bottom sheet: **+ Add event** sits under the Android system navigation / gesture bar and is hard to tap.
+
+**Root cause**  
+Sheet padding used `viewInsets.bottom` (keyboard) only, not `viewPadding.bottom` (system nav). Modal sheets are above Scaffold `SafeArea`, so workspace SafeArea does not protect sheet chrome.
+
+**Fix**  
+Capture `viewPadding.bottom` from the **caller** context (modal sheet MediaQuery often reports 0), then pad with `viewInsets + systemBottom` on day sheet and event editor sheet.
+
+---
+
+### DEF-073 — Graph listAttachments 400: contentId not on microsoft.graph.attachment
+
+| Field | Value |
+| --- | --- |
+| Priority | **Pri-1** |
+| Status | **Open** (fix landed 2026-08-03 — awaiting dogfood) |
+| Area | `lib/protocol/graph_mail_provider.dart` (`listAttachments`) |
+| Platforms | Graph / Exchange accounts (Android dogfood + all) |
+| Logged | 2026-08-03 |
+| Found by | Trish (Wave 6P E7 dogfood screenshot) |
+| Related | [DEF-069](#def-069--reading-pane-remote-images-banner--quick-reply-overflow-33px) |
+
+**Summary**  
+Opening a Graph message with attachments shows  
+`ProtocolException(400): Parsing OData Select and Expand failed: Could not find a property named 'contentId' on type 'microsoft.graph.attachment'.`  
+in the reading pane (attachments strip).
+
+**Root cause**  
+`$select=…,contentId` is validated against the polymorphic base type `microsoft.graph.attachment`. `contentId` is declared only on `microsoft.graph.fileAttachment`.
+
+**Fix**  
+Use OData cast: `microsoft.graph.fileAttachment/contentId` (`kGraphAttachmentListSelect`).
+
+---
+
+### DEF-072 — People “Back to contacts” does not leave contact detail
+
+| Field | Value |
+| --- | --- |
+| Priority | **Pri-1** |
+| Status | **Open** (fix landed 2026-08-03 — awaiting dogfood) |
+| Area | `lib/ui/people/people_workspace.dart` (`_PeopleListOnly`, `_ContactDetailPage`), `PeopleCubit.selectContact` |
+| Platforms | Android (phone / narrow) |
+| Logged | 2026-08-03 |
+| Found by | Trish (Wave 6P E7 dogfood) |
+| Related | [DEF-071](#def-071--calendar-module-should-default-to-today) |
+
+**Summary**  
+On People contact detail, **Back to contacts** appears to do nothing — detail stays on screen.
+
+**Root cause**  
+Mobile detail was a conditional widget swap (`selected != null ? detail : list`) with no nested route. Clearing selection alone proved unreliable in dogfood; in-flight `selectContact` email/phone loads could also race the clear.
+
+**Fix**  
+Nested declarative `Navigator` pages for list → detail; Back pops / clears selection; selection epoch ignores stale loads after clear.
+
+---
+
+### DEF-071 — Calendar module should default to Today
+
+| Field | Value |
+| --- | --- |
+| Priority | **Pri-2.5** (enhancement) |
+| Status | Open (enhancement) |
+| Target | **V-Soon / V-Next** (prefer over Wave 7 unless pulled forward) |
+| Area | `lib/ui/calendar/calendar_workspace.dart`, `CalendarCubit` / `CalendarState` (`showAgenda`, `focusedMonth`, `goToToday`) |
+| Platforms | All |
+| Logged | 2026-08-03 |
+| Found by | Trish (product ask during Wave 6P dogfood) |
+| Related | Closed Wave 5 Calendar UI; [DEF-070](#def-070--calendar-month-view-header-right-overflow--day-cell-bottom-overflow) |
+
+**Summary**  
+Opening the Calendar module should land on **Today** by default — not a cold month-grid entry that requires tapping Today. Prefer Agenda (or a dedicated Today / day surface) centered on the current date; month grid remains available via the existing Month/Agenda toggle.
+
+**Expected**  
+First paint of Calendar focuses today (date + useful “what’s on today” surface). Exact chrome (Agenda-first vs day sheet vs new Today view) decided at implementation; persist last view only if product later wants that override.
+
+**Actual**  
+Calendar opens on the month grid for `focusedMonth` (typically current month) with `showAgenda == false`. `goToToday` exists but is operator-initiated.
+
+**Notes**  
+Enhancement backlog — dogfood UX preference, not a layout defect. Parked **V-Soon / V-Next**; may pull into Wave 7 only if operator bandwidth after Waves 6P/6.
+
+---
+
+### DEF-070 — Calendar month view: header RIGHT overflow + day-cell BOTTOM overflow
+
+| Field | Value |
+| --- | --- |
+| Priority | **Pri-1** |
+| Status | **Open** (fix landed 2026-08-03 — awaiting dogfood) |
+| Area | `lib/ui/calendar/calendar_workspace.dart` (`_CalendarHeader`, `_DayCell`, `_MonthGridView`) |
+| Platforms | Android (phone) |
+| Logged | 2026-08-03 |
+| Found by | Trish (Wave 6P E7 dogfood screenshot) |
+| Related | [DEF-069](#def-069--reading-pane-remote-images-banner--quick-reply-overflow-33px) |
+
+**Summary**  
+Calendar month view on phone: `RIGHT OVERFLOWED BY ~203 PIXELS` on the chrome row (month nav + Today + Month/Agenda), plus pervasive `BOTTOM OVERFLOWED BY ~0.76 PIXELS` (and small variants) in day cells with event chips.
+
+**Root cause**  
+1. Single header `Row` packed fixed 160px month label, chevrons, Today, and a wide `SegmentedButton` — ~500dp intrinsic vs ~332dp usable.  
+2. Day cells always painted up to 3 chips in a non-flex `Column` inside a tight 6-row `childAspectRatio` grid; fractional text metrics overflow by &lt;1px.
+
+**Fix**  
+Narrow (&lt;520dp) header stacks month nav / Today+toggle; month label `Expanded`; day cells size chip count to remaining height via `LayoutBuilder` + non-scrolling `ListView`; taller cells for 6-row months.
+
+---
+
+### DEF-069 — Reading pane: remote-images banner + Quick Reply overflow (~33px)
+
+| Field | Value |
+| --- | --- |
+| Priority | **Pri-1** |
+| Status | **Open** (fix landed 2026-08-03 — awaiting dogfood) |
+| Area | `lib/ui/shell/message_body_view.dart`, `lib/ui/shell/message_attachments_panel.dart` (`QuickReplyBar`) |
+| Platforms | Android |
+| Logged | 2026-08-03 |
+| Found by | Trish (Wave 6P E7 dogfood screenshot) |
+| Related | Closed [DEF-066](#def-066--quick-reply-send-clipped--horizontal-overflow-on-android) |
+
+**Summary**  
+Open message with remote images blocked + Quick Reply: yellow/black ribbon `BOTTOM OVERFLOWED BY 33 PIXELS` between the banner and the Quick Reply field. “Remote images blocked” crushed into a one-letter-wide vertical column beside “Load images for this message.”
+
+**Root cause**  
+1. Banner `Row`: long `TextButton` took intrinsic width; `Expanded` label got ~0 flex → vertical letter stack; banner taller than the 72px budget when stacked.  
+2. DEF-066 added `viewPadding.bottom` to `QuickReplyBar` while the reading pane already sits above `ModuleNavigationBar` / Scaffold body — double-counting system insets (~48px) and starving the body `Column`.
+
+**Fix**  
+Stack / `Flexible` banner layout under ~420 dp; raise banner height budget to 96px; Quick Reply insets = keyboard `viewInsets.bottom` only.
+
+---
+
+### DEF-068 — Add account sheet overflows (BOTTOM OVERFLOWED BY ~85px)
+
+| Field | Value |
+| --- | --- |
+| Priority | **Pri-1** |
+| Status | **Open** (fix landed 2026-08-03 — awaiting dogfood) |
+| Area | `lib/ui/account/add_account_sheet.dart` |
+| Platforms | Android |
+| Logged | 2026-08-03 |
+| Found by | Trish (Wave 6P E7 dogfood screenshot) |
+| Related | [DEF-063](#def-063--manage-accounts-sheet-overflows-no-scroll-yellowblack-stripes) |
+
+**Summary**  
+Add account (Microsoft tab) showed yellow/black ribbon: `BOTTOM OVERFLOWED BY 85 PIXELS` over Accent color. Jules had flagged this sheet as still using `viewInsets`-only padding after the compose/accounts sweep.
+
+**Root cause**  
+Fixed `SizedBox(height: 0.85 * screen)` plus a `Column` with title, blurb, tabs, email, display name, and `AccountColorPicker` **above** `Expanded` `TabBarView` — fixed chrome taller than remaining space on phone.
+
+**Fix**  
+Sheet sized from `LayoutBuilder` max height + `SafeArea`; identity fields (display/accent/address) moved into each tab’s `ListView` so only title+TabBar stay fixed.
+
+---
+
+### DEF-067 — Reinstall / clear-data option that preserves accounts and local mailbox
+
+| Field | Value |
+| --- | --- |
+| Priority | **Pri-3** (enhancement; dogfood friction) |
+| Status | Open |
+| Target wave | **Wave 7 / Trish extras** (or post-V2 release prep) |
+| Area | Backup/export of accounts + encrypted DB; Android clear-data / sideload reinstall path |
+| Platforms | Android first (also Windows useful) |
+| Logged | 2026-08-03 |
+| Found by | Trish (Wave 6P E7 dogfood) |
+
+**Summary**  
+Operator must repeatedly clear Synesis and re-add real accounts when clean-installing dogfood APKs. Wants an option to **reinstall/upgrade while preserving accounts and local mail/PIM data** (or an explicit backup → restore flow), so test accounts can be wiped without redoing OAuth for production accounts.
+
+**Expected**  
+Documented path (settings action and/or sideload checklist): export/backup credentials+DB (or “preserve data on uninstall” guidance), restore on next install; or “Reset demo data only” without wiping linked accounts.
+
+**Actual**  
+Clean install / clear storage wipes everything; operator re-auths and re-adds accounts each cycle.
+
+**Notes**  
+Not urgent for V2.0 critical path. Touches secure storage, DB encryption keys, and OAuth tokens — design carefully (Tesla + Jules). Related: encryption-at-rest, account remove WIPE confirmation.
+
+---
+
+### DEF-063 — Manage Accounts sheet overflows (no scroll; yellow/black stripes)
+
+| Field | Value |
+| --- | --- |
+| Priority | **Pri-1** (blocks multi-account dogfood on phone) |
+| Status | **Closed** (2026-08-03) — Trish dogfood: hamburger drawer ribbon gone |
+| Area | `lib/ui/shell/folder_sidebar.dart` (drawer), `lib/ui/shell/mail_navigation_drawer.dart`; also account sheets from earlier passes |
+| Platforms | Android (also narrow Windows sheets) |
+| Logged | 2026-08-03 |
+| Found by | Trish (Wave 6P E7 Android dogfood) |
+| Related | [DEF-039](#def-039--remove-account-confirmation-dialog-overflows), closed [DEF-040](#def-040--edit-account-sheet-overflows) / [DEF-059](#def-059--edit-account-re-authenticate-button-vertically-clipped) |
+| Tests | `test/account_sheets_overflow_test.dart`; drawer overflow case in `test/mail_navigation_drawer_test.dart` |
+
+**Summary**  
+Yellow/black overflow ribbon on Android. Passes 1–3 treated Manage/Edit account sheets. **Operator screenshot (2026-08-03):** hamburger drawer — `BOTTOM OVERFLOWED BY 49 PIXELS` over Snoozed / ACCOUNTS, with Compose…Settings footer still visible.
+
+**Root cause (pass 4)**  
+`MailNavigationDrawer` footer (7 ListTiles) left a short `Expanded` for `FolderSidebar`. Sidebar used `Column` of fixed MAIL tiles + inner `Expanded`; when allocated height &lt; fixed MAIL block (~49px short), Flutter painted the overflow ribbon. No scroll.
+
+**Fix (pass 4)**  
+`embeddedInDrawer` `FolderSidebar` is a single `ListView` (MAIL + ACCOUNTS); `_DrawerAccountsBody` shrink-wraps inside it.
+
+**Also (2026-08-03):** Settings → Accounts **empty** state overflowed by **15px** (`EmptyState` in tight `Expanded`). `EmptyState` now scrolls when height-bounded; empty Manage Accounts uses `ListView`.
+
+---
+
+**Summary**  
+With **3 accounts**, Manage Accounts / Edit Account showed Flutter yellow/black overflow stripes. No usable scroll on phone.
+
+**Root cause (pass 1)**  
+Modal `primaryScroll` existed but Settings → Accounts used shrink-wrap embed that still overflowed.
+
+**Root cause (pass 2 — still ribbon after rebuild)**  
+Sheets used a **fixed `SizedBox(height: 0.85 * screen)`** (or equivalent) **inside `SafeArea` + extra `viewPadding` padding**, so the forced height exceeded the parent's max constraint → vertical overflow ribbon. Edit Account also used `ListTile` + trailing `DropdownButton` ("Default (default)") which **horizontally overflows** ~360dp phones.
+
+**Fix (pass 2)**  
+`LayoutBuilder` + `ConstrainedBox(maxHeight: parent * 0.95)`; form/list use `Expanded` + `ListView`; sync profile `DropdownButtonFormField(isExpanded)`; account card ellipsis; compact icon buttons. **Still ribbon on device.**
+
+**Root cause (pass 3)**  
+Compound layout debt, not a single missed widget:
+
+1. **Loose max height on modal sheets** — `ConstrainedBox(maxHeight: …)` does not give `Column`+`Expanded` a tight height the way a modal + drag-handle `Stack` needs; production now uses `SizedBox(height: layoutMax * 0.95)` from the already-padded `LayoutBuilder` max (fallback subtracts `padding`/`viewInsets`, never raw `0.9 * screen`).
+2. **Edit Account sticky footer too tall** — signatures + templates + Save stayed outside the `ListView`; on short phones / open keyboard the non-flex column exceeded the sheet → vertical ribbon. Secondary actions moved into the scroll body; only Save stays sticky.
+3. **Custom color dialog** — `SizedBox(width: 360)` ignored dialog insets on ~360dp phones (horizontal overflow risk).
+4. **Settings wide Accounts** — `primaryScroll` body lacked a tight height bound from the rail pane `LayoutBuilder`.
+
+**Fix (pass 3)**  
+Tight `SizedBox` sheet chrome; Edit Account scrollable secondary actions; color dialog `min(360, width - 48)`; Settings Accounts `SizedBox(height: constraints.maxHeight)`; phone widget guards in `account_sheets_overflow_test.dart`.
+
+---
+
+### DEF-065 — Compose / full reply Send clipped by Android system navigation bar
+
+| Field | Value |
+| --- | --- |
+| Priority | **Pri-1** |
+| Status | **Closed** (2026-08-03) |
+| Area | `lib/ui/compose/compose_sheet.dart` |
+| Platforms | Android |
+| Logged | 2026-08-03 |
+| Found by | Trish (Wave 6P E7 Android dogfood) |
+| Related | Closed [DEF-022](#def-022--compose-send-hung-on-sending-android) |
+
+**Summary**  
+Full reply / compose bottom sheet: Send button not visible; could not scroll to last lines of body. Android gesture navigation bar ate bottom chrome.
+
+**Root cause**  
+Sheet padding used `viewInsets` (keyboard) only, not `viewPadding` (system nav). Unconstrained `SingleChildScrollView` grew behind nav bar; Send row scrolled off-screen.
+
+**Fix**  
+`SafeArea` + `viewPadding.bottom` on modal wrapper; `ConstrainedBox(maxHeight: ~92%)`; sticky footer Row (Save draft / Send) outside scroll body.
+
+---
+
+### DEF-066 — Quick Reply Send clipped / horizontal overflow on Android
+
+| Field | Value |
+| --- | --- |
+| Priority | **Pri-1** |
+| Status | **Closed** (2026-08-03) |
+| Area | `lib/ui/shell/message_attachments_panel.dart` (`QuickReplyBar`), `lib/ui/shell/reading_pane.dart` |
+| Platforms | Android |
+| Logged | 2026-08-03 |
+| Found by | Trish (Wave 6P E7 Android dogfood) |
+| Related | Closed [DEF-001](#def-001--workspace-ctrl-shortcuts-only-fire-when-quick-reply-has-focus) |
+
+**Summary**  
+Quick Reply appeared broken — Send not tappable, field clipped by system nav, possible yellow/black overflow on narrow widths.
+
+**Root cause**  
+`QuickReplyBar` Row (field + full-reply icon + Send) had no `viewPadding.bottom` and could horizontally overflow (~360 dp). No `TextInputAction.send` / `onSubmitted`.
+
+**Fix**  
+Responsive stack layout under 360 dp; keyboard send action; clearer full-reply icon. Initial `viewPadding.bottom` inset was **wrong for in-scaffold reading pane** (double-count with module nav) — corrected under [DEF-069](#def-069--reading-pane-remote-images-banner--quick-reply-overflow-33px) to keyboard `viewInsets` only.
+
+---
+
+### DEF-064 — Ship Synesis public OAuth client IDs for distribution builds
+
+| Field | Value |
+| --- | --- |
+| Priority | **Pri-1** (blocks handoff / store / friend builds) |
+| Status | Open |
+| Target | Release prep / pre-distribution gate (not Wave 6 DnD) |
+| Area | `lib/auth/oauth_public_clients.dart`, CI/release build, README |
+| Platforms | Windows + Android |
+| Logged | 2026-08-03 |
+| Found by | Trish (product question during 6P dogfood) |
+| Related | Closed [DEF-038](#def-038--microsoft--google-sign-in-missing-in-dogfood-build-pri-1) |
+
+**Summary**  
+Product path is: end users Sign in with Synesis-owned **public** Entra + Google clients baked into `oauth_public_clients.dart`. Those defaults are currently **empty** (GitHub push-protection / scrub). Dev overrides (`oauth_local.json` / dart-defines) work on Windows from the repo cwd but **do not** ship inside a plain `flutter build apk`. Android dogfood therefore shows “Google OAuth is not configured in this build,” blocking People/Calendar re-auth.
+
+**Expected**  
+Official / friend-handoff builds carry Synesis public client IDs (Desktop + Android package/SHA clients). End users never need `oauth_local.json`. CI may inject IDs at build time if git must stay scrubbed.
+
+**Actual**  
+Empty shipped defaults + naked debug APK → OAuth UI disabled on device; calendar PIM re-auth blocked.
+
+**Notes**  
+Public/native PKCE IDs are not confidential secrets; still avoid careless public gist dumps. Android needs a Google OAuth Android client matching `net.livebytes.synesis` + signing cert SHA-1 per keystore (debug vs release). Track as release-prep before distributing beyond operator.
+
+---
 
 ### DEF-050 — Right-click mark read on message list (solo vs thread)
 
@@ -537,48 +965,49 @@ Each call runs to completion independently with no mutex or generation token.
 | Field | Value |
 | --- | --- |
 | Priority | **Pri-3** |
-| Status | Open |
-| Target wave | **Wave 7 / Trish extras** |
+| Status | **Closed** (2026-08-03) |
 | Area | `lib/ui/account/remove_account_dialog.dart` |
 | Platforms | Android (likely all narrow widths) |
 | Logged | 2026-07-23 |
 
 **Summary**  
-Yellow/black Flutter overflow stripes appear in the Remove Account confirmation pop-up (dogfood on Android). Non-blocking; confirm/cancel still usable.
+Yellow/black Flutter overflow stripes appeared in the Remove Account confirmation pop-up (dogfood on Android).
 
-**Expected**  
-Dialog content is constrained to the available width/height and scrolls when needed; no overflow indicators.
-
-**Actual**  
-Layout overflows the confirmation dialog chrome.
-
-**Notes**  
-Defer to a post-dogfood UI overflow sweep (DEF-040 Edit Account overflow closed with DEF-059 scroll fix). **Target wave: Wave 7 / Trish extras.** Not blocking daily use.
+**Fix**  
+Dialog `content` wrapped in `SingleChildScrollView` (DEF-063 overflow sweep, 2026-08-03).
 
 ---
 
-### DEF-044 — Home-screen list widget: configurable account/folder + open message
+### DEF-044 — Home-screen list widget: per-account mail + open in app (AquaMail bar)
 
 | Field | Value |
 | --- | --- |
-| Priority | **Pri-3** |
-| Status | Open |
-| Target wave | **Wave 7 / Trish extras** |
+| Priority | **Pri-2** |
+| Status | Open (enhancement) |
+| Target | **V-Next** |
 | Area | Android widgets (`SynesisWidgetProvider`, `WidgetSnapshotService`); enhancement |
 | Platforms | Android |
 | Logged | 2026-07-24 |
+| Updated | 2026-08-03 — **Trish:** per-account widget; quality bar = **AquaMail**; bumped **Pri-2 / V-Next** (operator uses widgets daily) |
+| Found by | Trish (dogfood; refreshed ask 2026-08-03) |
 
 **Summary**  
-Dogfood: the existing summary/action widget concept is good. Operator wants a second (list-style) widget that can be configured to a selected account/folder and whose rows open the corresponding message when tapped. Current Synesis widget is counter + latest subject + Inbox/Compose actions only (`synesis_widget.xml`); list snapshot data exists (`synesis_widget.list`) but is not rendered as a clickable list UI.
+**Trish:** Need real home-screen widgets — especially **one widget instance pinned to a specific account** that shows actual mail (subjects/senders/snippets as appropriate) and **tapping a row opens that message in Synesis**. Quality bar: **AquaMail’s widgets** (usable list, account-scoped, deep-link into the app). Operator uses these heavily when available.
+
+Existing ask (2026-07-24): configurable account/folder list widget; current Synesis widget is counter + latest subject + Inbox/Compose only (`synesis_widget.xml`); list snapshot data exists (`synesis_widget.list`) but is not rendered as a clickable list UI.
 
 **Expected**  
-Configurable list widget (account and/or folder), rows tappable → deep-link into that message; refresh from local DB snapshots.
+- Configurable list widget scoped to an **account** (and optionally folder).  
+- Multiple widget instances (different accounts) supported.  
+- Rows show real local mail from snapshots; tap → deep-link / open message in app.  
+- Refresh from local DB after sync (no full Flutter UI wake for routine updates — SPEC widget path).  
+- UX/polish aiming at AquaMail-class usefulness, not a decorative unread badge.
 
 **Actual**  
-Only the summary widget ships; no configurable folder-scoped clickable list widget.
+Only the summary widget ships; no configurable account-scoped clickable list widget.
 
 **Notes**  
-Feature backlog for a post-dogfood widget pass — not blocking beta mail use. **Target wave: Wave 7 / Trish extras** (widget wishlist corner of the parking lot).
+**V-Next Pri-2** (bumped from Wave 7 Pri-3 on 2026-08-03). Related SPEC § Android widgets (`home_widget` + snapshot table). Pairs with phone reading UX ([DEF-078](#def-078--phone-quick-reply-density--settings-toggle)) as operator daily-driver polish.
 
 ---
 

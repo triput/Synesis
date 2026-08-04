@@ -4,7 +4,7 @@
 // Component: UI
 // Version: 1.0 (Gold Master)
 // Created: 2026-07-27
-// Last Update: 2026-07-27
+// Last Update: 2026-08-03
 // ==============================================================================
 
 import 'package:flutter/material.dart';
@@ -164,81 +164,119 @@ class _CalendarHeader extends StatelessWidget {
         ),
         border: Border(bottom: BorderSide(color: t.line)),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          Row(
-            children: <Widget>[
-              const SynesisWordmark(fontSize: 15),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8),
-                child: Text('/', style: TextStyle(color: t.muted)),
-              ),
-              Text(
-                'Calendar',
-                style: TextStyle(color: t.muted, fontSize: 13),
-              ),
-              const Spacer(),
-              IconButton(
-                key: const Key('calendar_picker_button'),
-                tooltip: 'Choose calendars',
-                onPressed: () => showCalendarPickerSheet(
-                  context,
-                  cubit: cubit,
-                ),
-                icon: Icon(Icons.tune, color: t.muted, size: 20),
-              ),
+      child: LayoutBuilder(
+        builder: (BuildContext context, BoxConstraints constraints) {
+          // Month nav + Today + Month/Agenda SegmentedButton exceeds ~360dp
+          // (~203px RIGHT overflow on phone). Stack chrome under this width.
+          final bool narrow = constraints.maxWidth < 520;
+          final Widget viewToggle = SegmentedButton<bool>(
+            key: const Key('calendar_view_toggle'),
+            segments: const <ButtonSegment<bool>>[
+              ButtonSegment<bool>(value: false, label: Text('Month')),
+              ButtonSegment<bool>(value: true, label: Text('Agenda')),
             ],
-          ),
-          const SizedBox(height: 10),
-          Row(
+            selected: <bool>{state.showAgenda},
+            onSelectionChanged: (Set<bool> value) =>
+                cubit.setShowAgenda(value.first),
+          );
+          final Widget todayButton = TextButton(
+            onPressed: cubit.goToToday,
+            child: const Text('Today'),
+          );
+          final Widget monthNav = Row(
             children: <Widget>[
               IconButton(
                 tooltip: 'Previous month',
                 onPressed: cubit.previousMonth,
+                visualDensity: VisualDensity.compact,
                 icon: Icon(Icons.chevron_left, color: t.muted),
               ),
-              SizedBox(
-                width: 160,
+              Expanded(
                 child: Text(
                   _monthLabel(month),
                   style: Theme.of(context).textTheme.titleMedium,
                   overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.center,
                 ),
               ),
               IconButton(
                 tooltip: 'Next month',
                 onPressed: cubit.nextMonth,
+                visualDensity: VisualDensity.compact,
                 icon: Icon(Icons.chevron_right, color: t.muted),
               ),
-              TextButton(
-                onPressed: cubit.goToToday,
-                child: const Text('Today'),
-              ),
-              const Spacer(),
-              SegmentedButton<bool>(
-                key: const Key('calendar_view_toggle'),
-                segments: const <ButtonSegment<bool>>[
-                  ButtonSegment<bool>(value: false, label: Text('Month')),
-                  ButtonSegment<bool>(value: true, label: Text('Agenda')),
-                ],
-                selected: <bool>{state.showAgenda},
-                onSelectionChanged: (Set<bool> value) =>
-                    cubit.setShowAgenda(value.first),
-              ),
             ],
-          ),
-          if (state.showAgenda &&
-              state.viewMode == CalendarViewMode.sideBySide &&
-              state.selectedCalendars.length > 1) ...<Widget>[
-            const SizedBox(height: 6),
-            Text(
-              'Side-by-side: month view stays overlaid; Agenda shows one '
-              'lane per selected calendar.',
-              style: TextStyle(color: t.muted, fontSize: 11),
-            ),
-          ],
-        ],
+          );
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Row(
+                children: <Widget>[
+                  const SynesisWordmark(fontSize: 15),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    child: Text('/', style: TextStyle(color: t.muted)),
+                  ),
+                  Expanded(
+                    child: Text(
+                      'Calendar',
+                      style: TextStyle(color: t.muted, fontSize: 13),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  IconButton(
+                    key: const Key('calendar_picker_button'),
+                    tooltip: 'Choose calendars',
+                    onPressed: () => showCalendarPickerSheet(
+                      context,
+                      cubit: cubit,
+                    ),
+                    icon: Icon(Icons.tune, color: t.muted, size: 20),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+              if (narrow) ...<Widget>[
+                monthNav,
+                const SizedBox(height: 4),
+                Row(
+                  children: <Widget>[
+                    todayButton,
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Align(
+                        alignment: Alignment.centerRight,
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          alignment: Alignment.centerRight,
+                          child: viewToggle,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ] else
+                Row(
+                  children: <Widget>[
+                    Expanded(child: monthNav),
+                    todayButton,
+                    const SizedBox(width: 8),
+                    viewToggle,
+                  ],
+                ),
+              if (state.showAgenda &&
+                  state.viewMode == CalendarViewMode.sideBySide &&
+                  state.selectedCalendars.length > 1) ...<Widget>[
+                const SizedBox(height: 6),
+                Text(
+                  'Side-by-side: month view stays overlaid; Agenda shows one '
+                  'lane per selected calendar.',
+                  style: TextStyle(color: t.muted, fontSize: 11),
+                ),
+              ],
+            ],
+          );
+        },
       ),
     );
   }
@@ -333,7 +371,9 @@ class _MonthGridView extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 7,
-              childAspectRatio: rows <= 5 ? 1.05 : 0.9,
+              // 6-row months need taller cells (lower ratio) or chips overflow
+              // by fractional pixels on phone heights.
+              childAspectRatio: rows <= 5 ? 1.0 : 0.78,
             ),
             itemCount: cellCount,
             itemBuilder: (BuildContext context, int index) {
@@ -380,7 +420,7 @@ class _CalendarEventChip extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+      padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 0),
       decoration: BoxDecoration(
         color: _calendarAccentWash(accent, tokens),
         borderRadius: BorderRadius.circular(4),
@@ -390,7 +430,7 @@ class _CalendarEventChip extends StatelessWidget {
         title,
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
-        style: TextStyle(color: tokens.text, fontSize: 10),
+        style: TextStyle(color: tokens.text, fontSize: 10, height: 1.15),
       ),
     );
   }
@@ -416,14 +456,11 @@ class _DayCell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ThemeTokens t = tokensOf(context);
-    const int maxVisible = 3;
-    final List<CalendarEvent> visible = events.take(maxVisible).toList();
-    final int overflow = events.length - visible.length;
     return InkWell(
       onTap: onTap,
       child: Container(
-        margin: const EdgeInsets.all(2),
-        padding: const EdgeInsets.all(4),
+        margin: const EdgeInsets.all(1),
+        padding: const EdgeInsets.fromLTRB(3, 2, 3, 2),
         decoration: BoxDecoration(
           color: inMonth ? t.panel : t.panel.withValues(alpha: 0.4),
           borderRadius: BorderRadius.circular(8),
@@ -438,27 +475,65 @@ class _DayCell extends StatelessWidget {
                 color: inMonth ? t.text : t.muted,
                 fontWeight: isToday ? FontWeight.w700 : FontWeight.w500,
                 fontSize: 12,
+                height: 1.0,
               ),
             ),
             const SizedBox(height: 2),
-            for (final CalendarEvent event in visible)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 2),
-                child: _CalendarEventChip(
-                  title: event.title,
-                  accent: _calendarAccentColor(
-                    state,
-                    event.calendarId,
-                    t,
-                  ),
-                  tokens: t,
-                ),
+            Expanded(
+              child: LayoutBuilder(
+                builder: (BuildContext context, BoxConstraints constraints) {
+                  // Fit chips to remaining height — fixed maxVisible=3 caused
+                  // BOTTOM OVERFLOWED BY ~0.76px on 6-row phone months.
+                  const double chipExtent = 13;
+                  final double maxH = constraints.maxHeight;
+                  final int capacity =
+                      maxH <= 0 ? 0 : (maxH / chipExtent).floor();
+                  if (capacity <= 0 || events.isEmpty) {
+                    return const SizedBox.shrink();
+                  }
+                  final List<CalendarEvent> visible;
+                  final int overflowCount;
+                  if (events.length <= capacity) {
+                    visible = events;
+                    overflowCount = 0;
+                  } else if (capacity == 1) {
+                    visible = const <CalendarEvent>[];
+                    overflowCount = events.length;
+                  } else {
+                    visible = events.take(capacity - 1).toList();
+                    overflowCount = events.length - visible.length;
+                  }
+                  return ListView(
+                    padding: EdgeInsets.zero,
+                    physics: const NeverScrollableScrollPhysics(),
+                    children: <Widget>[
+                      for (final CalendarEvent event in visible)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 1),
+                          child: _CalendarEventChip(
+                            title: event.title,
+                            accent: _calendarAccentColor(
+                              state,
+                              event.calendarId,
+                              t,
+                            ),
+                            tokens: t,
+                          ),
+                        ),
+                      if (overflowCount > 0)
+                        Text(
+                          '+$overflowCount more',
+                          style: TextStyle(
+                            color: t.muted,
+                            fontSize: 10,
+                            height: 1.0,
+                          ),
+                        ),
+                    ],
+                  );
+                },
               ),
-            if (overflow > 0)
-              Text(
-                '+$overflow more',
-                style: TextStyle(color: t.muted, fontSize: 10),
-              ),
+            ),
           ],
         ),
       ),
@@ -692,18 +767,23 @@ Future<void> showDayEventsSheet(
 }) {
   final ThemeTokens t = tokensOf(context);
   final List<CalendarEvent> events = state.eventsOnDay(day);
+  // Capture before the modal route; sheet MediaQuery often reports
+  // viewPadding.bottom == 0 (DEF-074).
+  final double systemBottom = MediaQuery.viewPaddingOf(context).bottom;
   return showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
     backgroundColor: t.panel,
     showDragHandle: true,
     builder: (BuildContext sheetContext) {
+      final double keyboard = MediaQuery.viewInsetsOf(sheetContext).bottom;
+      final double bottomInset = keyboard + systemBottom;
       return Padding(
         padding: EdgeInsets.only(
           left: 20,
           right: 20,
           top: 8,
-          bottom: MediaQuery.viewInsetsOf(sheetContext).bottom + 24,
+          bottom: bottomInset + 12,
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -872,18 +952,21 @@ Future<void> showEventEditorSheet(
   DateTime? initialDay,
 }) {
   final ThemeTokens t = tokensOf(context);
+  final double systemBottom = MediaQuery.viewPaddingOf(context).bottom;
   return showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
     backgroundColor: t.panel,
     showDragHandle: true,
     builder: (BuildContext sheetContext) {
+      final double keyboard = MediaQuery.viewInsetsOf(sheetContext).bottom;
+      final double bottomInset = keyboard + systemBottom;
       return Padding(
         padding: EdgeInsets.only(
           left: 20,
           right: 20,
           top: 8,
-          bottom: MediaQuery.viewInsetsOf(sheetContext).bottom + 24,
+          bottom: bottomInset + 12,
         ),
         child: _EventEditorForm(
           cubit: cubit,
@@ -1141,6 +1224,7 @@ class _EventEditorFormState extends State<_EventEditorForm> {
           DropdownButtonFormField<String>(
             key: const Key('event_calendar_dropdown'),
             initialValue: _calendarId,
+            isExpanded: true,
             decoration: const InputDecoration(labelText: 'Calendar'),
             items: <DropdownMenuItem<String>>[
               for (final Calendar calendar in widget.state.calendars)
@@ -1149,6 +1233,7 @@ class _EventEditorFormState extends State<_EventEditorForm> {
                   child: Text(
                     '${calendar.name} '
                     '(${_accountLabelFor(widget.state.accounts, calendar.accountId)})',
+                    maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),

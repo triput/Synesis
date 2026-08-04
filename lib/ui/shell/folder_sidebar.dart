@@ -4,7 +4,7 @@
 // Component: UI
 // Version: 1.5 (Gold Master)
 // Created: 2026-07-14
-// Last Update: 2026-07-27
+// Last Update: 2026-08-03
 // ==============================================================================
 
 import 'dart:async';
@@ -178,11 +178,83 @@ class FolderSidebar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = tokensOf(context);
+    if (embeddedInDrawer) {
+      // Phone drawer: one scrollable column. A Column+Expanded here overflows
+      // when the drawer footer (compose/settings/…) leaves < ~200px for MAIL
+      // tiles — yellow/black "BOTTOM OVERFLOWED BY ~49 PIXELS" (DEF-063).
+      return Container(
+        color: t.panel,
+        padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
+        child: ListView(
+          padding: EdgeInsets.zero,
+          children: <Widget>[
+            Text(
+              'MAIL',
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: t.muted,
+                fontSize: 12,
+                letterSpacing: 1.2,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 10),
+            _NavTile(
+              label: 'Unified Inbox',
+              selected: state.unified &&
+                  state.virtualView == MailboxVirtualView.none,
+              onTap: onSelectUnified,
+            ),
+            _NavTile(
+              label: 'Starred',
+              selected: state.virtualView == MailboxVirtualView.starred,
+              indent: 12,
+              leading:
+                  Icon(Icons.star_outline_rounded, size: 16, color: t.amber),
+              onTap: () => onSelectVirtualView(MailboxVirtualView.starred),
+            ),
+            _NavTile(
+              label: 'Pinned',
+              selected: state.virtualView == MailboxVirtualView.pinned,
+              indent: 12,
+              leading: Icon(
+                Icons.push_pin_outlined,
+                size: 16,
+                color: t.amethyst,
+              ),
+              onTap: () => onSelectVirtualView(MailboxVirtualView.pinned),
+            ),
+            _NavTile(
+              label: 'Snoozed',
+              selected: state.virtualView == MailboxVirtualView.snoozed,
+              indent: 12,
+              leading: Icon(Icons.snooze_rounded, size: 16, color: t.azure),
+              onTap: () => onSelectVirtualView(MailboxVirtualView.snoozed),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'ACCOUNTS',
+              style: TextStyle(
+                color: t.muted.withValues(alpha: 0.7),
+                fontSize: 10,
+                letterSpacing: 1.4,
+              ),
+            ),
+            const SizedBox(height: 6),
+            _DrawerAccountsBody(
+              state: state,
+              onSelectAccount: onSelectAccount,
+              onSelectFolder: onSelectFolder,
+              onMarkFolderUnread: onMarkFolderUnread,
+              shrinkWrap: true,
+            ),
+          ],
+        ),
+      );
+    }
     return Container(
       color: t.panel,
-      padding: embeddedInDrawer
-          ? const EdgeInsets.fromLTRB(12, 8, 12, 12)
-          : const EdgeInsets.fromLTRB(12, 14, 12, 12),
+      padding: const EdgeInsets.fromLTRB(12, 14, 12, 12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -190,7 +262,7 @@ class FolderSidebar extends StatelessWidget {
             children: [
               Expanded(
                 child: Text(
-                  embeddedInDrawer ? 'MAIL' : 'MAILBOX',
+                  'MAILBOX',
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     color: t.muted,
@@ -200,7 +272,7 @@ class FolderSidebar extends StatelessWidget {
                   ),
                 ),
               ),
-              if (!embeddedInDrawer && state.expandedAccountIds.isNotEmpty)
+              if (state.expandedAccountIds.isNotEmpty)
                 TextButton(
                   onPressed: onCollapseAll,
                   style: TextButton.styleFrom(
@@ -211,17 +283,16 @@ class FolderSidebar extends StatelessWidget {
                   ),
                   child: const Text('Collapse', style: TextStyle(fontSize: 11)),
                 ),
-              if (!embeddedInDrawer)
-                TextButton(
-                  onPressed: onHideSidebar,
-                  style: TextButton.styleFrom(
-                    foregroundColor: t.teal,
-                    padding: const EdgeInsets.symmetric(horizontal: 8),
-                    minimumSize: Size.zero,
-                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  ),
-                  child: const Text('Hide', style: TextStyle(fontSize: 11)),
+              TextButton(
+                onPressed: onHideSidebar,
+                style: TextButton.styleFrom(
+                  foregroundColor: t.teal,
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  minimumSize: Size.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 ),
+                child: const Text('Hide', style: TextStyle(fontSize: 11)),
+              ),
             ],
           ),
           const SizedBox(height: 10),
@@ -267,75 +338,67 @@ class FolderSidebar extends StatelessWidget {
           ),
           const SizedBox(height: 6),
           Expanded(
-            child: embeddedInDrawer
-                ? _DrawerAccountsBody(
+            child: _AccountsScrollArea(
+              showMoreHint: false,
+              moreHintLabel: 'More accounts',
+              children: <Widget>[
+                for (final MailAccount account in state.accounts)
+                  _AccountSection(
+                    account: account,
                     state: state,
-                    onSelectAccount: onSelectAccount,
+                    settings: settings,
+                    onToggleExpanded: () =>
+                        onToggleAccountExpanded(account.id),
+                    onSelectAccount: () => onSelectAccount(account.id),
                     onSelectFolder: onSelectFolder,
                     onMarkFolderUnread: onMarkFolderUnread,
-                  )
-                : _AccountsScrollArea(
-                    showMoreHint: false,
-                    moreHintLabel: 'More accounts',
-                    children: <Widget>[
-                      for (final MailAccount account in state.accounts)
-                        _AccountSection(
-                          account: account,
-                          state: state,
-                          settings: settings,
-                          onToggleExpanded: () =>
-                              onToggleAccountExpanded(account.id),
-                          onSelectAccount: () => onSelectAccount(account.id),
-                          onSelectFolder: onSelectFolder,
-                          onMarkFolderUnread: onMarkFolderUnread,
-                        ),
-                    ],
                   ),
+              ],
+            ),
           ),
-          if (!embeddedInDrawer)
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: t.line),
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    t.indigo.withValues(alpha: 0.2),
-                    t.teal.withValues(alpha: 0.08),
-                  ],
-                ),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'RETENTION DIAL',
-                    style: TextStyle(
-                      color: t.muted,
-                      fontSize: 10,
-                      letterSpacing: 1.1,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    '${settings.retentionDays} days · this device',
-                    style: const TextStyle(fontSize: 13),
-                  ),
-                  const SizedBox(height: 10),
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(999),
-                    child: LinearProgressIndicator(
-                      value: (settings.retentionDays / 365).clamp(0.05, 1),
-                      minHeight: 6,
-                      backgroundColor: Colors.black38,
-                      color: t.teal,
-                    ),
-                  ),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: t.line),
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  t.indigo.withValues(alpha: 0.2),
+                  t.teal.withValues(alpha: 0.08),
                 ],
               ),
             ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'RETENTION DIAL',
+                  style: TextStyle(
+                    color: t.muted,
+                    fontSize: 10,
+                    letterSpacing: 1.1,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '${settings.retentionDays} days · this device',
+                  style: const TextStyle(fontSize: 13),
+                ),
+                const SizedBox(height: 10),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(999),
+                  child: LinearProgressIndicator(
+                    value: (settings.retentionDays / 365).clamp(0.05, 1),
+                    minHeight: 6,
+                    backgroundColor: Colors.black38,
+                    color: t.teal,
+                  ),
+                ),
+              ],
+            ),
+          ),
         ],
       ),
     );
@@ -467,12 +530,16 @@ class _DrawerAccountsBody extends StatefulWidget {
     required this.onSelectAccount,
     required this.onSelectFolder,
     required this.onMarkFolderUnread,
+    this.shrinkWrap = false,
   });
 
   final MailboxState state;
   final ValueChanged<String> onSelectAccount;
   final void Function(String accountId, String folderId) onSelectFolder;
   final MarkFolderUnread onMarkFolderUnread;
+
+  /// When true, nest inside a parent [ListView] (drawer MAIL+ACCOUNTS scroll).
+  final bool shrinkWrap;
 
   @override
   State<_DrawerAccountsBody> createState() => _DrawerAccountsBodyState();
@@ -530,6 +597,10 @@ class _DrawerAccountsBodyState extends State<_DrawerAccountsBody> {
 
     return ListView(
       padding: EdgeInsets.zero,
+      shrinkWrap: widget.shrinkWrap,
+      physics: widget.shrinkWrap
+          ? const NeverScrollableScrollPhysics()
+          : null,
       children: <Widget>[
         SizedBox(
           height: 40,

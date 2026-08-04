@@ -4,7 +4,7 @@
 // Component: UI
 // Version: 1.0 (Gold Master)
 // Created: 2026-07-14
-// Last Update: 2026-07-14
+// Last Update: 2026-08-03
 // ==============================================================================
 
 import 'package:flutter/material.dart';
@@ -107,51 +107,55 @@ class _RemoveAccountDialogState extends State<_RemoveAccountDialog> {
     final t = tokensOf(context);
     return AlertDialog(
       title: const Text('Remove account'),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text(
-            'This permanently deletes local mail, folders, sync jobs, and '
-            'stored credentials for ${widget.account.address}. '
-            'The server mailbox is not affected.',
-            style: TextStyle(color: t.muted, fontSize: 13),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            'Type the phrase below to confirm:',
-            style: TextStyle(color: t.muted, fontSize: 12),
-          ),
-          const SizedBox(height: 4),
-          SelectableText(
-            _requiredPhrase,
-            style: TextStyle(
-              color: t.coral,
-              fontWeight: FontWeight.w600,
-              fontFamily: 'monospace',
-            ),
-          ),
-          const SizedBox(height: 8),
-          TextField(
-            controller: _confirmation,
-            decoration: const InputDecoration(
-              labelText: 'Confirmation phrase',
-            ),
-            autocorrect: false,
-            enableSuggestions: false,
-            onChanged: (_) => setState(() {}),
-            onSubmitted: (_) => _canConfirm ? _remove() : null,
-          ),
-          if (_error != null) ...[
-            const SizedBox(height: 8),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
             Text(
-              _error!,
-              style: TextStyle(color: t.coral, fontSize: 13),
+              'This permanently deletes local mail, folders, sync jobs, and '
+              'stored credentials for ${widget.account.address}. '
+              'The server mailbox is not affected.',
+              style: TextStyle(color: t.muted, fontSize: 13),
             ),
+            const SizedBox(height: 12),
+            Text(
+              'Type the phrase below to confirm:',
+              style: TextStyle(color: t.muted, fontSize: 12),
+            ),
+            const SizedBox(height: 4),
+            SelectableText(
+              _requiredPhrase,
+              style: TextStyle(
+                color: t.coral,
+                fontWeight: FontWeight.w600,
+                fontFamily: 'monospace',
+              ),
+            ),
+            const SizedBox(height: 8),
+            TextField(
+              controller: _confirmation,
+              decoration: const InputDecoration(
+                labelText: 'Confirmation phrase',
+              ),
+              autocorrect: false,
+              enableSuggestions: false,
+              onChanged: (_) => setState(() {}),
+              onSubmitted: (_) => _canConfirm ? _remove() : null,
+            ),
+            if (_error != null) ...[
+              const SizedBox(height: 8),
+              Text(
+                _error!,
+                style: TextStyle(color: t.coral, fontSize: 13),
+              ),
+            ],
           ],
-        ],
+        ),
       ),
-      actions: [
+      actionsAlignment: MainAxisAlignment.end,
+      actionsOverflowButtonSpacing: 8,
+      actions: <Widget>[
         TextButton(
           onPressed: _busy ? null : () => Navigator.pop(context, false),
           child: const Text('Cancel'),

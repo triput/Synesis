@@ -4,7 +4,7 @@
 // Component: Bloc / UI
 // Version: 1.0 (Gold Master)
 // Created: 2026-07-27
-// Last Update: 2026-07-27
+// Last Update: 2026-08-03
 // ==============================================================================
 
 import 'dart:async';
@@ -37,6 +37,7 @@ class PeopleCubit extends Cubit<PeopleState> {
   final MailRepository _repository;
   StreamSubscription<void>? _changesSub;
   Timer? _searchDebounce;
+  int _selectionEpoch = 0;
 
   Future<void> refresh() async {
     if (isClosed) {
@@ -109,7 +110,13 @@ class PeopleCubit extends Cubit<PeopleState> {
   /// Selects a contact for the detail pane and loads its emails/phones.
   /// Pass `null` to clear the detail pane.
   Future<void> selectContact(String? contactId) async {
+    final int epoch = ++_selectionEpoch;
     if (contactId == null) {
+      if (state.selectedContactId == null &&
+          state.selectedEmails.isEmpty &&
+          state.selectedPhones.isEmpty) {
+        return;
+      }
       emit(
         state.copyWith(
           clearSelectedContactId: true,
@@ -126,7 +133,7 @@ class PeopleCubit extends Cubit<PeopleState> {
     final List<ContactPhone> phones = await _pimStore.listContactPhones(
       contactId,
     );
-    if (isClosed || state.selectedContactId != contactId) {
+    if (isClosed || epoch != _selectionEpoch) {
       return;
     }
     emit(state.copyWith(selectedEmails: emails, selectedPhones: phones));

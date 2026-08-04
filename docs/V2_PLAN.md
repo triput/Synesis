@@ -113,8 +113,12 @@ Checklists: [V2_0A_P0_CHECKLIST.md](V2_0A_P0_CHECKLIST.md) (Wave 1 exit); [V2_WA
 | Include Sent items in conversation threads | [DEF-055](DEFECTS.md) | Pri-2; operator reply context / “did I respond?” triage |
 | Thread/list sort: oldest first vs newest first | [DEF-056](DEFECTS.md) | Pri-2; user-selectable list sort direction |
 | Hamburger → folders-only sheet (swipe keeps full drawer) | [DEF-046](DEFECTS.md) | Android phone nav polish |
-| Account dialog overflow sweep | [DEF-039](DEFECTS.md), [DEF-040](DEFECTS.md) | Remove / Edit Account yellow-black stripes on narrow widths |
-| Configurable home-screen list widget | [DEF-044](DEFECTS.md) | Tap-through to message from widget rows |
+| Account dialog overflow sweep | [DEF-039](DEFECTS.md), [DEF-040](DEFECTS.md), [DEF-063](DEFECTS.md) | Remove / Edit / Manage Account yellow-black stripes on narrow widths |
+| Preserve accounts/data across reinstall | [DEF-067](DEFECTS.md) | Backup/restore or clear-data-safe reinstall so dogfood doesn’t force full re-auth |
+| Configurable home-screen list widget | [DEF-044](DEFECTS.md) | **Moved to V-Next Pri-2** — see deferred table |
+| Calendar defaults to **Today** (Agenda / day-first) | [DEF-071](DEFECTS.md) | Prefer **V-Soon / V-Next**; pull into Wave 7 only if bandwidth |
+| **Trish:** Calendar **Week** + **Weekdays** views | [DEF-075](DEFECTS.md) | Pri-3; beyond Month/Agenda |
+| **Trish:** Day-of-year + week-of-year in chrome | [DEF-076](DEFECTS.md) | Pri-3; operator uses these numbers |
 
 Real Pri-1/2 defects and PIM gates stay on their owning waves — this bucket is **enhancement-shaped** backlog only.
 
@@ -306,6 +310,9 @@ Operator waves 1–7 + **G** map into these buckets for release narrative:
 | PST import | After V1.5; not V2 headline |
 | Rooms/resources, shared calendar ACLs, Teams deep links | Later calendar depth |
 | Avatar / monogram hover cards (Option C) | V-Next / late polish |
+| Calendar module defaults to **Today** | **V-Soon / V-Next** — [DEF-071](DEFECTS.md); Wave 7 only if pulled forward |
+| **Trish:** Phone Quick Reply density + settings toggle | **V-Next** Pri-2 — [DEF-078](DEFECTS.md); keep desktop QR |
+| **Trish:** Per-account home-screen list widgets (AquaMail bar) | **V-Next** Pri-2 — [DEF-044](DEFECTS.md); tap opens message in app |
 | Cross-account DnD copy (events + contacts) | **Wave 6** — after Wave G Google PIM + provider sync + Calendar/People UI |
 | UI niceties / operator enhancement backlog | **Wave 7 / Trish extras** — not V2.0 critical path |
 

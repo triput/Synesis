@@ -4,7 +4,7 @@
 // Component: UI
 // Version: 1.0 (Gold Master)
 // Created: 2026-07-14
-// Last Update: 2026-07-27
+// Last Update: 2026-08-03
 // ==============================================================================
 
 import 'package:flutter/foundation.dart';
@@ -29,15 +29,29 @@ Future<void> showAddAccountSheet(BuildContext context) {
     isScrollControlled: true,
     backgroundColor: t.panel,
     showDragHandle: true,
-    builder: (context) {
+    builder: (BuildContext sheetContext) {
+      final MediaQueryData mq = MediaQuery.of(sheetContext);
+      // Keyboard via viewInsets; SafeArea owns system nav. Tight height from
+      // parent max — never 0.85*screen inside padding (DEF-068 / Add account
+      // BOTTOM OVERFLOWED BY 85 PIXELS).
       return Padding(
-        padding: EdgeInsets.only(
-          left: 20,
-          right: 20,
-          top: 8,
-          bottom: MediaQuery.viewInsetsOf(context).bottom + 24,
+        padding: EdgeInsets.only(bottom: mq.viewInsets.bottom),
+        child: SafeArea(
+          child: LayoutBuilder(
+            builder: (BuildContext context, BoxConstraints constraints) {
+              final double maxH = constraints.maxHeight.isFinite
+                  ? constraints.maxHeight
+                  : mq.size.height * 0.9;
+              return SizedBox(
+                height: maxH * 0.95,
+                child: const Padding(
+                  padding: EdgeInsets.fromLTRB(20, 8, 20, 12),
+                  child: _AddAccountForm(),
+                ),
+              );
+            },
+          ),
         ),
-        child: const _AddAccountForm(),
       );
     },
   );
@@ -420,85 +434,90 @@ class _AddAccountFormState extends State<_AddAccountForm>
     }
   }
 
+  List<Widget> _identityFields({required bool includeAddress}) {
+    final t = tokensOf(context);
+    return <Widget>[
+      if (includeAddress)
+        TextField(
+          controller: _address,
+          decoration: const InputDecoration(
+            labelText: 'Email address',
+            hintText: 'you@example.com',
+          ),
+          keyboardType: TextInputType.emailAddress,
+          onChanged: (_) => setState(() {}),
+        ),
+      TextField(
+        controller: _display,
+        decoration: const InputDecoration(
+          labelText: 'Display name (optional)',
+          hintText: 'Seeded from email if left blank',
+          helperText: 'Shown on the account rail and drawer chips',
+        ),
+      ),
+      const SizedBox(height: 8),
+      Text('Accent color', style: TextStyle(color: t.muted, fontSize: 12)),
+      const SizedBox(height: 6),
+      AccountColorPicker(
+        value: _accent,
+        onChanged: (Color c) => setState(() => _accent = c),
+      ),
+      const SizedBox(height: 12),
+    ];
+  }
+
   @override
   Widget build(BuildContext context) {
     final t = tokensOf(context);
     final bool graphConfigured = _graphConfigured;
     final bool googleConfigured = _googleConfigured;
-    return SizedBox(
-      height: MediaQuery.sizeOf(context).height * 0.85,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text('Add account', style: Theme.of(context).textTheme.titleLarge),
-          const SizedBox(height: 8),
-          Text(
-            'Microsoft Graph, Google (Gmail IMAP/SMTP via OAuth), or any '
-            'IMAP / SMTP server. App passwords remain available on the IMAP tab.',
-            style: TextStyle(color: t.muted, fontSize: 13),
-          ),
-          const SizedBox(height: 12),
-          TabBar(
-            controller: _tabs,
-            tabs: const [
-              Tab(text: 'Microsoft'),
-              Tab(text: 'Google'),
-              Tab(text: 'IMAP / Other'),
-            ],
-          ),
-          const SizedBox(height: 12),
-          if (!graphConfigured || _tabs.index != 0 || _showPasteToken) ...[
-            if (_tabs.index == 2 ||
-                (_tabs.index == 0 &&
-                    (!graphConfigured || _showPasteToken))) ...[
-              TextField(
-                controller: _address,
-                decoration: const InputDecoration(
-                  labelText: 'Email address',
-                  hintText: 'you@example.com',
-                ),
-                keyboardType: TextInputType.emailAddress,
-                onChanged: (_) => setState(() {}),
-              ),
-            ],
+    final bool microsoftNeedsAddress =
+        !graphConfigured || _showPasteToken;
+    // Compact chrome + scrollable tab bodies. Fixed identity fields above
+    // Expanded TabBarView overflowed short phones / keyboards by ~85px.
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        Text('Add account', style: Theme.of(context).textTheme.titleLarge),
+        const SizedBox(height: 8),
+        Text(
+          'Microsoft Graph, Google (Gmail IMAP/SMTP via OAuth), or any '
+          'IMAP / SMTP server. App passwords remain available on the IMAP tab.',
+          style: TextStyle(color: t.muted, fontSize: 13),
+        ),
+        const SizedBox(height: 12),
+        TabBar(
+          controller: _tabs,
+          tabs: const <Widget>[
+            Tab(text: 'Microsoft'),
+            Tab(text: 'Google'),
+            Tab(text: 'IMAP / Other'),
           ],
-          TextField(
-            controller: _display,
-            decoration: const InputDecoration(
-              labelText: 'Display name (optional)',
-              hintText: 'Seeded from email if left blank',
-              helperText: 'Shown on the account rail and drawer chips',
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text('Accent color', style: TextStyle(color: t.muted, fontSize: 12)),
-          const SizedBox(height: 6),
-          AccountColorPicker(
-            value: _accent,
-            onChanged: (c) => setState(() => _accent = c),
-          ),
-          const SizedBox(height: 12),
-          Expanded(
-            child: TabBarView(
-              controller: _tabs,
-              children: [
-                ListView(
-                  children: [
-                    if (graphConfigured) ...[
-                      FilledButton.icon(
-                        onPressed: _busy ? null : _signInMicrosoft,
-                        icon: const Icon(Icons.login),
-                        label: Text(
-                          _busy ? 'Signing in…' : 'Sign in with Microsoft',
-                        ),
+        ),
+        const SizedBox(height: 8),
+        Expanded(
+          child: TabBarView(
+            controller: _tabs,
+            children: <Widget>[
+              ListView(
+                children: <Widget>[
+                  ..._identityFields(includeAddress: microsoftNeedsAddress),
+                  if (graphConfigured) ...<Widget>[
+                    FilledButton.icon(
+                      onPressed: _busy ? null : _signInMicrosoft,
+                      icon: const Icon(Icons.login),
+                      label: Text(
+                        _busy ? 'Signing in…' : 'Sign in with Microsoft',
                       ),
-                      if (_showPasteToken) ...[
-                        const SizedBox(height: 16),
-                        Text(
-                          'Debug: paste token',
-                          style: TextStyle(color: t.muted, fontSize: 12),
-                        ),
-                        const SizedBox(height: 8),
+                    ),
+                    if (_showPasteToken) ...<Widget>[
+                      const SizedBox(height: 16),
+                      Text(
+                        'Debug: paste token',
+                        style: TextStyle(color: t.muted, fontSize: 12),
+                      ),
+                      const SizedBox(height: 8),
+                      if (!microsoftNeedsAddress)
                         TextField(
                           controller: _address,
                           decoration: const InputDecoration(
@@ -507,219 +526,212 @@ class _AddAccountFormState extends State<_AddAccountForm>
                           ),
                           keyboardType: TextInputType.emailAddress,
                         ),
-                        TextField(
-                          controller: _graphToken,
-                          decoration: const InputDecoration(
-                            labelText: 'Graph access token',
-                            helperText:
-                                'Debug-only paste; prefer Sign in with Microsoft',
-                          ),
-                          minLines: 3,
-                          maxLines: 6,
-                        ),
-                        const SizedBox(height: 12),
-                        OutlinedButton(
-                          onPressed: _busy ? null : _submitGraphPaste,
-                          child: Text(
-                            _busy ? 'Adding…' : 'Add with pasted token',
-                          ),
-                        ),
-                      ],
-                    ] else ...[
-                      Text(
-                        'Microsoft browser sign-in is not configured yet.\n\n'
-                        'Add your Entra Application (client) ID to '
-                        'oauth_local.json in the project root (see '
-                        'oauth_local.json.example), set SYNESIS_GRAPH_CLIENT_ID '
-                        'in the environment, or pass '
-                        '--dart-define=SYNESIS_GRAPH_CLIENT_ID=… then restart.\n\n'
-                        'Until then you can paste a Graph access token below, '
-                        'or use IMAP / Other.',
-                        style: TextStyle(color: t.muted, fontSize: 13),
-                      ),
-                      const SizedBox(height: 16),
-                      TextField(
-                        controller: _address,
-                        decoration: const InputDecoration(
-                          labelText: 'Email address',
-                          hintText: 'you@example.com',
-                        ),
-                        keyboardType: TextInputType.emailAddress,
-                      ),
                       TextField(
                         controller: _graphToken,
                         decoration: const InputDecoration(
                           labelText: 'Graph access token',
                           helperText:
-                              'Paste a Graph token with Mail.ReadWrite + Mail.Send.',
+                              'Debug-only paste; prefer Sign in with Microsoft',
                         ),
                         minLines: 3,
                         maxLines: 6,
                       ),
-                      const SizedBox(height: 16),
-                      FilledButton(
+                      const SizedBox(height: 12),
+                      OutlinedButton(
                         onPressed: _busy ? null : _submitGraphPaste,
                         child: Text(
-                          _busy ? 'Adding…' : 'Add Microsoft account',
+                          _busy ? 'Adding…' : 'Add with pasted token',
                         ),
                       ),
                     ],
-                  ],
-                ),
-                ListView(
-                  children: [
-                    if (googleConfigured) ...[
-                      Text(
-                        'Sign in with Google to connect Gmail over IMAP/SMTP '
-                        'using OAuth (XOAUTH2). No app password required.\n\n'
-                        'You will get an account chooser — pick the Gmail '
-                        'inbox you want (including a second account).',
-                        style: TextStyle(color: t.muted, fontSize: 13),
-                      ),
-                      const SizedBox(height: 16),
-                      FilledButton.icon(
-                        onPressed: _busy ? null : _signInGoogle,
-                        icon: const Icon(Icons.login),
-                        label: Text(
-                          _busy ? 'Signing in…' : 'Sign in with Google',
-                        ),
-                      ),
-                    ] else ...[
-                      Text(
-                        'Google browser sign-in is not configured yet.\n\n'
-                        'Add SYNESIS_GOOGLE_CLIENT_ID to oauth_local.json '
-                        '(see oauth_local.json.example), set it in the '
-                        'environment, or pass --dart-define, then restart.\n\n'
-                        'You can still add Gmail on the IMAP / Other tab with an '
-                        'app password from Google Account → Security.',
-                        style: TextStyle(color: t.muted, fontSize: 13),
-                      ),
-                      const SizedBox(height: 16),
-                      OutlinedButton(
-                        onPressed: _busy
-                            ? null
-                            : () {
-                                _tabs.animateTo(2);
-                                if (_imapHost.text.trim().isEmpty) {
-                                  _imapHost.text = 'imap.gmail.com';
-                                }
-                                if (_smtpHost.text.trim().isEmpty) {
-                                  _smtpHost.text = 'smtp.gmail.com';
-                                }
-                              },
-                        child: const Text('Use IMAP tab with app password'),
-                      ),
-                    ],
-                  ],
-                ),
-                ListView(
-                  children: [
+                  ] else ...<Widget>[
                     Text(
-                      'Password or app-password IMAP (including Gmail app '
-                      'passwords). Use Look up settings to fill hosts from '
-                      'Thunderbird ISPDB, or enter them manually.',
+                      'Microsoft browser sign-in is not configured yet.\n\n'
+                      'Add your Entra Application (client) ID to '
+                      'oauth_local.json in the project root (see '
+                      'oauth_local.json.example), set SYNESIS_GRAPH_CLIENT_ID '
+                      'in the environment, or pass '
+                      '--dart-define=SYNESIS_GRAPH_CLIENT_ID=… then restart.\n\n'
+                      'Until then you can paste a Graph access token below, '
+                      'or use IMAP / Other.',
                       style: TextStyle(color: t.muted, fontSize: 13),
                     ),
-                    const SizedBox(height: 12),
-                    OutlinedButton.icon(
-                      onPressed: (_busy || _lookupBusy)
-                          ? null
-                          : _lookupImapSettings,
-                      icon: _lookupBusy
-                          ? const SizedBox(
-                              width: 16,
-                              height: 16,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : const Icon(Icons.travel_explore),
-                      label: Text(
-                        _lookupBusy ? 'Looking up…' : 'Look up settings',
-                      ),
-                    ),
-                    if (_lookupMessage != null) ...[
-                      const SizedBox(height: 8),
-                      Text(
-                        _lookupMessage!,
-                        style: TextStyle(color: t.muted, fontSize: 12),
-                      ),
-                    ],
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 16),
                     TextField(
-                      controller: _imapHost,
+                      controller: _graphToken,
                       decoration: const InputDecoration(
-                        labelText: 'IMAP host',
-                        hintText: 'imap.gmail.com',
+                        labelText: 'Graph access token',
+                        helperText:
+                            'Paste a Graph token with Mail.ReadWrite + Mail.Send.',
                       ),
-                      onChanged: (v) {
-                        if (_smtpHost.text.isEmpty) {
-                          setState(() => _smtpHost.text = v);
-                        } else {
-                          setState(() {});
-                        }
-                      },
-                    ),
-                    TextField(
-                      controller: _imapPort,
-                      decoration: const InputDecoration(labelText: 'IMAP port'),
-                      keyboardType: TextInputType.number,
-                    ),
-                    TextField(
-                      controller: _imapUser,
-                      decoration: InputDecoration(
-                        labelText: 'IMAP username',
-                        hintText: _address.text.isEmpty
-                            ? 'Usually your email'
-                            : _address.text,
-                      ),
-                    ),
-                    TextField(
-                      controller: _imapPassword,
-                      decoration: const InputDecoration(
-                        labelText: 'Password / app password',
-                      ),
-                      obscureText: true,
-                    ),
-                    TextField(
-                      controller: _davBaseUrl,
-                      decoration: InputDecoration(
-                        labelText: 'CardDAV / CalDAV URL (optional)',
-                        hintText: _isRunboxImap
-                            ? DavDiscovery.runboxDavUrl
-                            : 'https://dav.example.com/',
-                        helperText: _isRunboxImap
-                            ? 'Runbox detected — leave blank to use '
-                                '${DavDiscovery.runboxDavUrl}. Use an app '
-                                'password if 2FA is enabled.'
-                            : 'Shared endpoint for contacts and calendars. '
-                                'Use an app password if 2FA is enabled.',
-                      ),
-                      keyboardType: TextInputType.url,
-                    ),
-                    TextField(
-                      controller: _smtpHost,
-                      decoration: const InputDecoration(labelText: 'SMTP host'),
-                    ),
-                    TextField(
-                      controller: _smtpPort,
-                      decoration: const InputDecoration(labelText: 'SMTP port'),
-                      keyboardType: TextInputType.number,
+                      minLines: 3,
+                      maxLines: 6,
                     ),
                     const SizedBox(height: 16),
                     FilledButton(
-                      onPressed: (_busy || _lookupBusy) ? null : _submitImap,
-                      child: Text(_busy ? 'Adding…' : 'Add IMAP account'),
+                      onPressed: _busy ? null : _submitGraphPaste,
+                      child: Text(
+                        _busy ? 'Adding…' : 'Add Microsoft account',
+                      ),
                     ),
                   ],
-                ),
-              ],
-            ),
+                ],
+              ),
+              ListView(
+                children: <Widget>[
+                  ..._identityFields(includeAddress: false),
+                  if (googleConfigured) ...<Widget>[
+                    Text(
+                      'Sign in with Google to connect Gmail over IMAP/SMTP '
+                      'using OAuth (XOAUTH2). No app password required.\n\n'
+                      'You will get an account chooser — pick the Gmail '
+                      'inbox you want (including a second account).',
+                      style: TextStyle(color: t.muted, fontSize: 13),
+                    ),
+                    const SizedBox(height: 16),
+                    FilledButton.icon(
+                      onPressed: _busy ? null : _signInGoogle,
+                      icon: const Icon(Icons.login),
+                      label: Text(
+                        _busy ? 'Signing in…' : 'Sign in with Google',
+                      ),
+                    ),
+                  ] else ...<Widget>[
+                    Text(
+                      'Google browser sign-in is not configured yet.\n\n'
+                      'Add SYNESIS_GOOGLE_CLIENT_ID to oauth_local.json '
+                      '(see oauth_local.json.example), set it in the '
+                      'environment, or pass --dart-define, then restart.\n\n'
+                      'You can still add Gmail on the IMAP / Other tab with an '
+                      'app password from Google Account → Security.',
+                      style: TextStyle(color: t.muted, fontSize: 13),
+                    ),
+                    const SizedBox(height: 16),
+                    OutlinedButton(
+                      onPressed: _busy
+                          ? null
+                          : () {
+                              _tabs.animateTo(2);
+                              if (_imapHost.text.trim().isEmpty) {
+                                _imapHost.text = 'imap.gmail.com';
+                              }
+                              if (_smtpHost.text.trim().isEmpty) {
+                                _smtpHost.text = 'smtp.gmail.com';
+                              }
+                            },
+                      child: const Text('Use IMAP tab with app password'),
+                    ),
+                  ],
+                ],
+              ),
+              ListView(
+                children: <Widget>[
+                  ..._identityFields(includeAddress: true),
+                  Text(
+                    'Password or app-password IMAP (including Gmail app '
+                    'passwords). Use Look up settings to fill hosts from '
+                    'Thunderbird ISPDB, or enter them manually.',
+                    style: TextStyle(color: t.muted, fontSize: 13),
+                  ),
+                  const SizedBox(height: 12),
+                  OutlinedButton.icon(
+                    onPressed: (_busy || _lookupBusy)
+                        ? null
+                        : _lookupImapSettings,
+                    icon: _lookupBusy
+                        ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.travel_explore),
+                    label: Text(
+                      _lookupBusy ? 'Looking up…' : 'Look up settings',
+                    ),
+                  ),
+                  if (_lookupMessage != null) ...<Widget>[
+                    const SizedBox(height: 8),
+                    Text(
+                      _lookupMessage!,
+                      style: TextStyle(color: t.muted, fontSize: 12),
+                    ),
+                  ],
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: _imapHost,
+                    decoration: const InputDecoration(
+                      labelText: 'IMAP host',
+                      hintText: 'imap.gmail.com',
+                    ),
+                    onChanged: (String v) {
+                      if (_smtpHost.text.isEmpty) {
+                        setState(() => _smtpHost.text = v);
+                      } else {
+                        setState(() {});
+                      }
+                    },
+                  ),
+                  TextField(
+                    controller: _imapPort,
+                    decoration: const InputDecoration(labelText: 'IMAP port'),
+                    keyboardType: TextInputType.number,
+                  ),
+                  TextField(
+                    controller: _imapUser,
+                    decoration: InputDecoration(
+                      labelText: 'IMAP username',
+                      hintText: _address.text.isEmpty
+                          ? 'Usually your email'
+                          : _address.text,
+                    ),
+                  ),
+                  TextField(
+                    controller: _imapPassword,
+                    decoration: const InputDecoration(
+                      labelText: 'Password / app password',
+                    ),
+                    obscureText: true,
+                  ),
+                  TextField(
+                    controller: _davBaseUrl,
+                    decoration: InputDecoration(
+                      labelText: 'CardDAV / CalDAV URL (optional)',
+                      hintText: _isRunboxImap
+                          ? DavDiscovery.runboxDavUrl
+                          : 'https://dav.example.com/',
+                      helperText: _isRunboxImap
+                          ? 'Runbox detected — leave blank to use '
+                              '${DavDiscovery.runboxDavUrl}. Use an app '
+                              'password if 2FA is enabled.'
+                          : 'Shared endpoint for contacts and calendars. '
+                              'Use an app password if 2FA is enabled.',
+                    ),
+                    keyboardType: TextInputType.url,
+                  ),
+                  TextField(
+                    controller: _smtpHost,
+                    decoration: const InputDecoration(labelText: 'SMTP host'),
+                  ),
+                  TextField(
+                    controller: _smtpPort,
+                    decoration: const InputDecoration(labelText: 'SMTP port'),
+                    keyboardType: TextInputType.number,
+                  ),
+                  const SizedBox(height: 16),
+                  FilledButton(
+                    onPressed: (_busy || _lookupBusy) ? null : _submitImap,
+                    child: Text(_busy ? 'Adding…' : 'Add IMAP account'),
+                  ),
+                ],
+              ),
+            ],
           ),
-          if (_error != null) ...[
-            const SizedBox(height: 8),
-            Text(_error!, style: TextStyle(color: t.coral, fontSize: 13)),
-          ],
+        ),
+        if (_error != null) ...<Widget>[
+          const SizedBox(height: 8),
+          Text(_error!, style: TextStyle(color: t.coral, fontSize: 13)),
         ],
-      ),
+      ],
     );
   }
 }

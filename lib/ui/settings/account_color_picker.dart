@@ -4,8 +4,10 @@
 // Component: UI / Settings
 // Version: 1.0 (Gold Master)
 // Created: 2026-07-14
-// Last Update: 2026-07-14
+// Last Update: 2026-08-03
 // ==============================================================================
+
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
@@ -73,10 +75,16 @@ Future<Color?> showAccountColorPickerDialog(
           BuildContext context,
           StateSetter setDialogState,
         ) {
+          // Cap width to the phone dialog inset — fixed 360 overflows ~360dp
+          // screens (DEF-063).
+          final double maxContentWidth = math.min(
+            360,
+            MediaQuery.sizeOf(context).width - 48,
+          );
           return AlertDialog(
             title: const Text('Custom account color'),
             content: SizedBox(
-              width: 360,
+              width: maxContentWidth,
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: <Widget>[
