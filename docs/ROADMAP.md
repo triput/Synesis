@@ -131,7 +131,7 @@ Full scope: **[V1_5_PLAN.md](V1_5_PLAN.md)**.
 
 ### Maybe / Someday ([TIER_D_PLAN.md §16](TIER_D_PLAN.md#16-maybe--someday-unplanned-backlog))
 
-Explicitly considered; **unplanned** — on radar to avoid re-debate. Includes: **AI draft/summarize** (Maybe/Someday, not V2.0 critical path), newsletter builder, consumer mail merge, team collab (co-edit/read receipts), EAS/on-prem, mail hosting, cloud Focus ranking, Windows shell widgets. **Synesis Tasks** (if ever): basic local to-do + agenda with calendar items only — full productivity stays **Phronesis**. **Voice / assistant capture** (**V-SometimeSoonish**): in-car voice; phone assistants (**Gemini**, **Siri**, and peers) to add/modify items — not V2.0.
+Explicitly considered; **unplanned** — on radar to avoid re-debate. Includes: **AI draft/summarize** (Maybe/Someday, not V2.0 critical path), newsletter builder, consumer mail merge, team collab (co-edit/read receipts), EAS/on-prem, mail hosting, cloud Focus ranking, Windows shell widgets. **Synesis Tasks** (if ever): basic local to-do + agenda with calendar items only — full productivity stays **Phronesis**. **Voice / assistant capture** (**V-SometimeSoonish**): in-car voice; phone assistants (**Gemini**, **Siri**, and peers) to add/modify items — not V2.0. **Contact postal addresses** (**Pri-3 / V-Next**): store when providers supply ADR; open in Google Maps / Waze / other map apps.
 
 Full item catalog: [TIER_D_PLAN.md](TIER_D_PLAN.md).
 
@@ -257,6 +257,7 @@ Visual polish & mailbox interaction backlog — **active; add items in [§7 Back
 | **Pri-2** | [DEF-044](DEFECTS.md) per-account home-screen list widget + open in app (**Trish** / AquaMail bar) | Open (enhancement) | **V-Next** (bumped from Wave 7 Pri-3) |
 | **Pri-3** | [DEF-075](DEFECTS.md) Calendar Week + Weekdays views (**Trish**) | Open (enhancement) | **Wave 7 / Trish extras** |
 | **Pri-3** | [DEF-076](DEFECTS.md) Calendar day-of-year + week-of-year (**Trish**) | Open (enhancement) | **Wave 7 / Trish extras** |
+| **Pri-3** | [DEF-079](DEFECTS.md) Contact postal addresses when provided + open in Maps / Waze / peers (**Trish**) | Open (enhancement) | **V-Next** |
 
 Full inventory + backlog template: **[UI_ENHANCEMENT_SWEEP.md](UI_ENHANCEMENT_SWEEP.md)**.
 

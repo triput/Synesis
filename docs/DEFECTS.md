@@ -12,7 +12,36 @@
 
 > Android dogfood folder/drawer polish (2026-07-27): account chips, folder-picker sheet, title-bar **Show folders** → sheet.
 >
-> **V2 Wave 7 / Trish extras parking lot** (2026-07-27): operator enhancement backlog (Pri-2 / Pri-2.5 / Pri-3) parked for **Wave 7 — Final polish / Trish extras** — last if time permits; not V2.0 critical path. See [V2_PLAN.md](V2_PLAN.md) § Wave 7. **Trish calendar asks (2026-08-03):** [DEF-075](#def-075--calendar-week--weekdays-views) week/weekdays views; [DEF-076](#def-076--calendar-show-day-of-year--week-of-year) day-of-year + week-of-year. **Trish V-Next (2026-08-03):** [DEF-078](#def-078--phone-quick-reply-density--settings-toggle) phone Quick Reply; [DEF-044](#def-044--home-screen-list-widget-per-account-mail--open-in-app-aquamail-bar) per-account list widgets (AquaMail bar) — **Pri-2**.
+> **V2 Wave 7 / Trish extras parking lot** (2026-07-27): operator enhancement backlog (Pri-2 / Pri-2.5 / Pri-3) parked for **Wave 7 — Final polish / Trish extras** — last if time permits; not V2.0 critical path. See [V2_PLAN.md](V2_PLAN.md) § Wave 7. **Trish calendar asks (2026-08-03):** [DEF-075](#def-075--calendar-week--weekdays-views) week/weekdays views; [DEF-076](#def-076--calendar-show-day-of-year--week-of-year) day-of-year + week-of-year. **Trish V-Next (2026-08-03):** [DEF-078](#def-078--phone-quick-reply-density--settings-toggle) phone Quick Reply; [DEF-044](#def-044--home-screen-list-widget-per-account-mail--open-in-app-aquamail-bar) per-account list widgets (AquaMail bar) — **Pri-2**. **Trish Pri-3 (2026-08-04):** [DEF-079](#def-079--contact-postal-addresses--open-in-map-apps) contact postal addresses + Maps/Waze.
+
+### DEF-079 — Contact postal addresses + open in map apps
+
+| Field | Value |
+| --- | --- |
+| Priority | **Pri-3** |
+| Status | Open (enhancement) |
+| Target | **V-Next** |
+| Area | PIM contacts schema / `DriftPimStore`; Graph / Google / CardDAV address mapping; People UI; `url_launcher` (or equiv.) deep links |
+| Platforms | Windows, Android (map apps vary by platform) |
+| Logged | 2026-08-04 |
+| Found by | **Trish** |
+| Related | Wave 2/G contact sync; People workspace |
+
+**Summary**  
+**Trish:** When providers supply physical / postal addresses on contacts, Synesis should store and show them in People. Ideally tap-to-open in Google Maps, Waze, or other installed map apps (platform chooser / deep links).
+
+**Expected**  
+- Persist structured or display-ready address when Graph / Google / CardDAV ADR (or equivalent) is present.
+- People detail shows address(es); action to open in an external map app.
+- No inventing addresses; skip when absent.
+
+**Actual**  
+Contacts map emails/phones primarily; postal addresses are not a first-class People surface yet.
+
+**Notes**  
+Non-urgent Pri-3 — not Wave 6 / 6b / 6c.
+
+---
 
 ### DEF-078 — Phone Quick Reply: reclaim reading space + settings toggle
 
