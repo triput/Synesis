@@ -146,7 +146,12 @@ Dart 3 assumes values are non-null unless marked optional.
 
 An **Isolate** is a separate memory heap — true parallel work without sharing mutable state on the UI thread.
 
-**Where Synesis uses them today:** `lib/mime/multipart_builder.dart` — `buildMultipartMessageInIsolate()` calls `Isolate.run()` to assemble outgoing MIME bytes before send. Sync and network I/O use **async/await** on the main isolate (sequential job loop in `sync_engine.dart`), but MIME assembly is the heaviest CPU path pushed off-thread.
+**Where Synesis uses them today:**
+
+- **`lib/mime/multipart_builder.dart`** — `buildMultipartMessageInIsolate()` calls `Isolate.run()` to assemble outgoing MIME bytes before send.
+- **Sync / network I/O** — `lib/sync/sync_engine.dart` runs the durable job loop on the **main isolate** via async/await (`_processPendingJobs`). Wave **6P P2** ([V2_WAVE_6P_P2_PROFILING.md](V2_WAVE_6P_P2_PROFILING.md)) profiles whether inbox sync during scroll drops frames; if E10 fails, see [V2_WAVE_6P_P2_ISOLATE_SPIKE.md](V2_WAVE_6P_P2_ISOLATE_SPIKE.md) for an incremental worker-isolate design (Phase 1: `incremental` inbox fetch only).
+
+**Target posture (SPEC §4.3):** Heavy MIME + bulk sync parse/upsert batches off UI thread. **Current (2026-08-03):** MIME only in production; sync worker deferred pending operator E10 baseline.
 
 ### Packages vs `lib/`
 

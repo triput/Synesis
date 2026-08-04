@@ -1,6 +1,6 @@
 # Wave 6P — Performance UX (Sync Honesty) Checklist
 
-> **Status:** **P1 gate complete** (2026-08-03) — E1–E9 ✅; **645 tests**. P2 profiling gate open. Parent plan: [V2_PLAN.md](V2_PLAN.md). Prior: P0 E7 Trish GO (`87ec66a`). **Next:** P2 E10–E11 profiling, then Wave 6 DnD after full 6P exit.
+> **Status:** **P2 profiling open** (2026-08-03) — E1–E9 ✅ (**645 tests**); E10/E11 operator DevTools gate — [V2_WAVE_6P_P2_PROFILING.md](V2_WAVE_6P_P2_PROFILING.md). P0+P1 complete. **Next after full 6P exit:** Wave 6 (cross-account DnD copy).
 
 Wave 6P delivers **honest sync UX** — decouple local SQLite refresh from remote sync-in-flight indicators, stop blocking the UI on `await kick()` / `kickFresh()`, and land targeted polish (UI-P11, UI-P9 partial, DEF-015, DEF-007). **P2** (Tesla SyncEngine isolate work) is **committed** if post-P0 profiling confirms frame jank on operator hardware.
 
@@ -63,9 +63,9 @@ Wave 0 ✅ → Wave H ✅ → Wave 1 (P0) ✅
 | **6P-9** | UI-P9 partial — body fetch skeleton in reading pane | P1 | Andi | `reading_pane.dart` | ✅ |
 | **6P-10** | DEF-015 per-message header loading / error scope | P1 | Jules | `mailbox_cubit.dart`, `message_headers_sheet.dart` | ✅ |
 | **6P-11** | Folder sidebar sync label accuracy | P1 | Andi | `folder_sidebar.dart` | ✅ |
-| **6P-12** | Profile sync on large mailbox (Android + Windows) | P2 | Renee + Tesla | DevTools timeline — only if post-P0 jank |
-| **6P-13** | Isolate spike for `_processPendingJobs` hot path | P2 | Tesla | Design doc; incremental move if E10 fails |
-| **6P-14** | SPEC / `DART_IN_SYNESIS.md` alignment pass | P2 | Page | Current vs target isolate posture |
+| **6P-12** | Profile sync on large mailbox (Android + Windows) | P2 | Renee + Tesla | DevTools timeline — [V2_WAVE_6P_P2_PROFILING.md](V2_WAVE_6P_P2_PROFILING.md) | 🟡 |
+| **6P-13** | Isolate spike for `_processPendingJobs` hot path | P2 | Tesla | [V2_WAVE_6P_P2_ISOLATE_SPIKE.md](V2_WAVE_6P_P2_ISOLATE_SPIKE.md) — enter only if E10 fails | ⏸ |
+| **6P-14** | SPEC / `DART_IN_SYNESIS.md` alignment pass | P2 | Page | Current vs target isolate posture | ✅ (partial 2026-08-03) |
 
 **DEF-007 merge policy** lands in P1 alongside 6P-2 / repository upsert paths — no separate work ID; tracked in exit E9 and related defects below.
 
@@ -98,8 +98,8 @@ Wave 0 ✅ → Wave H ✅ → Wave 1 (P0) ✅
 
 ### P2 gate (committed if post-P0 jank confirmed)
 
-- [ ] **E10** — Profile confirms >16 ms UI frames during sync on operator Android device (or document clean baseline)
-- [ ] **E11** — If E10 fails: spike doc + incremental isolate move for heaviest sync path; if E10 passes: documented deferral with measured baseline
+- [ ] **E10** — Profile confirms >16 ms UI frames during sync on operator Android device (or document clean baseline) — script: [V2_WAVE_6P_P2_PROFILING.md](V2_WAVE_6P_P2_PROFILING.md)
+- [ ] **E11** — If E10 fails: [V2_WAVE_6P_P2_ISOLATE_SPIKE.md](V2_WAVE_6P_P2_ISOLATE_SPIKE.md) Phase 1; if E10 passes: documented deferral in profiling doc
 
 ## Team routing
 
