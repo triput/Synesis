@@ -1,6 +1,6 @@
 # Wave 6 — Cross-Account DnD Copy Checklist
 
-> **Status:** **E10 GO** (2026-08-04) — P0–P3 landed; Renee QA **659/659**. Awaiting E11 operator dogfood + Page inventory. Parent plan: [V2_PLAN.md](V2_PLAN.md). Prior: [V2_WAVE_6P_CHECKLIST.md](V2_WAVE_6P_CHECKLIST.md) (**complete**). Design: [V2_WAVE_6_TESLA_DESIGN.md](V2_WAVE_6_TESLA_DESIGN.md). QA: [V2_WAVE_6_QA.md](V2_WAVE_6_QA.md).
+> **Status:** **E10 GO** (2026-08-04) — P0–P3 landed; Renee QA **659/659**; Page inventory refreshed. **Awaiting E11** operator dogfood. Parent plan: [V2_PLAN.md](V2_PLAN.md). Prior: [V2_WAVE_6P_CHECKLIST.md](V2_WAVE_6P_CHECKLIST.md) (**complete**). Design: [V2_WAVE_6_TESLA_DESIGN.md](V2_WAVE_6_TESLA_DESIGN.md). QA: [V2_WAVE_6_QA.md](V2_WAVE_6_QA.md).
 
 Wave 6 delivers **cross-account / cross-list copy** for **calendar events** and **contacts** — Outlook-style drag-and-drop on desktop, long-press → “Copy to…” sheet on mobile. Pattern is **local-first**: duplicate row in SQLite under the target account/collection, then enqueue **`events_copy`** / **`contacts_copy`** sync jobs for remote push. UI never blocks on network.
 
@@ -99,7 +99,7 @@ Wave 0 ✅ → Wave H ✅ → Wave 1 (P0) ✅
 
 | ID | Task | Exit |
 | --- | --- | --- |
-| **E10** | Renee QA pass — [V2_WAVE_6_QA.md](V2_WAVE_6_QA.md) (**GO** / NO-GO) | **GO** — **659/659**; test delta → Page inventory |
+| **E10** | Renee QA pass — [V2_WAVE_6_QA.md](V2_WAVE_6_QA.md) (**GO** / NO-GO) | **GO** — **659/659**; Page inventory refreshed |
 | **E11** | Operator dogfood — Trish cross-account copy on principal Google + Graph calendars/contacts | Pending — matrix in QA doc |
 
 ## Provider matrix (D1 — **locked** 2026-08-04)
@@ -119,7 +119,7 @@ Wave 0 ✅ → Wave H ✅ → Wave 1 (P0) ✅
 - [ ] Desktop DnD works on Windows for events + contacts
 - [ ] Mobile long-press copy sheet works on Android
 - [ ] No network calls from widgets — all via repository + sync jobs
-- [ ] Renee **GO** + Page test inventory updated
+- [x] Renee **GO** + Page test inventory updated
 - [ ] Trish operator **GO** on E11 dogfood
 - [ ] [V2_PLAN.md](V2_PLAN.md) §14 exit checkbox for cross-account copy checked
 
@@ -185,4 +185,4 @@ Wave 0 ✅ → Wave H ✅ → Wave 1 (P0) ✅
 
 ---
 
-*Planning opened 2026-08-04 after Wave 6P exit (`6b0f3d7`, **645 tests**). **D1 locked** (Graph + Google MVP; DAV → 6b). Tesla design signed 2026-08-04. P0–P3 landed; **E10 GO** at **659 tests** (2026-08-04). Awaiting E11 + Page inventory.*
+*Planning opened 2026-08-04 after Wave 6P exit (`6b0f3d7`, **645 tests**). **D1 locked** (Graph + Google MVP; DAV → 6b). Tesla design signed 2026-08-04. P0–P3 landed; **E10 GO** at **659 tests** (2026-08-04). Page inventory refreshed; **awaiting E11** operator dogfood for wave exit.*

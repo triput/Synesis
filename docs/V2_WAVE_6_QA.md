@@ -75,7 +75,7 @@ No Pri-1 defects. Nothing added to `DEFECTS.md` for this wave.
 | Desktop DnD Windows | Pass (auto) / E11 manual | Widget tests green |
 | Mobile long-press Android | Pass (auto) / E11 manual | Sheet tests green |
 | No network from widgets | Pass | Code review + architecture |
-| Renee GO + Page inventory | **GO** / Page next | This doc + delta below |
+| Renee GO + Page inventory | **GO** / **Done** | This doc + [TEST_INVENTORY.md](TEST_INVENTORY.md) (**659 cases**) |
 | Trish E11 dogfood | Pending | Matrix below |
 | V2_PLAN §14 exit checkbox | Hold for Steve after E11 | — |
 
@@ -124,4 +124,4 @@ Regenerate or patch `docs/V1_AUTOMATED_TEST_INVENTORY.csv` via `tool/generate_te
 
 ---
 
-*E10 closed 2026-08-04 by Renee. Handoff: Page inventory → Steve E11 operator sign-off.*
+*E10 closed 2026-08-04 by Renee. Page inventory refreshed 2026-08-04. Handoff: Steve E11 operator sign-off.*

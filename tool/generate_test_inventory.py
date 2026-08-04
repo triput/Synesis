@@ -493,6 +493,28 @@ FILE_META: dict[str, dict[str, str]] = {
         "component": "Sync / Engine",
         "platform": "All",
     },
+    # V2 Wave 6 — cross-account DnD copy (Renee delta 2026-08-04, E10 GO)
+    "pim_copy_sync_engine_test.dart": {
+        "wave": "V2-W6",
+        "tier_refs": "V2.0;Wave 6;6-1;6-2",
+        "kind": "integration",
+        "component": "Sync / PIM",
+        "platform": "All",
+    },
+    "pim_desktop_dnd_test.dart": {
+        "wave": "V2-W6",
+        "tier_refs": "V2.0;Wave 6;6-2",
+        "kind": "widget",
+        "component": "PIM / Calendar",
+        "platform": "All",
+    },
+    "pim_copy_target_sheet_test.dart": {
+        "wave": "V2-W6",
+        "tier_refs": "V2.0;Wave 6;6-2",
+        "kind": "widget",
+        "component": "PIM / UI",
+        "platform": "All",
+    },
 }
 
 # Suite-level wave overrides from Renee inventory (file, group) -> wave.
@@ -535,6 +557,7 @@ GROUP_WAVE: dict[tuple[str, str], str] = {
     ("pim_store_test.dart", "DriftPimStore.listEventsInRange"): "V2-W5",
     ("pim_store_test.dart", "DriftPimStore display preference writers"): "V2-W5",
     ("pim_store_test.dart", "DriftPimStore local event CRUD"): "V2-W5",
+    ("pim_store_test.dart", "DriftPimStore Wave 6 copy helpers"): "V2-W6",
     ("account_service_test.dart", "AccountService.updateGoogleCredentials"): "V2-WG",
     # V2 Wave 6P sync honesty (Renee 2026-08-03)
     ("mailbox_cubit_test.dart", "MailboxCubit Wave 6P sync honesty"): "V2-W6P",
@@ -721,8 +744,9 @@ def wave_sort_key(wave: str) -> tuple[int, str]:
         "V2-W5": 9,
         "V2-WG": 10,
         "V2-W6P": 11,
-        "X": 12,
-        "Unmapped": 12,
+        "V2-W6": 12,
+        "X": 13,
+        "Unmapped": 13,
     }
     return (order.get(wave, 99), wave)
 
@@ -759,6 +783,12 @@ def manual_companion(wave: str, file_name: str) -> str:
         "message_filter_bar_test.dart",
     }:
         return "W2_AVD_CHECKLIST"
+    if wave == "V2-W6" or file_name in {
+        "pim_copy_sync_engine_test.dart",
+        "pim_desktop_dnd_test.dart",
+        "pim_copy_target_sheet_test.dart",
+    }:
+        return "V2_WAVE_6_CHECKLIST"
     return "—"
 
 
@@ -940,7 +970,8 @@ def write_xlsx(rows: list[dict[str, str]]) -> None:
             "W5": "V1 Windows desktop wave",
             "V2-W5": "V2.0c compose picker + Calendar/People UI (Wave 5 exit 2026-07-27)",
             "V2-WG": "V2.0d Google People + Calendar API (Wave G exit 2026-07-27)",
-            "V2-W6P": "Wave 6P Performance UX / Sync Honesty P0 (Renee E6 GO 2026-08-03, 626 tests)",
+            "V2-W6P": "Wave 6P Performance UX / Sync Honesty P0 (Renee E6 GO 2026-08-03, 645 tests)",
+            "V2-W6": "Wave 6 cross-account DnD copy (Renee E10 GO 2026-08-04, +14 → 659 tests)",
             "W4": "Compose wave mostly pending; early outbox/send coverage present",
             "W7": "Theme polish / hardening samples",
         }.get(wave, "")

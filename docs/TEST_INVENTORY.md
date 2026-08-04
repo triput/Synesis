@@ -6,13 +6,13 @@ Synesis tracks **automated** unit, widget, and BLoC tests in a versionable inven
 
 | Artifact | Role |
 | --- | --- |
-| [`V1_AUTOMATED_TEST_INVENTORY.csv`](V1_AUTOMATED_TEST_INVENTORY.csv) | **Canonical** git-tracked source (**626 cases** / 86 files as of Wave 6P P0 E6 2026-08-03). Diff-friendly; edit or regenerate. |
+| [`V1_AUTOMATED_TEST_INVENTORY.csv`](V1_AUTOMATED_TEST_INVENTORY.csv) | **Canonical** git-tracked source (**659 cases** / 98 files as of Wave 6 E10 2026-08-04). Diff-friendly; edit or regenerate. |
 | [`V1_AUTOMATED_TEST_INVENTORY.xlsx`](V1_AUTOMATED_TEST_INVENTORY.xlsx) | Operator workbook (Automated, By_File, Wave_Summary, Coverage_Gaps, Readme sheets). Regenerated from CSV. |
 | [`../tool/generate_test_inventory.py`](../tool/generate_test_inventory.py) | Scanner/regenerator for both artifacts. |
 
 **Not in scope:** [`V1_MANUAL_E2E_MATRIX.csv`](V1_MANUAL_E2E_MATRIX.csv) (ROADMAP **FW-5**) — planned manual E2E matrix; separate from this automated catalog.
 
-Suite/case wave and kind overrides (from Renee inventory handoffs) live in `tool/generate_test_inventory.py` (`GROUP_WAVE`, `CASE_WAVE`, `GROUP_KIND`, `CASE_KIND`). V2 operator waves use `V2-W*` labels (e.g. `V2-W5` = Wave 5 UI; `V2-WG` = Wave G Google PIM exit 2026-07-27; `V2-W6P` = Wave 6P Sync Honesty P0 exit 2026-08-03).
+Suite/case wave and kind overrides (from Renee inventory handoffs) live in `tool/generate_test_inventory.py` (`GROUP_WAVE`, `CASE_WAVE`, `GROUP_KIND`, `CASE_KIND`). V2 operator waves use `V2-W*` labels (e.g. `V2-W5` = Wave 5 UI; `V2-WG` = Wave G Google PIM exit 2026-07-27; `V2-W6P` = Wave 6P Sync Honesty exit 2026-08-03; `V2-W6` = Wave 6 cross-account DnD copy E10 2026-08-04).
 
 ## Regenerate
 
@@ -60,5 +60,6 @@ Wave checklists are the operator runbooks; they **link** the inventory instead o
 - [W6 Notifications checklist](W6_NOTIFICATIONS_CHECKLIST.md) — filter `wave=W6`
 - [W2 AVD checklist](W2_AVD_CHECKLIST.md) — filter `wave=W2`
 - [V2 Wave 6P checklist](V2_WAVE_6P_CHECKLIST.md) — filter `wave=V2-W6P`
+- [V2 Wave 6 checklist](V2_WAVE_6_CHECKLIST.md) — filter `wave=V2-W6`
 
 See also [V1 tier integration](V1_TIER_INTEGRATION.md) §5 for wave exit criteria.
