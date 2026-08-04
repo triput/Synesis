@@ -101,7 +101,7 @@ V2.0a / V2.0b / V2.0c remain **release buckets**; operator execution follows thi
 | **Wave 6P** | Performance UX (Sync Honesty) — honest spinners, non-blocking kick, UI-P11/P9 partial, DEF-007/015 | **Complete** (2026-08-04) — E1–E11 ✅ (**645 tests**); E11 isolate deferred | Pre–Wave 6 gate — [V2_WAVE_6P_CHECKLIST.md](V2_WAVE_6P_CHECKLIST.md) |
 | **Wave 6** | Cross-account DnD copy (events + contacts; Graph + Google push; DAV local-only until 6b) | **Planning** | [V2_WAVE_6_CHECKLIST.md](V2_WAVE_6_CHECKLIST.md) |
 | **Wave 6b** | CalDAV/CardDAV create-only write for copy targets | Planned after Wave 6 | Runbox dogfood |
-| **Wave 6c** | Calendar series / recurring event copy semantics | Planned after 6b | Not a Tasks module |
+| **Wave 6c** | Calendar series / recurring event copy semantics | Planned after 6b | Calendar RRULE/series only — not Tasks |
 | **Wave 7** | **Final polish / Trish extras** — UI niceties if time permits ([DEF-054](DEFECTS.md), [DEF-050](DEFECTS.md), [DEF-055](DEFECTS.md), [DEF-056](DEFECTS.md), [DEF-046](DEFECTS.md), overflow sweep; **Trish calendar:** [DEF-075](DEFECTS.md) Week/Weekdays, [DEF-076](DEFECTS.md) DOY/WOY; optional pull-forward [DEF-071](DEFECTS.md) Calendar→Today). **Widgets:** [DEF-044](DEFECTS.md) moved to **V-Next**. | Planned — **last** | Not V2.0 critical path |
 
 **Locked PIM product requirements (operator):** multi-calendar and multi-contact-list across accounts; select 1+ to display; Outlook-like calendar overlay / side-by-side (Wave 5 UI); **Google Workspace PIM via People + Calendar API (Wave G — complete)**; cross-account copy via DnD (**Wave 6 — planning**; **6b** DAV write; **6c** calendar series). Corporate Graph / Entra org = **post–Wave 6** research.
@@ -131,7 +131,7 @@ Full scope: **[V1_5_PLAN.md](V1_5_PLAN.md)**.
 
 ### Maybe / Someday ([TIER_D_PLAN.md §16](TIER_D_PLAN.md#16-maybe--someday-unplanned-backlog))
 
-Explicitly considered; **unplanned** — on radar to avoid re-debate. Includes: **AI draft/summarize** (Maybe/Someday, not V2.0 critical path), newsletter builder, consumer mail merge, team collab (co-edit/read receipts), EAS/on-prem, mail hosting, cloud Focus ranking, Windows shell widgets.
+Explicitly considered; **unplanned** — on radar to avoid re-debate. Includes: **AI draft/summarize** (Maybe/Someday, not V2.0 critical path), newsletter builder, consumer mail merge, team collab (co-edit/read receipts), EAS/on-prem, mail hosting, cloud Focus ranking, Windows shell widgets. **Synesis Tasks** (if ever): basic local to-do + agenda with calendar items only — full productivity stays **Phronesis**.
 
 Full item catalog: [TIER_D_PLAN.md](TIER_D_PLAN.md).
 
