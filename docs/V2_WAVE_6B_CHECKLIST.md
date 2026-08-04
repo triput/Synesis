@@ -1,6 +1,6 @@
 # Wave 6b — CalDAV/CardDAV Write (Copy Targets) Checklist
 
-> **Status:** **In progress** (2026-08-04) — E7 Renee **GO** (**668 tests**); E8 Runbox dogfood + Page inventory open. Parent: [V2_PLAN.md](V2_PLAN.md). Prior: [V2_WAVE_6_CHECKLIST.md](V2_WAVE_6_CHECKLIST.md) (**complete**, **659 tests**). Design: [V2_WAVE_6B_TESLA_DESIGN.md](V2_WAVE_6B_TESLA_DESIGN.md). QA: [V2_WAVE_6B_QA.md](V2_WAVE_6B_QA.md).
+> **Status:** **In progress** (2026-08-04) — E7 Renee **GO** + Page inventory (**668 tests**); **E8** Runbox dogfood open. Parent: [V2_PLAN.md](V2_PLAN.md). Prior: [V2_WAVE_6_CHECKLIST.md](V2_WAVE_6_CHECKLIST.md) (**complete**, **659 tests**). Design: [V2_WAVE_6B_TESLA_DESIGN.md](V2_WAVE_6B_TESLA_DESIGN.md). QA: [V2_WAVE_6B_QA.md](V2_WAVE_6B_QA.md).
 
 Wave 6b makes **DAV accounts real copy targets**: when the user copies an event/contact onto a CalDAV calendar or CardDAV list, Synesis still duplicates locally first, then **PUT**s create and rewrites `providerId`/etag — same job types (`events_copy` / `contacts_copy`) as Graph/Google.
 
@@ -47,7 +47,7 @@ Wave 6 ✅ → ★ Wave 6b: CalDAV/CardDAV create write ← active
 | **E4** | SyncEngine copy handlers call DAV create; rewrite id | **Done** — DAV early-return removed; rewrite via `PimRemoteCreateResult` |
 | **E5** | `PimCopyService.remotePushSupportedForAccount` true for DAV; enqueue | **Done** — enqueue for any resolved PIM provider |
 | **E6** | UI: sheet/snackbar no longer claim local-only for DAV | **Done** (minimal) — flip helper + snackbar fallback copy; sheet uses same flag |
-| **E7** | Renee **GO** + inventory | **Done** — engineering **GO** (**668/668**); QA [V2_WAVE_6B_QA.md](V2_WAVE_6B_QA.md); Page inventory handoff open |
+| **E7** | Renee **GO** + inventory | **Done** — engineering **GO** (**668/668**); QA [V2_WAVE_6B_QA.md](V2_WAVE_6B_QA.md); inventory **668 cases** (`V2-W6B` ×10) |
 | **E8** | Trish Runbox dogfood **GO** | Open — matrix in QA |
 
 ## Exit criteria
@@ -56,7 +56,7 @@ Wave 6 ✅ → ★ Wave 6b: CalDAV/CardDAV create write ← active
 - [ ] Copy contact → Runbox CardDAV list: same *(E8)*
 - [ ] Graph/Google → DAV and DAV → Graph/Google paths work (DAV side write) *(auto Pass; E8 live)*
 - [x] Unpushed `local:*` not wiped by full-pull soft-delete *(E7 auto)*
-- [x] Renee **GO** *(E7)* — Page inventory pending
+- [x] Renee **GO** *(E7)* — inventory cataloged (**668** cases)
 - [ ] Trish operator **GO** on Runbox *(E8)*
 
 ## Explicitly out

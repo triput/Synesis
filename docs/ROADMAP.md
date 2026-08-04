@@ -11,7 +11,7 @@
 | Exit checklist | [V1_EXIT_CHECKLIST.md](V1_EXIT_CHECKLIST.md) — **signed off** |
 | Product | Synesis |
 | Platforms (v1) | Windows, Android |
-| Last updated | 2026-08-04 (V2 Wave 6 **complete** — E10+E11 **GO**, **659 tests**; **Wave 6b in progress** — [V2_WAVE_6B_CHECKLIST.md](V2_WAVE_6B_CHECKLIST.md)) |
+| Last updated | 2026-08-04 (V2 Wave 6 **complete** — **659 tests**; **Wave 6b in progress** — E7 **GO**, **668 tests**; E8 Runbox dogfood open — [V2_WAVE_6B_CHECKLIST.md](V2_WAVE_6B_CHECKLIST.md)) |
 
 This roadmap tracks implementation milestones. Requirements live in the SPEC; this file tracks status and exit criteria.
 
@@ -84,7 +84,7 @@ Horizon backlog with promotion framework (V1.1 → V2 → enterprise). **V1.5 co
 
 ### V2 operator waves (2026-07-27)
 
-**Status:** **Wave G complete** (2026-07-27, `f4c21b0`, **597 tests**) — [V2_WAVE_G_CHECKLIST.md](V2_WAVE_G_CHECKLIST.md), [V2_WAVE_G_QA.md](V2_WAVE_G_QA.md) (**GO**). **Wave 6P complete** (2026-08-04, **645 tests** — [V2_WAVE_6P_CHECKLIST.md](V2_WAVE_6P_CHECKLIST.md)). **Wave 6 complete** (2026-08-04, E10+E11 **GO**, **659 tests**) — [V2_WAVE_6_CHECKLIST.md](V2_WAVE_6_CHECKLIST.md), [V2_WAVE_6_QA.md](V2_WAVE_6_QA.md). **Wave 6b** next. Full plan: [V2_PLAN.md](V2_PLAN.md).
+**Status:** **Wave G complete** (2026-07-27, `f4c21b0`, **597 tests**) — [V2_WAVE_G_CHECKLIST.md](V2_WAVE_G_CHECKLIST.md), [V2_WAVE_G_QA.md](V2_WAVE_G_QA.md) (**GO**). **Wave 6P complete** (2026-08-04, **645 tests** — [V2_WAVE_6P_CHECKLIST.md](V2_WAVE_6P_CHECKLIST.md)). **Wave 6 complete** (2026-08-04, E10+E11 **GO**, **659 tests**) — [V2_WAVE_6_CHECKLIST.md](V2_WAVE_6_CHECKLIST.md), [V2_WAVE_6_QA.md](V2_WAVE_6_QA.md). **Wave 6b in progress** — E7 **GO** (**668 tests**); E8 Runbox dogfood open — [V2_WAVE_6B_CHECKLIST.md](V2_WAVE_6B_CHECKLIST.md). Full plan: [V2_PLAN.md](V2_PLAN.md).
 
 V2.0a / V2.0b / V2.0c remain **release buckets**; operator execution follows this sequence:
 
@@ -100,7 +100,7 @@ V2.0a / V2.0b / V2.0c remain **release buckets**; operator execution follows thi
 | **Wave G** | Google People + Calendar API (XOAUTH Google PIM) | **Complete** (2026-07-27, `f4c21b0`, **597 tests**) | V2.0d |
 | **Wave 6P** | Performance UX (Sync Honesty) — honest spinners, non-blocking kick, UI-P11/P9 partial, DEF-007/015 | **Complete** (2026-08-04) — E1–E11 ✅ (**645 tests**); E11 isolate deferred | Pre–Wave 6 gate — [V2_WAVE_6P_CHECKLIST.md](V2_WAVE_6P_CHECKLIST.md) |
 | **Wave 6** | Cross-account DnD copy (events + contacts; Graph + Google push; DAV local-only until 6b) | **Complete** (2026-08-04) — E10+E11 **GO** (**659 tests**) | [V2_WAVE_6_CHECKLIST.md](V2_WAVE_6_CHECKLIST.md) · [V2_WAVE_6_QA.md](V2_WAVE_6_QA.md) |
-| **Wave 6b** | CalDAV/CardDAV create-only write for copy targets | **In progress** | [V2_WAVE_6B_CHECKLIST.md](V2_WAVE_6B_CHECKLIST.md) |
+| **Wave 6b** | CalDAV/CardDAV create-only write for copy targets | **In progress** — E7 **GO** (**668 tests**); E8 open | [V2_WAVE_6B_CHECKLIST.md](V2_WAVE_6B_CHECKLIST.md) · [V2_WAVE_6B_QA.md](V2_WAVE_6B_QA.md) |
 | **Wave 6c** | Calendar series / recurring event copy semantics | Planned after 6b | Calendar RRULE/series only — not Tasks |
 | **Wave 7** | **Final polish / Trish extras** — UI niceties if time permits ([DEF-054](DEFECTS.md), [DEF-050](DEFECTS.md), [DEF-055](DEFECTS.md), [DEF-056](DEFECTS.md), [DEF-046](DEFECTS.md), overflow sweep; **Trish calendar:** [DEF-075](DEFECTS.md) Week/Weekdays, [DEF-076](DEFECTS.md) DOY/WOY; optional pull-forward [DEF-071](DEFECTS.md) Calendar→Today). **Widgets:** [DEF-044](DEFECTS.md) moved to **V-Next**. | Planned — **last** | Not V2.0 critical path |
 

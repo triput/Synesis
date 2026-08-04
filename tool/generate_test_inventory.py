@@ -515,6 +515,14 @@ FILE_META: dict[str, dict[str, str]] = {
         "component": "PIM / UI",
         "platform": "All",
     },
+    # V2 Wave 6b — CalDAV/CardDAV create-only copy write (Renee delta 2026-08-04, E7 GO)
+    "dav_pim_create_test.dart": {
+        "wave": "V2-W6B",
+        "tier_refs": "V2.0;Wave 6b;6b-E1;6b-E4",
+        "kind": "integration",
+        "component": "Sync / PIM / DAV",
+        "platform": "All",
+    },
 }
 
 # Suite-level wave overrides from Renee inventory (file, group) -> wave.
@@ -580,6 +588,11 @@ CASE_WAVE: dict[tuple[str, str], str] = {
         "sync_engine_trash_purge_test.dart",
         "kickFresh enqueues trash_purge once when none pending",
     ): "V2-W6P",
+    # V2 Wave 6b — DAV enqueue flip (Renee 2026-08-04)
+    (
+        "pim_copy_sync_engine_test.dart",
+        "enqueues events_copy for DAV target",
+    ): "V2-W6B",
 }
 
 # Case-level kind overrides (file, test_name) -> kind.
@@ -745,8 +758,9 @@ def wave_sort_key(wave: str) -> tuple[int, str]:
         "V2-WG": 10,
         "V2-W6P": 11,
         "V2-W6": 12,
-        "X": 13,
-        "Unmapped": 13,
+        "V2-W6B": 13,
+        "X": 14,
+        "Unmapped": 14,
     }
     return (order.get(wave, 99), wave)
 
@@ -783,6 +797,8 @@ def manual_companion(wave: str, file_name: str) -> str:
         "message_filter_bar_test.dart",
     }:
         return "W2_AVD_CHECKLIST"
+    if wave == "V2-W6B" or file_name == "dav_pim_create_test.dart":
+        return "V2_WAVE_6B_CHECKLIST"
     if wave == "V2-W6" or file_name in {
         "pim_copy_sync_engine_test.dart",
         "pim_desktop_dnd_test.dart",
@@ -972,6 +988,7 @@ def write_xlsx(rows: list[dict[str, str]]) -> None:
             "V2-WG": "V2.0d Google People + Calendar API (Wave G exit 2026-07-27)",
             "V2-W6P": "Wave 6P Performance UX / Sync Honesty P0 (Renee E6 GO 2026-08-03, 645 tests)",
             "V2-W6": "Wave 6 cross-account DnD copy (Renee E10 GO 2026-08-04, +14 → 659 tests)",
+            "V2-W6B": "Wave 6b CalDAV/CardDAV create write (Renee E7 GO 2026-08-04, +9 → 668 tests)",
             "W4": "Compose wave mostly pending; early outbox/send coverage present",
             "W7": "Theme polish / hardening samples",
         }.get(wave, "")
