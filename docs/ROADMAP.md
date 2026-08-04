@@ -258,6 +258,7 @@ Visual polish & mailbox interaction backlog — **active; add items in [§7 Back
 | **Pri-3** | [DEF-075](DEFECTS.md) Calendar Week + Weekdays views (**Trish**) | Open (enhancement) | **Wave 7 / Trish extras** |
 | **Pri-3** | [DEF-076](DEFECTS.md) Calendar day-of-year + week-of-year (**Trish**) | Open (enhancement) | **Wave 7 / Trish extras** |
 | **Pri-3** | [DEF-079](DEFECTS.md) Contact postal addresses when provided + open in Maps / Waze / peers (**Trish**) | Open (enhancement) | **V-Next** |
+| **Pri-3** | [DEF-081](DEFECTS.md) Calendar pills: temporary show/hide in current view; reset on leave (**Trish**) | Open (enhancement) | **V-Next** |
 
 Full inventory + backlog template: **[UI_ENHANCEMENT_SWEEP.md](UI_ENHANCEMENT_SWEEP.md)**.
 

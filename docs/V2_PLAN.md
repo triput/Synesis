@@ -335,6 +335,7 @@ Operator waves 1–7 + **G** map into these buckets for release narrative:
 | Synesis **Tasks** (basic to-do + agenda with calendar items) | **Maybe/Someday / V-Next** — grocery-list class only; not V2.0. Full productivity / planning stays **Phronesis** |
 | **Voice / assistant capture** (add·modify to-dos or calendar-adjacent items) | **V-SometimeSoonish / V-Next** — in-car voice; phone assistants (**Gemini**, **Siri**, etc.). Not V2.0; pairs with basic Tasks if that lands |
 | Contact postal addresses + open in Maps / Waze / other map apps | **Pri-3 / V-Next** — [DEF-079](DEFECTS.md); when providers supply ADR; not Wave 6 |
+| Calendar pills: tap to temporarily show/hide in current view (reset on leave) | **Pri-3 / V-Next** — [DEF-081](DEFECTS.md); settings still gate which pills appear |
 | UI niceties / operator enhancement backlog | **Wave 7 / Trish extras** — not V2.0 critical path |
 
 ## 16. Forward-compat (from V1 / during V1.5)
