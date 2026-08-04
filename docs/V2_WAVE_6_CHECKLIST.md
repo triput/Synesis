@@ -153,7 +153,7 @@ Wave 0 ✅ → Wave H ✅ → Wave 1 (P0) ✅
 | Scope | Copy UX for **recurring calendar events** (RRULE / series-master vs instance): this occurrence · entire series · copy-as-new independent series. Graph `seriesMaster`/occurrence, Google `recurringEventId`, DAV RRULE fidelity. |
 | Why **6c** (not fold into 6b) | Non-trivial LOE — cross-provider identity, exception instances, UX disambiguation, and create-path differences. Fold into 6b only if a later spike shows ≤2 eng-days after 6b create lands. |
 | Depends on | Wave 6 (+ preferably 6b so DAV series copy can push) |
-| Not in scope | A separate **Tasks** module — “recurring” here means **calendar series only**. If Synesis ever ships tasks, they are **Maybe/Someday / V-Next**: a **basic local to-do list** whose agenda can also show calendar items (“stop for bread and eggs”) — **not** a productivity system; that stays **Phronesis**. |
+| Not in scope | A separate **Tasks** module — “recurring” here means **calendar series only**. If Synesis ever ships tasks, they are **Maybe/Someday / V-Next**: a **basic local to-do list** whose agenda can also show calendar items (“stop for bread and eggs”) — **not** a productivity system; that stays **Phronesis**. **Voice / assistant capture** (in-car; Gemini / Siri / peers) is **V-SometimeSoonish** and pairs with that Tasks surface if it lands — not Wave 6/6c. |
 
 ### Post–Wave 6 — Corporate Graph research (incremental version)
 

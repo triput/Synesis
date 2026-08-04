@@ -333,6 +333,7 @@ Operator waves 1–7 + **G** map into these buckets for release narrative:
 | Cross-account DnD copy (events + contacts) | **Wave 6** — Graph + Google; DAV write → **6b**; calendar series copy → **6c** |
 | Corporate Graph / Entra org work accounts | **Post–Wave 6** research → incremental version |
 | Synesis **Tasks** (basic to-do + agenda with calendar items) | **Maybe/Someday / V-Next** — grocery-list class only; not V2.0. Full productivity / planning stays **Phronesis** |
+| **Voice / assistant capture** (add·modify to-dos or calendar-adjacent items) | **V-SometimeSoonish / V-Next** — in-car voice; phone assistants (**Gemini**, **Siri**, etc.). Not V2.0; pairs with basic Tasks if that lands |
 | UI niceties / operator enhancement backlog | **Wave 7 / Trish extras** — not V2.0 critical path |
 
 ## 16. Forward-compat (from V1 / during V1.5)

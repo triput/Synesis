@@ -131,7 +131,7 @@ Full scope: **[V1_5_PLAN.md](V1_5_PLAN.md)**.
 
 ### Maybe / Someday ([TIER_D_PLAN.md §16](TIER_D_PLAN.md#16-maybe--someday-unplanned-backlog))
 
-Explicitly considered; **unplanned** — on radar to avoid re-debate. Includes: **AI draft/summarize** (Maybe/Someday, not V2.0 critical path), newsletter builder, consumer mail merge, team collab (co-edit/read receipts), EAS/on-prem, mail hosting, cloud Focus ranking, Windows shell widgets. **Synesis Tasks** (if ever): basic local to-do + agenda with calendar items only — full productivity stays **Phronesis**.
+Explicitly considered; **unplanned** — on radar to avoid re-debate. Includes: **AI draft/summarize** (Maybe/Someday, not V2.0 critical path), newsletter builder, consumer mail merge, team collab (co-edit/read receipts), EAS/on-prem, mail hosting, cloud Focus ranking, Windows shell widgets. **Synesis Tasks** (if ever): basic local to-do + agenda with calendar items only — full productivity stays **Phronesis**. **Voice / assistant capture** (**V-SometimeSoonish**): in-car voice; phone assistants (**Gemini**, **Siri**, and peers) to add/modify items — not V2.0.
 
 Full item catalog: [TIER_D_PLAN.md](TIER_D_PLAN.md).
 
