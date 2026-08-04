@@ -1,6 +1,6 @@
 // ==============================================================================
 // File: lib/protocol/dav_pim_provider.dart
-// Description: CardDAV/CalDAV PIM adapter (read sync; create deferred to Wave 6b).
+// Description: CardDAV/CalDAV PIM adapter with create-only copy write (Wave 6b).
 // Component: Protocol / Integration
 // Version: 1.0 (Gold Master)
 // Created: 2026-07-27
@@ -11,10 +11,13 @@ import 'package:http/http.dart' as http;
 import 'package:synesis/domain/pim.dart';
 import 'package:synesis/domain/pim_ids.dart';
 import 'package:synesis/pim/ics_calendar_parser.dart';
+import 'package:synesis/pim/ics_calendar_writer.dart';
 import 'package:synesis/protocol/dav/dav_client.dart';
 import 'package:synesis/protocol/dav/dav_discovery.dart';
 import 'package:synesis/protocol/dav/vcard_parser.dart';
+import 'package:synesis/protocol/dav/vcard_writer.dart';
 import 'package:synesis/protocol/graph_pim_provider.dart';
+import 'package:uuid/uuid.dart';
 
 const Duration kDavEventHorizonPast = Duration(days: 90);
 const Duration kDavEventHorizonFuture = Duration(days: 365);
@@ -28,7 +31,9 @@ class DavPimProvider extends GraphPimProvider {
     this.caldavBaseUrl,
     this.imapHost,
     http.Client? client,
+    Uuid? uuid,
   }) : _httpClient = client,
+       _uuid = uuid ?? const Uuid(),
        super(() async => '', client: client);
 
   final String emailAddress;
@@ -38,18 +43,45 @@ class DavPimProvider extends GraphPimProvider {
   final String? caldavBaseUrl;
   final String? imapHost;
   final http.Client? _httpClient;
+  final Uuid _uuid;
 
+  /// Creates a calendar object via CalDAV PUT (Wave 6b copy push).
   @override
   Future<PimRemoteCreateResult> createEvent({
     required String calendarProviderId,
     required CalendarEvent event,
   }) async {
-    throw UnsupportedError(
-      'CalDAV event create is Wave 6b — DAV is a local-only copy target in '
-      'Wave 6.',
+    final String collectionHref = calendarProviderId.trim();
+    if (collectionHref.isEmpty) {
+      throw ArgumentError.value(
+        calendarProviderId,
+        'calendarProviderId',
+        'Must not be empty.',
+      );
+    }
+    final String uid = _uidForLocalProviderId(event.providerId);
+    final Uri resourceUri = Uri.parse(collectionHref).resolve('$uid.ics');
+    final String body = const IcsCalendarWriter().writeEvent(
+      event: event,
+      uid: uid,
     );
+    final DavClient client = _client();
+    try {
+      final DavPutResult put = await client.put(
+        resourceUri,
+        body: body,
+        contentType: 'text/calendar; charset=utf-8',
+      );
+      return PimRemoteCreateResult(
+        providerId: put.href,
+        etag: put.etag,
+      );
+    } finally {
+      client.dispose();
+    }
   }
 
+  /// Creates an address-book object via CardDAV PUT (Wave 6b copy push).
   @override
   Future<PimRemoteCreateResult> createContact({
     required String folderProviderId,
@@ -57,10 +89,36 @@ class DavPimProvider extends GraphPimProvider {
     List<ContactEmail> emails = const <ContactEmail>[],
     List<ContactPhone> phones = const <ContactPhone>[],
   }) async {
-    throw UnsupportedError(
-      'CardDAV contact create is Wave 6b — DAV is a local-only copy target in '
-      'Wave 6.',
+    final String collectionHref = folderProviderId.trim();
+    if (collectionHref.isEmpty) {
+      throw ArgumentError.value(
+        folderProviderId,
+        'folderProviderId',
+        'Must not be empty.',
+      );
+    }
+    final String uid = _uidForLocalProviderId(contact.providerId);
+    final Uri resourceUri = Uri.parse(collectionHref).resolve('$uid.vcf');
+    final String body = const VCardWriter().writeContact(
+      contact: contact,
+      uid: uid,
+      emails: emails,
+      phones: phones,
     );
+    final DavClient client = _client();
+    try {
+      final DavPutResult put = await client.put(
+        resourceUri,
+        body: body,
+        contentType: 'text/vcard; charset=utf-8',
+      );
+      return PimRemoteCreateResult(
+        providerId: put.href,
+        etag: put.etag,
+      );
+    } finally {
+      client.dispose();
+    }
   }
 
   @override
@@ -296,6 +354,17 @@ class DavPimProvider extends GraphPimProvider {
     password: password,
     client: _httpClient,
   );
+
+  /// Prefer uuid from `local:{uuid}`; otherwise mint a fresh id for the PUT.
+  String _uidForLocalProviderId(String providerId) {
+    if (PimIds.isLocalProviderId(providerId)) {
+      final String stem = providerId.substring('local:'.length).trim();
+      if (stem.isNotEmpty) {
+        return stem;
+      }
+    }
+    return _uuid.v4();
+  }
 
   static List<EventAttendee> _attendees(String eventId, IcsEvent event) {
     final List<IcsAttendee> people = <IcsAttendee>[

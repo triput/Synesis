@@ -4,7 +4,7 @@
 // Component: Protocol / Integration
 // Version: 1.0 (Gold Master)
 // Created: 2026-07-27
-// Last Update: 2026-07-27
+// Last Update: 2026-08-04
 // ==============================================================================
 
 import 'dart:async';
@@ -38,6 +38,23 @@ class DavResponse {
     }
     return null;
   }
+}
+
+/// Result of a successful DAV PUT create (Wave 6b).
+class DavPutResult {
+  const DavPutResult({
+    required this.href,
+    required this.statusCode,
+    this.etag,
+  });
+
+  /// Absolute resource href (Location when present, else request URI).
+  final String href;
+
+  final int statusCode;
+
+  /// Opaque etag from the response `ETag` header when present.
+  final String? etag;
 }
 
 class DavClient {
@@ -74,6 +91,38 @@ class DavClient {
     final http.Response response = await _send(http.Request('GET', uri));
     _ensureSuccess(response);
     return response.body;
+  }
+
+  /// Creates a new resource with PUT + `If-None-Match: *` (Wave 6b).
+  ///
+  /// [contentType] is typically `text/calendar; charset=utf-8` or
+  /// `text/vcard; charset=utf-8`. Success codes: 200, 201, 204.
+  Future<DavPutResult> put(
+    Uri uri, {
+    required String body,
+    required String contentType,
+  }) async {
+    final http.Request request = http.Request('PUT', uri)
+      ..headers.addAll(<String, String>{
+        'Content-Type': contentType,
+        'If-None-Match': '*',
+      })
+      ..body = body;
+    final http.Response response = await _send(request);
+    _ensureSuccess(response);
+    final String? location = response.headers['location'];
+    final String href;
+    if (location != null && location.trim().isNotEmpty) {
+      href = uri.resolve(location.trim()).toString();
+    } else {
+      href = uri.toString();
+    }
+    final String? etag = _headerIgnoreCase(response.headers, 'etag');
+    return DavPutResult(
+      href: href,
+      statusCode: response.statusCode,
+      etag: etag == null || etag.isEmpty ? null : etag,
+    );
   }
 
   Future<List<DavResponse>> _davXml(
@@ -195,6 +244,19 @@ class DavClient {
         statusCode: response.statusCode,
       );
     }
+  }
+
+  static String? _headerIgnoreCase(
+    Map<String, String> headers,
+    String name,
+  ) {
+    final String lower = name.toLowerCase();
+    for (final MapEntry<String, String> entry in headers.entries) {
+      if (entry.key.toLowerCase() == lower) {
+        return entry.value;
+      }
+    }
+    return null;
   }
 
   void dispose() {

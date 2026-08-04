@@ -80,8 +80,7 @@ String eventCopySuccessMessage({
   if (remotePushEnqueued) {
     return 'Copied to $calendarName. Syncing to your provider…';
   }
-  return 'Copied locally to $calendarName. '
-      'Not synced yet — CalDAV write arrives in a future update.';
+  return 'Copied locally to $calendarName. Not synced to the remote calendar.';
 }
 
 String contactCopySuccessMessage({
@@ -91,8 +90,7 @@ String contactCopySuccessMessage({
   if (remotePushEnqueued) {
     return 'Copied to $listName. Syncing to your provider…';
   }
-  return 'Copied locally to $listName. '
-      'Not synced yet — CardDAV write arrives in a future update.';
+  return 'Copied locally to $listName. Not synced to the remote address book.';
 }
 
 /// Shows a snackbar after a successful event copy; optional Undo soft-deletes

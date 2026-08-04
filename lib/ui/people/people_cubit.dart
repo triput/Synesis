@@ -151,7 +151,7 @@ class PeopleCubit extends Cubit<PeopleState> {
   }
 
   /// Local-first duplicate of [sourceContactId] onto [targetContactListId]
-  /// (Wave 6). Enqueues `contacts_copy` for Graph/Google targets.
+  /// (Wave 6 / 6b). Enqueues `contacts_copy` for Graph/Google/DAV targets.
   Future<PimCopyResult<Contact>> copyContactToList({
     required String sourceContactId,
     required String targetAccountId,

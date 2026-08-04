@@ -1,6 +1,6 @@
 // ==============================================================================
 // File: test/pim_copy_sync_engine_test.dart
-// Description: Wave 6 events_copy / contacts_copy SyncEngine + PimCopyService.
+// Description: Wave 6/6b events_copy / contacts_copy SyncEngine + PimCopyService.
 // Component: Test
 // Version: 1.0 (Gold Master)
 // Created: 2026-08-04
@@ -437,7 +437,7 @@ void main() {
       );
     });
 
-    test('does not enqueue for DAV target', () async {
+    test('enqueues events_copy for DAV target', () async {
       final SynesisDatabase database = SynesisDatabase(NativeDatabase.memory());
       addTearDown(database.close);
       final DriftMailRepository repo = DriftMailRepository(database);
@@ -515,12 +515,12 @@ void main() {
             targetCalendarId: calDav,
           );
 
-      expect(result.remotePushEnqueued, isFalse);
+      expect(result.remotePushEnqueued, isTrue);
       expect(result.entity.providerId, startsWith('local:'));
       final List<SyncJob> jobs = await repo.listSyncJobs(limit: 10);
       expect(
         jobs.where((SyncJob j) => j.type == PimSyncJobs.eventsCopy),
-        isEmpty,
+        hasLength(1),
       );
     });
   });

@@ -192,9 +192,8 @@ class CalendarCubit extends Cubit<CalendarState> {
 
   /// Local-first duplicate of [sourceEventId] onto [targetCalendarId] (Wave 6).
   ///
-  /// Enqueues `events_copy` when the target account is Graph/Google; DAV
-  /// targets remain local-only until Wave 6b. Refreshes the visible month
-  /// after the duplicate lands.
+  /// Enqueues `events_copy` when the target account resolves a PIM provider
+  /// (Graph/Google/DAV). Refreshes the visible month after the duplicate lands.
   Future<PimCopyResult<CalendarEvent>> copyEventToCalendar({
     required String sourceEventId,
     required String targetAccountId,

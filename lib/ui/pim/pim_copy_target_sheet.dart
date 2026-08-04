@@ -21,7 +21,7 @@ import 'package:synesis/ui/people/people_cubit.dart';
 import 'package:synesis/ui/people/people_state.dart';
 import 'package:synesis/ui/pim/pim_copy_ui.dart';
 
-/// Subtitle on DAV / local-only copy targets in the picker sheet.
+/// Subtitle when the target account cannot enqueue remote create on copy.
 const String kPimCopyLocalOnlySubtitle = 'Local only — not synced yet';
 
 String _accountLabelFor(List<MailAccount> accounts, String accountId) {

@@ -1,6 +1,6 @@
 // ==============================================================================
 // File: lib/sync/pim_copy_service.dart
-// Description: Local-first event/contact copy + enqueue for Wave 6 sync push.
+// Description: Local-first event/contact copy + enqueue for Wave 6/6b push.
 // Component: Sync
 // Version: 1.0 (Gold Master)
 // Created: 2026-08-04
@@ -10,14 +10,13 @@
 import 'dart:convert';
 
 import 'package:synesis/domain/pim.dart';
-import 'package:synesis/protocol/dav_pim_provider.dart';
 import 'package:synesis/protocol/graph_pim_provider.dart';
 import 'package:synesis/repository/drift/drift_pim_store.dart';
 import 'package:synesis/repository/mail_repository.dart';
 import 'package:synesis/sync/pim_sync_jobs.dart';
 import 'package:synesis/sync/sync_engine.dart';
 
-/// Result of a local-first copy operation (Wave 6).
+/// Result of a local-first copy operation (Wave 6 / 6b).
 class PimCopyResult<T> {
   const PimCopyResult({
     required this.entity,
@@ -28,15 +27,15 @@ class PimCopyResult<T> {
   final T entity;
 
   /// `true` when an `events_copy` / `contacts_copy` job was enqueued for
-  /// Graph/Google. `false` for DAV targets (local-only until Wave 6b).
+  /// Graph/Google/DAV remote create.
   final bool remotePushEnqueued;
 }
 
 /// Duplicates PIM rows locally, then enqueues remote create jobs when the
-/// target account supports Graph/Google write-back.
+/// target account resolves a PIM provider (Graph, Google, or DAV).
 ///
-/// Cubits / DnD (Jules P2–P3) should call this — never hit the network from
-/// widgets. Kick [SyncEngine] separately (or rely on the existing kick loop).
+/// Cubits / DnD should call this — never hit the network from widgets. Kick
+/// [SyncEngine] separately (or rely on the existing kick loop).
 class PimCopyService {
   PimCopyService({
     required DriftPimStore pimStore,
@@ -137,9 +136,7 @@ class PimCopyService {
     );
   }
 
-  /// Whether [accountId] supports Graph/Google remote create on copy.
-  ///
-  /// DAV targets return `false` (local duplicate only until Wave 6b).
+  /// Whether [accountId] supports remote create on copy (Graph/Google/DAV).
   Future<bool> remotePushSupportedForAccount(String accountId) =>
       _shouldEnqueueRemotePush(accountId);
 
@@ -149,7 +146,8 @@ class PimCopyService {
       return false;
     }
     try {
-      return provider is! DavPimProvider;
+      // Wave 6b: DAV create-only PUT is supported for copy targets.
+      return true;
     } finally {
       await provider.dispose();
     }

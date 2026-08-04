@@ -895,10 +895,9 @@ class SyncEngine {
     }
   }
 
-  /// Pushes a locally duplicated event to Graph/Google (Wave 6).
+  /// Pushes a locally duplicated event to Graph/Google/DAV (Wave 6 / 6b).
   ///
   /// Payload: `localEventId`, `targetCalendarId`, `targetCalendarProviderId`.
-  /// DAV targets should not enqueue this job (see [PimCopyService]).
   Future<void> _copyEvent(SyncJob job) async {
     final DriftPimStore? store = _pimStore;
     final GraphPimProvider? provider = await _pimProvider(job.accountId);
@@ -906,10 +905,6 @@ class SyncEngine {
       return;
     }
     try {
-      if (provider is DavPimProvider) {
-        // Local duplicate is already done; Wave 6b owns DAV write-back.
-        return;
-      }
       final Map<String, Object?> payload = _decodePayload(job.payloadJson);
       final String? localEventId = payload['localEventId'] as String?;
       final String? targetCalendarProviderId =
@@ -949,7 +944,7 @@ class SyncEngine {
     }
   }
 
-  /// Pushes a locally duplicated contact to Graph/Google (Wave 6).
+  /// Pushes a locally duplicated contact to Graph/Google/DAV (Wave 6 / 6b).
   ///
   /// Payload: `localContactId`, `targetContactListId`,
   /// `targetContactListProviderId`.
@@ -960,9 +955,6 @@ class SyncEngine {
       return;
     }
     try {
-      if (provider is DavPimProvider) {
-        return;
-      }
       final Map<String, Object?> payload = _decodePayload(job.payloadJson);
       final String? localContactId = payload['localContactId'] as String?;
       final String? targetContactListProviderId =

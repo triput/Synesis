@@ -1,6 +1,6 @@
 # Wave 6b — CalDAV/CardDAV Write (Copy Targets) Checklist
 
-> **Status:** **In progress** (2026-08-04) — opened after Wave 6 E11 **GO**. Parent: [V2_PLAN.md](V2_PLAN.md). Prior: [V2_WAVE_6_CHECKLIST.md](V2_WAVE_6_CHECKLIST.md) (**complete**, **659 tests**). Design: [V2_WAVE_6_TESLA_DESIGN.md](V2_WAVE_6_TESLA_DESIGN.md) (Wave 6; extend for DAV).
+> **Status:** **In progress** (2026-08-04) — P0–P3 Tesla create path landed; E7–E8 (Renee/Page/Runbox dogfood) open. Parent: [V2_PLAN.md](V2_PLAN.md). Prior: [V2_WAVE_6_CHECKLIST.md](V2_WAVE_6_CHECKLIST.md) (**complete**, **659 tests**). Design: [V2_WAVE_6B_TESLA_DESIGN.md](V2_WAVE_6B_TESLA_DESIGN.md).
 
 Wave 6b makes **DAV accounts real copy targets**: when the user copies an event/contact onto a CalDAV calendar or CardDAV list, Synesis still duplicates locally first, then **PUT**s create and rewrites `providerId`/etag — same job types (`events_copy` / `contacts_copy`) as Graph/Google.
 
@@ -38,15 +38,15 @@ Wave 6 ✅ → ★ Wave 6b: CalDAV/CardDAV create write ← active
 
 | ID | Task | Exit |
 | --- | --- | --- |
-| **D1** | Design: collection href + `{uuid}.ics` / `.vcf` naming; UID generation; Location/ETag capture | Doc in `docs/V2_WAVE_6B_TESLA_DESIGN.md` |
-| **D2** | Minimal VEVENT / vCard writers (fields Wave 6 already copies) | Design + tests |
-| **D3** | Failure modes — 412, 403, auth; map to job failed | Design |
-| **E1** | `DavClient.put` (and headers) | Unit tests w/ fake HTTP |
-| **E2** | CalDAV createEvent PUT | Integration / provider tests |
-| **E3** | CardDAV createContact PUT | Same |
-| **E4** | SyncEngine copy handlers call DAV create; rewrite id | Tests |
-| **E5** | `PimCopyService.remotePushSupportedForAccount` true for DAV; enqueue | Tests |
-| **E6** | UI: sheet/snackbar no longer claim local-only for DAV | Widget smoke |
+| **D1** | Design: collection href + `{uuid}.ics` / `.vcf` naming; UID generation; Location/ETag capture | **Done** — [V2_WAVE_6B_TESLA_DESIGN.md](V2_WAVE_6B_TESLA_DESIGN.md) § D1 (`Uri.resolve`, `local:{uuid}` stem, `If-None-Match: *`, ETag/Location → `PimRemoteCreateResult`) |
+| **D2** | Minimal VEVENT / vCard writers (fields Wave 6 already copies) | **Done** — design § D2 (`IcsCalendarWriter` / `VCardWriter`; no ATTENDEE/RRULE) |
+| **D3** | Failure modes — 412, 403, auth; map to job failed | **Done** — design § D3 (`ProtocolException` → job failed; soft-delete / idempotent no-ops retained) |
+| **E1** | `DavClient.put` (and headers) | **Done** — `DavClient.put` + `If-None-Match: *`; tests in `test/dav_pim_create_test.dart` |
+| **E2** | CalDAV createEvent PUT | **Done** — `DavPimProvider.createEvent` + `IcsCalendarWriter` |
+| **E3** | CardDAV createContact PUT | **Done** — `DavPimProvider.createContact` + `VCardWriter` |
+| **E4** | SyncEngine copy handlers call DAV create; rewrite id | **Done** — DAV early-return removed; rewrite via `PimRemoteCreateResult` |
+| **E5** | `PimCopyService.remotePushSupportedForAccount` true for DAV; enqueue | **Done** — enqueue for any resolved PIM provider |
+| **E6** | UI: sheet/snackbar no longer claim local-only for DAV | **Done** (minimal) — flip helper + snackbar fallback copy; sheet uses same flag |
 | **E7** | Renee **GO** + inventory | [V2_WAVE_6B_QA.md](V2_WAVE_6B_QA.md) |
 | **E8** | Trish Runbox dogfood **GO** | Logged in QA |
 
