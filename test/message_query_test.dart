@@ -586,6 +586,29 @@ void main() {
       expect(row?.unread, isFalse);
     });
 
+    test(
+      'DEF-007: keeps local unread while mark-unread push is pending',
+      () async {
+        await repo.upsertMessages(<MailMessage>[
+          _msg(id: 'r3', unread: false),
+        ], folderId: 'inbox-work');
+        await repo.setUnread('r3', true);
+        await repo.enqueueSyncJob(
+          accountId: 'work',
+          type: 'push_message_action',
+          payloadJson:
+              '{"messageId":"r3","providerId":"101","action":"read","isRead":false}',
+        );
+
+        await repo.upsertMessages(<MailMessage>[
+          _msg(id: 'r3', unread: false),
+        ], folderId: 'inbox-work');
+
+        final MailMessage? row = await repo.getMessage('r3');
+        expect(row?.unread, isTrue);
+      },
+    );
+
     test('parses To/Cc from rawHeaders when recipient columns empty', () async {
       await repo.upsertMessages(<MailMessage>[
         _msg(

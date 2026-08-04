@@ -187,6 +187,7 @@ class MessageBodyCache {
   }) async {
     final MailboxMutationResult clearErr = const MailboxMutationResult(
       clearHeadersError: true,
+      clearHeadersErrorMessageId: true,
     );
     await apply?.call(clearErr);
 
@@ -211,9 +212,10 @@ class MessageBodyCache {
 
     final int generation = ++_headersFetchGeneration;
     _inFlightHeaderIds.add(messageId);
-    final MailboxMutationResult loading = const MailboxMutationResult(
-      isLoadingHeaders: true,
+    final MailboxMutationResult loading = MailboxMutationResult(
+      headersLoadingMessageId: messageId,
       clearHeadersError: true,
+      clearHeadersErrorMessageId: true,
     );
     await apply?.call(loading);
 
@@ -226,7 +228,7 @@ class MessageBodyCache {
         }
         _fetchedHeaderIds.add(messageId);
         final MailboxMutationResult done = const MailboxMutationResult(
-          isLoadingHeaders: false,
+          clearHeadersLoading: true,
         );
         await apply?.call(done);
         return done;
@@ -287,14 +289,16 @@ class MessageBodyCache {
             .toList(growable: false);
         final MailboxMutationResult done = MailboxMutationResult(
           messages: updated,
-          isLoadingHeaders: false,
+          clearHeadersLoading: true,
           clearHeadersError: true,
+          clearHeadersErrorMessageId: true,
         );
         await apply?.call(done);
         return done;
       }
-      final MailboxMutationResult empty = const MailboxMutationResult(
-        isLoadingHeaders: false,
+      final MailboxMutationResult empty = MailboxMutationResult(
+        clearHeadersLoading: true,
+        headersErrorMessageId: messageId,
         headersErrorMessage: 'No raw headers were returned by the server.',
       );
       await apply?.call(empty);
@@ -304,7 +308,8 @@ class MessageBodyCache {
         return null;
       }
       final MailboxMutationResult failed = MailboxMutationResult(
-        isLoadingHeaders: false,
+        clearHeadersLoading: true,
+        headersErrorMessageId: messageId,
         headersErrorMessage: e.toString(),
       );
       await apply?.call(failed);

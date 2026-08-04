@@ -22,7 +22,10 @@ class MailboxMutationResult {
     this.clearError = false,
     this.shouldRefresh = false,
     this.isLoadingBody,
-    this.isLoadingHeaders,
+    this.headersLoadingMessageId,
+    this.clearHeadersLoading = false,
+    this.headersErrorMessageId,
+    this.clearHeadersErrorMessageId = false,
     this.bodyErrorMessage,
     this.clearBodyError = false,
     this.headersErrorMessage,
@@ -42,7 +45,10 @@ class MailboxMutationResult {
 
   /// Body/header cache progressive UI fields.
   final bool? isLoadingBody;
-  final bool? isLoadingHeaders;
+  final String? headersLoadingMessageId;
+  final bool clearHeadersLoading;
+  final String? headersErrorMessageId;
+  final bool clearHeadersErrorMessageId;
   final String? bodyErrorMessage;
   final bool clearBodyError;
   final String? headersErrorMessage;

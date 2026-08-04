@@ -23,6 +23,8 @@ import 'package:synesis/theme/app_theme.dart';
 import 'package:synesis/theme/density.dart';
 import 'package:synesis/query/message_query.dart';
 import 'package:synesis/ui/branding/synesis_wordmark.dart';
+import 'package:synesis/sync/sync_activity.dart';
+import 'package:synesis/ui/sync/sync_status_presentation.dart';
 import 'package:synesis/ui/mailbox/mailbox_cubit.dart';
 import 'package:synesis/ui/mailbox/mailbox_state.dart';
 import 'package:synesis/ui/settings/notifications_sheet.dart';
@@ -408,6 +410,7 @@ class _MailWorkspaceState extends State<MailWorkspace> {
                         ? MailNavigationDrawer(
                             state: mailbox,
                             settings: settings,
+                            syncActivity: _syncActivity,
                             onCollapseAll: cubit.collapseAllFolders,
                             onSelectUnified: () {
                               unawaited(cubit.selectUnified());
@@ -454,7 +457,10 @@ class _MailWorkspaceState extends State<MailWorkspace> {
                       children: [
                       _TitleBar(
                         contextLabel: contextLabel,
-                        syncLabel: mailbox.syncStatusLabel,
+                        syncLabel: SyncStatusPresentation.composeLabel(
+                          activity: _syncActivity,
+                          repositoryLabel: mailbox.syncStatusLabel,
+                        ),
                         queued: mailbox.queuedOutboxCount,
                         failed: mailbox.failedOutboxCount,
                         syncing: _syncActivity.isRemoteSyncInFlight,
@@ -512,6 +518,7 @@ class _MailWorkspaceState extends State<MailWorkspace> {
                                 sidebar: FolderSidebar(
                                   state: mailbox,
                                   settings: settings,
+                                  syncActivity: _syncActivity,
                                   onHideSidebar: () =>
                                       cubit.setSidebarVisible(false),
                                   onCollapseAll: cubit.collapseAllFolders,

@@ -14,7 +14,10 @@ import 'package:synesis/account/account_display.dart';
 import 'package:synesis/domain/models.dart';
 import 'package:synesis/settings/app_settings_state.dart';
 import 'package:synesis/theme/app_theme.dart';
+import 'package:provider/provider.dart';
+import 'package:synesis/sync/sync_activity.dart';
 import 'package:synesis/ui/mailbox/mailbox_state.dart';
+import 'package:synesis/ui/sync/sync_status_presentation.dart';
 
 /// Signature for folder-level "mark all as read/unread" (UI-P23).
 typedef MarkFolderUnread = void Function(
@@ -156,6 +159,7 @@ class FolderSidebar extends StatelessWidget {
     required this.onSelectFolder,
     required this.onMarkFolderUnread,
     this.embeddedInDrawer = false,
+    this.syncActivity = const SyncActivitySnapshot.idle(),
   });
 
   final MailboxState state;
@@ -174,6 +178,9 @@ class FolderSidebar extends StatelessWidget {
   /// When true (phone drawer), hide the desktop "Hide" control and use
   /// drawer-friendly padding; retention dial stays.
   final bool embeddedInDrawer;
+
+  /// Wave 6P UI-P11 — remote sync lifecycle for honest sidebar labels.
+  final SyncActivitySnapshot syncActivity;
 
   @override
   Widget build(BuildContext context) {
@@ -243,6 +250,7 @@ class FolderSidebar extends StatelessWidget {
             const SizedBox(height: 6),
             _DrawerAccountsBody(
               state: state,
+              syncActivity: syncActivity,
               onSelectAccount: onSelectAccount,
               onSelectFolder: onSelectFolder,
               onMarkFolderUnread: onMarkFolderUnread,
@@ -347,6 +355,7 @@ class FolderSidebar extends StatelessWidget {
                     account: account,
                     state: state,
                     settings: settings,
+                    syncActivity: syncActivity,
                     onToggleExpanded: () =>
                         onToggleAccountExpanded(account.id),
                     onSelectAccount: () => onSelectAccount(account.id),
@@ -527,6 +536,7 @@ class _AccountsScrollAreaState extends State<_AccountsScrollArea> {
 class _DrawerAccountsBody extends StatefulWidget {
   const _DrawerAccountsBody({
     required this.state,
+    required this.syncActivity,
     required this.onSelectAccount,
     required this.onSelectFolder,
     required this.onMarkFolderUnread,
@@ -534,6 +544,7 @@ class _DrawerAccountsBody extends StatefulWidget {
   });
 
   final MailboxState state;
+  final SyncActivitySnapshot syncActivity;
   final ValueChanged<String> onSelectAccount;
   final void Function(String accountId, String folderId) onSelectFolder;
   final MarkFolderUnread onMarkFolderUnread;
@@ -575,7 +586,6 @@ class _DrawerAccountsBodyState extends State<_DrawerAccountsBody> {
 
   @override
   Widget build(BuildContext context) {
-    final t = tokensOf(context);
     final String? activeId = _activeAccountId();
     MailAccount? resolved;
     if (activeId != null) {
@@ -627,8 +637,15 @@ class _DrawerAccountsBodyState extends State<_DrawerAccountsBody> {
           account: resolved,
           folderCount: folders.length,
           selectedFolderName: selectedFolder?.name,
-          syncing: resolved != null && folders.isEmpty,
-          syncStatusLabel: widget.state.syncStatusLabel,
+          syncing: widget.syncActivity.isRemoteSyncInFlight,
+          syncStatusLabel: SyncStatusPresentation.composeLabel(
+            activity: widget.syncActivity,
+            repositoryLabel: widget.state.syncStatusLabel,
+          ),
+          syncSubtitle: SyncStatusPresentation.activeSyncSubtitle(
+            activity: widget.syncActivity,
+            repositoryLabel: widget.state.syncStatusLabel,
+          ),
           onOpen: resolved == null
               ? null
               : () {
@@ -673,6 +690,7 @@ class _FoldersLaunchTile extends StatelessWidget {
     required this.selectedFolderName,
     required this.syncing,
     required this.syncStatusLabel,
+    this.syncSubtitle,
     required this.onOpen,
   });
 
@@ -681,6 +699,7 @@ class _FoldersLaunchTile extends StatelessWidget {
   final String? selectedFolderName;
   final bool syncing;
   final String syncStatusLabel;
+  final String? syncSubtitle;
   final VoidCallback? onOpen;
 
   @override
@@ -690,9 +709,10 @@ class _FoldersLaunchTile extends StatelessWidget {
     if (account == null) {
       subtitle = 'No accounts yet';
     } else if (syncing) {
-      subtitle = syncStatusLabel.toLowerCase().contains('folder list')
-          ? 'Folder list incomplete — open Sync status'
-          : 'Syncing folders…';
+      subtitle = syncSubtitle ??
+          (syncStatusLabel.toLowerCase().contains('folder list')
+              ? 'Folder list incomplete — open Sync status'
+              : 'Syncing folders…');
     } else if (selectedFolderName != null) {
       subtitle = selectedFolderName!;
     } else if (folderCount == 1) {
@@ -1009,6 +1029,7 @@ class _AccountSection extends StatelessWidget {
     required this.account,
     required this.state,
     required this.settings,
+    required this.syncActivity,
     required this.onToggleExpanded,
     required this.onSelectAccount,
     required this.onSelectFolder,
@@ -1018,6 +1039,7 @@ class _AccountSection extends StatelessWidget {
   final MailAccount account;
   final MailboxState state;
   final AppSettingsState settings;
+  final SyncActivitySnapshot syncActivity;
   final VoidCallback onToggleExpanded;
   final VoidCallback onSelectAccount;
   final void Function(String accountId, String folderId) onSelectFolder;
@@ -1075,9 +1097,13 @@ class _AccountSection extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.fromLTRB(40, 2, 12, 8),
             child: Text(
-              state.syncStatusLabel.toLowerCase().contains('folder list')
-                  ? 'Folder list incomplete — open Sync status'
-                  : 'Syncing folders…',
+              SyncStatusPresentation.activeSyncSubtitle(
+                    activity: syncActivity,
+                    repositoryLabel: state.syncStatusLabel,
+                  ) ??
+                  (state.syncStatusLabel.toLowerCase().contains('folder list')
+                      ? 'Folder list incomplete — open Sync status'
+                      : 'Syncing folders…'),
               style: TextStyle(color: t.muted, fontSize: 12),
             ),
           )

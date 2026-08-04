@@ -1,6 +1,6 @@
 # Wave 6P — Performance UX (Sync Honesty) Checklist
 
-> **Status:** **P0 gate complete** (2026-08-03) — E1–E7 ✅; Renee **GO** on E6 (**626 tests**); Trish **GO** on E7 Android dogfood (`87ec66a`). P1/P2 open. Parent plan: [V2_PLAN.md](V2_PLAN.md). Prior: [V2_WAVE_G_QA.md](V2_WAVE_G_QA.md) **GO** (`f4c21b0`, **597 tests**). **Next after full 6P exit:** Wave 6 (cross-account DnD copy).
+> **Status:** **P1 gate complete** (2026-08-03) — E1–E9 ✅; **645 tests**. P2 profiling gate open. Parent plan: [V2_PLAN.md](V2_PLAN.md). Prior: P0 E7 Trish GO (`87ec66a`). **Next:** P2 E10–E11 profiling, then Wave 6 DnD after full 6P exit.
 
 Wave 6P delivers **honest sync UX** — decouple local SQLite refresh from remote sync-in-flight indicators, stop blocking the UI on `await kick()` / `kickFresh()`, and land targeted polish (UI-P11, UI-P9 partial, DEF-015, DEF-007). **P2** (Tesla SyncEngine isolate work) is **committed** if post-P0 profiling confirms frame jank on operator hardware.
 
@@ -20,7 +20,7 @@ Wave 0 ✅ → Wave H ✅ → Wave 1 (P0) ✅
                          → Wave 4: CardDAV/CalDAV (P3–P4) ✅
                          → Wave 5: picker + Calendar UI (P5–P6) ✅
                          → Wave G: Google People + Calendar API ✅
-                         → ★ Wave 6P: Performance UX (Sync Honesty) ← P0 gate complete; P1 open
+                         → ★ Wave 6P: Performance UX (Sync Honesty) ← P1 gate complete; P2 profiling open
                          → Wave 6: cross-account DnD copy
                          → Wave 7: Trish extras (last)
 ```
@@ -59,10 +59,10 @@ Wave 0 ✅ → Wave H ✅ → Wave 1 (P0) ✅
 | **6P-5** | Pull-to-refresh non-blocking — local `refresh()` only in `RefreshIndicator` | P0 | Andi | `mailbox_cubit.dart` | ✅ |
 | **6P-6** | Add-account unblocked — remove `await syncEngine.kick()` save paths | P0 | Andi | `add_account_sheet.dart` | ✅ |
 | **6P-7** | Renee test delta — state separation, DEF-006 reclaim regression, double-tap manual sync | P0 | Renee | `test/` | ✅ **GO** (626 tests, E6) |
-| **6P-8** | UI-P11 sync status polish — chip + sidebar + sheet consistency | P1 | Jules/Andi | Title bar, `sync_status_sheet.dart`, `folder_sidebar.dart` |
-| **6P-9** | UI-P9 partial — body fetch skeleton in reading pane | P1 | Andi | `reading_pane.dart` |
-| **6P-10** | DEF-015 per-message header loading / error scope | P1 | Jules | `mailbox_cubit.dart`, `message_headers_sheet.dart` |
-| **6P-11** | Folder sidebar sync label accuracy | P1 | Andi | `folder_sidebar.dart` |
+| **6P-8** | UI-P11 sync status polish — chip + sidebar + sheet consistency | P1 | Jules/Andi | Title bar, `sync_status_sheet.dart`, `folder_sidebar.dart` | ✅ |
+| **6P-9** | UI-P9 partial — body fetch skeleton in reading pane | P1 | Andi | `reading_pane.dart` | ✅ |
+| **6P-10** | DEF-015 per-message header loading / error scope | P1 | Jules | `mailbox_cubit.dart`, `message_headers_sheet.dart` | ✅ |
+| **6P-11** | Folder sidebar sync label accuracy | P1 | Andi | `folder_sidebar.dart` | ✅ |
 | **6P-12** | Profile sync on large mailbox (Android + Windows) | P2 | Renee + Tesla | DevTools timeline — only if post-P0 jank |
 | **6P-13** | Isolate spike for `_processPendingJobs` hot path | P2 | Tesla | Design doc; incremental move if E10 fails |
 | **6P-14** | SPEC / `DART_IN_SYNESIS.md` alignment pass | P2 | Page | Current vs target isolate posture |
@@ -93,8 +93,8 @@ Wave 0 ✅ → Wave H ✅ → Wave 1 (P0) ✅
 
 ### P1 gate (required for full wave exit)
 
-- [ ] **E8** — UI-P11: idle/syncing/error semantics consistent across title bar, sidebar label, sync sheet
-- [ ] **E9** — UI-P9 partial: body-fetch skeleton in reading pane; DEF-015 per-message header spinner; DEF-007 merge policy (no read/unread flicker on sync refresh)
+- [x] **E8** — UI-P11: idle/syncing/error semantics consistent across title bar, sidebar label, sync sheet
+- [x] **E9** — UI-P9 partial: body-fetch skeleton in reading pane; DEF-015 per-message header spinner; DEF-007 merge policy (no read/unread flicker on sync refresh)
 
 ### P2 gate (committed if post-P0 jank confirmed)
 

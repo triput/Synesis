@@ -36,7 +36,8 @@ class MailboxState extends Equatable {
     this.messages = const [],
     this.isLoading = false,
     this.isLoadingBody = false,
-    this.isLoadingHeaders = false,
+    this.headersLoadingMessageId,
+    this.headersErrorMessageId,
     this.errorMessage,
     this.bodyErrorMessage,
     this.headersErrorMessage,
@@ -68,7 +69,8 @@ class MailboxState extends Equatable {
   final List<MailMessage> messages;
   final bool isLoading;
   final bool isLoadingBody;
-  final bool isLoadingHeaders;
+  final String? headersLoadingMessageId;
+  final String? headersErrorMessageId;
   final String? errorMessage;
   final String? bodyErrorMessage;
   final String? headersErrorMessage;
@@ -187,7 +189,10 @@ class MailboxState extends Equatable {
     List<MailMessage>? messages,
     bool? isLoading,
     bool? isLoadingBody,
-    bool? isLoadingHeaders,
+    String? headersLoadingMessageId,
+    bool clearHeadersLoading = false,
+    String? headersErrorMessageId,
+    bool clearHeadersErrorMessageId = false,
     String? errorMessage,
     bool clearError = false,
     String? bodyErrorMessage,
@@ -255,7 +260,12 @@ class MailboxState extends Equatable {
       messages: nextMessages,
       isLoading: isLoading ?? this.isLoading,
       isLoadingBody: isLoadingBody ?? this.isLoadingBody,
-      isLoadingHeaders: isLoadingHeaders ?? this.isLoadingHeaders,
+      headersLoadingMessageId: clearHeadersLoading
+          ? null
+          : (headersLoadingMessageId ?? this.headersLoadingMessageId),
+      headersErrorMessageId: clearHeadersErrorMessageId
+          ? null
+          : (headersErrorMessageId ?? this.headersErrorMessageId),
       errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
       bodyErrorMessage: clearBodyError
           ? null
@@ -290,7 +300,8 @@ class MailboxState extends Equatable {
     messages,
     isLoading,
     isLoadingBody,
-    isLoadingHeaders,
+    headersLoadingMessageId,
+    headersErrorMessageId,
     errorMessage,
     bodyErrorMessage,
     headersErrorMessage,

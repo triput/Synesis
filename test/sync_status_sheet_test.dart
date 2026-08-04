@@ -14,6 +14,7 @@ import 'package:synesis/domain/models.dart';
 import 'package:synesis/domain/sync_profile.dart';
 import 'package:synesis/query/message_query.dart';
 import 'package:synesis/repository/mail_repository.dart';
+import 'package:synesis/sync/sync_activity.dart';
 import 'package:synesis/theme/custom_theme.dart';
 import 'package:synesis/theme/theme_id.dart';
 import 'package:synesis/theme/theme_tokens.dart';
@@ -464,11 +465,19 @@ void main() {
     WidgetTester tester,
   ) async {
     final _SheetRepo repo = _SheetRepo();
+    final SyncActivity syncActivity = SyncActivity(repository: repo);
+    syncActivity.start();
+    addTearDown(() async {
+      await syncActivity.dispose();
+    });
     final ThemeTokens tokens = ThemeTokens.forId(ThemeId.dark);
 
     await tester.pumpWidget(
-      RepositoryProvider<MailRepository>.value(
-        value: repo,
+      MultiRepositoryProvider(
+        providers: <RepositoryProvider<dynamic>>[
+          RepositoryProvider<MailRepository>.value(value: repo),
+          RepositoryProvider<SyncActivity>.value(value: syncActivity),
+        ],
         child: MaterialApp(
           theme: ThemeData(
             useMaterial3: true,

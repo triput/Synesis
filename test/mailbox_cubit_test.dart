@@ -1342,7 +1342,7 @@ void main() {
         ),
       );
       await cubit.ensureHeadersCached('msg-1');
-      expect(cubit.state.isLoadingHeaders, isFalse);
+      expect(cubit.state.headersLoadingMessageId, isNull);
       expect(cubit.state.messages.first.rawHeaders, headers);
       expect(repo.lastRawHeadersMessageId, 'msg-1');
       expect(repo.lastRawHeadersValue, headers);
@@ -1377,7 +1377,7 @@ void main() {
         ),
       );
       await cubit.ensureHeadersCached('msg-1');
-      expect(cubit.state.isLoadingHeaders, isFalse);
+      expect(cubit.state.headersLoadingMessageId, isNull);
       expect(repo.lastRawHeadersMessageId, isNull);
       await cubit.close();
     });
@@ -1389,7 +1389,7 @@ void main() {
         resolveProvider: (_) async => _HeaderStubProvider('unused'),
       );
       await cubit.ensureHeadersCached('missing-id');
-      expect(cubit.state.isLoadingHeaders, isFalse);
+      expect(cubit.state.headersLoadingMessageId, isNull);
       expect(cubit.state.headersErrorMessage, isNull);
       await cubit.close();
     });
@@ -1408,7 +1408,8 @@ void main() {
         ),
       );
       await cubit.ensureHeadersCached('msg-1');
-      expect(cubit.state.isLoadingHeaders, isFalse);
+      expect(cubit.state.headersLoadingMessageId, isNull);
+      expect(cubit.state.headersErrorMessageId, 'msg-1');
       expect(cubit.state.headersErrorMessage, contains('header fetch failed'));
       expect(cubit.state.messages.first.rawHeaders, isNull);
       expect(repo.lastRawHeadersMessageId, isNull);
@@ -1428,6 +1429,7 @@ void main() {
         ),
       );
       await cubit.ensureHeadersCached('msg-1');
+      expect(cubit.state.headersErrorMessageId, 'msg-1');
       expect(
         cubit.state.headersErrorMessage,
         'No raw headers were returned by the server.',

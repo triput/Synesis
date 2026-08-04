@@ -152,19 +152,22 @@ class _MessageBodyViewState extends State<MessageBodyView> {
   Widget build(BuildContext context) {
     if (widget.isLoadingBody && widget.body.trim().isEmpty) {
       return Padding(
-        padding: const EdgeInsets.only(top: 24),
-        child: Row(
+        padding: const EdgeInsets.only(top: 16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
-            SizedBox(
-              width: 16,
-              height: 16,
-              child: CircularProgressIndicator(
-                strokeWidth: 2,
-                color: widget.muted,
+            for (int index = 0; index < 8; index++)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 10),
+                child: Container(
+                  height: 14,
+                  width: index % 3 == 2 ? 180 : double.infinity,
+                  decoration: BoxDecoration(
+                    color: widget.muted.withValues(alpha: 0.22),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                ),
               ),
-            ),
-            const SizedBox(width: 12),
-            Text('Loading message…', style: TextStyle(color: widget.muted)),
           ],
         ),
       );

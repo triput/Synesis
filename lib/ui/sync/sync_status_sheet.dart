@@ -12,12 +12,15 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:synesis/domain/models.dart';
 import 'package:synesis/repository/mail_repository.dart';
+import 'package:synesis/sync/sync_activity.dart';
 import 'package:synesis/sync/sync_engine.dart';
 import 'package:synesis/theme/app_theme.dart';
 import 'package:synesis/theme/theme_tokens.dart';
 import 'package:synesis/ui/mailbox/mailbox_cubit.dart';
+import 'package:synesis/ui/sync/sync_status_presentation.dart';
 
 /// Opens the sync health / job viewer sheet.
 Future<void> showSyncStatusSheet(BuildContext context) async {
@@ -53,6 +56,8 @@ class _SyncStatusSheetBodyState extends State<SyncStatusSheetBody>
     with SingleTickerProviderStateMixin {
   late final TabController _tabs = TabController(length: 2, vsync: this);
   StreamSubscription<void>? _watchSub;
+  StreamSubscription<SyncActivitySnapshot>? _syncActivitySub;
+  SyncActivitySnapshot _syncActivity = const SyncActivitySnapshot.idle();
   List<SyncJob> _jobs = const <SyncJob>[];
   List<AccountSyncHealth> _health = const <AccountSyncHealth>[];
   bool _loading = true;
@@ -73,12 +78,22 @@ class _SyncStatusSheetBodyState extends State<SyncStatusSheetBody>
         unawaited(_reload());
       }
     });
+    final SyncActivity syncActivity = context.read<SyncActivity>();
+    _syncActivity = syncActivity.value;
+    _syncActivitySub = syncActivity.stream.listen((
+      SyncActivitySnapshot snapshot,
+    ) {
+      if (mounted) {
+        setState(() => _syncActivity = snapshot);
+      }
+    });
     unawaited(_reload());
   }
 
   @override
   void dispose() {
     unawaited(_watchSub?.cancel() ?? Future<void>.value());
+    unawaited(_syncActivitySub?.cancel() ?? Future<void>.value());
     _tabs.dispose();
     super.dispose();
   }
@@ -217,6 +232,19 @@ class _SyncStatusSheetBodyState extends State<SyncStatusSheetBody>
   @override
   Widget build(BuildContext context) {
     final ThemeTokens t = tokensOf(context);
+    String repositoryLabel = 'Up to date';
+    try {
+      repositoryLabel = context.read<MailboxCubit>().state.syncStatusLabel;
+    } on Object {
+      // Sheet may open without MailboxCubit in tests.
+    }
+    final String statusSummary = SyncStatusPresentation.sheetSummary(
+      activity: _syncActivity,
+      repositoryLabel: repositoryLabel,
+    );
+    final bool needsAttention = SyncStatusPresentation.needsAttention(
+      statusSummary,
+    );
     return ConstrainedBox(
       constraints: BoxConstraints(
         maxHeight: MediaQuery.sizeOf(context).height * 0.78,
@@ -230,6 +258,48 @@ class _SyncStatusSheetBodyState extends State<SyncStatusSheetBody>
           Text(
             'Inspect the sync job queue and per-account health. Retry failed jobs or sync an account now.',
             style: TextStyle(color: t.muted, height: 1.35),
+          ),
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            decoration: BoxDecoration(
+              color: needsAttention
+                  ? t.coral.withValues(alpha: 0.12)
+                  : (_syncActivity.isRemoteSyncInFlight
+                        ? t.teal.withValues(alpha: 0.12)
+                        : t.panel2),
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(
+                color: needsAttention
+                    ? t.coral.withValues(alpha: 0.35)
+                    : t.line,
+              ),
+            ),
+            child: Row(
+              children: <Widget>[
+                if (_syncActivity.isRemoteSyncInFlight)
+                  Padding(
+                    padding: const EdgeInsets.only(right: 10),
+                    child: SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: needsAttention ? t.coral : t.teal,
+                      ),
+                    ),
+                  ),
+                Expanded(
+                  child: Text(
+                    statusSummary,
+                    style: TextStyle(
+                      color: needsAttention ? t.coral : t.text,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
           const SizedBox(height: 12),
           TabBar(

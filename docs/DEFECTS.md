@@ -833,8 +833,8 @@ Silent success; callers cannot distinguish removed vs already-gone.
 | Field | Value |
 | --- | --- |
 | Priority | **Pri-3** |
-| Status | Open |
-| Area | `MailboxState.isLoadingHeaders`, `MailboxState.headersErrorMessage`, `message_headers_sheet.dart` |
+| Status | **Closed** (2026-08-03) — Wave 6P P1: `headersLoadingMessageId` / `headersErrorMessageId` per message |
+| Area | `MailboxState.headersLoadingMessageId`, `headersErrorMessageId`, `message_headers_sheet.dart` |
 | Platforms | All |
 | Logged | 2026-07-14 |
 
@@ -920,8 +920,8 @@ No provider-backed fetch path for sample messages; documented as intentional gap
 | Field | Value |
 | --- | --- |
 | Priority | **Pri-2** |
-| Status | Open |
-| Area | `SyncEngine._toMailMessage`, `DriftMailRepository.upsertMessages`, `MailboxCubit.setUnreadBulk` |
+| Status | **Closed** (2026-08-03) — Wave 6P P1: merge policy in `drift_message_store.dart` (local read + pending unread push) |
+| Area | `SyncEngine._toMailMessage`, `DriftMessageStore.upsertMessages`, `MailboxCubit.setUnreadBulk` |
 | Platforms | All |
 | Logged | 2026-07-14 |
 

@@ -7,6 +7,8 @@
 // Last Update: 2026-07-18
 // ==============================================================================
 
+import 'dart:convert';
+
 import 'package:synesis/domain/models.dart';
 import 'package:synesis/query/message_query.dart';
 import 'package:synesis/repository/database.dart';
@@ -181,11 +183,7 @@ class DriftMessageStore {
               existingToRecipients: existing?.toRecipients,
               existingCcRecipients: existing?.ccRecipients,
             );
-        // DEF-007 partial: keep local read when sync would flicker back to unread.
-        final bool unreadToStore =
-            existing != null && !existing.unread && message.unread
-            ? existing.unread
-            : message.unread;
+        final bool unreadToStore = await _unreadForUpsert(existing, message);
         final String? threadIdToStore =
             message.threadId ?? existing?.threadId;
         await _database
@@ -565,5 +563,69 @@ class DriftMessageStore {
       await _folders.recountUnreadFromMessages();
     });
     _notify();
+  }
+
+  /// True when a pending/running read-state push matches [messageId].
+  Future<bool> _hasPendingReadStatePush(
+    String messageId, {
+    required bool isRead,
+  }) async {
+    final List<Job> jobs =
+        await (_database.select(_database.jobs)
+              ..where(
+                (Jobs table) => table.status.isIn(<String>['pending', 'running']),
+              )
+              ..where((Jobs table) => table.type.equals('push_message_action')))
+            .get();
+    for (final Job job in jobs) {
+      final String raw = job.payloadJson ?? '';
+      if (raw.isEmpty) {
+        continue;
+      }
+      try {
+        final Object? decoded = jsonDecode(raw);
+        if (decoded is! Map) {
+          continue;
+        }
+        final Map<String, dynamic> payload = Map<String, dynamic>.from(
+          decoded as Map<dynamic, dynamic>,
+        );
+        if (payload['messageId'] != messageId) {
+          continue;
+        }
+        if (payload['action'] != 'read') {
+          continue;
+        }
+        final Object? isReadRaw = payload['isRead'];
+        final bool pushIsRead = isReadRaw == true || isReadRaw == 'true';
+        if (pushIsRead == isRead) {
+          return true;
+        }
+      } on Object {
+        continue;
+      }
+    }
+    return false;
+  }
+
+  /// DEF-007: local user intent wins over stale remote read/unread headers.
+  Future<bool> _unreadForUpsert(Message? existing, MailMessage message) async {
+    if (existing == null) {
+      return message.unread;
+    }
+    if (existing.unread == message.unread) {
+      return message.unread;
+    }
+    if (!existing.unread && message.unread) {
+      return false;
+    }
+    if (existing.unread && !message.unread) {
+      final bool pendingMarkUnread = await _hasPendingReadStatePush(
+        message.id,
+        isRead: false,
+      );
+      return pendingMarkUnread;
+    }
+    return message.unread;
   }
 }

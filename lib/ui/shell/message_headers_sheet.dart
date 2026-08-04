@@ -131,7 +131,7 @@ Future<void> showMessageHeadersSheet(
                             ),
                           ),
                           const SizedBox(height: 8),
-                          if (mailbox.isLoadingHeaders &&
+                          if (mailbox.headersLoadingMessageId == current.id &&
                               (current.rawHeaders == null ||
                                   current.rawHeaders!.trim().isEmpty))
                             Padding(
@@ -147,7 +147,8 @@ Future<void> showMessageHeadersSheet(
                                 ),
                               ),
                             )
-                          else if (mailbox.headersErrorMessage != null &&
+                          else if (mailbox.headersErrorMessageId == current.id &&
+                              mailbox.headersErrorMessage != null &&
                               (current.rawHeaders == null ||
                                   current.rawHeaders!.trim().isEmpty))
                             Text(
