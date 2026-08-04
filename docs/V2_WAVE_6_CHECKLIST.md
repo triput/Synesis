@@ -17,10 +17,12 @@ Wave 0 ✅ → Wave H ✅ → Wave 1 (P0) ✅
                          → Wave G: Google People + Calendar API ✅
                          → Wave 6P: Performance UX (Sync Honesty) ✅
                          → ★ Wave 6: cross-account DnD copy ← active
+                         → Wave 6b: CalDAV/CardDAV write (copy targets)
+                         → Wave 6c: recurring event copy semantics
                          → Wave 7: Trish extras (last)
 ```
 
-## Locked product decisions (V2 plan — reaffirm at kickoff)
+## Locked product decisions (Trish, 2026-08-04)
 
 | # | Decision |
 | --- | --- |
@@ -28,8 +30,11 @@ Wave 0 ✅ → Wave H ✅ → Wave 1 (P0) ✅
 | W6-2 | **Desktop:** drag source → drop target (calendar lane / contact list). **Mobile:** long-press → bottom sheet picker (“Copy to calendar…” / “Copy to list…”) |
 | W6-3 | Job types **`events_copy`** and **`contacts_copy`** already reserved in [pim_sync_jobs.dart](../lib/sync/pim_sync_jobs.dart); [SyncEngine](../lib/sync/sync_engine.dart) handlers are **no-ops today** |
 | W6-4 | **Same UX** for events and contacts — shared picker/sheet patterns where sensible |
-| W6-5 | **Out of Wave 6 MVP:** recurring series instance semantics, organizer/meeting copy rules, event attachments, mail cross-account copy |
-| W6-6 | **Provider matrix (discovery gate D1):** Graph + Google create paths are **in scope**; CardDAV/CalDAV targets are **read-only today** — Tesla proposes write-back scope vs local-only target for Runbox |
+| W6-5 | **Out of Wave 6 MVP:** recurring series/instance semantics → **Wave 6c**; organizer/meeting copy rules; event attachments; mail cross-account copy |
+| W6-6 | **D1 locked:** Graph + Google create/push **in MVP**. DAV-as-target = **local duplicate only** + honest “not synced yet” UI until **Wave 6b** CalDAV/CardDAV write |
+| W6-7 | **Wave 6b** = CalDAV/CardDAV **create-only** write for copy targets (~8–12 eng-days); full update/delete push may extend 6b or trail |
+| W6-8 | **Wave 6c** = recurring **event** series/instance copy semantics (this occurrence vs series vs expand-and-copy) — after 6 + 6b so create paths exist on all providers |
+| W6-9 | **Corporate Graph / microsoft.com** work accounts = **post–Wave 6** research → incremental version (not 6 / 6b / 6c) |
 
 ## Discovery map (Steve — 2026-08-04)
 
@@ -42,7 +47,7 @@ Wave 0 ✅ → Wave H ✅ → Wave 1 (P0) ✅
 | [people_workspace.dart](../lib/ui/people/people_workspace.dart) | List/detail; no DnD | `Draggable` contact rows + list drop targets / mobile sheet |
 | [graph_pim_provider.dart](../lib/protocol/graph_pim_provider.dart) | Read sync + RSVP; `_postObject` exists | Tesla: `createEvent` / `createContact` POST payloads |
 | [google_pim_provider.dart](../lib/protocol/google_pim_provider.dart) | Read sync | Tesla: Calendar Events.insert + People createContact |
-| [dav_pim_provider.dart](../lib/protocol/dav_pim_provider.dart) | **Read-only** CardDAV/CalDAV | D1: write-back spike or defer DAV-as-target |
+| [dav_pim_provider.dart](../lib/protocol/dav_pim_provider.dart) | **Read-only** CardDAV/CalDAV | Wave 6: local-only target + label; **Wave 6b:** PUT create |
 | Mail sidebar | [folder_sidebar.dart](../lib/ui/shell/folder_sidebar.dart) long-press pattern | Reuse context-menu / sheet patterns for mobile copy |
 
 ## Slices
@@ -61,7 +66,7 @@ Wave 0 ✅ → Wave H ✅ → Wave 1 (P0) ✅
 
 | ID | Task | Exit |
 | --- | --- | --- |
-| **D1** | **Provider matrix** — document which source→target pairs ship in MVP (Graph↔Graph, Graph↔Google, Google↔Google; DAV target TBD) | Written in this checklist § Provider matrix |
+| **D1** | **Provider matrix** — Graph↔Graph / Graph↔Google / Google↔Google MVP; DAV → Wave 6b | **Locked** 2026-08-04 — § Provider matrix |
 | **D2** | **Job payload schema** — `events_copy` / `contacts_copy` JSON in job metadata (source id, target accountId, target collection id, optional field overrides) | Draft in Tesla design note or inline here |
 | **D3** | **Provider create APIs** — Graph POST event/contact; Google Calendar + People insert; error mapping → BLoC | API surface list + failure modes |
 | **D4** | **Idempotency** — new local `providerId` on copy; map remote id on push success; retry-safe | Design signed by Tesla |
@@ -97,15 +102,15 @@ Wave 0 ✅ → Wave H ✅ → Wave 1 (P0) ✅
 | **E10** | Renee QA pass — [V2_WAVE_6_QA.md](V2_WAVE_6_QA.md) (**GO** / NO-GO) | Test delta → Page inventory |
 | **E11** | Operator dogfood — Trish cross-account copy on principal Google + Graph calendars/contacts | **GO** logged in QA doc |
 
-## Provider matrix (D1 — draft pending Tesla sign-off)
+## Provider matrix (D1 — **locked** 2026-08-04)
 
 | Source \ Target | Graph | Google | DAV (Runbox) |
 | --- | --- | --- | --- |
-| **Graph** | ✅ MVP | ✅ MVP | ⏸ D1 — needs CalDAV/CardDAV write |
-| **Google** | ✅ MVP | ✅ MVP | ⏸ D1 |
-| **DAV** | ⏸ D1 | ⏸ D1 | ⏸ D1 |
+| **Graph** | ✅ MVP | ✅ MVP | ⏸ Wave 6b (local-only + label in Wave 6) |
+| **Google** | ✅ MVP | ✅ MVP | ⏸ Wave 6b (local-only + label in Wave 6) |
+| **DAV** | ⏸ Wave 6b | ⏸ Wave 6b | ⏸ Wave 6b |
 
-> **Default proposal:** Ship Graph + Google remote push in P1; DAV-as-target creates **local duplicate only** with sync job no-op + honest UI label until write-back lands (or a thin Wave 6b if Trish pulls DAV write forward).
+> Wave 6 ships Graph ↔ Google remote push. DAV-as-target: **local duplicate only** + honest UI until Wave 6b write-back.
 
 ## Exit criteria (wave complete)
 
@@ -122,17 +127,46 @@ Wave 0 ✅ → Wave H ✅ → Wave 1 (P0) ✅
 
 | Item | Disposition |
 | --- | --- |
-| Recurring event instance copy semantics | Later UX / Wave 7+ |
-| Organizer meeting / attendee re-invite on copy | Later |
+| **Calendar series / recurring event copy** (this occurrence vs series vs expand) | **Wave 6c** — not a Tasks module |
+| CalDAV/CardDAV write (create for copy targets) | **Wave 6b** |
+| Organizer meeting / attendee re-invite on copy | Later / Wave 6c+ if needed |
 | Event attachments on copy | Later |
 | Mail message / folder cross-account copy | Not PIM Wave 6 |
-| Full CalDAV/CardDAV write-back (unless D1 pulls in) | Wave 6b or post-V2.0 |
 | `events_push` / `contacts_push` for local CRUD edits | Separate CRUD wave if needed |
+| Corporate Graph (`microsoft.com` / Entra org tenants) | **Post–Wave 6** research → incremental version |
+
+## Follow-on waves (locked sequencing)
+
+### Wave 6b — CalDAV/CardDAV write (copy targets)
+
+| Item | Notes |
+| --- | --- |
+| Scope | Create-only PUT for events + contacts when DAV is the **copy target**; rewrite `providerId`/etag; guard unpushed `local:*` from full-pull soft-delete |
+| LOE | ~8–12 eng-days (Tesla-heavy) |
+| Depends on | Wave 6 copy UX + job plumbing |
+| Out | Full update/delete push (may trail 6b); free/busy; ACLs |
+
+### Wave 6c — Calendar series / recurring event copy semantics
+
+| Item | Notes |
+| --- | --- |
+| Scope | Copy UX for **recurring calendar events** (RRULE / series-master vs instance): this occurrence · entire series · copy-as-new independent series. Graph `seriesMaster`/occurrence, Google `recurringEventId`, DAV RRULE fidelity. |
+| Why **6c** (not fold into 6b) | Non-trivial LOE — cross-provider identity, exception instances, UX disambiguation, and create-path differences. Fold into 6b only if a later spike shows ≤2 eng-days after 6b create lands. |
+| Depends on | Wave 6 (+ preferably 6b so DAV series copy can push) |
+| Not in scope | A separate **Tasks** module — “recurring” here means **calendar series only** |
+
+### Post–Wave 6 — Corporate Graph research (incremental version)
+
+| Item | Notes |
+| --- | --- |
+| Scope | Research spike for **work/school Graph** accounts (e.g. `microsoft.com`, Entra org tenants): admin consent, publisher verification, tenant policies, Conditional Access, shared mailboxes if needed |
+| Timing | **After** Wave 6 family; **not** 6 / 6b / 6c |
+| Disposition | Stub for an **incremental version** plan (likely V2.x); Page opens research brief when operator prioritizes |
 
 ## Phase-gate routing
 
 ```text
-(1) Discovery  — Steve + Page context; Tesla D1–D4 design
+(1) Discovery  — Steve + Page context; Tesla D2–D4 design (D1 locked)
 (2) Implement  — Tesla P1 → Jules/Andi P2–P3
 (3) Quality    — Renee E10
 (4) Docs       — Page inventory + V2_PLAN/ROADMAP
@@ -150,4 +184,4 @@ Wave 0 ✅ → Wave H ✅ → Wave 1 (P0) ✅
 
 ---
 
-*Planning opened 2026-08-04 after Wave 6P exit (`6b0f3d7`, **645 tests**). Implementation starts after operator approves D1 provider matrix.*
+*Planning opened 2026-08-04 after Wave 6P exit (`6b0f3d7`, **645 tests**). **D1 locked** (Graph + Google MVP; DAV → 6b). Implementation may start on Tesla D2–D4.*
