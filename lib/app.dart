@@ -4,7 +4,7 @@
 // Component: UI
 // Version: 1.3 (Gold Master)
 // Created: 2026-07-14
-// Last Update: 2026-07-27
+// Last Update: 2026-08-04
 // ==============================================================================
 
 import 'dart:async';
@@ -26,6 +26,7 @@ import 'package:synesis/repository/drift/drift_pim_store.dart';
 import 'package:synesis/repository/mail_repository.dart';
 import 'package:synesis/settings/app_settings_cubit.dart';
 import 'package:synesis/settings/app_settings_state.dart';
+import 'package:synesis/sync/pim_copy_service.dart';
 import 'package:synesis/sync/retention_service.dart';
 import 'package:synesis/sync/sync_activity.dart';
 import 'package:synesis/sync/sync_engine.dart';
@@ -49,6 +50,7 @@ class SynesisApp extends StatelessWidget {
     required this.identityManager,
     required this.resolveProvider,
     required this.pimStore,
+    this.pimCopyService,
     this.meetingInviteService,
     this.retentionService,
     this.settingsCubit,
@@ -67,6 +69,7 @@ class SynesisApp extends StatelessWidget {
   final OAuthIdentityManager identityManager;
   final ProviderResolver resolveProvider;
   final MeetingInviteService? meetingInviteService;
+  final PimCopyService? pimCopyService;
   final RetentionService? retentionService;
   final AppSettingsCubit? settingsCubit;
   final DesktopController desktopController;
@@ -92,6 +95,8 @@ class SynesisApp extends StatelessWidget {
           RepositoryProvider<MeetingInviteService>.value(
             value: meetingInviteService!,
           ),
+        if (pimCopyService != null)
+          RepositoryProvider<PimCopyService>.value(value: pimCopyService!),
         RepositoryProvider<DesktopController>.value(value: desktopController),
         RepositoryProvider<DetachedMessageWindowController>.value(
           value: detachedMessageWindowController,
@@ -132,12 +137,18 @@ class SynesisApp extends StatelessWidget {
             create: (context) => CalendarCubit(
               pimStore: pimStore,
               repository: repository,
+              copyService: pimCopyService,
+              syncEngine: syncEngine,
               settingsCubit: context.read<AppSettingsCubit>(),
             ),
           ),
           BlocProvider<PeopleCubit>(
-            create: (context) =>
-                PeopleCubit(pimStore: pimStore, repository: repository),
+            create: (context) => PeopleCubit(
+              pimStore: pimStore,
+              repository: repository,
+              copyService: pimCopyService,
+              syncEngine: syncEngine,
+            ),
           ),
         ],
         child: BlocListener<AppSettingsCubit, AppSettingsState>(

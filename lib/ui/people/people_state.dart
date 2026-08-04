@@ -4,14 +4,16 @@
 // Component: Bloc / UI
 // Version: 1.0 (Gold Master)
 // Created: 2026-07-27
-// Last Update: 2026-07-27
+// Last Update: 2026-08-04
 // ==============================================================================
 
 import 'package:equatable/equatable.dart';
+import 'package:synesis/domain/models.dart';
 import 'package:synesis/domain/pim.dart';
 
 class PeopleState extends Equatable {
   const PeopleState({
+    this.accounts = const <MailAccount>[],
     this.contactLists = const <ContactList>[],
     this.contacts = const <Contact>[],
     this.searchQuery = '',
@@ -23,6 +25,7 @@ class PeopleState extends Equatable {
     this.errorMessage,
   });
 
+  final List<MailAccount> accounts;
   final List<ContactList> contactLists;
 
   /// Contacts belonging to lists with [ContactList.isSelectedForDisplay].
@@ -69,6 +72,7 @@ class PeopleState extends Equatable {
   }
 
   PeopleState copyWith({
+    List<MailAccount>? accounts,
     List<ContactList>? contactLists,
     List<Contact>? contacts,
     String? searchQuery,
@@ -82,6 +86,7 @@ class PeopleState extends Equatable {
     bool clearError = false,
   }) {
     return PeopleState(
+      accounts: accounts ?? this.accounts,
       contactLists: contactLists ?? this.contactLists,
       contacts: contacts ?? this.contacts,
       searchQuery: searchQuery ?? this.searchQuery,
@@ -98,6 +103,7 @@ class PeopleState extends Equatable {
 
   @override
   List<Object?> get props => <Object?>[
+    accounts,
     contactLists,
     contacts,
     searchQuery,

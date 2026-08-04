@@ -4,7 +4,7 @@
 // Component: Bloc / UI
 // Version: 1.0 (Gold Master)
 // Created: 2026-07-27
-// Last Update: 2026-07-27
+// Last Update: 2026-08-04
 // ==============================================================================
 
 import 'dart:async';
@@ -16,6 +16,8 @@ import 'package:synesis/repository/drift/drift_pim_store.dart';
 import 'package:synesis/repository/mail_repository.dart';
 import 'package:synesis/settings/app_settings_cubit.dart';
 import 'package:synesis/settings/app_settings_state.dart';
+import 'package:synesis/sync/pim_copy_service.dart';
+import 'package:synesis/sync/sync_engine.dart';
 import 'package:synesis/ui/calendar/calendar_state.dart';
 
 /// Owns the Calendar workspace's visible month range, calendar display
@@ -31,10 +33,14 @@ class CalendarCubit extends Cubit<CalendarState> {
   CalendarCubit({
     required DriftPimStore pimStore,
     required MailRepository repository,
+    PimCopyService? copyService,
+    SyncEngine? syncEngine,
     AppSettingsCubit? settingsCubit,
     DateTime? initialMonth,
   }) : _pimStore = pimStore,
        _repository = repository,
+       _copyService = copyService,
+       _syncEngine = syncEngine,
        super(
          CalendarState(
            focusedMonth: _startOfMonth(initialMonth ?? DateTime.now()),
@@ -55,6 +61,8 @@ class CalendarCubit extends Cubit<CalendarState> {
 
   final DriftPimStore _pimStore;
   final MailRepository _repository;
+  final PimCopyService? _copyService;
+  final SyncEngine? _syncEngine;
   StreamSubscription<void>? _changesSub;
   StreamSubscription<AppSettingsState>? _settingsSub;
 
@@ -181,6 +189,34 @@ class CalendarCubit extends Cubit<CalendarState> {
   Future<void> deleteEvent(String eventId) => _pimStore.softDeleteEvent(
     eventId,
   );
+
+  /// Local-first duplicate of [sourceEventId] onto [targetCalendarId] (Wave 6).
+  ///
+  /// Enqueues `events_copy` when the target account is Graph/Google; DAV
+  /// targets remain local-only until Wave 6b. Refreshes the visible month
+  /// after the duplicate lands.
+  Future<PimCopyResult<CalendarEvent>> copyEventToCalendar({
+    required String sourceEventId,
+    required String targetAccountId,
+    required String targetCalendarId,
+  }) async {
+    final PimCopyService? copyService = _copyService;
+    if (copyService == null) {
+      throw StateError('CalendarCubit.copyEventToCalendar: PimCopyService '
+          'not configured.');
+    }
+    final PimCopyResult<CalendarEvent> result =
+        await copyService.copyEventToCalendar(
+      sourceEventId: sourceEventId,
+      targetAccountId: targetAccountId,
+      targetCalendarId: targetCalendarId,
+    );
+    if (result.remotePushEnqueued) {
+      unawaited(_syncEngine?.kick());
+    }
+    await refresh();
+    return result;
+  }
 
   @override
   Future<void> close() {

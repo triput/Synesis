@@ -31,6 +31,7 @@ import 'package:synesis/repository/database.dart';
 import 'package:synesis/repository/drift/drift_pim_store.dart';
 import 'package:synesis/repository/drift_mail_repository.dart';
 import 'package:synesis/settings/app_settings_cubit.dart';
+import 'package:synesis/sync/pim_copy_service.dart';
 import 'package:synesis/sync/provider_registry.dart';
 import 'package:synesis/sync/retention_service.dart';
 import 'package:synesis/sync/sync_activity.dart';
@@ -169,6 +170,11 @@ Future<void> main(List<String> args) async {
     resolvePim: providerRegistry.resolvePim,
     resolveMail: providerRegistry.resolve,
   );
+  final PimCopyService pimCopyService = PimCopyService(
+    pimStore: pimStore,
+    repository: repository,
+    resolvePim: providerRegistry.resolvePim,
+  );
   syncEngine.startNetworkWatcher();
 
   // D6-8: dedicated service for Windows toast Archive/Delete actions. These
@@ -235,6 +241,7 @@ Future<void> main(List<String> args) async {
       accountService: accountService,
       identityManager: identityManager,
       meetingInviteService: meetingInviteService,
+      pimCopyService: pimCopyService,
       resolveProvider: providerRegistry.resolve,
       pimStore: pimStore,
       settingsCubit: settingsCubit,

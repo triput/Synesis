@@ -4,19 +4,26 @@
 // Component: UI
 // Version: 1.0 (Gold Master)
 // Created: 2026-07-27
-// Last Update: 2026-08-03
+// Last Update: 2026-08-04
 // ==============================================================================
+
+import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:provider/provider.dart';
 import 'package:synesis/domain/models.dart';
 import 'package:synesis/domain/pim.dart';
 import 'package:synesis/settings/app_settings_state.dart';
+import 'package:synesis/sync/pim_copy_service.dart';
 import 'package:synesis/theme/app_theme.dart';
 import 'package:synesis/theme/theme_tokens.dart';
 import 'package:synesis/ui/branding/synesis_wordmark.dart';
 import 'package:synesis/ui/calendar/calendar_cubit.dart';
 import 'package:synesis/ui/calendar/calendar_state.dart';
+import 'package:synesis/ui/pim/pim_copy_target_sheet.dart';
+import 'package:synesis/ui/pim/pim_copy_ui.dart';
+import 'package:synesis/ui/shell/mail_split_layout.dart';
 
 /// Local-only write notice shown in the event editor and confirmation
 /// snackbars (Wave 5 W5-2: `events_push` remains a no-op).
@@ -93,6 +100,71 @@ String _formatEventTimeRange(CalendarEvent event) {
   return '${_formatTimeOfDay(start)} – ${_formatTimeOfDay(end)}';
 }
 
+PimCopyService? _pimCopyServiceOf(BuildContext context) {
+  try {
+    return RepositoryProvider.of<PimCopyService>(context, listen: false);
+  } on ProviderNotFoundException {
+    return null;
+  }
+}
+
+VoidCallback? _eventCopyLongPressHandler(
+  BuildContext context, {
+  required CalendarEvent event,
+  required CalendarCubit cubit,
+  required CalendarState state,
+}) {
+  if (!isPortraitMobileLayout(context)) {
+    return null;
+  }
+  final PimCopyService? copyService = _pimCopyServiceOf(context);
+  if (copyService == null) {
+    return null;
+  }
+  return () {
+    unawaited(
+      showEventCopyTargetSheet(
+        context,
+        sourceEvent: event,
+        cubit: cubit,
+        state: state,
+        copyService: copyService,
+      ),
+    );
+  };
+}
+
+Future<void> _acceptEventCopy(
+  BuildContext context, {
+  required CalendarCubit cubit,
+  required PimEventDragData data,
+  required Calendar targetCalendar,
+}) async {
+  try {
+    final PimCopyResult<CalendarEvent> result = await cubit.copyEventToCalendar(
+      sourceEventId: data.eventId,
+      targetAccountId: targetCalendar.accountId,
+      targetCalendarId: targetCalendar.id,
+    );
+    if (!context.mounted) {
+      return;
+    }
+    showEventCopyResultSnackBar(
+      context: context,
+      calendarName: targetCalendar.name,
+      result: result,
+      onUndo: cubit.deleteEvent,
+    );
+  } catch (error) {
+    if (!context.mounted) {
+      return;
+    }
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Copy failed: $error')),
+    );
+  }
+}
+
 /// Month-grid + agenda Calendar workspace (Wave 5 / V2.0c P6).
 ///
 /// Reads and writes only through [CalendarCubit] → `DriftPimStore` — there is
@@ -107,20 +179,40 @@ class CalendarWorkspace extends StatelessWidget {
       builder: (BuildContext context, CalendarState state) {
         final ThemeTokens t = tokensOf(context);
         final CalendarCubit cubit = context.read<CalendarCubit>();
+        final bool dndEnabled = isDesktopPimDnDEnabled(context);
         return Scaffold(
           backgroundColor: t.ink,
           body: SafeArea(
             child: Column(
               children: <Widget>[
                 _CalendarHeader(state: state, cubit: cubit),
+                if (dndEnabled && state.hasSelectedCalendars)
+                  CalendarLaneDropBar(
+                    calendars: state.selectedCalendars,
+                    onAccept: (PimEventDragData data, Calendar calendar) =>
+                        _acceptEventCopy(
+                      context,
+                      cubit: cubit,
+                      data: data,
+                      targetCalendar: calendar,
+                    ),
+                  ),
                 Expanded(
                   child: state.isLoading && state.calendars.isEmpty
                       ? const Center(child: CircularProgressIndicator())
                       : !state.hasAnyCalendars
                           ? _EmptyCalendarState(state: state)
                           : (state.showAgenda
-                                ? _AgendaView(state: state, cubit: cubit)
-                                : _MonthGridView(state: state, cubit: cubit)),
+                                ? _AgendaView(
+                                    state: state,
+                                    cubit: cubit,
+                                    dndEnabled: dndEnabled,
+                                  )
+                                : _MonthGridView(
+                                    state: state,
+                                    cubit: cubit,
+                                    dndEnabled: dndEnabled,
+                                  )),
                 ),
               ],
             ),
@@ -343,10 +435,15 @@ class _WeekdayHeaderRow extends StatelessWidget {
 }
 
 class _MonthGridView extends StatelessWidget {
-  const _MonthGridView({required this.state, required this.cubit});
+  const _MonthGridView({
+    required this.state,
+    required this.cubit,
+    required this.dndEnabled,
+  });
 
   final CalendarState state;
   final CalendarCubit cubit;
+  final bool dndEnabled;
 
   @override
   Widget build(BuildContext context) {
@@ -390,6 +487,7 @@ class _MonthGridView extends StatelessWidget {
                 isToday: isToday,
                 events: events,
                 state: state,
+                dndEnabled: dndEnabled,
                 onTap: () => showDayEventsSheet(
                   context,
                   cubit: cubit,
@@ -443,6 +541,7 @@ class _DayCell extends StatelessWidget {
     required this.isToday,
     required this.events,
     required this.state,
+    required this.dndEnabled,
     required this.onTap,
   });
 
@@ -451,6 +550,7 @@ class _DayCell extends StatelessWidget {
   final bool isToday;
   final List<CalendarEvent> events;
   final CalendarState state;
+  final bool dndEnabled;
   final VoidCallback onTap;
 
   @override
@@ -510,14 +610,28 @@ class _DayCell extends StatelessWidget {
                       for (final CalendarEvent event in visible)
                         Padding(
                           padding: const EdgeInsets.only(bottom: 1),
-                          child: _CalendarEventChip(
-                            title: event.title,
+                          child: desktopEventDraggable(
+                            enabled: dndEnabled,
+                            data: PimEventDragData(
+                              eventId: event.id,
+                              sourceCalendarId: event.calendarId,
+                              sourceAccountId: event.accountId,
+                              title: event.title,
+                            ),
                             accent: _calendarAccentColor(
                               state,
                               event.calendarId,
                               t,
                             ),
-                            tokens: t,
+                            child: _CalendarEventChip(
+                              title: event.title,
+                              accent: _calendarAccentColor(
+                                state,
+                                event.calendarId,
+                                t,
+                              ),
+                              tokens: t,
+                            ),
                           ),
                         ),
                       if (overflowCount > 0)
@@ -542,10 +656,15 @@ class _DayCell extends StatelessWidget {
 }
 
 class _AgendaView extends StatelessWidget {
-  const _AgendaView({required this.state, required this.cubit});
+  const _AgendaView({
+    required this.state,
+    required this.cubit,
+    required this.dndEnabled,
+  });
 
   final CalendarState state;
   final CalendarCubit cubit;
+  final bool dndEnabled;
 
   @override
   Widget build(BuildContext context) {
@@ -572,11 +691,26 @@ class _AgendaView extends StatelessWidget {
                           e.calendarId == state.selectedCalendars[i].id,
                     )
                     .toList(growable: false),
+                dndEnabled: dndEnabled,
                 onTapEvent: (CalendarEvent e) => showEventEditorSheet(
                   context,
                   cubit: cubit,
                   state: state,
                   event: e,
+                ),
+                onLongPressEvent: (CalendarEvent e) {
+                  _eventCopyLongPressHandler(
+                    context,
+                    event: e,
+                    cubit: cubit,
+                    state: state,
+                  )?.call();
+                },
+                onAcceptDrop: (PimEventDragData data) => _acceptEventCopy(
+                  context,
+                  cubit: cubit,
+                  data: data,
+                  targetCalendar: state.selectedCalendars[i],
                 ),
               ),
             ),
@@ -602,11 +736,18 @@ class _AgendaView extends StatelessWidget {
         return _AgendaEventTile(
           event: event,
           calendar: state.calendarById(event.calendarId),
+          dndEnabled: dndEnabled,
           onTap: () => showEventEditorSheet(
             context,
             cubit: cubit,
             state: state,
             event: event,
+          ),
+          onLongPress: _eventCopyLongPressHandler(
+            context,
+            event: event,
+            cubit: cubit,
+            state: state,
           ),
         );
       },
@@ -619,16 +760,26 @@ class _AgendaColumn extends StatelessWidget {
     required this.calendar,
     required this.events,
     required this.onTapEvent,
+    required this.dndEnabled,
+    required this.onAcceptDrop,
+    this.onLongPressEvent,
   });
 
   final Calendar calendar;
   final List<CalendarEvent> events;
   final ValueChanged<CalendarEvent> onTapEvent;
+  final bool dndEnabled;
+  final Future<void> Function(PimEventDragData data) onAcceptDrop;
+  final ValueChanged<CalendarEvent>? onLongPressEvent;
 
   @override
   Widget build(BuildContext context) {
     final ThemeTokens t = tokensOf(context);
-    return Column(
+    return CalendarAgendaLaneDropTarget(
+      calendar: calendar,
+      enabled: dndEnabled,
+      onAccept: onAcceptDrop,
+      child: Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
         Padding(
@@ -674,13 +825,18 @@ class _AgendaColumn extends StatelessWidget {
                     return _AgendaEventTile(
                       event: event,
                       calendar: calendar,
+                      dndEnabled: dndEnabled,
                       onTap: () => onTapEvent(event),
+                      onLongPress: onLongPressEvent == null
+                          ? null
+                          : () => onLongPressEvent!(event),
                       dense: true,
                     );
                   },
                 ),
         ),
       ],
+      ),
     );
   }
 }
@@ -690,12 +846,16 @@ class _AgendaEventTile extends StatelessWidget {
     required this.event,
     required this.calendar,
     required this.onTap,
+    this.onLongPress,
+    this.dndEnabled = false,
     this.dense = false,
   });
 
   final CalendarEvent event;
   final Calendar? calendar;
   final VoidCallback onTap;
+  final VoidCallback? onLongPress;
+  final bool dndEnabled;
   final bool dense;
 
   @override
@@ -712,43 +872,57 @@ class _AgendaEventTile extends StatelessWidget {
         horizontal: dense ? 6 : 12,
         vertical: dense ? 2 : 4,
       ),
-      child: Material(
-        color: _calendarAccentWash(accent, t),
-        borderRadius: BorderRadius.circular(8),
-        child: InkWell(
-          key: ValueKey<String>('calendar_agenda_event_${event.id}'),
-          onTap: onTap,
+      child: desktopEventDraggable(
+        enabled: dndEnabled,
+        data: PimEventDragData(
+          eventId: event.id,
+          sourceCalendarId: event.calendarId,
+          sourceAccountId: event.accountId,
+          title: event.title,
+        ),
+        accent: accent,
+        child: Material(
+          color: _calendarAccentWash(accent, t),
           borderRadius: BorderRadius.circular(8),
-          child: Container(
-            decoration: BoxDecoration(
+          child: GestureDetector(
+            behavior: HitTestBehavior.translucent,
+            onLongPress: onLongPress,
+            child: InkWell(
+              key: ValueKey<String>('calendar_agenda_event_${event.id}'),
+              onTap: onTap,
               borderRadius: BorderRadius.circular(8),
-              border: Border(
-                left: BorderSide(color: accent, width: 3),
-              ),
-            ),
-            padding: EdgeInsets.symmetric(
-              horizontal: dense ? 10 : 12,
-              vertical: dense ? 8 : 10,
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                Text(
-                  event.title,
-                  style: TextStyle(
-                    color: t.text,
-                    fontWeight: FontWeight.w600,
-                    fontSize: dense ? 13 : 14,
+              child: Container(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border(
+                    left: BorderSide(color: accent, width: 3),
                   ),
-                  overflow: TextOverflow.ellipsis,
                 ),
-                const SizedBox(height: 2),
-                Text(
-                  '${start.month}/${start.day} · ${_formatEventTimeRange(event)}'
-                  '${calendar == null ? '' : ' · ${calendar!.name}'}',
-                  style: TextStyle(color: t.muted, fontSize: 11),
+                padding: EdgeInsets.symmetric(
+                  horizontal: dense ? 10 : 12,
+                  vertical: dense ? 8 : 10,
                 ),
-              ],
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Text(
+                      event.title,
+                      style: TextStyle(
+                        color: t.text,
+                        fontWeight: FontWeight.w600,
+                        fontSize: dense ? 13 : 14,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      '${start.month}/${start.day} · ${_formatEventTimeRange(event)}'
+                      '${calendar == null ? '' : ' · ${calendar!.name}'}',
+                      style: TextStyle(color: t.muted, fontSize: 11),
+                    ),
+                  ],
+                ),
+              ),
             ),
           ),
         ),
@@ -822,6 +996,12 @@ Future<void> showDayEventsSheet(
                           event: event,
                         );
                       },
+                      onLongPress: _eventCopyLongPressHandler(
+                        sheetContext,
+                        event: event,
+                        cubit: cubit,
+                        state: state,
+                      ),
                     );
                   },
                 ),

@@ -4,20 +4,56 @@
 // Component: UI
 // Version: 1.0 (Gold Master)
 // Created: 2026-07-27
-// Last Update: 2026-08-03
+// Last Update: 2026-08-04
 // ==============================================================================
 
 import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:provider/provider.dart';
 import 'package:synesis/domain/pim.dart';
+import 'package:synesis/sync/pim_copy_service.dart';
 import 'package:synesis/theme/app_theme.dart';
 import 'package:synesis/theme/theme_tokens.dart';
 import 'package:synesis/ui/branding/synesis_wordmark.dart';
 import 'package:synesis/ui/people/people_cubit.dart';
 import 'package:synesis/ui/people/people_state.dart';
+import 'package:synesis/ui/pim/pim_copy_target_sheet.dart';
+import 'package:synesis/ui/pim/pim_copy_ui.dart';
 import 'package:synesis/ui/shell/mail_split_layout.dart';
+
+PimCopyService? _pimCopyServiceOf(BuildContext context) {
+  try {
+    return RepositoryProvider.of<PimCopyService>(context, listen: false);
+  } on ProviderNotFoundException {
+    return null;
+  }
+}
+
+void _openContactCopySheetIfMobile(
+  BuildContext context, {
+  required Contact contact,
+  required PeopleCubit cubit,
+  required PeopleState state,
+}) {
+  if (!isPortraitMobileLayout(context)) {
+    return;
+  }
+  final PimCopyService? copyService = _pimCopyServiceOf(context);
+  if (copyService == null) {
+    return;
+  }
+  unawaited(
+    showContactCopyTargetSheet(
+      context,
+      sourceContact: contact,
+      cubit: cubit,
+      state: state,
+      copyService: copyService,
+    ),
+  );
+}
 
 /// People module UI (Wave 5 / V2.0c): lists contacts from
 /// `isSelectedForDisplay` contact lists, local FTS search, and a read-only
@@ -38,6 +74,36 @@ class _PeopleWorkspaceState extends State<PeopleWorkspace> {
     super.dispose();
   }
 
+  Future<void> _acceptContactCopy(
+    BuildContext context, {
+    required PeopleCubit cubit,
+    required PimContactDragData data,
+    required ContactList targetList,
+  }) async {
+    try {
+      final PimCopyResult<Contact> result = await cubit.copyContactToList(
+        sourceContactId: data.contactId,
+        targetAccountId: targetList.accountId,
+        targetContactListId: targetList.id,
+      );
+      if (!context.mounted) {
+        return;
+      }
+      showContactCopyResultSnackBar(
+        context: context,
+        listName: targetList.name,
+        result: result,
+      );
+    } catch (error) {
+      if (!context.mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Copy failed: $error')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<PeopleCubit, PeopleState>(
@@ -45,6 +111,7 @@ class _PeopleWorkspaceState extends State<PeopleWorkspace> {
         final ThemeTokens t = tokensOf(context);
         final PeopleCubit cubit = context.read<PeopleCubit>();
         final bool portraitMobile = isPortraitMobileLayout(context);
+        final bool dndEnabled = isDesktopPimDnDEnabled(context);
         final Contact? selected = state.selectedContact;
         return Scaffold(
           backgroundColor: t.ink,
@@ -56,13 +123,29 @@ class _PeopleWorkspaceState extends State<PeopleWorkspace> {
                   state: state,
                   cubit: cubit,
                 ),
+                if (dndEnabled && state.contactLists.isNotEmpty)
+                  ContactListLaneDropBar(
+                    contactLists: state.contactLists,
+                    onAccept: (PimContactDragData data, ContactList list) =>
+                        _acceptContactCopy(
+                      context,
+                      cubit: cubit,
+                      data: data,
+                      targetList: list,
+                    ),
+                  ),
                 Expanded(
                   child: state.isLoading && state.contactLists.isEmpty
                       ? const Center(child: CircularProgressIndicator())
                       : state.contactLists.isEmpty
                       ? _EmptyPeopleState(state: state)
                       : (portraitMobile
-                            ? _PeopleListOnly(state: state, cubit: cubit)
+                            ? _PeopleListOnly(
+                                state: state,
+                                cubit: cubit,
+                                dndEnabled: false,
+                                mobileCopyEnabled: true,
+                              )
                             : Row(
                                 children: <Widget>[
                                   SizedBox(
@@ -70,6 +153,7 @@ class _PeopleWorkspaceState extends State<PeopleWorkspace> {
                                     child: _PeopleList(
                                       state: state,
                                       cubit: cubit,
+                                      dndEnabled: dndEnabled,
                                     ),
                                   ),
                                   VerticalDivider(width: 1, color: t.line),
@@ -201,10 +285,17 @@ class _EmptyPeopleState extends StatelessWidget {
 }
 
 class _PeopleListOnly extends StatelessWidget {
-  const _PeopleListOnly({required this.state, required this.cubit});
+  const _PeopleListOnly({
+    required this.state,
+    required this.cubit,
+    required this.dndEnabled,
+    this.mobileCopyEnabled = false,
+  });
 
   final PeopleState state;
   final PeopleCubit cubit;
+  final bool dndEnabled;
+  final bool mobileCopyEnabled;
 
   @override
   Widget build(BuildContext context) {
@@ -219,7 +310,12 @@ class _PeopleListOnly extends StatelessWidget {
           key: const ValueKey<String>('people-list'),
           child: Material(
             color: t.ink,
-            child: _PeopleList(state: state, cubit: cubit),
+            child: _PeopleList(
+              state: state,
+              cubit: cubit,
+              dndEnabled: dndEnabled,
+              mobileCopyEnabled: mobileCopyEnabled,
+            ),
           ),
         ),
         if (selected != null)
@@ -297,10 +393,17 @@ class _ContactDetailPage extends StatelessWidget {
 }
 
 class _PeopleList extends StatelessWidget {
-  const _PeopleList({required this.state, required this.cubit});
+  const _PeopleList({
+    required this.state,
+    required this.cubit,
+    required this.dndEnabled,
+    this.mobileCopyEnabled = false,
+  });
 
   final PeopleState state;
   final PeopleCubit cubit;
+  final bool dndEnabled;
+  final bool mobileCopyEnabled;
 
   @override
   Widget build(BuildContext context) {
@@ -320,7 +423,7 @@ class _PeopleList extends StatelessWidget {
       itemBuilder: (BuildContext context, int index) {
         final Contact contact = contacts[index];
         final bool selected = contact.id == state.selectedContactId;
-        return ListTile(
+        final Widget row = ListTile(
           key: ValueKey<String>('people_contact_row_${contact.id}'),
           selected: selected,
           selectedTileColor: t.indigo.withValues(alpha: 0.14),
@@ -342,6 +445,24 @@ class _PeopleList extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                 ),
           onTap: () => cubit.selectContact(contact.id),
+          onLongPress: mobileCopyEnabled
+              ? () => _openContactCopySheetIfMobile(
+                    context,
+                    contact: contact,
+                    cubit: cubit,
+                    state: state,
+                  )
+              : null,
+        );
+        return desktopContactDraggable(
+          enabled: dndEnabled,
+          data: PimContactDragData(
+            contactId: contact.id,
+            sourceContactListId: contact.contactListId,
+            sourceAccountId: contact.accountId,
+            displayName: contact.displayName,
+          ),
+          child: row,
         );
       },
     );

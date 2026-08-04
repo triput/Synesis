@@ -137,6 +137,12 @@ class PimCopyService {
     );
   }
 
+  /// Whether [accountId] supports Graph/Google remote create on copy.
+  ///
+  /// DAV targets return `false` (local duplicate only until Wave 6b).
+  Future<bool> remotePushSupportedForAccount(String accountId) =>
+      _shouldEnqueueRemotePush(accountId);
+
   Future<bool> _shouldEnqueueRemotePush(String accountId) async {
     final GraphPimProvider? provider = await _resolvePim(accountId);
     if (provider == null) {
