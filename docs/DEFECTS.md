@@ -12,7 +12,37 @@
 
 > Android dogfood folder/drawer polish (2026-07-27): account chips, folder-picker sheet, title-bar **Show folders** → sheet.
 >
-> **V2 Wave 7 / Trish extras parking lot** (2026-07-27): operator enhancement backlog (Pri-2 / Pri-2.5 / Pri-3) parked for **Wave 7 — Final polish / Trish extras** — last if time permits; not V2.0 critical path. See [V2_PLAN.md](V2_PLAN.md) § Wave 7. **Trish calendar asks (2026-08-03):** [DEF-075](#def-075--calendar-week--weekdays-views) week/weekdays views; [DEF-076](#def-076--calendar-show-day-of-year--week-of-year) day-of-year + week-of-year. **Trish V-Next (2026-08-03):** [DEF-078](#def-078--phone-quick-reply-density--settings-toggle) phone Quick Reply; [DEF-044](#def-044--home-screen-list-widget-per-account-mail--open-in-app-aquamail-bar) per-account list widgets (AquaMail bar) — **Pri-2**. **Trish Pri-3 (2026-08-04):** [DEF-079](#def-079--contact-postal-addresses--open-in-map-apps) contact postal addresses + Maps/Waze.
+> **V2 Wave 7 / Trish extras parking lot** (2026-07-27): operator enhancement backlog (Pri-2 / Pri-2.5 / Pri-3) parked for **Wave 7 — Final polish / Trish extras** — last if time permits; not V2.0 critical path. See [V2_PLAN.md](V2_PLAN.md) § Wave 7. **Trish calendar asks (2026-08-03):** [DEF-075](#def-075--calendar-week--weekdays-views) week/weekdays views; [DEF-076](#def-076--calendar-show-day-of-year--week-of-year) day-of-year + week-of-year. **Trish V-Next (2026-08-03):** [DEF-078](#def-078--phone-quick-reply-density--settings-toggle) phone Quick Reply; [DEF-044](#def-044--home-screen-list-widget-per-account-mail--open-in-app-aquamail-bar) per-account list widgets (AquaMail bar) — **Pri-2**. **Trish Pri-3 (2026-08-04):** [DEF-079](#def-079--contact-postal-addresses--open-in-map-apps) contact postal addresses + Maps/Waze. **Wave 6 E11 dogfood (2026-08-04):** [DEF-080](#def-080--gmail-imap-too-many-simultaneous-connections-on-body-fetch).
+
+### DEF-080 — Gmail IMAP: Too many simultaneous connections on body fetch
+
+| Field | Value |
+| --- | --- |
+| Priority | **Pri-2** |
+| Status | Open |
+| Target | Post–Wave 6 / sync hardening (Tesla) |
+| Area | `ImapSmtpMailProvider`, `ProviderRegistry`, `ImapIdleService`, `SyncEngine._withProvider`, `MessageBodyCache` |
+| Platforms | Windows (repro), Android likely same account |
+| Logged | 2026-08-04 |
+| Found by | **Trish** (Wave 6 E11 desktop dogfood — Gmail XOAUTH) |
+| Related | IMAP IDLE; Gmail connection cap (~15 per account across clients) |
+
+**Summary**  
+**Trish:** Opening a Gmail message on desktop shows reading-pane error:
+
+`ProtocolException: Unable to fetch the IMAP message body.`  
+`Cause: [ALERT] Too many simultaneous connections. (Failure)`
+
+**Expected**  
+Body fetch reuses a single per-account IMAP session (or waits/queues) so Gmail’s simultaneous-connection limit is not exceeded by Synesis alone; transient ALERT should retry with backoff.
+
+**Actual**  
+`ProviderRegistry.resolve` returns a **new** `ImapSmtpMailProvider` (new `ImapClient`) on every resolve. `ImapIdleService` holds one long-lived connection; sync jobs `_withProvider` open another then dispose; UI body fetch resolves yet another. Combined with phone/other IMAP clients, Gmail rejects with `[ALERT] Too many simultaneous connections`.
+
+**Notes**  
+Not Wave 6 DnD scope — mail path. Workaround for dogfood: wait for sync idle, retry open; temporarily stop phone Synesis / other IMAP clients on that mailbox if needed. Fix direction: per-account provider/session cache + serialized IMAP ops (or share IDLE connection for fetches) + ALERT-specific retry.
+
+---
 
 ### DEF-079 — Contact postal addresses + open in map apps
 
