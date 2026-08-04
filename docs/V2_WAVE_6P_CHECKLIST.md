@@ -1,6 +1,6 @@
 # Wave 6P — Performance UX (Sync Honesty) Checklist
 
-> **Status:** **P2 profiling open** (2026-08-03) — E1–E9 ✅ (**645 tests**); E10/E11 operator DevTools gate — [V2_WAVE_6P_P2_PROFILING.md](V2_WAVE_6P_P2_PROFILING.md). P0+P1 complete. **Next after full 6P exit:** Wave 6 (cross-account DnD copy).
+> **Status:** **Wave complete** (2026-08-04) — E1–E11 ✅; Trish **GO** on E10 profiling; E11 deferred (no isolate spike). **645 tests**. **Next:** Wave 6 (cross-account DnD copy) — [V2_PLAN.md](V2_PLAN.md).
 
 Wave 6P delivers **honest sync UX** — decouple local SQLite refresh from remote sync-in-flight indicators, stop blocking the UI on `await kick()` / `kickFresh()`, and land targeted polish (UI-P11, UI-P9 partial, DEF-015, DEF-007). **P2** (Tesla SyncEngine isolate work) is **committed** if post-P0 profiling confirms frame jank on operator hardware.
 
@@ -20,8 +20,8 @@ Wave 0 ✅ → Wave H ✅ → Wave 1 (P0) ✅
                          → Wave 4: CardDAV/CalDAV (P3–P4) ✅
                          → Wave 5: picker + Calendar UI (P5–P6) ✅
                          → Wave G: Google People + Calendar API ✅
-                         → ★ Wave 6P: Performance UX (Sync Honesty) ← P1 gate complete; P2 profiling open
-                         → Wave 6: cross-account DnD copy
+                         → Wave 6P: Performance UX (Sync Honesty) ✅
+                         → ★ Wave 6: cross-account DnD copy ← next
                          → Wave 7: Trish extras (last)
 ```
 
@@ -63,8 +63,8 @@ Wave 0 ✅ → Wave H ✅ → Wave 1 (P0) ✅
 | **6P-9** | UI-P9 partial — body fetch skeleton in reading pane | P1 | Andi | `reading_pane.dart` | ✅ |
 | **6P-10** | DEF-015 per-message header loading / error scope | P1 | Jules | `mailbox_cubit.dart`, `message_headers_sheet.dart` | ✅ |
 | **6P-11** | Folder sidebar sync label accuracy | P1 | Andi | `folder_sidebar.dart` | ✅ |
-| **6P-12** | Profile sync on large mailbox (Android + Windows) | P2 | Renee + Tesla | DevTools timeline — [V2_WAVE_6P_P2_PROFILING.md](V2_WAVE_6P_P2_PROFILING.md) | 🟡 |
-| **6P-13** | Isolate spike for `_processPendingJobs` hot path | P2 | Tesla | [V2_WAVE_6P_P2_ISOLATE_SPIKE.md](V2_WAVE_6P_P2_ISOLATE_SPIKE.md) — enter only if E10 fails | ⏸ |
+| **6P-12** | Profile sync on large mailbox (Android + Windows) | P2 | Renee + Tesla | DevTools timeline — [V2_WAVE_6P_P2_PROFILING.md](V2_WAVE_6P_P2_PROFILING.md) | ✅ Trish GO (2026-08-04) |
+| **6P-13** | Isolate spike for `_processPendingJobs` hot path | P2 | Tesla | [V2_WAVE_6P_P2_ISOLATE_SPIKE.md](V2_WAVE_6P_P2_ISOLATE_SPIKE.md) — **deferred** (E10 pass) | ⏭ |
 | **6P-14** | SPEC / `DART_IN_SYNESIS.md` alignment pass | P2 | Page | Current vs target isolate posture | ✅ (partial 2026-08-03) |
 
 **DEF-007 merge policy** lands in P1 alongside 6P-2 / repository upsert paths — no separate work ID; tracked in exit E9 and related defects below.
@@ -98,8 +98,8 @@ Wave 0 ✅ → Wave H ✅ → Wave 1 (P0) ✅
 
 ### P2 gate (committed if post-P0 jank confirmed)
 
-- [ ] **E10** — Profile confirms >16 ms UI frames during sync on operator Android device (or document clean baseline) — script: [V2_WAVE_6P_P2_PROFILING.md](V2_WAVE_6P_P2_PROFILING.md)
-- [ ] **E11** — If E10 fails: [V2_WAVE_6P_P2_ISOLATE_SPIKE.md](V2_WAVE_6P_P2_ISOLATE_SPIKE.md) Phase 1; if E10 passes: documented deferral in profiling doc
+- [x] **E10** — Profile confirms >16 ms UI frames during sync on operator Android device (or document clean baseline) — Trish **GO** (2026-08-04) — [V2_WAVE_6P_P2_PROFILING.md](V2_WAVE_6P_P2_PROFILING.md)
+- [x] **E11** — E10 pass: documented deferral — isolate spike **not entered** ([V2_WAVE_6P_P2_ISOLATE_SPIKE.md](V2_WAVE_6P_P2_ISOLATE_SPIKE.md) remains draft only)
 
 ## Team routing
 

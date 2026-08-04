@@ -1,6 +1,6 @@
 # Wave 6P P2 — Android Profiling Gate (E10 / E11)
 
-> **Status:** **In progress** (2026-08-03) — operator dogfood + DevTools spot-check on Galaxy-class hardware. Parent: [V2_WAVE_6P_CHECKLIST.md](V2_WAVE_6P_CHECKLIST.md). Spike (if needed): [V2_WAVE_6P_P2_ISOLATE_SPIKE.md](V2_WAVE_6P_P2_ISOLATE_SPIKE.md).
+> **Status:** **Complete — E10 GO** (2026-08-04) — Trish operator pass; **E11 deferred** (isolate spike not needed). Parent: [V2_WAVE_6P_CHECKLIST.md](V2_WAVE_6P_CHECKLIST.md). Spike (not entered): [V2_WAVE_6P_P2_ISOLATE_SPIKE.md](V2_WAVE_6P_P2_ISOLATE_SPIKE.md).
 
 Wave 6P **P2** decides whether post-P0/P1 sync still drops UI frames on operator Android. **Pass (E10 clean)** → document baseline and defer isolate migration. **Fail (E10 jank)** → land incremental isolate spike per [V2_WAVE_6P_P2_ISOLATE_SPIKE.md](V2_WAVE_6P_P2_ISOLATE_SPIKE.md) (E11).
 
@@ -48,6 +48,7 @@ Install the latest **debug dogfood APK** built from `v2.0` with `oauth_local.jso
 
 | Date | Operator | E10 result | Action |
 | --- | --- | --- | --- |
+| 2026-08-04 | Trish | **PASS** | No sustained >16 ms frames during sync+scroll; P0/P1 honest sync UX holds. **E11:** isolate spike **deferred** — not needed. Wave 6 unblocked. |
 | 2026-08-03 | Trish | *pending* | Profiling gate opened; dogfood APK + P1 (`db6d316`) |
 
 ### If E10 passes (expected after P0 non-blocking kick)

@@ -1,6 +1,6 @@
 # Wave 6P P2 — SyncEngine Isolate Spike (E11)
 
-> **Status:** **Draft — enter only if E10 fails** ([V2_WAVE_6P_P2_PROFILING.md](V2_WAVE_6P_P2_PROFILING.md)). Owner: **Tesla**. Parent: [V2_WAVE_6P_CHECKLIST.md](V2_WAVE_6P_CHECKLIST.md).
+> **Status:** **Draft — not entered** (E10 pass 2026-08-04; isolate work deferred). Owner: **Tesla**. Parent: [V2_WAVE_6P_CHECKLIST.md](V2_WAVE_6P_CHECKLIST.md).
 
 Design for moving the hottest **mail sync** path off the UI isolate without a full SPEC §4.3 migration. Scope is **incremental** — one vertical slice, measurable on E10 re-run.
 

@@ -58,7 +58,7 @@ Local store is provider-agnostic (`contacts` / `events` + sync cursors), same ph
 
 Per-version hygiene after V1.5 freeze: toolchain + pub debt + native/plugin skew + docs SDK pins. Checklist: [WAVE_H_DEPENDENCY_HYGIENE.md](WAVE_H_DEPENDENCY_HYGIENE.md).
 
-**Sequence:** Wave 0 → **Wave H ✅** → **Wave 1 (P0) ✅** → **Wave 2 (P1) ✅** → **Wave 3 (P2) ✅** → **Wave 4 (P3–P4) ✅** → **Wave 5 (P5–P6) ✅** → **Wave G ✅** → **Wave 6P ← in progress** (P0 E1–E6 ✅; E7 dogfood pending) → Wave 6 (DnD) → Wave 7.
+**Sequence:** Wave 0 → **Wave H ✅** → **Wave 1 (P0) ✅** → **Wave 2 (P1) ✅** → **Wave 3 (P2) ✅** → **Wave 4 (P3–P4) ✅** → **Wave 5 (P5–P6) ✅** → **Wave G ✅** → **Wave 6P ✅** → **Wave 6 ← next** (DnD) → Wave 7.
 
 | Batch | Scope | Notes |
 | --- | --- | --- |
@@ -84,7 +84,7 @@ Per-version hygiene after V1.5 freeze: toolchain + pub debt + native/plugin skew
 | **Wave 4** | P3–P4 — CardDAV/CalDAV (Runbox; multi address-book / calendar discovery) | Tesla + Jules | V2.0b ✅ **Complete** (2026-07-27, `f2bd29b`, 556 tests) |
 | **Wave 5** | P5–P6 — compose contact picker (FTS across selected lists) + Calendar module UI (multi-select overlay / side-by-side) | Jules + Tesla | V2.0c ✅ **Complete** (2026-07-27, `73c181d`, 585 tests) |
 | **Wave G** | **Google People + Calendar API** for XOAUTH Google accounts (`GooglePimProvider` → `DriftPimStore`; no DAV) | Tesla | **V2.0d** ✅ **Complete** (2026-07-27, `f4c21b0`, **597 tests**) |
-| **Wave 6P** | **Performance UX (Sync Honesty)** — decouple local refresh vs remote sync spinners; non-blocking kick; title-bar honesty; UI-P11 / UI-P9 partial / DEF-015 / DEF-007; P2 isolate if post-P0 jank | Jules + Andi + Tesla | **In progress** — P0+P1 E1–E9 ✅ (**645 tests**); P2 profiling open — [V2_WAVE_6P_CHECKLIST.md](V2_WAVE_6P_CHECKLIST.md) |
+| **Wave 6P** | **Performance UX (Sync Honesty)** — decouple local refresh vs remote sync spinners; non-blocking kick; title-bar honesty; UI-P11 / UI-P9 partial / DEF-015 / DEF-007; P2 isolate if post-P0 jank | Jules + Andi + Tesla | **Complete** (2026-08-04) — E1–E11 ✅ (**645 tests**); E11 deferred — [V2_WAVE_6P_CHECKLIST.md](V2_WAVE_6P_CHECKLIST.md) |
 | **Wave 6** | Cross-account / cross-list **DnD copy** for events + contacts (local copy + push) | Jules + Tesla | Planned after 6P |
 | **Wave 7** | **Final polish / Trish extras** — UI niceties & enhancement backlog if time permits (resizable panes, list context menus, mobile nav polish, overflow sweeps, widget wishlist). **Not V2.0 critical path.** | Jules / Andi | Scope-creep parking lot — **last** |
 
