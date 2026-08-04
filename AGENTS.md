@@ -6,7 +6,7 @@
 
 This workspace runs a **Steve-orchestrated multi-agent team** inside Cursor: the human operator (Trish) works through **James** (sometimes *Jim*) as the session router, Steve coordinates discovery through delivery, and specialized subagents handle implementation, sync/API work, quality, and documentation. The stack is tuned for the Synesis Flutter/Dart local-first email and PIM client.
 
-**V2 status (2026-08-04):** Waves 0–G and **Wave 6P** complete (Performance UX / Sync Honesty, **645 tests**, Trish E10 GO). **Wave 6** (cross-account DnD copy) is **next on critical path** — then Wave 7 (Trish extras). See [V2 Plan](docs/V2_PLAN.md) · [Wave 6P checklist](docs/V2_WAVE_6P_CHECKLIST.md).
+**V2 status (2026-08-04):** Waves 0–G and **Wave 6P** complete (Performance UX / Sync Honesty, **645 tests**, Trish E10 GO). **Wave 6** (cross-account DnD copy) is **planning** on critical path — then Wave 7 (Trish extras). See [V2 Plan](docs/V2_PLAN.md) · [Wave 6 checklist](docs/V2_WAVE_6_CHECKLIST.md) · [Wave 6P checklist](docs/V2_WAVE_6P_CHECKLIST.md).
 
 ---
 
