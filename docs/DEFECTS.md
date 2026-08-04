@@ -12,7 +12,37 @@
 
 > Android dogfood folder/drawer polish (2026-07-27): account chips, folder-picker sheet, title-bar **Show folders** → sheet.
 >
-> **V2 Wave 7 / Trish extras parking lot** (2026-07-27): operator enhancement backlog (Pri-2 / Pri-2.5 / Pri-3) parked for **Wave 7 — Final polish / Trish extras** — last if time permits; not V2.0 critical path. See [V2_PLAN.md](V2_PLAN.md) § Wave 7. **Trish calendar asks (2026-08-03):** [DEF-075](#def-075--calendar-week--weekdays-views) week/weekdays views; [DEF-076](#def-076--calendar-show-day-of-year--week-of-year) day-of-year + week-of-year. **Trish V-Next (2026-08-03):** [DEF-078](#def-078--phone-quick-reply-density--settings-toggle) phone Quick Reply; [DEF-044](#def-044--home-screen-list-widget-per-account-mail--open-in-app-aquamail-bar) per-account list widgets (AquaMail bar) — **Pri-2**. **Trish Pri-3 (2026-08-04):** [DEF-079](#def-079--contact-postal-addresses--open-in-map-apps) contact postal addresses + Maps/Waze. **Wave 6 E11 dogfood (2026-08-04):** [DEF-080](#def-080--gmail-imap-too-many-simultaneous-connections-on-body-fetch).
+> **V2 Wave 7 / Trish extras parking lot** (2026-07-27): operator enhancement backlog (Pri-2 / Pri-2.5 / Pri-3) parked for **Wave 7 — Final polish / Trish extras** — last if time permits; not V2.0 critical path. See [V2_PLAN.md](V2_PLAN.md) § Wave 7. **Trish calendar asks (2026-08-03):** [DEF-075](#def-075--calendar-week--weekdays-views) week/weekdays views; [DEF-076](#def-076--calendar-show-day-of-year--week-of-year) day-of-year + week-of-year. **Trish V-Next (2026-08-03):** [DEF-078](#def-078--phone-quick-reply-density--settings-toggle) phone Quick Reply; [DEF-044](#def-044--home-screen-list-widget-per-account-mail--open-in-app-aquamail-bar) per-account list widgets (AquaMail bar) — **Pri-2**. **Trish Pri-3 (2026-08-04):** [DEF-079](#def-079--contact-postal-addresses--open-in-map-apps) contact postal addresses + Maps/Waze; [DEF-081](#def-081--calendar-pills-temporary-view-toggle) calendar pill temp toggle. **Wave 6 E11 dogfood (2026-08-04):** [DEF-080](#def-080--gmail-imap-too-many-simultaneous-connections-on-body-fetch).
+
+### DEF-081 — Calendar pills: temporary view toggle
+
+| Field | Value |
+| --- | --- |
+| Priority | **Pri-3** |
+| Status | Open (enhancement) |
+| Target | **V-Next** |
+| Area | Calendar workspace chrome / display prefs (session overlay only) |
+| Platforms | Windows, Android |
+| Logged | 2026-08-04 |
+| Found by | **Trish** |
+| Related | Multi-calendar \isSelectedForDisplay\; Wave 5 calendar UI |
+
+**Summary**  
+**Trish:** Calendar pills already reflect calendars enabled in settings. Nice-to-have: tap a pill to temporarily hide/show that calendar in the **current** view without changing settings. Leaving Calendar and returning resets to settings.
+
+**Expected**  
+- Pills only for calendars selected in settings (unchanged).  
+- Tap pill → toggle visibility for this Calendar-module session only.  
+- Exit Calendar module (or equivalent leave) → restore settings-backed selection.  
+- No persistence of the temporary mask.
+
+**Actual**  
+Pills are display-only indicators / lane chrome; visibility is settings-driven only for the session.
+
+**Notes**  
+Pri-3 nice-to-have — not Wave 6 / 6c.
+
+---
 
 ### DEF-080 — Gmail IMAP: Too many simultaneous connections on body fetch
 
