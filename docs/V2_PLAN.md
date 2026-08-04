@@ -2,7 +2,7 @@
 
 | Field | Value |
 | --- | --- |
-| Status | **In progress** — **Wave 6** E10 engineering **GO** (2026-08-04, Renee **659/659** — [V2_WAVE_6_QA.md](V2_WAVE_6_QA.md)); **E11** operator dogfood pending. **Wave 6P complete** (2026-08-04, E1–E11 ✅, **645 tests** — [V2_WAVE_6P_CHECKLIST.md](V2_WAVE_6P_CHECKLIST.md)). **Wave G / V2.0d complete** (2026-07-27, `f4c21b0`, **597 tests**). **Wave 5 / V2.0c complete** (2026-07-27, `73c181d`, **585 tests**). **Wave 4 / V2.0b complete** (2026-07-27, `f2bd29b`, 556 tests). Wave 0 ✅; Wave H ✅; **Wave 1 / P0 ✅** (2026-07-27, `00ebdef`); **Wave 2 / P1 ✅** (2026-07-27, `b526e70`, 530 tests); **Wave 3 / P2 ✅** (2026-07-27, `7cbfdaa`, 551 tests, [V2_WAVE3_QA.md](V2_WAVE3_QA.md)). Wave 4 checklist: [V2_WAVE4_CHECKLIST.md](V2_WAVE4_CHECKLIST.md); Renee QA: [V2_WAVE4_QA.md](V2_WAVE4_QA.md) (**GO**). Wave 5 checklist: [V2_WAVE5_CHECKLIST.md](V2_WAVE5_CHECKLIST.md) ✅; Renee QA: [V2_WAVE5_QA.md](V2_WAVE5_QA.md) (**GO**, 585 tests). Wave G checklist: [V2_WAVE_G_CHECKLIST.md](V2_WAVE_G_CHECKLIST.md) ✅; Renee QA: [V2_WAVE_G_QA.md](V2_WAVE_G_QA.md) (**GO**, 597 tests). Wave 6 checklist: [V2_WAVE_6_CHECKLIST.md](V2_WAVE_6_CHECKLIST.md) — E10 ✅; E11 pending. **Graph re-consent:** `Contacts.Read` + **`Calendars.ReadWrite`**; **Google Wave G re-consent:** `contacts.readonly` + **`calendar`** on existing XOAUTH accounts via Edit account → re-auth |
+| Status | **In progress** — **Wave 6 complete** (2026-08-04, E10+E11 **GO**, **659 tests** — [V2_WAVE_6_CHECKLIST.md](V2_WAVE_6_CHECKLIST.md) · [V2_WAVE_6_QA.md](V2_WAVE_6_QA.md)); **Wave 6b** next (DAV write). **Wave 6P complete** (2026-08-04, E1–E11 ✅, **645 tests** — [V2_WAVE_6P_CHECKLIST.md](V2_WAVE_6P_CHECKLIST.md)). **Wave G / V2.0d complete** (2026-07-27, `f4c21b0`, **597 tests**). **Wave 5 / V2.0c complete** (2026-07-27, `73c181d`, **585 tests**). **Wave 4 / V2.0b complete** (2026-07-27, `f2bd29b`, 556 tests). Wave 0 ✅; Wave H ✅; **Wave 1 / P0 ✅** (2026-07-27, `00ebdef`); **Wave 2 / P1 ✅** (2026-07-27, `b526e70`, 530 tests); **Wave 3 / P2 ✅** (2026-07-27, `7cbfdaa`, 551 tests, [V2_WAVE3_QA.md](V2_WAVE3_QA.md)). Wave 4 checklist: [V2_WAVE4_CHECKLIST.md](V2_WAVE4_CHECKLIST.md); Renee QA: [V2_WAVE4_QA.md](V2_WAVE4_QA.md) (**GO**). Wave 5 checklist: [V2_WAVE5_CHECKLIST.md](V2_WAVE5_CHECKLIST.md) ✅; Renee QA: [V2_WAVE5_QA.md](V2_WAVE5_QA.md) (**GO**, 585 tests). Wave G checklist: [V2_WAVE_G_CHECKLIST.md](V2_WAVE_G_CHECKLIST.md) ✅; Renee QA: [V2_WAVE_G_QA.md](V2_WAVE_G_QA.md) (**GO**, 597 tests). Wave 6 checklist: [V2_WAVE_6_CHECKLIST.md](V2_WAVE_6_CHECKLIST.md) — E10 ✅; E11 pending. **Graph re-consent:** `Contacts.Read` + **`Calendars.ReadWrite`**; **Google Wave G re-consent:** `contacts.readonly` + **`calendar`** on existing XOAUTH accounts via Edit account → re-auth |
 | Headline | Contacts & calendar (TD-A) — not a new phone OS |
 | Prerequisite | V1 exit signed off; **V1.5 complete** ([V1_5_PLAN.md](V1_5_PLAN.md)) |
 | Watch | **P3 → V2.1** (not V2.0 critical path) |
@@ -58,7 +58,7 @@ Local store is provider-agnostic (`contacts` / `events` + sync cursors), same ph
 
 Per-version hygiene after V1.5 freeze: toolchain + pub debt + native/plugin skew + docs SDK pins. Checklist: [WAVE_H_DEPENDENCY_HYGIENE.md](WAVE_H_DEPENDENCY_HYGIENE.md).
 
-**Sequence:** Wave 0 → **Wave H ✅** → **Wave 1 (P0) ✅** → **Wave 2 (P1) ✅** → **Wave 3 (P2) ✅** → **Wave 4 (P3–P4) ✅** → **Wave 5 (P5–P6) ✅** → **Wave G ✅** → **Wave 6P ✅** → **Wave 6 ← active** (E10 GO; E11 dogfood) → **Wave 6b** (DAV write) → **Wave 6c** (calendar series copy) → Wave 7.
+**Sequence:** Wave 0 → **Wave H ✅** → **Wave 1 (P0) ✅** → **Wave 2 (P1) ✅** → **Wave 3 (P2) ✅** → **Wave 4 (P3–P4) ✅** → **Wave 5 (P5–P6) ✅** → **Wave G ✅** → **Wave 6P ✅** → **Wave 6 ✅** → **Wave 6b ← next** (DAV write) → **Wave 6b** (DAV write) → **Wave 6c** (calendar series copy) → Wave 7.
 
 | Batch | Scope | Notes |
 | --- | --- | --- |
@@ -72,7 +72,7 @@ Per-version hygiene after V1.5 freeze: toolchain + pub debt + native/plugin skew
 
 ## 5. Operator waves (working sequence)
 
-**Status:** **Wave 1 complete** (2026-07-27, `00ebdef`); **Wave 2 complete** (2026-07-27, `b526e70`); **Wave 3 complete** (2026-07-27, 551 tests); **Wave 4 complete** (2026-07-27, `f2bd29b`, 556 tests); **Wave 5 complete** (2026-07-27, `73c181d`, 585 tests); **Wave G complete** (2026-07-27, `f4c21b0`, **597 tests**); **Wave 6P complete** (2026-08-04, E1–E11 ✅, **645 tests**); **Wave 6 E10 GO** (2026-08-04, **659 tests**; E11 operator dogfood pending) — [V2_WAVE_6_CHECKLIST.md](V2_WAVE_6_CHECKLIST.md). V2.0a / V2.0b / V2.0c / V2.0d below remain **release buckets** for ship grouping; operator execution follows this table.
+**Status:** **Wave 1 complete** (2026-07-27, `00ebdef`); **Wave 2 complete** (2026-07-27, `b526e70`); **Wave 3 complete** (2026-07-27, 551 tests); **Wave 4 complete** (2026-07-27, `f2bd29b`, 556 tests); **Wave 5 complete** (2026-07-27, `73c181d`, 585 tests); **Wave G complete** (2026-07-27, `f4c21b0`, **597 tests**); **Wave 6P complete** (2026-08-04, E1–E11 ✅, **645 tests**); **Wave 6 complete** (2026-08-04, E10+E11 **GO**, **659 tests**) — [V2_WAVE_6_CHECKLIST.md](V2_WAVE_6_CHECKLIST.md). **Wave 6b** next. V2.0a / V2.0b / V2.0c / V2.0d below remain **release buckets** for ship grouping; operator execution follows this table.
 
 | Wave | Scope | Owner(s) | Maps to |
 | --- | --- | --- | --- |
@@ -85,12 +85,12 @@ Per-version hygiene after V1.5 freeze: toolchain + pub debt + native/plugin skew
 | **Wave 5** | P5–P6 — compose contact picker (FTS across selected lists) + Calendar module UI (multi-select overlay / side-by-side) | Jules + Tesla | V2.0c ✅ **Complete** (2026-07-27, `73c181d`, 585 tests) |
 | **Wave G** | **Google People + Calendar API** for XOAUTH Google accounts (`GooglePimProvider` → `DriftPimStore`; no DAV) | Tesla | **V2.0d** ✅ **Complete** (2026-07-27, `f4c21b0`, **597 tests**) |
 | **Wave 6P** | **Performance UX (Sync Honesty)** — decouple local refresh vs remote sync spinners; non-blocking kick; title-bar honesty; UI-P11 / UI-P9 partial / DEF-015 / DEF-007; P2 isolate if post-P0 jank | Jules + Andi + Tesla | **Complete** (2026-08-04) — E1–E11 ✅ (**645 tests**); E11 deferred — [V2_WAVE_6P_CHECKLIST.md](V2_WAVE_6P_CHECKLIST.md) |
-| **Wave 6** | Cross-account / cross-list **DnD copy** for events + contacts (local copy + push); **D1 locked:** Graph + Google remote push; DAV-as-target = local-only + honest label | Jules + Tesla | **E10 GO** (2026-08-04, **659 tests**); **E11 pending** — [V2_WAVE_6_CHECKLIST.md](V2_WAVE_6_CHECKLIST.md) · [V2_WAVE_6_QA.md](V2_WAVE_6_QA.md) |
+| **Wave 6** | Cross-account / cross-list **DnD copy** for events + contacts (local copy + push); **D1 locked:** Graph + Google remote push; DAV-as-target = local-only + honest label | Jules + Tesla | **Complete** (2026-08-04) — E10+E11 **GO** (**659 tests**) — [V2_WAVE_6_CHECKLIST.md](V2_WAVE_6_CHECKLIST.md) · [V2_WAVE_6_QA.md](V2_WAVE_6_QA.md) |
 | **Wave 6b** | CalDAV/CardDAV **create-only write** for copy targets (Runbox) | Tesla + Jules | Planned after Wave 6 |
 | **Wave 6c** | **Calendar series / recurring event copy** semantics (this occurrence vs series vs new series) — not a Tasks module | Jules + Tesla | Planned after 6b (prefer separate from 6b) |
 | **Wave 7** | **Final polish / Trish extras** — UI niceties & enhancement backlog if time permits (resizable panes, list context menus, mobile nav polish, overflow sweeps, widget wishlist). **Not V2.0 critical path.** | Jules / Andi | Scope-creep parking lot — **last** |
 
-Checklists: [V2_0A_P0_CHECKLIST.md](V2_0A_P0_CHECKLIST.md) (Wave 1 exit); [V2_WAVE2_CHECKLIST.md](V2_WAVE2_CHECKLIST.md) (Wave 2 exit ✅); [V2_WAVE3_CHECKLIST.md](V2_WAVE3_CHECKLIST.md) (Wave 3 exit ✅); [V2_WAVE4_CHECKLIST.md](V2_WAVE4_CHECKLIST.md) (Wave 4 exit ✅, `f2bd29b`, 556 tests); [V2_WAVE5_CHECKLIST.md](V2_WAVE5_CHECKLIST.md) (Wave 5 exit ✅, `73c181d`, 585 tests); [V2_WAVE_G_CHECKLIST.md](V2_WAVE_G_CHECKLIST.md) (Wave G exit ✅, `f4c21b0`, **597 tests**); [V2_WAVE_6P_CHECKLIST.md](V2_WAVE_6P_CHECKLIST.md) (Wave 6P exit ✅, **645 tests**); [V2_WAVE_6_CHECKLIST.md](V2_WAVE_6_CHECKLIST.md) (Wave 6 — **E10 GO**, **659 tests**; E11 pending). Wave 4 QA: [V2_WAVE4_QA.md](V2_WAVE4_QA.md) (**GO**). Wave 5 QA: [V2_WAVE5_QA.md](V2_WAVE5_QA.md) (**GO**). Wave G QA: [V2_WAVE_G_QA.md](V2_WAVE_G_QA.md) (**GO**). Wave 6 QA: [V2_WAVE_6_QA.md](V2_WAVE_6_QA.md) (**GO**).
+Checklists: [V2_0A_P0_CHECKLIST.md](V2_0A_P0_CHECKLIST.md) (Wave 1 exit); [V2_WAVE2_CHECKLIST.md](V2_WAVE2_CHECKLIST.md) (Wave 2 exit ✅); [V2_WAVE3_CHECKLIST.md](V2_WAVE3_CHECKLIST.md) (Wave 3 exit ✅); [V2_WAVE4_CHECKLIST.md](V2_WAVE4_CHECKLIST.md) (Wave 4 exit ✅, `f2bd29b`, 556 tests); [V2_WAVE5_CHECKLIST.md](V2_WAVE5_CHECKLIST.md) (Wave 5 exit ✅, `73c181d`, 585 tests); [V2_WAVE_G_CHECKLIST.md](V2_WAVE_G_CHECKLIST.md) (Wave G exit ✅, `f4c21b0`, **597 tests**); [V2_WAVE_6P_CHECKLIST.md](V2_WAVE_6P_CHECKLIST.md) (Wave 6P exit ✅, **645 tests**); [V2_WAVE_6_CHECKLIST.md](V2_WAVE_6_CHECKLIST.md) (Wave 6 exit ✅, **659 tests**). Wave 4 QA: [V2_WAVE4_QA.md](V2_WAVE4_QA.md) (**GO**). Wave 5 QA: [V2_WAVE5_QA.md](V2_WAVE5_QA.md) (**GO**). Wave G QA: [V2_WAVE_G_QA.md](V2_WAVE_G_QA.md) (**GO**). Wave 6 QA: [V2_WAVE_6_QA.md](V2_WAVE_6_QA.md) (**GO**).
 
 ### Wave 6P — Performance UX (Sync Honesty)
 
@@ -297,7 +297,7 @@ Operator waves 1–7 + **G** map into these buckets for release narrative:
 | **Wave 5** | P5–P6 — picker + Calendar/People UI | **Complete** (2026-07-27, `73c181d`, 585 tests) · [V2_WAVE5_CHECKLIST.md](V2_WAVE5_CHECKLIST.md) · [V2_WAVE5_QA.md](V2_WAVE5_QA.md) (**GO**) |
 | **Wave G** | Google People + Calendar API (XOAUTH Google PIM) | **Complete** (2026-07-27, `f4c21b0`, **597 tests**) · [V2_WAVE_G_CHECKLIST.md](V2_WAVE_G_CHECKLIST.md) · [V2_WAVE_G_QA.md](V2_WAVE_G_QA.md) (**GO**) |
 | **Wave 6P** | Performance UX (Sync Honesty) | **Complete** (2026-08-04) — E1–E11 ✅ (**645 tests**) · [V2_WAVE_6P_CHECKLIST.md](V2_WAVE_6P_CHECKLIST.md) |
-| **Wave 6** | Cross-account DnD copy (events + contacts; Graph + Google) | **E10 GO** (2026-08-04, **659 tests**); E11 operator dogfood pending · [V2_WAVE_6_CHECKLIST.md](V2_WAVE_6_CHECKLIST.md) · [V2_WAVE_6_QA.md](V2_WAVE_6_QA.md) |
+| **Wave 6** | Cross-account DnD copy (events + contacts; Graph + Google) | **Complete** (2026-08-04) — E10+E11 **GO** (**659 tests**) · [V2_WAVE_6_CHECKLIST.md](V2_WAVE_6_CHECKLIST.md) · [V2_WAVE_6_QA.md](V2_WAVE_6_QA.md) |
 | **Wave 6b** | CalDAV/CardDAV write (copy targets) | Planned after Wave 6 |
 | **Wave 6c** | Calendar series / recurring event copy semantics | Planned after 6b |
 
@@ -313,7 +313,7 @@ Operator waves 1–7 + **G** map into these buckets for release narrative:
 - [x] Mail remains default launch surface; Calendar/People reachable via module switcher
 - [x] Multi-calendar display: select 1+ calendars; overlay or side-by-side; colored lanes
 - [x] Multi-contact-list: select 1+ lists for picker and People views
-- [ ] Cross-account event + contact copy (DnD desktop / menu mobile) — Wave 6
+- [x] Cross-account event + contact copy (DnD desktop / menu mobile) — Wave 6
 - [ ] Docs + E2E matrix rows for PIM; regression on V1/V1.5 mail paths
 
 ## 15. Explicitly out of V2.0
@@ -365,7 +365,7 @@ Do not expand V1.5 scope — only avoid painting corners:
 | [V2_WAVE_G_CHECKLIST.md](V2_WAVE_G_CHECKLIST.md) | Wave G / Google PIM exit criteria ✅ |
 | [V2_WAVE_G_QA.md](V2_WAVE_G_QA.md) | Wave G Renee QA — GO + Wave 6P handoff |
 | [V2_WAVE_6P_CHECKLIST.md](V2_WAVE_6P_CHECKLIST.md) | Wave 6P / Performance UX (Sync Honesty) exit criteria |
-| [V2_WAVE_6_CHECKLIST.md](V2_WAVE_6_CHECKLIST.md) | Wave 6 / cross-account DnD copy — E10 GO; E11 pending |
+| [V2_WAVE_6_CHECKLIST.md](V2_WAVE_6_CHECKLIST.md) | Wave 6 / cross-account DnD copy — complete (E10+E11 GO) |
 | [WAVE_H_DEPENDENCY_HYGIENE.md](WAVE_H_DEPENDENCY_HYGIENE.md) | Wave H checklist (batches H1–H5, exit gate) |
 | [TIER_D_PLAN.md](TIER_D_PLAN.md) §4 TD-A | Horizon detail; dispositions updated to point here |
 | [V1_5_PLAN.md](V1_5_PLAN.md) | Immediate post-V1 ship before this plan executes |
@@ -375,4 +375,4 @@ Do not expand V1.5 scope — only avoid painting corners:
 
 ---
 
-*Wave 0 complete 2026-07-27. Wave H complete 2026-07-27. **Wave 1 / V2.0a P0 complete** 2026-07-27 (`00ebdef`). **Wave 2 / V2.0a P1 complete** 2026-07-27 (`b526e70`, 530 tests). **Wave 3 / V2.0a P2 complete** 2026-07-27 (`7cbfdaa`, 551 tests) — Renee GO [V2_WAVE3_QA.md](V2_WAVE3_QA.md); `Calendars.ReadWrite` re-consent; meeting-mail bridge. **Wave 4 / V2.0b complete** 2026-07-27 (`f2bd29b`, 556 tests; [V2_WAVE4_CHECKLIST.md](V2_WAVE4_CHECKLIST.md); Renee GO [V2_WAVE4_QA.md](V2_WAVE4_QA.md)). **Wave 5 / V2.0c complete** 2026-07-27 (`73c181d`, 585 tests; [V2_WAVE5_CHECKLIST.md](V2_WAVE5_CHECKLIST.md); Renee GO [V2_WAVE5_QA.md](V2_WAVE5_QA.md)). **Wave G / V2.0d complete** 2026-07-27 (`f4c21b0`, **597 tests**; [V2_WAVE_G_CHECKLIST.md](V2_WAVE_G_CHECKLIST.md); Renee GO [V2_WAVE_G_QA.md](V2_WAVE_G_QA.md)). **Wave 6P complete** 2026-08-04 (**645 tests**; [V2_WAVE_6P_CHECKLIST.md](V2_WAVE_6P_CHECKLIST.md)). **Wave 6 E10 GO** 2026-08-04 (**659 tests**; Renee GO [V2_WAVE_6_QA.md](V2_WAVE_6_QA.md); E11 operator dogfood pending) → **6b** DAV write → **6c** calendar series copy — [V2_WAVE_6_CHECKLIST.md](V2_WAVE_6_CHECKLIST.md). Corporate Graph research post–Wave 6. **Wave 7 / Trish extras** last.*
+*Wave 0 complete 2026-07-27. Wave H complete 2026-07-27. **Wave 1 / V2.0a P0 complete** 2026-07-27 (`00ebdef`). **Wave 2 / V2.0a P1 complete** 2026-07-27 (`b526e70`, 530 tests). **Wave 3 / V2.0a P2 complete** 2026-07-27 (`7cbfdaa`, 551 tests) — Renee GO [V2_WAVE3_QA.md](V2_WAVE3_QA.md); `Calendars.ReadWrite` re-consent; meeting-mail bridge. **Wave 4 / V2.0b complete** 2026-07-27 (`f2bd29b`, 556 tests; [V2_WAVE4_CHECKLIST.md](V2_WAVE4_CHECKLIST.md); Renee GO [V2_WAVE4_QA.md](V2_WAVE4_QA.md)). **Wave 5 / V2.0c complete** 2026-07-27 (`73c181d`, 585 tests; [V2_WAVE5_CHECKLIST.md](V2_WAVE5_CHECKLIST.md); Renee GO [V2_WAVE5_QA.md](V2_WAVE5_QA.md)). **Wave G / V2.0d complete** 2026-07-27 (`f4c21b0`, **597 tests**; [V2_WAVE_G_CHECKLIST.md](V2_WAVE_G_CHECKLIST.md); Renee GO [V2_WAVE_G_QA.md](V2_WAVE_G_QA.md)). **Wave 6P complete** 2026-08-04 (**645 tests**; [V2_WAVE_6P_CHECKLIST.md](V2_WAVE_6P_CHECKLIST.md)). **Wave 6 complete** 2026-08-04 (**659 tests**; E10+E11 GO [V2_WAVE_6_QA.md](V2_WAVE_6_QA.md); E11 operator dogfood pending) → **6b** DAV write → **6c** calendar series copy — [V2_WAVE_6_CHECKLIST.md](V2_WAVE_6_CHECKLIST.md). Corporate Graph research post–Wave 6. **Wave 7 / Trish extras** last.*

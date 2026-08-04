@@ -1,15 +1,15 @@
 # Wave 6 — Renee QA (Cross-Account DnD Copy)
 
-> **Status:** **E10 complete — GO** (2026-08-04). Checklist: [V2_WAVE_6_CHECKLIST.md](V2_WAVE_6_CHECKLIST.md). Design: [V2_WAVE_6_TESLA_DESIGN.md](V2_WAVE_6_TESLA_DESIGN.md).
+> **Status:** **Wave complete — GO** (2026-08-04). E10 engineering + E11 operator dogfood. Checklist: [V2_WAVE_6_CHECKLIST.md](V2_WAVE_6_CHECKLIST.md). Design: [V2_WAVE_6_TESLA_DESIGN.md](V2_WAVE_6_TESLA_DESIGN.md).
 
 | Field | Value |
 | --- | --- |
 | Reviewed | 2026-08-04 |
-| Commits under review | `5fd3ca9` (Tesla P0/P1) · `772085f` (Andi P3 + P2 wiring) · `fca71e9` (Jules P2 DnD tests) · E10 fix commit (this gate) |
+| Commits under review | `5fd3ca9` (Tesla P0/P1) · `772085f` (Andi P3 + P2 wiring) · `fca71e9` (Jules P2 DnD tests) · `722df26` (E10 undo-guard) · inventory `1f8e192` |
 | Prior gate | Wave 6P exit (**645** tests) |
 | Tests | **659/659 passed** (`flutter test`, Renee E10) |
-| Verdict | **GO** Wave 6 engineering exit · **Ready for E11** operator dogfood |
-| Operator dogfood (E11) | — (pending Trish) |
+| Verdict | **GO** — Wave 6 complete |
+| Operator dogfood (E11) | **GO** (Trish, 2026-08-04) — Windows desktop + Android APK; copy paths functioning |
 
 ---
 
@@ -26,9 +26,9 @@
 | Mobile copy sheets | **Pass** (automated) | Long-press → picker → copy; Android manual → E11. |
 | Full regression | **Pass** | **659/659**. Net **+14** vs Wave 6P (645). |
 | Wave 6 engineering exit (E10) | **GO** | No Pri-1 / data-safety blockers. |
-| E11 dogfood handoff | **Ready** | See matrix below. |
+| E11 dogfood handoff | **GO** | Trish 2026-08-04 — Windows + Android; see notes below. |
 
-No Pri-1 defects. Nothing added to `DEFECTS.md` for this wave.
+No Pri-1 defects from Wave 6 copy. Dogfood side-logs: [DEF-080](DEFECTS.md) Gmail IMAP connection cap (orthogonal mail path); [DEF-081](DEFECTS.md) calendar pill temp toggle (V-Next).
 
 ---
 
@@ -94,7 +94,7 @@ No Pri-1 defects. Nothing added to `DEFECTS.md` for this wave.
 | 7 | Undo event copy quickly after Graph target drop | Local row gone; **no** orphan remote event |
 | 8 | Recurring source event | Copied as single independent event (no series) — expected |
 
-**Ready for Trish E11?** **Yes** — engineering GO; live Graph↔Google + Windows/Android UX confirmation remains.
+**Ready for Trish E11?** **Complete — GO** (2026-08-04).
 
 ---
 
@@ -124,4 +124,4 @@ Regenerate or patch `docs/V1_AUTOMATED_TEST_INVENTORY.csv` via `tool/generate_te
 
 ---
 
-*E10 closed 2026-08-04 by Renee. Page inventory refreshed 2026-08-04. Handoff: Steve E11 operator sign-off.*
+*E10 closed 2026-08-04 by Renee. Page inventory refreshed 2026-08-04. E11 operator **GO** 2026-08-04 (Trish). Wave 6 complete.*

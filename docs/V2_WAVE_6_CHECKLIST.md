@@ -1,6 +1,6 @@
 # Wave 6 — Cross-Account DnD Copy Checklist
 
-> **Status:** **E10 GO** (2026-08-04) — P0–P3 landed; Renee QA **659/659**; Page inventory refreshed. **Awaiting E11** operator dogfood. Parent plan: [V2_PLAN.md](V2_PLAN.md). Prior: [V2_WAVE_6P_CHECKLIST.md](V2_WAVE_6P_CHECKLIST.md) (**complete**). Design: [V2_WAVE_6_TESLA_DESIGN.md](V2_WAVE_6_TESLA_DESIGN.md). QA: [V2_WAVE_6_QA.md](V2_WAVE_6_QA.md).
+> **Status:** **Wave complete** (2026-08-04) — E1–E11 ✅; Trish **GO** on E11 dogfood (Windows + Android). Renee **659/659**. Next: **Wave 6b** (CalDAV/CardDAV write). Parent plan: [V2_PLAN.md](V2_PLAN.md). Prior: [V2_WAVE_6P_CHECKLIST.md](V2_WAVE_6P_CHECKLIST.md) (**complete**). Design: [V2_WAVE_6_TESLA_DESIGN.md](V2_WAVE_6_TESLA_DESIGN.md). QA: [V2_WAVE_6_QA.md](V2_WAVE_6_QA.md).
 
 Wave 6 delivers **cross-account / cross-list copy** for **calendar events** and **contacts** — Outlook-style drag-and-drop on desktop, long-press → “Copy to…” sheet on mobile. Pattern is **local-first**: duplicate row in SQLite under the target account/collection, then enqueue **`events_copy`** / **`contacts_copy`** sync jobs for remote push. UI never blocks on network.
 
@@ -16,8 +16,8 @@ Wave 0 ✅ → Wave H ✅ → Wave 1 (P0) ✅
                          → Wave 5: picker + Calendar UI (P5–P6) ✅
                          → Wave G: Google People + Calendar API ✅
                          → Wave 6P: Performance UX (Sync Honesty) ✅
-                         → ★ Wave 6: cross-account DnD copy ← active
-                         → Wave 6b: CalDAV/CardDAV write (copy targets)
+                         → ★ Wave 6: cross-account DnD copy ✅
+                         → ★ Wave 6b: CalDAV/CardDAV write (copy targets) ← next
                          → Wave 6c: recurring event copy semantics
                          → Wave 7: Trish extras (last)
 ```
@@ -114,14 +114,14 @@ Wave 0 ✅ → Wave H ✅ → Wave 1 (P0) ✅
 
 ## Exit criteria (wave complete)
 
-- [ ] Copy event from account A calendar → account B calendar: appears locally immediately; remote push completes async
-- [ ] Copy contact from list A → list B (cross-account): same pattern
-- [ ] Desktop DnD works on Windows for events + contacts
-- [ ] Mobile long-press copy sheet works on Android
-- [ ] No network calls from widgets — all via repository + sync jobs
+- [x] Copy event from account A calendar → account B calendar: appears locally immediately; remote push completes async
+- [x] Copy contact from list A → list B (cross-account): same pattern
+- [x] Desktop DnD works on Windows for events + contacts
+- [x] Mobile long-press copy sheet works on Android
+- [x] No network calls from widgets — all via repository + sync jobs
 - [x] Renee **GO** + Page test inventory updated
-- [ ] Trish operator **GO** on E11 dogfood
-- [ ] [V2_PLAN.md](V2_PLAN.md) §14 exit checkbox for cross-account copy checked
+- [x] Trish operator **GO** on E11 dogfood (2026-08-04 — Windows + phone)
+- [x] [V2_PLAN.md](V2_PLAN.md) §14 exit checkbox for cross-account copy checked
 
 ## Explicitly out of Wave 6
 
