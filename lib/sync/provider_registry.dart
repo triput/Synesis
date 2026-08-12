@@ -2,9 +2,9 @@
 // File: lib/sync/provider_registry.dart
 // Description: Resolves persisted account credentials to concrete mail providers
 // Component: Sync / Integration
-// Version: 1.1 (Gold Master)
+// Version: 1.2 (Gold Master)
 // Created: 2026-07-14
-// Last Update: 2026-07-27
+// Last Update: 2026-08-12
 // ==============================================================================
 
 import 'package:synesis/auth/oauth_identity_manager.dart';
@@ -241,6 +241,47 @@ class ProviderRegistry {
         );
       },
     );
+  }
+
+  /// Forces OAuth access-token refresh for Graph or Google XOAUTH [accountId].
+  ///
+  /// No-op for IMAP app-password accounts. Used by [SyncEngine.forceRefreshAuthToken].
+  Future<void> forceRefreshAuth(String accountId) async {
+    final MailAccount? account = await _accountFor(accountId);
+    if (account == null) {
+      return;
+    }
+    final String? credentialsRef = await _resolveCredentialsRef(account);
+    if (credentialsRef == null || credentialsRef.isEmpty) {
+      return;
+    }
+    if (account.providerType == 'graph' ||
+        account.providerType == 'microsoft') {
+      await _identityManager.getValidAccessToken(
+        credentialsRef,
+        forceRefresh: true,
+      );
+      return;
+    }
+    if (account.providerType == 'imap' && credentialsRef.startsWith('google:')) {
+      await _identityManager.getValidGoogleAccessToken(
+        credentialsRef,
+        forceRefresh: true,
+      );
+    }
+  }
+
+  Future<String?> _resolveCredentialsRef(MailAccount account) async {
+    String? reference = account.credentialsRef?.trim();
+    if ((reference == null || reference.isEmpty) &&
+        account.providerType == 'imap') {
+      final String googleRef = 'google:${account.id}';
+      if (_looksLikeGmailAddress(account.address) ||
+          await _identityManager.hasGoogleCredentials(googleRef)) {
+        reference = googleRef;
+      }
+    }
+    return reference;
   }
 
   Future<MailAccount?> _accountFor(String accountId) async {

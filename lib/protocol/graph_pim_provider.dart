@@ -4,7 +4,7 @@
 // Component: Protocol / Integration
 // Version: 1.0 (Gold Master)
 // Created: 2026-07-27
-// Last Update: 2026-08-04
+// Last Update: 2026-08-12
 // ==============================================================================
 
 import 'dart:async';
@@ -141,8 +141,7 @@ class GraphPimProvider {
       'emailAddresses,businessPhones,mobilePhone,homePhones,lastModifiedDateTime';
   static const String _eventSelect =
       'id,subject,bodyPreview,body,start,end,isAllDay,location,recurrence,'
-      'reminderMinutesBeforeStart,lastModifiedDateTime,attendees,organizer,'
-      '@odata.etag';
+      'reminderMinutesBeforeStart,lastModifiedDateTime,attendees,organizer';
 
   final Future<String> Function() _accessToken;
   final http.Client _innerClient;

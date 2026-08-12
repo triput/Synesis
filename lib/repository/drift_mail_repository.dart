@@ -356,6 +356,18 @@ class DriftMailRepository implements MailRepository {
   Future<void> cancelSyncJob(String id) => _jobs.cancelSyncJob(id);
 
   @override
+  Future<int> cancelPendingSyncJobs({String? accountId}) =>
+      _jobs.cancelPendingSyncJobs(accountId: accountId);
+
+  @override
+  Future<int> abortRunningSyncJobs({String? accountId}) =>
+      _jobs.abortRunningSyncJobs(accountId: accountId);
+
+  @override
+  Future<int> clearSyncCursors({String? accountId, String? folderId}) =>
+      _jobs.clearSyncCursors(accountId: accountId, folderId: folderId);
+
+  @override
   Future<List<AccountSyncHealth>> listAccountSyncHealth() =>
       _jobs.listAccountSyncHealth();
 

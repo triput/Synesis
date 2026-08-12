@@ -2,9 +2,15 @@
 // File: lib/sync/sync_engine.dart
 // Description: Sequential durable sync-job processor for local-first mail data.
 // Component: Sync
-// Version: 1.4 (Gold Master)
+// Version: 1.5 (Gold Master)
 // Created: 2026-07-14
-// Last Update: 2026-08-04
+// Last Update: 2026-08-12
+//
+// Recovery APIs (DEF-084 — Jules wires Sync Status sheet):
+//   [stopAllSync]           cancel pending + abort running jobs; interrupt kick
+//   [clearSyncCursors]      per-account / per-folder cursor wipe (no mail delete)
+//   [forceRefreshAuthToken] OAuth refresh for Graph / Google XOAUTH accounts
+// See docs/SYNC_RECOVERY_APIS.md
 // ==============================================================================
 
 import 'dart:async';
@@ -26,6 +32,7 @@ import 'package:synesis/protocol/thread_id.dart';
 import 'package:synesis/repository/drift/drift_pim_store.dart';
 import 'package:synesis/repository/mail_repository.dart';
 import 'package:synesis/outbox/send_error_messages.dart';
+import 'package:synesis/sync/graph_sync_recovery.dart';
 import 'package:synesis/sync/imap_idle_service.dart';
 import 'package:synesis/sync/network_sync_policy.dart';
 import 'package:synesis/sync/pim_sync_jobs.dart';
@@ -56,6 +63,9 @@ typedef PushOnCellularReader = bool Function();
 /// Injectable connectivity probe (defaults to [Connectivity.checkConnectivity]).
 typedef ConnectivityReader = Future<List<ConnectivityResult>> Function();
 
+/// Forces OAuth access-token refresh for Graph / Google XOAUTH accounts.
+typedef AuthTokenRefresher = Future<void> Function(String accountId);
+
 class SyncEngine {
   SyncEngine({
     required MailRepository repository,
@@ -69,6 +79,7 @@ class SyncEngine {
     NetworkSyncPolicy? networkPolicy,
     Connectivity? connectivity,
     NewUnreadMailHandler? onNewUnread,
+    AuthTokenRefresher? refreshAuthToken,
   }) : _repository = repository,
        _resolveProvider = resolveProvider,
        _pimStore = pimStore,
@@ -82,7 +93,8 @@ class SyncEngine {
        _networkPolicy =
            networkPolicy ?? NetworkSyncPolicy(isDesktop: _detectDesktop()),
        _connectivity = connectivity,
-       _onNewUnread = onNewUnread {
+       _onNewUnread = onNewUnread,
+       _refreshAuthToken = refreshAuthToken {
     _idleService = ImapIdleService(
       resolveProvider: resolveProvider,
       onMailboxChanged: _onIdleWake,
@@ -105,6 +117,7 @@ class SyncEngine {
   final NetworkSyncPolicy _networkPolicy;
   final Connectivity? _connectivity;
   final NewUnreadMailHandler? _onNewUnread;
+  final AuthTokenRefresher? _refreshAuthToken;
 
   late final ImapIdleService _idleService;
   StreamSubscription<List<ConnectivityResult>>? _connectivitySub;
@@ -247,6 +260,45 @@ class SyncEngine {
     await _repository.reclaimSendingOutbox();
     await _enqueueTrashPurgeIfNeeded();
     await kick();
+  }
+
+  /// Stops sync work: interrupts the in-flight kick, aborts running jobs, and
+  /// cancels pending jobs. Optional [accountId] scopes to one account (DEF-084).
+  Future<({int abortedRunning, int cancelledPending})> stopAllSync({
+    String? accountId,
+  }) async {
+    _kickGeneration++;
+    _activeKick = null;
+    _syncActivity?.onKickEnded();
+    final int abortedRunning = await _repository.abortRunningSyncJobs(
+      accountId: accountId,
+    );
+    final int cancelledPending = await _repository.cancelPendingSyncJobs(
+      accountId: accountId,
+    );
+    await _syncActivity?.refresh();
+    return (abortedRunning: abortedRunning, cancelledPending: cancelledPending);
+  }
+
+  /// Clears durable sync cursors (Graph delta, IMAP markers, PIM delta).
+  /// Does not delete local messages. Optional [folderId] scopes to one folder
+  /// or PIM collection id (DEF-084).
+  Future<int> clearSyncCursors({
+    String? accountId,
+    String? folderId,
+  }) =>
+      _repository.clearSyncCursors(accountId: accountId, folderId: folderId);
+
+  /// Forces OAuth token refresh for Graph / Google XOAUTH accounts (DEF-084).
+  ///
+  /// No-op when [refreshAuthToken] was not wired or the account uses app password.
+  /// After refresh, call [enqueueIncremental] + [kickNonBlocking] for sync now.
+  Future<void> forceRefreshAuthToken(String accountId) async {
+    final AuthTokenRefresher? refresher = _refreshAuthToken;
+    if (refresher == null) {
+      return;
+    }
+    await refresher(accountId);
   }
 
   Future<void> enqueueIncremental(String accountId) async {
@@ -562,7 +614,7 @@ class SyncEngine {
           deltaLink: deltaLink,
         );
       } on ProtocolException catch (error) {
-        if (error.statusCode == 410) {
+        if (isGraphExpiredSyncToken(error)) {
           await _repository.setCursor(
             job.accountId,
             contactListId,
@@ -769,7 +821,7 @@ class SyncEngine {
           deltaLink: deltaLink,
         );
       } on ProtocolException catch (error) {
-        if (error.statusCode == 410) {
+        if (isGraphExpiredSyncToken(error)) {
           await _repository.setCursor(job.accountId, calendarId, cursorKey, '');
           result = await provider.syncEvents(
             accountId: job.accountId,
@@ -1302,7 +1354,7 @@ class SyncEngine {
       );
       return true;
     } on ProtocolException catch (error) {
-      if (error.statusCode == 410) {
+      if (isGraphExpiredSyncToken(error)) {
         await _repository.setCursor(
           job.accountId,
           folderId,

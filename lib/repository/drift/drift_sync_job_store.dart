@@ -4,7 +4,7 @@
 // Component: Repository / Data
 // Version: 1.0 (Gold Master)
 // Created: 2026-07-17
-// Last Update: 2026-07-24
+// Last Update: 2026-08-12
 // ==============================================================================
 
 import 'dart:convert';
@@ -297,6 +297,74 @@ class DriftSyncJobStore {
       _database.jobs,
     )..where((Jobs table) => table.id.equals(id))).go();
     _notify();
+  }
+
+  /// Deletes all `pending` jobs; optional [accountId] filter (DEF-084).
+  Future<int> cancelPendingSyncJobs({String? accountId}) async {
+    final int removed = await (_database.delete(_database.jobs)..where(
+          (Jobs table) {
+            Expression<bool> clause = table.status.equals('pending');
+            if (accountId != null && accountId.isNotEmpty) {
+              clause = clause & table.accountId.equals(accountId);
+            }
+            return clause;
+          },
+        ))
+        .go();
+    if (removed > 0) {
+      _notify();
+    }
+    return removed;
+  }
+
+  /// Marks `running` jobs as `failed` with an operator-stop error (DEF-084).
+  Future<int> abortRunningSyncJobs({String? accountId}) async {
+    final int now = DateTime.now().millisecondsSinceEpoch;
+    final String errorJson = jsonEncode(<String, String>{
+      'error': 'Sync stopped by operator',
+    });
+    final int changed =
+        await (_database.update(_database.jobs)..where((Jobs table) {
+          Expression<bool> clause = table.status.equals('running');
+          if (accountId != null && accountId.isNotEmpty) {
+            clause = clause & table.accountId.equals(accountId);
+          }
+          return clause;
+        })).write(
+          JobsCompanion(
+            status: const Value<String>('failed'),
+            cursorJson: Value<String?>(errorJson),
+            updatedAt: Value<int>(now),
+          ),
+        );
+    if (changed > 0) {
+      _notify();
+    }
+    return changed;
+  }
+
+  /// Removes rows from [sync_cursors]; optional account/folder scope (DEF-084).
+  Future<int> clearSyncCursors({
+    String? accountId,
+    String? folderId,
+  }) async {
+    final int removed = await (_database.delete(_database.syncCursors)..where(
+          (SyncCursors table) {
+            Expression<bool> clause = const Constant<bool>(true);
+            if (accountId != null && accountId.isNotEmpty) {
+              clause = clause & table.accountId.equals(accountId);
+            }
+            if (folderId != null && folderId.isNotEmpty) {
+              clause = clause & table.folderId.equals(folderId);
+            }
+            return clause;
+          },
+        ))
+        .go();
+    if (removed > 0) {
+      _notify();
+    }
+    return removed;
   }
 
   Future<List<AccountSyncHealth>> listAccountSyncHealth() async {

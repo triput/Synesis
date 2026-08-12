@@ -2,16 +2,15 @@
 // File: lib/ui/sync/sync_status_sheet.dart
 // Description: In-app sync job queue viewer and per-account sync health.
 // Component: UI
-// Version: 1.0 (Gold Master)
+// Version: 1.1 (Gold Master)
 // Created: 2026-07-17
-// Last Update: 2026-07-17
+// Last Update: 2026-08-12
 // ==============================================================================
 
 import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:synesis/domain/models.dart';
 import 'package:synesis/repository/mail_repository.dart';
@@ -64,6 +63,7 @@ class _SyncStatusSheetBodyState extends State<SyncStatusSheetBody>
   bool _busy = false;
   bool _didInit = false;
   String? _banner;
+  bool _bannerIsError = true;
 
   @override
   void didChangeDependencies() {
@@ -112,22 +112,51 @@ class _SyncStatusSheetBodyState extends State<SyncStatusSheetBody>
     });
   }
 
-  String _accountLabel(String accountId) {
+  MailAccount? _accountFor(String accountId) {
     try {
       final List<MailAccount> accounts =
           context.read<MailboxCubit>().state.accounts;
       for (final MailAccount account in accounts) {
         if (account.id == accountId) {
-          return account.address;
+          return account;
         }
       }
     } on Object {
       // Sheet may be opened without MailboxCubit in tests.
     }
+    return null;
+  }
+
+  String _accountLabel(String accountId) {
+    final MailAccount? account = _accountFor(accountId);
+    if (account != null) {
+      return account.address;
+    }
     return accountId;
   }
 
-  Future<void> _withBusy(Future<void> Function() action) async {
+  bool _supportsOAuthRefresh(String accountId) {
+    final MailAccount? account = _accountFor(accountId);
+    if (account == null) {
+      return false;
+    }
+    if (account.providerType == 'graph' ||
+        account.providerType == 'microsoft') {
+      return true;
+    }
+    if (account.providerType == 'imap') {
+      final String? ref = account.credentialsRef?.trim();
+      if (ref != null && ref.startsWith('google:')) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  Future<void> _withBusy(
+    Future<void> Function() action, {
+    String? successMessage,
+  }) async {
     if (_busy) {
       return;
     }
@@ -148,10 +177,17 @@ class _SyncStatusSheetBodyState extends State<SyncStatusSheetBody>
       }
       await mailbox?.refresh();
       await _reload();
+      if (mounted && successMessage != null) {
+        setState(() {
+          _banner = successMessage;
+          _bannerIsError = false;
+        });
+      }
     } on Object catch (error) {
       if (mounted) {
         setState(() {
           _banner = 'Sync action failed: $error';
+          _bannerIsError = true;
         });
       }
     } finally {
@@ -161,17 +197,20 @@ class _SyncStatusSheetBodyState extends State<SyncStatusSheetBody>
     }
   }
 
+  SyncEngine? _syncEngineOrNull() {
+    try {
+      return context.read<SyncEngine>();
+    } on Object {
+      return null;
+    }
+  }
+
   Future<void> _retryJob(SyncJob job) async {
     await _withBusy(() async {
       final MailRepository repo = context.read<MailRepository>();
-      SyncEngine? sync;
-      try {
-        sync = context.read<SyncEngine>();
-      } on Object {
-        sync = null;
-      }
+      final SyncEngine? sync = _syncEngineOrNull();
       await repo.retrySyncJob(job.id);
-      await sync?.kick();
+      sync?.kickNonBlocking();
     });
   }
 
@@ -181,34 +220,158 @@ class _SyncStatusSheetBodyState extends State<SyncStatusSheetBody>
     });
   }
 
-  Future<void> _syncAccountNow(AccountSyncHealth health) async {
+  Future<void> _stopAllSync() async {
+    final SyncEngine? sync = _syncEngineOrNull();
+    if (sync == null) {
+      return;
+    }
     await _withBusy(() async {
-      final MailRepository repo = context.read<MailRepository>();
-      final SyncEngine sync = context.read<SyncEngine>();
-      await sync.enqueueIncremental(health.accountId);
-      final List<MailFolder> folders = await repo.listFolders(
-        accountId: health.accountId,
-      );
-      MailFolder? inbox;
-      for (final MailFolder folder in folders) {
-        if (folder.role == 'inbox' ||
-            folder.id == MailFolder.inboxId(health.accountId)) {
-          inbox = folder;
-          break;
-        }
+      final ({int abortedRunning, int cancelledPending}) result =
+          await sync.stopAllSync();
+      final int total = result.abortedRunning + result.cancelledPending;
+      if (mounted) {
+        setState(() {
+          _banner = total == 0
+              ? 'No active sync jobs to stop.'
+              : 'Stopped sync: ${result.cancelledPending} pending cancelled, '
+                    '${result.abortedRunning} running aborted. '
+                    'Local mail was not deleted.';
+          _bannerIsError = false;
+        });
       }
-      final MailFolder? target = inbox;
-      if (target != null && target.remoteId.isNotEmpty) {
-        await repo.enqueueSyncJob(
-          accountId: health.accountId,
-          type: 'full_folder',
-          payloadJson: jsonEncode(<String, String>{
-            'folderId': target.id,
-            'remoteId': target.remoteId,
-          }),
+    });
+  }
+
+  Future<void> _stopAccountSync(String accountId) async {
+    final SyncEngine? sync = _syncEngineOrNull();
+    if (sync == null) {
+      return;
+    }
+    await _withBusy(() async {
+      final ({int abortedRunning, int cancelledPending}) result =
+          await sync.stopAllSync(accountId: accountId);
+      final int total = result.abortedRunning + result.cancelledPending;
+      if (mounted) {
+        setState(() {
+          _banner = total == 0
+              ? 'No active jobs for this account.'
+              : 'Stopped sync for ${_accountLabel(accountId)}: '
+                    '${result.cancelledPending} pending, '
+                    '${result.abortedRunning} running. '
+                    'Local mail was not deleted.';
+          _bannerIsError = false;
+        });
+      }
+    });
+  }
+
+  Future<bool> _confirmClearCursors(String accountLabel) async {
+    final bool? confirmed = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return AlertDialog(
+          title: const Text('Clear sync cursors?'),
+          content: Text(
+            'Removes sync position markers for $accountLabel so the next '
+            'sync re-fetches from the server.\n\n'
+            'Downloaded mail and folders on this device are not deleted.',
+          ),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              child: const Text('Clear cursors'),
+            ),
+          ],
         );
+      },
+    );
+    return confirmed ?? false;
+  }
+
+  Future<void> _clearAccountCursors(String accountId) async {
+    final String label = _accountLabel(accountId);
+    final bool confirmed = await _confirmClearCursors(label);
+    if (!confirmed || !mounted) {
+      return;
+    }
+    final SyncEngine? sync = _syncEngineOrNull();
+    if (sync == null) {
+      return;
+    }
+    await _withBusy(() async {
+      final int removed = await sync.clearSyncCursors(accountId: accountId);
+      if (mounted) {
+        setState(() {
+          _banner = removed == 0
+              ? 'No sync cursors stored for $label.'
+              : 'Cleared $removed sync cursor(s) for $label. '
+                    'Downloaded mail was not deleted.';
+          _bannerIsError = false;
+        });
       }
-      await sync.kick();
+    });
+  }
+
+  Future<void> _forceRefreshToken(String accountId, {bool syncAfter = false}) async {
+    final SyncEngine? sync = _syncEngineOrNull();
+    if (sync == null) {
+      return;
+    }
+    await _withBusy(() async {
+      await sync.forceRefreshAuthToken(accountId);
+      if (syncAfter) {
+        await _enqueueAccountSync(accountId, sync);
+      }
+      if (mounted) {
+        setState(() {
+          _banner = syncAfter
+              ? 'Token refreshed and sync queued for ${_accountLabel(accountId)}.'
+              : 'Access token refreshed for ${_accountLabel(accountId)}.';
+          _bannerIsError = false;
+        });
+      }
+    });
+  }
+
+  Future<void> _enqueueAccountSync(String accountId, SyncEngine sync) async {
+    final MailRepository repo = context.read<MailRepository>();
+    await sync.enqueueIncremental(accountId);
+    final List<MailFolder> folders = await repo.listFolders(
+      accountId: accountId,
+    );
+    MailFolder? inbox;
+    for (final MailFolder folder in folders) {
+      if (folder.role == 'inbox' ||
+          folder.id == MailFolder.inboxId(accountId)) {
+        inbox = folder;
+        break;
+      }
+    }
+    final MailFolder? target = inbox;
+    if (target != null && target.remoteId.isNotEmpty) {
+      await repo.enqueueSyncJob(
+        accountId: accountId,
+        type: 'full_folder',
+        payloadJson: jsonEncode(<String, String>{
+          'folderId': target.id,
+          'remoteId': target.remoteId,
+        }),
+      );
+    }
+    sync.kickNonBlocking();
+  }
+
+  Future<void> _syncAccountNow(AccountSyncHealth health) async {
+    final SyncEngine? sync = _syncEngineOrNull();
+    if (sync == null) {
+      return;
+    }
+    await _withBusy(() async {
+      await _enqueueAccountSync(health.accountId, sync);
     });
   }
 
@@ -228,6 +391,9 @@ class _SyncStatusSheetBodyState extends State<SyncStatusSheetBody>
     final String mm = at.minute.toString().padLeft(2, '0');
     return '${at.month}/${at.day} $hh:$mm';
   }
+
+  bool get _hasActiveSyncWork =>
+      _syncActivity.isRemoteSyncInFlight || _syncActivity.activeJobCount > 0;
 
   @override
   Widget build(BuildContext context) {
@@ -256,7 +422,8 @@ class _SyncStatusSheetBodyState extends State<SyncStatusSheetBody>
           Text('Sync status', style: Theme.of(context).textTheme.titleLarge),
           const SizedBox(height: 4),
           Text(
-            'Inspect the sync job queue and per-account health. Retry failed jobs or sync an account now.',
+            'Inspect the sync job queue and per-account health. Stop runaway '
+            'sync, clear stale cursors, refresh OAuth tokens, or sync now.',
             style: TextStyle(color: t.muted, height: 1.35),
           ),
           const SizedBox(height: 12),
@@ -301,6 +468,16 @@ class _SyncStatusSheetBodyState extends State<SyncStatusSheetBody>
               ],
             ),
           ),
+          if (_hasActiveSyncWork) ...<Widget>[
+            const SizedBox(height: 8),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: OutlinedButton(
+                onPressed: _busy ? null : _stopAllSync,
+                child: const Text('Stop all sync'),
+              ),
+            ),
+          ],
           const SizedBox(height: 12),
           TabBar(
             controller: _tabs,
@@ -314,7 +491,13 @@ class _SyncStatusSheetBodyState extends State<SyncStatusSheetBody>
           ),
           if (_banner != null) ...<Widget>[
             const SizedBox(height: 12),
-            Text(_banner!, style: TextStyle(color: t.coral, height: 1.35)),
+            Text(
+              _banner!,
+              style: TextStyle(
+                color: _bannerIsError ? t.coral : t.teal,
+                height: 1.35,
+              ),
+            ),
           ],
           const SizedBox(height: 8),
           Flexible(
@@ -347,8 +530,9 @@ class _SyncStatusSheetBodyState extends State<SyncStatusSheetBody>
                             : ListView.separated(
                                 physics: const AlwaysScrollableScrollPhysics(),
                                 itemCount: _jobs.length,
-                                separatorBuilder: (BuildContext context, int index) =>
-                                    Divider(color: t.line, height: 1),
+                                separatorBuilder:
+                                    (BuildContext context, int index) =>
+                                        Divider(color: t.line, height: 1),
                                 itemBuilder: (BuildContext context, int index) {
                                   final SyncJob job = _jobs[index];
                                   return _JobTile(
@@ -387,10 +571,13 @@ class _SyncStatusSheetBodyState extends State<SyncStatusSheetBody>
                             : ListView.separated(
                                 physics: const AlwaysScrollableScrollPhysics(),
                                 itemCount: _health.length,
-                                separatorBuilder: (BuildContext context, int index) =>
-                                    Divider(color: t.line, height: 1),
+                                separatorBuilder:
+                                    (BuildContext context, int index) =>
+                                        Divider(color: t.line, height: 1),
                                 itemBuilder: (BuildContext context, int index) {
                                   final AccountSyncHealth row = _health[index];
+                                  final bool accountActive =
+                                      row.syncing || row.pendingCount > 0;
                                   return _AccountHealthTile(
                                     health: row,
                                     accountLabel: _accountLabel(row.accountId),
@@ -398,7 +585,21 @@ class _SyncStatusSheetBodyState extends State<SyncStatusSheetBody>
                                       row.lastSuccessAt,
                                     ),
                                     busy: _busy,
+                                    showStop: accountActive,
+                                    showOAuthRefresh: _supportsOAuthRefresh(
+                                      row.accountId,
+                                    ),
                                     onSyncNow: () => _syncAccountNow(row),
+                                    onStop: () => _stopAccountSync(
+                                      row.accountId,
+                                    ),
+                                    onClearCursors: () => _clearAccountCursors(
+                                      row.accountId,
+                                    ),
+                                    onRefreshToken: () => _forceRefreshToken(
+                                      row.accountId,
+                                      syncAfter: true,
+                                    ),
                                   );
                                 },
                               ),
@@ -468,6 +669,7 @@ class _JobTile extends StatelessWidget {
             const SizedBox(height: 8),
             Wrap(
               spacing: 8,
+              runSpacing: 4,
               children: <Widget>[
                 if (onRetry != null)
                   OutlinedButton(
@@ -494,14 +696,24 @@ class _AccountHealthTile extends StatelessWidget {
     required this.accountLabel,
     required this.lastSuccessLabel,
     required this.busy,
+    required this.showStop,
+    required this.showOAuthRefresh,
     required this.onSyncNow,
+    required this.onStop,
+    required this.onClearCursors,
+    required this.onRefreshToken,
   });
 
   final AccountSyncHealth health;
   final String accountLabel;
   final String lastSuccessLabel;
   final bool busy;
+  final bool showStop;
+  final bool showOAuthRefresh;
   final VoidCallback onSyncNow;
+  final VoidCallback onStop;
+  final VoidCallback onClearCursors;
+  final VoidCallback onRefreshToken;
 
   @override
   Widget build(BuildContext context) {
@@ -518,19 +730,9 @@ class _AccountHealthTile extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          Row(
-            children: <Widget>[
-              Expanded(
-                child: Text(
-                  accountLabel,
-                  style: const TextStyle(fontWeight: FontWeight.w600),
-                ),
-              ),
-              OutlinedButton(
-                onPressed: busy ? null : onSyncNow,
-                child: const Text('Sync now'),
-              ),
-            ],
+          Text(
+            accountLabel,
+            style: const TextStyle(fontWeight: FontWeight.w600),
           ),
           const SizedBox(height: 4),
           Text(
@@ -548,6 +750,31 @@ class _AccountHealthTile extends StatelessWidget {
               style: TextStyle(color: t.coral, fontSize: 12, height: 1.3),
             ),
           ],
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            runSpacing: 4,
+            children: <Widget>[
+              OutlinedButton(
+                onPressed: busy ? null : onSyncNow,
+                child: const Text('Sync now'),
+              ),
+              if (showStop)
+                OutlinedButton(
+                  onPressed: busy ? null : onStop,
+                  child: const Text('Stop sync'),
+                ),
+              if (showOAuthRefresh)
+                OutlinedButton(
+                  onPressed: busy ? null : onRefreshToken,
+                  child: const Text('Refresh token'),
+                ),
+              TextButton(
+                onPressed: busy ? null : onClearCursors,
+                child: const Text('Clear cursors'),
+              ),
+            ],
+          ),
         ],
       ),
     );

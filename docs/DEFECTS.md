@@ -79,7 +79,7 @@ Pairs with DEF-083 automatic 400→clear. UI can live in Sync status sheet.
 | Field | Value |
 | --- | --- |
 | Priority | **Pri-1** |
-| Status | Open |
+| Status | Fixed (Tesla) |
 | Target | Immediate (Tesla) |
 | Area | `SyncEngine` Graph delta path; `GraphMailProvider.listDelta` |
 | Platforms | Android (repro on Graph accounts) |

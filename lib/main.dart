@@ -162,6 +162,7 @@ Future<void> main(List<String> args) async {
     pushOnCellular: () => settingsCubit.state.pushOnCellular,
     onNewUnread: (List<MailMessage> messages) =>
         notificationService.onNewMail(messages),
+    refreshAuthToken: providerRegistry.forceRefreshAuth,
   );
   syncEngine.attachSyncActivity(syncActivity);
   final MeetingInviteService meetingInviteService = MeetingInviteService(

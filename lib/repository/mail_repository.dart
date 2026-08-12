@@ -286,6 +286,21 @@ abstract class MailRepository {
   /// Cancels a `pending` job (deletes the row). No-op for other statuses.
   Future<void> cancelSyncJob(String id) async {}
 
+  /// Deletes all `pending` sync jobs. Optional [accountId] scopes to one account.
+  Future<int> cancelPendingSyncJobs({String? accountId}) async => 0;
+
+  /// Marks `running` jobs as `failed` (operator stop). Returns rows changed.
+  Future<int> abortRunningSyncJobs({String? accountId}) async => 0;
+
+  /// Removes durable sync cursors without deleting messages.
+  ///
+  /// Optional [accountId] and [folderId] narrow the wipe. Returns rows removed.
+  Future<int> clearSyncCursors({
+    String? accountId,
+    String? folderId,
+  }) async =>
+      0;
+
   /// Per-account pending/failed/running counts plus last success/error.
   Future<List<AccountSyncHealth>> listAccountSyncHealth() async {
     return const <AccountSyncHealth>[];

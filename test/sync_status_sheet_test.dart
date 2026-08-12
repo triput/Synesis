@@ -2,9 +2,9 @@
 // File: test/sync_status_sheet_test.dart
 // Description: Widget smoke coverage for the sync status / job viewer sheet.
 // Component: Test
-// Version: 1.0 (Gold Master)
+// Version: 1.1 (Gold Master)
 // Created: 2026-07-17
-// Last Update: 2026-07-17
+// Last Update: 2026-08-12
 // ==============================================================================
 
 import 'dart:async';
@@ -15,6 +15,7 @@ import 'package:synesis/domain/sync_profile.dart';
 import 'package:synesis/query/message_query.dart';
 import 'package:synesis/repository/mail_repository.dart';
 import 'package:synesis/sync/sync_activity.dart';
+import 'package:synesis/sync/sync_engine.dart';
 import 'package:synesis/theme/custom_theme.dart';
 import 'package:synesis/theme/theme_id.dart';
 import 'package:synesis/theme/theme_tokens.dart';
@@ -44,6 +45,8 @@ class _SheetRepo implements MailRepository {
   ];
 
   String? lastRetryId;
+  String? lastStopAccountId;
+  int clearCursorsCalls = 0;
 
   @override
   Stream<void> watchChanges() => _changes.stream;
@@ -173,8 +176,47 @@ class _SheetRepo implements MailRepository {
   Future<int> countFailedOutbox() async => 0;
 
   @override
-  Future<({int running, int pending})> countSyncJobActivity() async =>
-      (running: 0, pending: 0);
+  Future<({int running, int pending})> countSyncJobActivity() async {
+    int pending = 0;
+    int running = 0;
+    for (final SyncJob job in jobs) {
+      if (job.status == 'pending') {
+        pending += 1;
+      } else if (job.status == 'running') {
+        running += 1;
+      }
+    }
+    return (running: running, pending: pending);
+  }
+
+  @override
+  Future<int> cancelPendingSyncJobs({String? accountId}) async {
+    lastStopAccountId = accountId;
+    final int before = jobs.length;
+    jobs.removeWhere((SyncJob job) {
+      if (job.status != 'pending') {
+        return false;
+      }
+      if (accountId != null && job.accountId != accountId) {
+        return false;
+      }
+      return true;
+    });
+    final int removed = before - jobs.length;
+    if (removed > 0) {
+      _changes.add(null);
+    }
+    return removed;
+  }
+
+  @override
+  Future<int> abortRunningSyncJobs({String? accountId}) async => 0;
+
+  @override
+  Future<int> clearSyncCursors({String? accountId, String? folderId}) async {
+    clearCursorsCalls += 1;
+    return 2;
+  }
 
   @override
   Future<int> reclassifyFocusBuckets(
@@ -446,6 +488,34 @@ class _SheetRepo implements MailRepository {
       null;
 }
 
+Widget _wrapSheet({
+  required _SheetRepo repo,
+  required SyncActivity syncActivity,
+  required SyncEngine syncEngine,
+  required ThemeTokens tokens,
+}) {
+  return MultiRepositoryProvider(
+    providers: <RepositoryProvider<dynamic>>[
+      RepositoryProvider<MailRepository>.value(value: repo),
+      RepositoryProvider<SyncActivity>.value(value: syncActivity),
+      RepositoryProvider<SyncEngine>.value(value: syncEngine),
+    ],
+    child: MaterialApp(
+      theme: ThemeData(
+        useMaterial3: true,
+        brightness: tokens.brightness,
+        extensions: <ThemeExtension<dynamic>>[tokens],
+      ),
+      home: const Scaffold(
+        body: SizedBox(
+          height: 720,
+          child: SyncStatusSheetBody(),
+        ),
+      ),
+    ),
+  );
+}
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
@@ -470,27 +540,18 @@ void main() {
     addTearDown(() async {
       await syncActivity.dispose();
     });
+    final SyncEngine syncEngine = SyncEngine(
+      repository: repo,
+      resolveProvider: (_) async => null,
+    );
     final ThemeTokens tokens = ThemeTokens.forId(ThemeId.dark);
 
     await tester.pumpWidget(
-      MultiRepositoryProvider(
-        providers: <RepositoryProvider<dynamic>>[
-          RepositoryProvider<MailRepository>.value(value: repo),
-          RepositoryProvider<SyncActivity>.value(value: syncActivity),
-        ],
-        child: MaterialApp(
-          theme: ThemeData(
-            useMaterial3: true,
-            brightness: tokens.brightness,
-            extensions: <ThemeExtension<dynamic>>[tokens],
-          ),
-          home: const Scaffold(
-            body: SizedBox(
-              height: 640,
-              child: SyncStatusSheetBody(),
-            ),
-          ),
-        ),
+      _wrapSheet(
+        repo: repo,
+        syncActivity: syncActivity,
+        syncEngine: syncEngine,
+        tokens: tokens,
       ),
     );
     await tester.pump();
@@ -509,5 +570,104 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 20));
     expect(find.text('Sync now'), findsOneWidget);
+    expect(find.text('Clear cursors'), findsOneWidget);
+    expect(find.text('Stop sync'), findsOneWidget);
+  });
+
+  testWidgets('Stop all sync cancels pending jobs', (WidgetTester tester) async {
+    final _SheetRepo repo = _SheetRepo();
+    final SyncActivity syncActivity = SyncActivity(repository: repo);
+    syncActivity.start();
+    addTearDown(() async {
+      await syncActivity.dispose();
+    });
+    final SyncEngine syncEngine = SyncEngine(
+      repository: repo,
+      resolveProvider: (_) async => null,
+    );
+    final ThemeTokens tokens = ThemeTokens.forId(ThemeId.dark);
+
+    await tester.pumpWidget(
+      _wrapSheet(
+        repo: repo,
+        syncActivity: syncActivity,
+        syncEngine: syncEngine,
+        tokens: tokens,
+      ),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 20));
+
+    expect(find.text('Stop all sync'), findsOneWidget);
+
+    await tester.tap(find.text('Stop all sync'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 20));
+
+    expect(repo.lastStopAccountId, isNull);
+    expect(
+      repo.jobs.where((SyncJob j) => j.status == 'pending'),
+      isEmpty,
+    );
+    expect(
+      find.textContaining('Local mail was not deleted'),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('Clear cursors requires confirmation', (
+    WidgetTester tester,
+  ) async {
+    final _SheetRepo repo = _SheetRepo();
+    final SyncActivity syncActivity = SyncActivity(repository: repo);
+    syncActivity.start();
+    addTearDown(() async {
+      await syncActivity.dispose();
+    });
+    final SyncEngine syncEngine = SyncEngine(
+      repository: repo,
+      resolveProvider: (_) async => null,
+    );
+    final ThemeTokens tokens = ThemeTokens.forId(ThemeId.dark);
+
+    await tester.pumpWidget(
+      _wrapSheet(
+        repo: repo,
+        syncActivity: syncActivity,
+        syncEngine: syncEngine,
+        tokens: tokens,
+      ),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 20));
+
+    await tester.tap(find.text('Accounts'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 20));
+
+    final Finder clearCursors = find.text('Clear cursors');
+    await tester.ensureVisible(clearCursors);
+    await tester.pump();
+    await tester.tap(clearCursors);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 20));
+
+    expect(find.text('Clear sync cursors?'), findsOneWidget);
+    expect(
+      find.textContaining(
+        'Downloaded mail and folders on this device are not deleted',
+      ),
+      findsOneWidget,
+    );
+
+    await tester.tap(find.text('Clear cursors').last);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 20));
+
+    expect(repo.clearCursorsCalls, 1);
+    expect(
+      find.textContaining('Downloaded mail was not deleted'),
+      findsOneWidget,
+    );
   });
 }
