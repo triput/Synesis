@@ -4,7 +4,7 @@
 // Component: UI
 // Version: 1.1 (Gold Master)
 // Created: 2026-07-23
-// Last Update: 2026-08-03
+// Last Update: 2026-08-12
 // ==============================================================================
 
 import 'package:flutter/material.dart';
@@ -18,7 +18,7 @@ import 'package:synesis/ui/shell/folder_sidebar.dart';
 /// AquaMail-style navigation drawer for narrow/phone shells.
 ///
 /// Reuses [FolderSidebar] in [FolderSidebar.embeddedInDrawer] mode and adds
-/// footer actions (compose, outbox, add account, settings, sync status).
+/// footer actions (compose, outbox, sync status, settings).
 class MailNavigationDrawer extends StatelessWidget {
   const MailNavigationDrawer({
     super.key,
@@ -33,11 +33,8 @@ class MailNavigationDrawer extends StatelessWidget {
     required this.onMarkFolderUnread,
     required this.onCompose,
     required this.onOpenOutbox,
-    required this.onAddAccount,
-    required this.onManageAccounts,
     required this.onOpenSettings,
     required this.onOpenSyncStatus,
-    this.onOpenNotifications,
     this.syncActivity = const SyncActivitySnapshot.idle(),
   });
 
@@ -52,11 +49,8 @@ class MailNavigationDrawer extends StatelessWidget {
   final MarkFolderUnread onMarkFolderUnread;
   final VoidCallback onCompose;
   final VoidCallback onOpenOutbox;
-  final VoidCallback onAddAccount;
-  final VoidCallback onManageAccounts;
   final VoidCallback onOpenSettings;
   final VoidCallback onOpenSyncStatus;
-  final VoidCallback? onOpenNotifications;
   final SyncActivitySnapshot syncActivity;
 
   void _closeThen(BuildContext context, VoidCallback action) {
@@ -183,44 +177,10 @@ class MailNavigationDrawer extends StatelessWidget {
                   ),
                   ListTile(
                     dense: true,
-                    leading: Icon(
-                      Icons.manage_accounts_outlined,
-                      color: t.muted,
-                    ),
-                    title: Text(
-                      'Manage accounts',
-                      style: TextStyle(color: t.text),
-                    ),
-                    onTap: () => _closeThen(context, onManageAccounts),
-                  ),
-                  ListTile(
-                    dense: true,
-                    leading: Icon(
-                      Icons.person_add_alt_1_outlined,
-                      color: t.muted,
-                    ),
-                    title: Text('Add account', style: TextStyle(color: t.text)),
-                    onTap: () => _closeThen(context, onAddAccount),
-                  ),
-                  ListTile(
-                    dense: true,
                     leading: Icon(Icons.sync, color: t.muted),
                     title: Text('Sync status', style: TextStyle(color: t.text)),
                     onTap: () => _closeThen(context, onOpenSyncStatus),
                   ),
-                  if (onOpenNotifications != null)
-                    ListTile(
-                      dense: true,
-                      leading: Icon(
-                        Icons.notifications_outlined,
-                        color: t.muted,
-                      ),
-                      title: Text(
-                        'Notifications',
-                        style: TextStyle(color: t.text),
-                      ),
-                      onTap: () => _closeThen(context, onOpenNotifications!),
-                    ),
                   ListTile(
                     dense: true,
                     leading: Icon(Icons.settings_outlined, color: t.muted),

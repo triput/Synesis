@@ -4,7 +4,7 @@
 // Component: UI
 // Version: 1.4 (Gold Master)
 // Created: 2026-07-14
-// Last Update: 2026-07-27
+// Last Update: 2026-08-12
 // ==============================================================================
 
 import 'dart:async';
@@ -41,13 +41,11 @@ import 'package:synesis/ui/shell/message_headers_sheet.dart';
 import 'package:synesis/ui/shell/reading_pane.dart';
 import 'package:synesis/ui/shell/snooze_dialog.dart';
 import 'package:synesis/ui/account/add_account_sheet.dart';
-import 'package:synesis/ui/account/manage_accounts_sheet.dart';
 import 'package:synesis/ui/compose/compose_prefill.dart';
 import 'package:synesis/ui/compose/compose_sheet.dart';
 import 'package:synesis/ui/outbox/outbox_sheet.dart';
 import 'package:synesis/ui/search/search_sheet.dart';
 import 'package:synesis/ui/sync/sync_status_sheet.dart';
-import 'package:synesis/sync/sync_activity.dart';
 import 'package:synesis/sync/sync_engine.dart';
 
 class MailWorkspace extends StatefulWidget {
@@ -443,14 +441,9 @@ class _MailWorkspaceState extends State<MailWorkspace> {
                                 ),
                             onCompose: () => showComposeSheet(context),
                             onOpenOutbox: () => showOutboxSheet(context),
-                            onAddAccount: () => showAddAccountSheet(context),
-                            onManageAccounts: () =>
-                                showManageAccountsSheet(context),
                             onOpenSettings: () => showSettingsSheet(context),
                             onOpenSyncStatus: () =>
                                 showSyncStatusSheet(context),
-                            onOpenNotifications: () =>
-                                showNotificationsSheet(context),
                           )
                         : null,
                     body: Column(

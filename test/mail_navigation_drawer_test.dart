@@ -4,7 +4,7 @@
 // Component: Test
 // Version: 1.2 (Gold Master)
 // Created: 2026-07-23
-// Last Update: 2026-07-27
+// Last Update: 2026-08-12
 // ==============================================================================
 
 import 'dart:async';
@@ -163,7 +163,7 @@ void main() {
       expect(find.text('FOLDERS'), findsOneWidget);
     });
 
-    testWidgets('opens folder sheet for active account and switches chips', (
+    testWidgets('opens folder sheet for active account and switches accounts', (
       WidgetTester tester,
     ) async {
       String? selectedAccount;
@@ -346,8 +346,6 @@ void main() {
                 onMarkFolderUnread: (String a, String f, bool u) {},
                 onCompose: () {},
                 onOpenOutbox: () {},
-                onAddAccount: () {},
-                onManageAccounts: () {},
                 onOpenSettings: () {},
                 onOpenSyncStatus: () {},
               ),
@@ -362,7 +360,11 @@ void main() {
 
       expect(find.text('Compose'), findsOneWidget);
       expect(find.text('Outbox'), findsOneWidget);
+      expect(find.text('Sync status'), findsOneWidget);
       expect(find.text('Settings'), findsOneWidget);
+      expect(find.text('Manage accounts'), findsNothing);
+      expect(find.text('Add account'), findsNothing);
+      expect(find.text('Notifications'), findsNothing);
       await tester.tap(find.text('Unified Inbox'));
       await tester.pumpAndSettle();
 
@@ -371,7 +373,7 @@ void main() {
       expect(find.text('main'), findsOneWidget);
     });
 
-    testWidgets('account chip tap closes drawer and selects account', (
+    testWidgets('account list tap closes drawer and selects account', (
       WidgetTester tester,
     ) async {
       String? selectedAccount;
@@ -398,8 +400,6 @@ void main() {
                 onMarkFolderUnread: (String a, String f, bool u) {},
                 onCompose: () {},
                 onOpenOutbox: () {},
-                onAddAccount: () {},
-                onManageAccounts: () {},
                 onOpenSettings: () {},
                 onOpenSyncStatus: () {},
               ),
@@ -551,11 +551,8 @@ void main() {
                   onMarkFolderUnread: (String a, String f, bool u) {},
                   onCompose: () {},
                   onOpenOutbox: () {},
-                  onAddAccount: () {},
-                  onManageAccounts: () {},
                   onOpenSettings: () {},
                   onOpenSyncStatus: () {},
-                  onOpenNotifications: () {},
                 ),
                 body: const Center(child: Text('main')),
                 bottomNavigationBar: NavigationBar(
@@ -585,7 +582,12 @@ void main() {
         await tester.pumpAndSettle();
 
         expect(find.text('Compose'), findsOneWidget);
+        expect(find.text('Outbox'), findsOneWidget);
+        expect(find.text('Sync status'), findsOneWidget);
         expect(find.text('Settings'), findsOneWidget);
+        expect(find.text('Manage accounts'), findsNothing);
+        expect(find.text('Add account'), findsNothing);
+        expect(find.text('Notifications'), findsNothing);
         expect(find.text('Unified Inbox'), findsOneWidget);
         // May need a flick if footer is tall — prove MAIL section scrolls.
         await tester.drag(find.text('Unified Inbox'), const Offset(0, -120));

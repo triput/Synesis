@@ -12,7 +12,7 @@
 
 > Android dogfood folder/drawer polish (2026-07-27): account chips, folder-picker sheet, title-bar **Show folders** → sheet.
 >
-> **V2 Wave 7 / Trish extras parking lot** (2026-07-27): operator enhancement backlog (Pri-2 / Pri-2.5 / Pri-3) parked for **Wave 7 — Final polish / Trish extras** — last if time permits; not V2.0 critical path. See [V2_PLAN.md](V2_PLAN.md) § Wave 7. **Trish calendar asks (2026-08-03):** [DEF-075](#def-075--calendar-week--weekdays-views) week/weekdays views; [DEF-076](#def-076--calendar-show-day-of-year--week-of-year) day-of-year + week-of-year. **Trish V-Next (2026-08-03):** [DEF-078](#def-078--phone-quick-reply-density--settings-toggle) phone Quick Reply; [DEF-044](#def-044--home-screen-list-widget-per-account-mail--open-in-app-aquamail-bar) per-account list widgets (AquaMail bar) — **Pri-2**. **Trish Pri-3 (2026-08-04):** [DEF-079](#def-079--contact-postal-addresses--open-in-map-apps) contact postal addresses + Maps/Waze; [DEF-081](#def-081--calendar-pills-temporary-view-toggle) calendar pill temp toggle. **Wave 6 E11 dogfood (2026-08-04):** [DEF-080](#def-080--gmail-imap-too-many-simultaneous-connections-on-body-fetch). **Android week dogfood (2026-08-12):** [DEF-082](#def-082--phone-drawer-move-account-admin-to-settings--vertical-accounts) drawer IA; [DEF-083](#def-083--graph-sync-token-expired-400-does-not-clear-cursor--jobs-pile-up) Graph expired token; [DEF-084](#def-084--sync-recovery-controls--clear-cursors-stop-all-force-refresh) sync recovery; [DEF-085](#def-085--reading-pane-wide-images-clipped--no-horizontal-pan) wide images.
+> **V2 Wave 7 / Trish extras parking lot** (2026-07-27): operator enhancement backlog (Pri-2 / Pri-2.5 / Pri-3) parked for **Wave 7 — Final polish / Trish extras** — last if time permits; not V2.0 critical path. See [V2_PLAN.md](V2_PLAN.md) § Wave 7. **Trish calendar asks (2026-08-03):** [DEF-075](#def-075--calendar-week--weekdays-views) week/weekdays views; [DEF-076](#def-076--calendar-show-day-of-year--week-of-year) day-of-year + week-of-year. **Trish V-Next (2026-08-03):** [DEF-078](#def-078--phone-quick-reply-density--settings-toggle) phone Quick Reply; [DEF-044](#def-044--home-screen-list-widget-per-account-mail--open-in-app-aquamail-bar) per-account list widgets (AquaMail bar) — **Pri-2**. **Trish Pri-3 (2026-08-04):** [DEF-079](#def-079--contact-postal-addresses--open-in-map-apps) contact postal addresses + Maps/Waze; [DEF-081](#def-081--calendar-pills-temporary-view-toggle) calendar pill temp toggle. **Wave 6 E11 dogfood (2026-08-04):** [DEF-080](#def-080--gmail-imap-too-many-simultaneous-connections-on-body-fetch). **Android week dogfood (2026-08-12):** [DEF-083](#def-083--graph-sync-token-expired-400-does-not-clear-cursor--jobs-pile-up) Graph expired token; [DEF-084](#def-084--sync-recovery-controls--clear-cursors-stop-all-force-refresh) sync recovery; [DEF-085](#def-085--reading-pane-wide-images-clipped--no-horizontal-pan) wide images. **Closed:** [DEF-082](#def-082--phone-drawer-move-account-admin-to-settings-vertical-accounts-only) drawer IA (2026-08-12).
 
 
 ### DEF-085 — Reading pane: wide images clipped; no horizontal pan
@@ -99,35 +99,6 @@ Treat Graph **expired sync token** (400 with that message, and/or 410 Gone) as c
 
 **Notes**  
 Also fixed `@odata.etag` in Graph PIM event `$select` (not valid in `$select`; etag still returned in response body). Follow-up if silverhelmet tenant still errors on another field.
-
----
-
-### DEF-082 — Phone drawer: move account admin to Settings; vertical accounts only
-
-| Field | Value |
-| --- | --- |
-| Priority | **Pri-2** |
-| Status | Open (enhancement) |
-| Target | Android drawer polish (Jules / Andi + ux-design) |
-| Area | `mail_navigation_drawer.dart`, `folder_sidebar.dart` (`_DrawerAccountsBody`), Settings Accounts / Notifications sections |
-| Platforms | Android / narrow |
-| Logged | 2026-08-12 |
-| Found by | **Trish** |
-| Related | [DEF-046](#def-046--hamburger-opens-full-drawer-prefer-folders-only-sheet-enhancement); hybrid A chips |
-
-**Summary**  
-Drawer footer still lists Manage accounts, Add account, Notifications (plus Sync status / Settings). With several accounts, the hybrid-A **horizontal** chip row forces awkward scroll (vertical then horizontal).
-
-**Expected**  
-- Move **Notifications**, **Manage accounts**, **Add account** into **Settings** (Accounts / Notifications already exist — remove drawer duplicates).
-- Keep Sync status + Settings (+ Compose / Outbox) in drawer if needed.
-- Account list: **vertical only**; if overflow, vertical scroll only — no horizontal account chip strip.
-
-**Actual**  
-Drawer footer has Manage / Add / Notifications; accounts use horizontal chips in embedded drawer mode.
-
-**Notes**  
-Settings already embeds ManageAccountsSheetBody and NotificationsSettingsSection — drawer entries are redundant on phone.
 
 ---
 
@@ -1275,6 +1246,30 @@ Pri-3 polish; Tesla not needed (fields already exist).
 ---
 
 ## Closed
+
+### DEF-082 — Phone drawer: move account admin to Settings; vertical accounts only
+
+| Field | Value |
+| --- | --- |
+| Priority | **Pri-2** |
+| Status | **Closed** (2026-08-12) |
+| Fixed | 2026-08-12 |
+| Area | `mail_navigation_drawer.dart`, `folder_sidebar.dart` (`_DrawerAccountsBody`); Settings Accounts / Notifications unchanged |
+| Platforms | Android / narrow |
+| Logged | 2026-08-12 |
+| Found by | **Trish** |
+| Related | [DEF-046](#def-046--hamburger-opens-full-drawer-prefer-folders-only-sheet-enhancement) remains open (hamburger → folders-only sheet) |
+
+**Summary**  
+Drawer footer duplicated account admin and Notifications already available under Settings; hybrid-A horizontal account chips forced awkward two-axis scroll on multi-account phones.
+
+**Fix**  
+Removed **Manage accounts**, **Add account**, and **Notifications** from the phone drawer footer. Account picker is **vertical only** (no horizontal chip strip). Kept Compose, Outbox, Sync status, and Settings in the drawer. Settings Accounts and Notifications sections unchanged; desktop sidebar unchanged.
+
+**Verification**  
+Renee GO: `flutter test test/mail_navigation_drawer_test.dart` — **12 passed** (2026-08-12).
+
+---
 
 ### DEF-061 — Google Calendar PIM 403 after fresh revoke + re-add (tokeninfo fail-open / GCP API)
 

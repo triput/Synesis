@@ -11,7 +11,7 @@ Wave 6b makes **DAV accounts real copy targets**: when the user copies an event/
 ```text
 Wave 6 ✅ → Wave 6b ✅ CalDAV/CardDAV create write (2026-08-12)
          → Wave 6c: calendar series copy — parked (not next)
-         → Next: Android Pri-2 (DEF-085, DEF-082) / Wave 7 candidates
+         → Next: Android Pri-2 (DEF-085) / Wave 7 candidates — [DEF-082](DEFECTS.md#def-082--phone-drawer-move-account-admin-to-settings-vertical-accounts-only) closed 2026-08-12
 ```
 
 ## Locked decisions

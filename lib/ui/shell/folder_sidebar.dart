@@ -4,7 +4,7 @@
 // Component: UI
 // Version: 1.5 (Gold Master)
 // Created: 2026-07-14
-// Last Update: 2026-08-03
+// Last Update: 2026-08-12
 // ==============================================================================
 
 import 'dart:async';
@@ -14,7 +14,6 @@ import 'package:synesis/account/account_display.dart';
 import 'package:synesis/domain/models.dart';
 import 'package:synesis/settings/app_settings_state.dart';
 import 'package:synesis/theme/app_theme.dart';
-import 'package:provider/provider.dart';
 import 'package:synesis/sync/sync_activity.dart';
 import 'package:synesis/ui/mailbox/mailbox_state.dart';
 import 'package:synesis/ui/sync/sync_status_presentation.dart';
@@ -532,7 +531,7 @@ class _AccountsScrollAreaState extends State<_AccountsScrollArea> {
   }
 }
 
-/// Phone drawer: horizontal account chips + folders for the active account only.
+/// Phone drawer: vertical account list + folders launch for the resolved account.
 class _DrawerAccountsBody extends StatefulWidget {
   const _DrawerAccountsBody({
     required this.state,
@@ -612,26 +611,13 @@ class _DrawerAccountsBodyState extends State<_DrawerAccountsBody> {
           ? const NeverScrollableScrollPhysics()
           : null,
       children: <Widget>[
-        SizedBox(
-          height: 40,
-          child: ListView.separated(
-            scrollDirection: Axis.horizontal,
-            itemCount: widget.state.accounts.length,
-            separatorBuilder: (BuildContext context, int index) =>
-                const SizedBox(width: 8),
-            itemBuilder: (BuildContext context, int index) {
-              final MailAccount account = widget.state.accounts[index];
-              final bool selected = account.id == activeId;
-              final int unread = widget.state.unreadForAccount(account.id);
-              return _AccountChip(
-                account: account,
-                selected: selected,
-                unread: unread,
-                onTap: () => widget.onSelectAccount(account.id),
-              );
-            },
+        for (final MailAccount account in widget.state.accounts)
+          _DrawerAccountTile(
+            account: account,
+            selected: account.id == activeId,
+            unread: widget.state.unreadForAccount(account.id),
+            onTap: () => widget.onSelectAccount(account.id),
           ),
-        ),
         const SizedBox(height: 12),
         _FoldersLaunchTile(
           account: resolved,
@@ -872,8 +858,9 @@ class _DrawerFolderPickerSheet extends StatelessWidget {
   }
 }
 
-class _AccountChip extends StatelessWidget {
-  const _AccountChip({
+/// Compact full-width account row for the phone drawer accounts list (DEF-082).
+class _DrawerAccountTile extends StatelessWidget {
+  const _DrawerAccountTile({
     required this.account,
     required this.selected,
     required this.unread,
@@ -885,73 +872,66 @@ class _AccountChip extends StatelessWidget {
   final int unread;
   final VoidCallback onTap;
 
-  String get _label {
-    final String primary = AccountDisplay.primaryLabel(account);
-    if (primary.length <= 18) {
-      return primary;
-    }
-    return '${primary.substring(0, 16)}…';
-  }
-
   @override
   Widget build(BuildContext context) {
     final t = tokensOf(context);
-    return Tooltip(
-      message: AccountDisplay.secondaryLabel(account),
-      waitDuration: const Duration(milliseconds: 400),
-      child: Material(
-        color: selected
-            ? t.teal.withValues(alpha: 0.14)
-            : t.line.withValues(alpha: 0.35),
-        borderRadius: BorderRadius.circular(20),
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(20),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                color: selected ? t.teal : Colors.transparent,
-                width: 1.5,
-              ),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: <Widget>[
-                Container(
-                  width: 8,
-                  height: 8,
-                  decoration: BoxDecoration(
-                    color: account.accent,
-                    shape: BoxShape.circle,
-                  ),
-                ),
-                const SizedBox(width: 6),
-                ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 120),
-                  child: Text(
-                    _label,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      color: selected ? t.text : t.muted,
-                      fontSize: 12,
-                      fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
+    final String label = AccountDisplay.primaryLabel(account);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 2),
+      child: Tooltip(
+        message: AccountDisplay.secondaryLabel(account),
+        waitDuration: const Duration(milliseconds: 400),
+        child: Material(
+          color: selected ? t.teal.withValues(alpha: 0.12) : Colors.transparent,
+          borderRadius: BorderRadius.circular(10),
+          child: InkWell(
+            onTap: onTap,
+            borderRadius: BorderRadius.circular(10),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+              child: Row(
+                children: <Widget>[
+                  Container(
+                    width: 8,
+                    height: 8,
+                    decoration: BoxDecoration(
+                      color: account.accent,
+                      shape: BoxShape.circle,
+                      boxShadow: <BoxShadow>[
+                        BoxShadow(
+                          color: account.accent.withValues(alpha: 0.35),
+                          blurRadius: 6,
+                          spreadRadius: 1,
+                        ),
+                      ],
                     ),
                   ),
-                ),
-                if (unread > 0) ...[
-                  const SizedBox(width: 6),
-                  Text(
-                    '$unread',
-                    style: TextStyle(
-                      color: t.teal,
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      label,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: selected ? t.text : t.muted,
+                        fontSize: 13,
+                        fontWeight:
+                            selected ? FontWeight.w600 : FontWeight.w500,
+                      ),
                     ),
                   ),
+                  if (unread > 0) ...<Widget>[
+                    const SizedBox(width: 8),
+                    Text(
+                      '$unread',
+                      style: TextStyle(
+                        color: t.teal,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
                 ],
-              ],
+              ),
             ),
           ),
         ),
