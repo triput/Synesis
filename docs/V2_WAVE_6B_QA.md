@@ -1,6 +1,6 @@
 # Wave 6b — Renee QA (CalDAV/CardDAV Write)
 
-> **Status:** **E7 engineering GO** (2026-08-04). E8 Runbox dogfood open for Trish. Checklist: [V2_WAVE_6B_CHECKLIST.md](V2_WAVE_6B_CHECKLIST.md). Design: [V2_WAVE_6B_TESLA_DESIGN.md](V2_WAVE_6B_TESLA_DESIGN.md).
+> **Status:** **Wave complete** (2026-08-12). E7 engineering **GO** (2026-08-04); E8 Trish **GO** 2026-08-12 (matrix 1–4 Pass). Checklist: [V2_WAVE_6B_CHECKLIST.md](V2_WAVE_6B_CHECKLIST.md). Design: [V2_WAVE_6B_TESLA_DESIGN.md](V2_WAVE_6B_TESLA_DESIGN.md).
 
 | Field | Value |
 | --- | --- |
@@ -8,8 +8,8 @@
 | Commits under review | `69ce462` (Tesla P0–P3 create path + UI honesty flip) |
 | Prior gate | Wave 6 exit (**659** tests) |
 | Tests | **668/668 passed** (`flutter test`, Renee E7) |
-| Verdict | **GO** — engineering exit (E7); wave complete after E8 |
-| Operator dogfood (E8) | **Pending** — Trish Runbox |
+| Verdict | **GO** — wave complete after E8 (2026-08-12) |
+| Operator dogfood (E8) | **Pass** — matrix 1–4 + Trish **GO** 2026-08-12 (Android/Runbox) |
 
 ---
 
@@ -27,7 +27,7 @@
 | Graph / Google copy regression | **Pass** | Existing Graph POST + rewrite tests green in same suite. |
 | Full regression | **Pass** | **668/668**. Net **+9** vs Wave 6 (659). |
 | Wave 6b engineering exit (E7) | **GO** | No Pri-1 / data-safety blockers. |
-| E8 dogfood handoff | **Ready** | Trish Runbox matrix below. |
+| E8 dogfood handoff | **GO** | Trish **GO** 2026-08-12; matrix 1–4 Pass (Android/Runbox). |
 
 No Pri-1 defects from Wave 6b create-only write. Accepted MVP risks match Tesla D1 (412 on retry after rewrite crash).
 
@@ -70,23 +70,23 @@ No Pri-1 defects from Wave 6b create-only write. Accepted MVP risks match Tesla 
 | Graph/Google ↔ DAV paths (DAV write side) | Pass (auto) / E8 live | Enqueue + PUT path; Graph regression green |
 | Unpushed `local:*` not wiped by full-pull soft-delete | Pass | SyncEngine filter + unit test |
 | Renee GO + Page inventory | **GO** / handoff | This doc + delta below |
-| Trish E8 Runbox dogfood | Pending | Matrix below |
+| Trish E8 Runbox dogfood | **GO** | Matrix 1–4 Pass; Trish **GO** 2026-08-12 |
 
 ---
 
 ## Operator dogfood matrix (E8 — Trish)
 
-| # | Scenario | Expect |
-| --- | --- | --- |
-| 1 | Graph/Google → Runbox CalDAV: copy event | Local chip immediately; snackbar “Syncing to your provider…”; Sync sheet `events_copy` → done; event appears in Runbox web/other client |
-| 2 | Any → Runbox CardDAV: copy contact | Same pattern with `contacts_copy`; contact visible remotely |
-| 3 | Runbox → Graph/Google: copy event or contact | Local + remote create on Graph/Google (regression) |
-| 4 | Sheet / DnD target list for Runbox calendar/list | **No** “Local only — not synced yet” subtitle |
-| 5 | Undo event copy quickly after DAV drop | Local row gone; **no** orphan remote object |
-| 6 | Full pull / refresh while copy still `local:*` | Unpushed copy remains until rewrite |
-| 7 | Recurring source event | Still single independent copy (no RRULE) — Wave 6c |
+| # | Scenario | Expect | Result |
+| --- | --- | --- | --- |
+| 1 | Graph/Google → Runbox CalDAV: copy event | Local chip immediately; snackbar “Syncing to your provider…”; Sync sheet `events_copy` → done; event appears in Runbox web/other client | **Pass** — Android dogfood 2026-08-12 |
+| 2 | Any → Runbox CardDAV: copy contact | Same pattern with `contacts_copy`; contact visible remotely | **Pass** — Runbox 2026-08-12 |
+| 3 | Runbox → Graph/Google: copy event or contact | Local + remote create on Graph/Google (regression) | **Pass** — 2026-08-12 |
+| 4 | Sheet / DnD target list for Runbox calendar/list | **No** “Local only — not synced yet” subtitle | **Pass** — 2026-08-12 |
+| 5 | Undo event copy quickly after DAV drop | Local row gone; **no** orphan remote object | **Not run** — optional; not required for wave close |
+| 6 | Full pull / refresh while copy still `local:*` | Unpushed copy remains until rewrite | **Not run** — optional; not required for wave close |
+| 7 | Recurring source event | Still single independent copy (no RRULE) — Wave 6c | **Not run** — optional; Wave 6c parked |
 
-**Ready for Trish E8?** **Yes** — engineering GO; dogfood unblocks wave close.
+**Trish E8 verdict:** **GO** 2026-08-12 — matrix 1–4 Pass (Android/Runbox); wave closed.
 
 ---
 
@@ -112,4 +112,4 @@ Regenerate or patch `docs/V1_AUTOMATED_TEST_INVENTORY.csv` via `tool/generate_te
 
 ---
 
-*Renee E7 signed 2026-08-04. Wave close after Trish E8 + Page inventory.*
+*Renee E7 signed 2026-08-04. Trish E8 signed 2026-08-12 — wave closed. No new test inventory delta (E8 operator-only; catalog remains **668**).*

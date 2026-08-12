@@ -1,6 +1,6 @@
 # Wave 6b — CalDAV/CardDAV Write (Copy Targets) Checklist
 
-> **Status:** **In progress** (2026-08-04) — E7 Renee **GO** + Page inventory (**668 tests**); **E8** Runbox dogfood open. Parent: [V2_PLAN.md](V2_PLAN.md). Prior: [V2_WAVE_6_CHECKLIST.md](V2_WAVE_6_CHECKLIST.md) (**complete**, **659 tests**). Design: [V2_WAVE_6B_TESLA_DESIGN.md](V2_WAVE_6B_TESLA_DESIGN.md). QA: [V2_WAVE_6B_QA.md](V2_WAVE_6B_QA.md).
+> **Status:** **Complete** (2026-08-12) — E7 Renee **GO** + Page inventory (**668 tests**); **E8** Trish Runbox/Android dogfood **GO** (matrix 1–4 Pass). Parent: [V2_PLAN.md](V2_PLAN.md). Prior: [V2_WAVE_6_CHECKLIST.md](V2_WAVE_6_CHECKLIST.md) (**complete**, **659 tests**). Design: [V2_WAVE_6B_TESLA_DESIGN.md](V2_WAVE_6B_TESLA_DESIGN.md). QA: [V2_WAVE_6B_QA.md](V2_WAVE_6B_QA.md).
 
 Wave 6b makes **DAV accounts real copy targets**: when the user copies an event/contact onto a CalDAV calendar or CardDAV list, Synesis still duplicates locally first, then **PUT**s create and rewrites `providerId`/etag — same job types (`events_copy` / `contacts_copy`) as Graph/Google.
 
@@ -9,9 +9,9 @@ Wave 6b makes **DAV accounts real copy targets**: when the user copies an event/
 ## Sequence
 
 ```text
-Wave 6 ✅ → ★ Wave 6b: CalDAV/CardDAV create write ← active
-         → Wave 6c: calendar series copy
-         → Wave 7: Trish extras
+Wave 6 ✅ → Wave 6b ✅ CalDAV/CardDAV create write (2026-08-12)
+         → Wave 6c: calendar series copy — parked (not next)
+         → Next: Android Pri-2 (DEF-085, DEF-082) / Wave 7 candidates
 ```
 
 ## Locked decisions
@@ -48,16 +48,16 @@ Wave 6 ✅ → ★ Wave 6b: CalDAV/CardDAV create write ← active
 | **E5** | `PimCopyService.remotePushSupportedForAccount` true for DAV; enqueue | **Done** — enqueue for any resolved PIM provider |
 | **E6** | UI: sheet/snackbar no longer claim local-only for DAV | **Done** (minimal) — flip helper + snackbar fallback copy; sheet uses same flag |
 | **E7** | Renee **GO** + inventory | **Done** — engineering **GO** (**668/668**); QA [V2_WAVE_6B_QA.md](V2_WAVE_6B_QA.md); inventory **668 cases** (`V2-W6B` ×10) |
-| **E8** | Trish Runbox dogfood **GO** | Open — matrix in QA |
+| **E8** | Trish Runbox dogfood **GO** | **Done** — Trish **GO** 2026-08-12; matrix 1–4 Pass (Android/Runbox) |
 
 ## Exit criteria
 
-- [ ] Copy event → Runbox CalDAV calendar: local immediate + remote appears after sync job *(E8)*
-- [ ] Copy contact → Runbox CardDAV list: same *(E8)*
-- [ ] Graph/Google → DAV and DAV → Graph/Google paths work (DAV side write) *(auto Pass; E8 live)*
+- [x] Copy event → Runbox CalDAV calendar: local immediate + remote appears after sync job *(E8)*
+- [x] Copy contact → Runbox CardDAV list: same *(E8)*
+- [x] Graph/Google → DAV and DAV → Graph/Google paths work (DAV side write) *(E8 matrix 1–4 Pass)*
 - [x] Unpushed `local:*` not wiped by full-pull soft-delete *(E7 auto)*
 - [x] Renee **GO** *(E7)* — inventory cataloged (**668** cases)
-- [ ] Trish operator **GO** on Runbox *(E8)*
+- [x] Trish operator **GO** on Runbox *(E8)* — 2026-08-12; matrix 1–4 Pass
 
 ## Explicitly out
 
@@ -69,4 +69,4 @@ Wave 6 ✅ → ★ Wave 6b: CalDAV/CardDAV create write ← active
 
 ---
 
-*Opened 2026-08-04 after Wave 6 close (`6b1fcaf`).*
+*Opened 2026-08-04 after Wave 6 close (`6b1fcaf`). **Closed 2026-08-12** — E8 Trish **GO**; Wave 6c **parked** (hard-stop after 6b; next = Android Pri-2 / Wave 7 candidates).*
