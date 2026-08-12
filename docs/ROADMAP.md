@@ -11,7 +11,7 @@
 | Exit checklist | [V1_EXIT_CHECKLIST.md](V1_EXIT_CHECKLIST.md) — **signed off** |
 | Product | Synesis |
 | Platforms (v1) | Windows, Android |
-| Last updated | 2026-08-12 (V2 Wave 6 **complete** — **659 tests**; **Wave 6b complete** — E8 **GO**, **668 tests** — [V2_WAVE_6B_CHECKLIST.md](V2_WAVE_6B_CHECKLIST.md); **Wave 6c parked**; next = Android Pri-2 / Wave 7 candidates) |
+| Last updated | 2026-08-12 (scheduled **Wave H2** + **Wave R** post–V2.0; V2 Wave 6/6b complete — **668 tests**; Wave 6c parked; next = Android Pri-2 / Wave 7) |
 
 This roadmap tracks implementation milestones. Requirements live in the SPEC; this file tracks status and exit criteria.
 
@@ -102,9 +102,19 @@ V2.0a / V2.0b / V2.0c remain **release buckets**; operator execution follows thi
 | **Wave 6** | Cross-account DnD copy (events + contacts; Graph + Google push; DAV local-only until 6b) | **Complete** (2026-08-04) — E10+E11 **GO** (**659 tests**) | [V2_WAVE_6_CHECKLIST.md](V2_WAVE_6_CHECKLIST.md) · [V2_WAVE_6_QA.md](V2_WAVE_6_QA.md) |
 | **Wave 6b** | CalDAV/CardDAV create-only write for copy targets | **Complete** (2026-08-12) — E8 **GO** (**668 tests**) | [V2_WAVE_6B_CHECKLIST.md](V2_WAVE_6B_CHECKLIST.md) · [V2_WAVE_6B_QA.md](V2_WAVE_6B_QA.md) |
 | **Wave 6c** | Calendar series / recurring event copy semantics | **Parked** — not next; Android Pri-2 / Wave 7 candidates | Calendar RRULE/series only — not Tasks |
-| **Wave 7** | **Final polish / Trish extras** — UI niceties if time permits ([DEF-054](DEFECTS.md), [DEF-050](DEFECTS.md), [DEF-055](DEFECTS.md), [DEF-056](DEFECTS.md), [DEF-046](DEFECTS.md), overflow sweep; **Trish calendar:** [DEF-075](DEFECTS.md) Week/Weekdays, [DEF-076](DEFECTS.md) DOY/WOY; optional pull-forward [DEF-071](DEFECTS.md) Calendar→Today). **Widgets:** [DEF-044](DEFECTS.md) moved to **V-Next**. | Planned — **last** | Not V2.0 critical path |
+| **Wave 7** | **Final polish / Trish extras** — UI niceties if time permits ([DEF-054](DEFECTS.md), [DEF-050](DEFECTS.md), [DEF-055](DEFECTS.md), [DEF-056](DEFECTS.md), [DEF-046](DEFECTS.md), overflow sweep; **Trish calendar:** [DEF-075](DEFECTS.md) Week/Weekdays, [DEF-076](DEFECTS.md) DOY/WOY; optional pull-forward [DEF-071](DEFECTS.md) Calendar→Today). **Widgets:** [DEF-044](DEFECTS.md) moved to **V-Next**. | Planned — **last within V2.0** | Not V2.0 critical path |
+| **Wave H2** | **Dependency hygiene (post–V2.0)** — toolchain + pub majors + native/plugin debt + docs pins; revisit Wave H residuals | **TBD** — after V2.0 freeze/tag | Pre–V2.1 gate (required unless Trish overrides) |
+| **Wave R** | **Refactoring pass** — dead code / API tighten / AGENTS.md pattern debt; **no new product features** | **TBD** — after Wave H2 | Pre–V2.1 feature gate |
 
-**Locked PIM product requirements (operator):** multi-calendar and multi-contact-list across accounts; select 1+ to display; Outlook-like calendar overlay / side-by-side (Wave 5 UI); **Google Workspace PIM via People + Calendar API (Wave G — complete)**; cross-account copy via DnD (**Wave 6 — complete**, **659 tests**; **6b — complete**, **668 tests**; **6c parked**). Corporate Graph / Entra org = **post–Wave 6** research. Next = Android Pri-2 (DEF-085, DEF-082) / Wave 7 candidates.
+**Post–V2.0 sequence (locked as schedule placeholders 2026-08-12):**
+
+```text
+V2.0 exit (Android Pri-2 / Wave 7) → V2.0 freeze/tag
+  → Wave H2 (Dependency Hygiene) → Wave R (Refactor)
+  → V2.1 features (Watch P3, PIM polish, V-Next pulls)
+```
+
+**Locked PIM product requirements (operator):** multi-calendar and multi-contact-list across accounts; select 1+ to display; Outlook-like calendar overlay / side-by-side (Wave 5 UI); **Google Workspace PIM via People + Calendar API (Wave G — complete)**; cross-account copy via DnD (**Wave 6 — complete**, **659 tests**; **6b — complete**, **668 tests**; **6c parked**). Corporate Graph / Entra org = **post–Wave 6** research. Next = Android Pri-2 (DEF-085, DEF-082) / Wave 7 candidates. **Post–V2.0:** Wave H2 → Wave R before V2.1.
 
 ### Confirmed post-V1 (from V1 + Tier D → V1.5)
 
@@ -328,10 +338,11 @@ Competitive gap closure per [COMPETITIVE_ANALYSIS.md](COMPETITIVE_ANALYSIS.md). 
 | --- | --- | --- |
 | **V1.5 (D6 + dogfood UI)** | Multi-window+, image whitelist, large Graph attachments, PDF, snooze, trackers, toast actions, UI-P28–P30/P21 | **Complete** (2026-07-27) — [V1_5_PLAN.md](V1_5_PLAN.md) |
 | **V2.0 (TD-A)** | **Wave 0:** account identity — **complete**. **Wave H:** dependency hygiene — **complete**. **Wave 1:** P0 schema — **complete** (2026-07-27). **Wave 2 complete:** Graph PIM; **Wave 3 complete:** meeting-mail bridge (551 tests); **Wave 4 complete:** CardDAV/CalDAV (556 tests); **Wave 5 complete:** picker + Calendar/People UI (585 tests); **Wave G complete:** Google People + Calendar API (`f4c21b0`, **597 tests**); **Wave 6P next** (Sync Honesty); **Wave 6** (DnD copy) after 6P | Major version — [V2_PLAN.md](V2_PLAN.md) |
-| **V2.1** | Galaxy Watch (P3), PIM polish | After V2.0 |
+| **Post–V2.0 gates** | **Wave H2** dependency hygiene → **Wave R** refactor | **TBD** — after V2.0 freeze/tag; before V2.1 features |
+| **V2.1** | Galaxy Watch (P3), PIM polish | After Wave H2 + Wave R |
 | **Defer** | Enterprise crypto/shared mail, AI draft/summarize, Maybe/Someday (§16) | Unplanned radar |
 
-**Locked:** V1.5 adjacency · V2.0 = PIM (+ CardDAV/CalDAV + **Google PIM Wave G**) · **Wave 0 complete · Wave H complete · Wave 1 complete · Wave 2 complete · Wave 3 complete · Wave 4 complete (556 tests) · Wave 5 complete (585 tests) · Wave G complete (`f4c21b0`, 597 tests) · Wave 6P next · Wave 6 after 6P** · Watch = V2.1 P3 · Enterprise + AI = Maybe/Someday · D6-3 must-ship.
+**Locked:** V1.5 adjacency · V2.0 = PIM (+ CardDAV/CalDAV + **Google PIM Wave G**) · **Wave 0–6b complete · Wave 6c parked · Wave 7 last within V2.0 · Wave H2 + Wave R TBD post–freeze** · Watch = V2.1 P3 · Enterprise + AI = Maybe/Someday · D6-3 must-ship.
 
 ## Planned backlog (post-foundation)
 

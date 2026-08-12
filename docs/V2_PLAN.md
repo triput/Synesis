@@ -8,7 +8,7 @@
 | Watch | **P3 → V2.1** (not V2.0 critical path) |
 | Enterprise crypto / shared mail / AI draft·summarize | **Maybe/Someday** — not V2.0 critical path unless demand appears |
 | Owners | Steve (orchestrate) · Tesla (Graph + **Google PIM** / sync) · Jules (CardDAV spike + UI modules) · Renee (QA) · Page (docs) |
-| Last updated | 2026-08-12 |
+| Last updated | 2026-08-12 (scheduled **Wave H2** + **Wave R** post–V2.0 freeze; Wave 6b complete — **668 tests**; Wave 6c parked; next = Android Pri-2 / Wave 7) |
 
 ## 1. Locked product decisions (2026-07-22)
 
@@ -58,7 +58,7 @@ Local store is provider-agnostic (`contacts` / `events` + sync cursors), same ph
 
 Per-version hygiene after V1.5 freeze: toolchain + pub debt + native/plugin skew + docs SDK pins. Checklist: [WAVE_H_DEPENDENCY_HYGIENE.md](WAVE_H_DEPENDENCY_HYGIENE.md).
 
-**Sequence:** Wave 0 → **Wave H ✅** → **Wave 1 (P0) ✅** → **Wave 2 (P1) ✅** → **Wave 3 (P2) ✅** → **Wave 4 (P3–P4) ✅** → **Wave 5 (P5–P6) ✅** → **Wave G ✅** → **Wave 6P ✅** → **Wave 6 ✅** → **Wave 6b ✅** (DAV write, 2026-08-12) → **Wave 6c parked** (calendar series copy — not next) → Android Pri-2 (DEF-085, DEF-082) / Wave 7 candidates.
+**Sequence:** Wave 0 → **Wave H ✅** → **Wave 1 (P0) ✅** → **Wave 2 (P1) ✅** → **Wave 3 (P2) ✅** → **Wave 4 (P3–P4) ✅** → **Wave 5 (P5–P6) ✅** → **Wave G ✅** → **Wave 6P ✅** → **Wave 6 ✅** → **Wave 6b ✅** (DAV write, 2026-08-12) → **Wave 6c parked** (calendar series copy — not next) → Android Pri-2 (DEF-085, DEF-082) / Wave 7 candidates → **V2.0 freeze/tag** → **Wave H2 (TBD)** → **Wave R (TBD)** → V2.1.
 
 | Batch | Scope | Notes |
 | --- | --- | --- |
@@ -88,7 +88,9 @@ Per-version hygiene after V1.5 freeze: toolchain + pub debt + native/plugin skew
 | **Wave 6** | Cross-account / cross-list **DnD copy** for events + contacts (local copy + push); **D1 locked:** Graph + Google remote push; DAV-as-target = local-only + honest label | Jules + Tesla | **Complete** (2026-08-04) — E10+E11 **GO** (**659 tests**) — [V2_WAVE_6_CHECKLIST.md](V2_WAVE_6_CHECKLIST.md) · [V2_WAVE_6_QA.md](V2_WAVE_6_QA.md) |
 | **Wave 6b** | CalDAV/CardDAV **create-only write** for copy targets (Runbox) | Tesla + Jules | **Complete** (2026-08-12) — E7 **GO** + E8 Trish **GO** (**668 tests**) — [V2_WAVE_6B_CHECKLIST.md](V2_WAVE_6B_CHECKLIST.md) · [V2_WAVE_6B_QA.md](V2_WAVE_6B_QA.md) |
 | **Wave 6c** | **Calendar series / recurring event copy** semantics (this occurrence vs series vs new series) — not a Tasks module | Jules + Tesla | **Parked** — hard-stop after 6b; not planned-as-next |
-| **Wave 7** | **Final polish / Trish extras** — UI niceties & enhancement backlog if time permits (resizable panes, list context menus, mobile nav polish, overflow sweeps, widget wishlist). **Not V2.0 critical path.** | Jules / Andi | Scope-creep parking lot — **last** |
+| **Wave 7** | **Final polish / Trish extras** — UI niceties & enhancement backlog if time permits (resizable panes, list context menus, mobile nav polish, overflow sweeps, widget wishlist). **Not V2.0 critical path.** | Jules / Andi | Scope-creep parking lot — **last within V2.0** |
+| **Wave H2** | **Dependency hygiene (post–V2.0)** — toolchain + `pub outdated` majors + native/plugin debt + docs SDK pins; revisit Wave H residuals | Steve + team | **TBD** — after **V2.0 freeze/tag**; before V2.1 features |
+| **Wave R** | **Refactoring pass** — dead code, API tighten, AGENTS.md pattern debt; **no new product features** | Jules / Andi (+ Tesla if sync surfaces) | **TBD** — after Wave H2; before V2.1 features |
 
 Checklists: [V2_0A_P0_CHECKLIST.md](V2_0A_P0_CHECKLIST.md) (Wave 1 exit); [V2_WAVE2_CHECKLIST.md](V2_WAVE2_CHECKLIST.md) (Wave 2 exit ✅); [V2_WAVE3_CHECKLIST.md](V2_WAVE3_CHECKLIST.md) (Wave 3 exit ✅); [V2_WAVE4_CHECKLIST.md](V2_WAVE4_CHECKLIST.md) (Wave 4 exit ✅, `f2bd29b`, 556 tests); [V2_WAVE5_CHECKLIST.md](V2_WAVE5_CHECKLIST.md) (Wave 5 exit ✅, `73c181d`, 585 tests); [V2_WAVE_G_CHECKLIST.md](V2_WAVE_G_CHECKLIST.md) (Wave G exit ✅, `f4c21b0`, **597 tests**); [V2_WAVE_6P_CHECKLIST.md](V2_WAVE_6P_CHECKLIST.md) (Wave 6P exit ✅, **645 tests**); [V2_WAVE_6_CHECKLIST.md](V2_WAVE_6_CHECKLIST.md) (Wave 6 exit ✅, **659 tests**). Wave 4 QA: [V2_WAVE4_QA.md](V2_WAVE4_QA.md) (**GO**). Wave 5 QA: [V2_WAVE5_QA.md](V2_WAVE5_QA.md) (**GO**). Wave G QA: [V2_WAVE_G_QA.md](V2_WAVE_G_QA.md) (**GO**). Wave 6 QA: [V2_WAVE_6_QA.md](V2_WAVE_6_QA.md) (**GO**).
 
@@ -117,7 +119,40 @@ Checklists: [V2_0A_P0_CHECKLIST.md](V2_0A_P0_CHECKLIST.md) (Wave 1 exit); [V2_WA
 
 ### Wave 7 — Final polish / Trish extras (parking lot)
 
-**Status:** **Planned** — last operator wave; honest scope-creep bucket. Ship only if Waves 1–6 exit cleanly and operator bandwidth allows. Does **not** block V2.0 release narrative.
+**Status:** **Planned** — last **V2.0** operator wave; honest scope-creep bucket. Ship only if Waves 1–6 exit cleanly and operator bandwidth allows. Does **not** block V2.0 release narrative. Post–V2.0 gates (**Wave H2**, **Wave R**) are below — not Wave 7 scope.
+
+| Item | Source | Notes |
+| --- | --- | --- |
+| Resizable Windows mail panes (drag splitters) | [DEF-054](DEFECTS.md) | Outlook-style rail / sidebar / list / reading widths |
+| Right-click **Mark read** on list rows (solo vs thread) | [DEF-050](DEFECTS.md) | Pri-2.5 enhancement; context menu + thread disambiguation |
+| Include Sent items in conversation threads | [DEF-055](DEFECTS.md) | Pri-2; operator reply context / “did I respond?” triage |
+| Thread/list sort: oldest first vs newest first | [DEF-056](DEFECTS.md) | Pri-2; user-selectable list sort direction |
+| Hamburger → folders-only sheet (swipe keeps full drawer) | [DEF-046](DEFECTS.md) | Android phone nav polish |
+| Account dialog overflow sweep | [DEF-039](DEFECTS.md), [DEF-040](DEFECTS.md), [DEF-063](DEFECTS.md) | Remove / Edit / Manage Account yellow-black stripes on narrow widths |
+| Preserve accounts/data across reinstall | [DEF-067](DEFECTS.md) | Backup/restore or clear-data-safe reinstall so dogfood doesn’t force full re-auth |
+| Configurable home-screen list widget | [DEF-044](DEFECTS.md) | **Moved to V-Next Pri-2** — see deferred table |
+| Calendar defaults to **Today** (Agenda / day-first) | [DEF-071](DEFECTS.md) | Prefer **V-Soon / V-Next**; pull into Wave 7 only if bandwidth |
+| **Trish:** Calendar **Week** + **Weekdays** views | [DEF-075](DEFECTS.md) | Pri-3; beyond Month/Agenda |
+| **Trish:** Day-of-year + week-of-year in chrome | [DEF-076](DEFECTS.md) | Pri-3; operator uses these numbers |
+
+Real Pri-1/2 defects and PIM gates stay on their owning waves — this bucket is **enhancement-shaped** backlog only.
+
+### Post–V2.0 gates (scheduled placeholders — 2026-08-12)
+
+Per-version rule: after prior freeze/tag and **before** next-version feature waves, run Dependency Hygiene (unless Trish overrides). Refactor wave is now an explicit sibling gate.
+
+```text
+V2.0 exit (Wave 7 optional) → V2.0 freeze/tag
+  → Wave H2 (Dependency Hygiene) → Wave R (Refactor)
+  → V2.1 feature waves (Watch P3, PIM polish, V-Next pulls)
+```
+
+| Wave | Scope | Status |
+| --- | --- | --- |
+| **Wave H2** | Toolchain + pub soft/majors + native/KGP/plugin debt + docs SDK pins; reopen Wave H deferred majors (`xml`/`pdf`/`printing`/`file_picker` 12 / `drift_dev`) and residuals | **TBD** — plan stub only; **no upgrades until Trish unlocks** |
+| **Wave R** | Structural cleanup after V2.0 feature landings — rename/dead code, tighten public APIs, align patterns with AGENTS.md; fix debt found in pass only | **TBD** — plan stub only; **no refactor implementation until Trish unlocks** |
+
+**Not started:** checklist / inventory for H2 and R remain unopened until V2.0 freeze (or Trish picks a quick-scan / early start).
 
 | Item | Source | Notes |
 | --- | --- | --- |
@@ -284,7 +319,8 @@ Operator waves 1–7 + **G** map into these buckets for release narrative:
 | **V2.0d** | Google People + Calendar API (XOAUTH Google PIM) | Wave **G** |
 | **V2.0 +** | Cross-account DnD copy polish | Wave **6** |
 | **V2.0 ++** | Final polish / Trish extras (if time permits) | Wave **7** |
-| **V2.1** | Watch companion (P3); CalDAV depth / free-busy; Contacts polish | Post-V2.0 |
+| **Post–V2.0 gates** | Dependency hygiene + refactor (before V2.1 features) | **Wave H2** → **Wave R** (**TBD**) |
+| **V2.1** | Watch companion (P3); CalDAV depth / free-busy; Contacts polish | After Wave H2 + Wave R |
 
 | Gate | Scope | Status |
 | --- | --- | --- |
@@ -300,6 +336,9 @@ Operator waves 1–7 + **G** map into these buckets for release narrative:
 | **Wave 6** | Cross-account DnD copy (events + contacts; Graph + Google) | **Complete** (2026-08-04) — E10+E11 **GO** (**659 tests**) · [V2_WAVE_6_CHECKLIST.md](V2_WAVE_6_CHECKLIST.md) · [V2_WAVE_6_QA.md](V2_WAVE_6_QA.md) |
 | **Wave 6b** | CalDAV/CardDAV write (copy targets) | **Complete** (2026-08-12) — E8 **GO** (**668 tests**) — [V2_WAVE_6B_CHECKLIST.md](V2_WAVE_6B_CHECKLIST.md) · [V2_WAVE_6B_QA.md](V2_WAVE_6B_QA.md) |
 | **Wave 6c** | Calendar series / recurring event copy semantics | **Parked** — not next; Android Pri-2 / Wave 7 candidates |
+| **Wave 7** | Final polish / Trish extras | **Planned** — last within V2.0 |
+| **Wave H2** | Dependency hygiene (post–V2.0 freeze/tag) | **TBD** — before V2.1 features |
+| **Wave R** | Refactoring pass (no new product features) | **TBD** — after H2; before V2.1 features |
 
 ## 14. Exit criteria (V2.0)
 
@@ -366,7 +405,8 @@ Do not expand V1.5 scope — only avoid painting corners:
 | [V2_WAVE_G_QA.md](V2_WAVE_G_QA.md) | Wave G Renee QA — GO + Wave 6P handoff |
 | [V2_WAVE_6P_CHECKLIST.md](V2_WAVE_6P_CHECKLIST.md) | Wave 6P / Performance UX (Sync Honesty) exit criteria |
 | [V2_WAVE_6_CHECKLIST.md](V2_WAVE_6_CHECKLIST.md) | Wave 6 / cross-account DnD copy — complete (E10+E11 GO) |
-| [WAVE_H_DEPENDENCY_HYGIENE.md](WAVE_H_DEPENDENCY_HYGIENE.md) | Wave H checklist (batches H1–H5, exit gate) |
+| [WAVE_H_DEPENDENCY_HYGIENE.md](WAVE_H_DEPENDENCY_HYGIENE.md) | Wave H checklist (batches H1–H5, exit gate) — **complete**; residuals → Wave H2 |
+| *(pending)* Wave H2 / Wave R checklists | Open after V2.0 freeze/tag (or Trish early-start) |
 | [TIER_D_PLAN.md](TIER_D_PLAN.md) §4 TD-A | Horizon detail; dispositions updated to point here |
 | [V1_5_PLAN.md](V1_5_PLAN.md) | Immediate post-V1 ship before this plan executes |
 | [ROADMAP.md](ROADMAP.md) | Living index |
@@ -375,4 +415,4 @@ Do not expand V1.5 scope — only avoid painting corners:
 
 ---
 
-*Wave 0 complete 2026-07-27. Wave H complete 2026-07-27. **Wave 1 / V2.0a P0 complete** 2026-07-27 (`00ebdef`). **Wave 2 / V2.0a P1 complete** 2026-07-27 (`b526e70`, 530 tests). **Wave 3 / V2.0a P2 complete** 2026-07-27 (`7cbfdaa`, 551 tests) — Renee GO [V2_WAVE3_QA.md](V2_WAVE3_QA.md); `Calendars.ReadWrite` re-consent; meeting-mail bridge. **Wave 4 / V2.0b complete** 2026-07-27 (`f2bd29b`, 556 tests; [V2_WAVE4_CHECKLIST.md](V2_WAVE4_CHECKLIST.md); Renee GO [V2_WAVE4_QA.md](V2_WAVE4_QA.md)). **Wave 5 / V2.0c complete** 2026-07-27 (`73c181d`, 585 tests; [V2_WAVE5_CHECKLIST.md](V2_WAVE5_CHECKLIST.md); Renee GO [V2_WAVE5_QA.md](V2_WAVE5_QA.md)). **Wave G / V2.0d complete** 2026-07-27 (`f4c21b0`, **597 tests**; [V2_WAVE_G_CHECKLIST.md](V2_WAVE_G_CHECKLIST.md); Renee GO [V2_WAVE_G_QA.md](V2_WAVE_G_QA.md)). **Wave 6P complete** 2026-08-04 (**645 tests**; [V2_WAVE_6P_CHECKLIST.md](V2_WAVE_6P_CHECKLIST.md)). **Wave 6 complete** 2026-08-04 (**659 tests**; E10+E11 GO [V2_WAVE_6_QA.md](V2_WAVE_6_QA.md)) — [V2_WAVE_6_CHECKLIST.md](V2_WAVE_6_CHECKLIST.md). **Wave 6b complete** 2026-08-12 (**668 tests**; E8 Trish **GO** [V2_WAVE_6B_QA.md](V2_WAVE_6B_QA.md)) — [V2_WAVE_6B_CHECKLIST.md](V2_WAVE_6B_CHECKLIST.md). **Wave 6c parked** — hard-stop after 6b; next = Android Pri-2 (DEF-085, DEF-082) / Wave 7 candidates. Corporate Graph research post–Wave 6. **Wave 7 / Trish extras** last.*
+*Wave 0 complete 2026-07-27. Wave H complete 2026-07-27. **Wave 1 / V2.0a P0 complete** 2026-07-27 (`00ebdef`). **Wave 2 / V2.0a P1 complete** 2026-07-27 (`b526e70`, 530 tests). **Wave 3 / V2.0a P2 complete** 2026-07-27 (`7cbfdaa`, 551 tests) — Renee GO [V2_WAVE3_QA.md](V2_WAVE3_QA.md); `Calendars.ReadWrite` re-consent; meeting-mail bridge. **Wave 4 / V2.0b complete** 2026-07-27 (`f2bd29b`, 556 tests; [V2_WAVE4_CHECKLIST.md](V2_WAVE4_CHECKLIST.md); Renee GO [V2_WAVE4_QA.md](V2_WAVE4_QA.md)). **Wave 5 / V2.0c complete** 2026-07-27 (`73c181d`, 585 tests; [V2_WAVE5_CHECKLIST.md](V2_WAVE5_CHECKLIST.md); Renee GO [V2_WAVE5_QA.md](V2_WAVE5_QA.md)). **Wave G / V2.0d complete** 2026-07-27 (`f4c21b0`, **597 tests**; [V2_WAVE_G_CHECKLIST.md](V2_WAVE_G_CHECKLIST.md); Renee GO [V2_WAVE_G_QA.md](V2_WAVE_G_QA.md)). **Wave 6P complete** 2026-08-04 (**645 tests**; [V2_WAVE_6P_CHECKLIST.md](V2_WAVE_6P_CHECKLIST.md)). **Wave 6 complete** 2026-08-04 (**659 tests**; E10+E11 GO [V2_WAVE_6_QA.md](V2_WAVE_6_QA.md)) — [V2_WAVE_6_CHECKLIST.md](V2_WAVE_6_CHECKLIST.md). **Wave 6b complete** 2026-08-12 (**668 tests**; E8 Trish **GO** [V2_WAVE_6B_QA.md](V2_WAVE_6B_QA.md)) — [V2_WAVE_6B_CHECKLIST.md](V2_WAVE_6B_CHECKLIST.md). **Wave 6c parked** — hard-stop after 6b; next = Android Pri-2 (DEF-085, DEF-082) / Wave 7 candidates. Corporate Graph research post–Wave 6. **Wave 7 / Trish extras** last within V2.0. **Post–V2.0 (2026-08-12):** **Wave H2** (hygiene) → **Wave R** (refactor) before V2.1 features.*
