@@ -12,7 +12,123 @@
 
 > Android dogfood folder/drawer polish (2026-07-27): account chips, folder-picker sheet, title-bar **Show folders** → sheet.
 >
-> **V2 Wave 7 / Trish extras parking lot** (2026-07-27): operator enhancement backlog (Pri-2 / Pri-2.5 / Pri-3) parked for **Wave 7 — Final polish / Trish extras** — last if time permits; not V2.0 critical path. See [V2_PLAN.md](V2_PLAN.md) § Wave 7. **Trish calendar asks (2026-08-03):** [DEF-075](#def-075--calendar-week--weekdays-views) week/weekdays views; [DEF-076](#def-076--calendar-show-day-of-year--week-of-year) day-of-year + week-of-year. **Trish V-Next (2026-08-03):** [DEF-078](#def-078--phone-quick-reply-density--settings-toggle) phone Quick Reply; [DEF-044](#def-044--home-screen-list-widget-per-account-mail--open-in-app-aquamail-bar) per-account list widgets (AquaMail bar) — **Pri-2**. **Trish Pri-3 (2026-08-04):** [DEF-079](#def-079--contact-postal-addresses--open-in-map-apps) contact postal addresses + Maps/Waze; [DEF-081](#def-081--calendar-pills-temporary-view-toggle) calendar pill temp toggle. **Wave 6 E11 dogfood (2026-08-04):** [DEF-080](#def-080--gmail-imap-too-many-simultaneous-connections-on-body-fetch).
+> **V2 Wave 7 / Trish extras parking lot** (2026-07-27): operator enhancement backlog (Pri-2 / Pri-2.5 / Pri-3) parked for **Wave 7 — Final polish / Trish extras** — last if time permits; not V2.0 critical path. See [V2_PLAN.md](V2_PLAN.md) § Wave 7. **Trish calendar asks (2026-08-03):** [DEF-075](#def-075--calendar-week--weekdays-views) week/weekdays views; [DEF-076](#def-076--calendar-show-day-of-year--week-of-year) day-of-year + week-of-year. **Trish V-Next (2026-08-03):** [DEF-078](#def-078--phone-quick-reply-density--settings-toggle) phone Quick Reply; [DEF-044](#def-044--home-screen-list-widget-per-account-mail--open-in-app-aquamail-bar) per-account list widgets (AquaMail bar) — **Pri-2**. **Trish Pri-3 (2026-08-04):** [DEF-079](#def-079--contact-postal-addresses--open-in-map-apps) contact postal addresses + Maps/Waze; [DEF-081](#def-081--calendar-pills-temporary-view-toggle) calendar pill temp toggle. **Wave 6 E11 dogfood (2026-08-04):** [DEF-080](#def-080--gmail-imap-too-many-simultaneous-connections-on-body-fetch). **Android week dogfood (2026-08-12):** [DEF-082](#def-082--phone-drawer-move-account-admin-to-settings--vertical-accounts) drawer IA; [DEF-083](#def-083--graph-sync-token-expired-400-does-not-clear-cursor--jobs-pile-up) Graph expired token; [DEF-084](#def-084--sync-recovery-controls--clear-cursors-stop-all-force-refresh) sync recovery; [DEF-085](#def-085--reading-pane-wide-images-clipped--no-horizontal-pan) wide images.
+
+
+### DEF-085 — Reading pane: wide images clipped; no horizontal pan
+
+| Field | Value |
+| --- | --- |
+| Priority | **Pri-2** |
+| Status | Open |
+| Target | Reading-pane HTML (Jules / Andi) |
+| Area | `html_email_document.dart`, `html_email_body.dart`, `message_body_view.dart` |
+| Platforms | Android (repro); Windows likely same wrapper CSS |
+| Logged | 2026-08-12 |
+| Found by | **Trish** (Android week dogfood) |
+| Related | WebView nested scroll; remote-image policy |
+
+**Summary**  
+**Trish:** In-app email view clips wide images; there is no way to scroll horizontally to see the rest of the image.
+
+**Expected**  
+Wide content is reachable: horizontal pan/scroll inside the body (and/or pinch-zoom), without trapping the parent list/drawer gestures badly.
+
+**Actual**  
+[`wrapHtmlEmailDocument`](../lib/ui/shell/html_email_document.dart) sets `overflow-x: hidden` on `html, body` and `img, table { max-width: 100% }`. Oversized / non-conforming images are clipped with no pan affordance.
+
+**Notes**  
+Prefer `overflow-x: auto` (or a dedicated pan container) + keep vertical scroll; verify WebView vs HtmlWidget fallback both behave. Avoid breaking nested vertical gesture competition on Android.
+
+---
+
+### DEF-084 — Sync recovery controls: clear cursors, stop all, force refresh
+
+| Field | Value |
+| --- | --- |
+| Priority | **Pri-1** |
+| Status | Open |
+| Target | Immediate / sync hardening (Tesla + Jules) |
+| Area | `sync_status_sheet.dart`, `DriftSyncJobStore`, `sync_cursors`, SyncEngine, OAuth refresh |
+| Platforms | Android (repro), Windows |
+| Logged | 2026-08-12 |
+| Found by | **Trish** (Android week dogfood) |
+| Related | [DEF-083](#def-083--graph-sync-token-expired-400-does-not-clear-cursor--jobs-pile-up), Wave 6P SyncActivity |
+
+**Summary**  
+**Trish:** Sync status shows Syncing (171 jobs) with many failed; no operator recovery. Needs:
+1. **Clear sync cache / cursors** (per account or folder) to restart delta cleanly
+2. **Force refresh sync token** (OAuth access token and/or Graph delta cursor bootstrap)
+3. **Stop all sync activities** (cancel pending + interrupt running where safe)
+
+Suspects hung sync also causes **display issues for already-downloaded mail**.
+
+**Expected**  
+Sync Status (Accounts tab) exposes: Stop all · Clear cursors for account · Sync now (bootstrap). Failed token-expired jobs must not block reading of local SQLite rows.
+
+**Actual**  
+Per-account "Sync now" and job retry only. No stop-all, no clear-cursors, no force token refresh. Queue can grow unbounded on hard failures.
+
+**Notes**  
+Pairs with DEF-083 automatic 400→clear. UI can live in Sync status sheet.
+
+---
+
+### DEF-083 — Graph "Sync token is expired" (400) does not clear cursor; jobs pile up
+
+| Field | Value |
+| --- | --- |
+| Priority | **Pri-1** |
+| Status | Open |
+| Target | Immediate (Tesla) |
+| Area | `SyncEngine` Graph delta path; `GraphMailProvider.listDelta` |
+| Platforms | Android (repro on Graph accounts) |
+| Logged | 2026-08-12 |
+| Found by | **Trish** (Sync status screenshot) |
+| Related | [DEF-084](#def-084--sync-recovery-controls--clear-cursors-stop-all-force-refresh); existing 410 clear path |
+
+**Summary**  
+Account health shows: `ProtocolException(400): Sync token is expired. Clear local cache and retry call without the sync...` Syncing never finishes (hundreds of pending/failed jobs). Second Graph account also shows OData select/`@odata.etag` parse failures.
+
+**Expected**  
+Treat Graph **expired sync token** (400 with that message, and/or 410 Gone) as cursor invalid: clear `graphDeltaCursorKey` for the folder and re-bootstrap delta / listRecent — same spirit as today's **410** handler. Do not leave the bad cursor while re-enqueueing forever.
+
+**Actual**  
+`_tryGraphDelta` clears cursor only on `statusCode == 410`. A **400 Sync token is expired** is rethrown → job failed → operator "Sync now" stacks more work. Queue stays "busy."
+
+**Notes**  
+Also audit `@odata.etag` in `$select` (silverhelmet error) — may be a separate Graph select bug on that tenant/path.
+
+---
+
+### DEF-082 — Phone drawer: move account admin to Settings; vertical accounts only
+
+| Field | Value |
+| --- | --- |
+| Priority | **Pri-2** |
+| Status | Open (enhancement) |
+| Target | Android drawer polish (Jules / Andi + ux-design) |
+| Area | `mail_navigation_drawer.dart`, `folder_sidebar.dart` (`_DrawerAccountsBody`), Settings Accounts / Notifications sections |
+| Platforms | Android / narrow |
+| Logged | 2026-08-12 |
+| Found by | **Trish** |
+| Related | [DEF-046](#def-046--hamburger-opens-full-drawer-prefer-folders-only-sheet-enhancement); hybrid A chips |
+
+**Summary**  
+Drawer footer still lists Manage accounts, Add account, Notifications (plus Sync status / Settings). With several accounts, the hybrid-A **horizontal** chip row forces awkward scroll (vertical then horizontal).
+
+**Expected**  
+- Move **Notifications**, **Manage accounts**, **Add account** into **Settings** (Accounts / Notifications already exist — remove drawer duplicates).
+- Keep Sync status + Settings (+ Compose / Outbox) in drawer if needed.
+- Account list: **vertical only**; if overflow, vertical scroll only — no horizontal account chip strip.
+
+**Actual**  
+Drawer footer has Manage / Add / Notifications; accounts use horizontal chips in embedded drawer mode.
+
+**Notes**  
+Settings already embeds ManageAccountsSheetBody and NotificationsSettingsSection — drawer entries are redundant on phone.
+
+---
 
 ### DEF-081 — Calendar pills: temporary view toggle
 
