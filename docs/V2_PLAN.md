@@ -149,10 +149,10 @@ V2.0 exit (Wave 7 optional) → V2.0 freeze/tag
 
 | Wave | Scope | Status |
 | --- | --- | --- |
-| **Wave H2** | Toolchain + pub soft/majors + native/KGP/plugin debt + docs SDK pins; reopen Wave H deferred majors (`xml`/`pdf`/`printing`/`file_picker` 12 / `drift_dev`) and residuals | **TBD** — plan stub only; **no upgrades until Trish unlocks** |
+| **Wave H2** | Toolchain + pub soft/majors + native/KGP/plugin debt + docs SDK pins; reopen Wave H deferred majors (`xml`/`pdf`/`printing`/`file_picker` 12 / `drift_dev`) and residuals | **Quick scan** (2026-08-12) — [WAVE_H2_DEPENDENCY_HYGIENE.md](WAVE_H2_DEPENDENCY_HYGIENE.md); full H2 **TBD**; **no upgrades until Trish unlocks** |
 | **Wave R** | Structural cleanup after V2.0 feature landings — rename/dead code, tighten public APIs, align patterns with AGENTS.md; fix debt found in pass only | **TBD** — plan stub only; **no refactor implementation until Trish unlocks** |
 
-**Not started:** checklist / inventory for H2 and R remain unopened until V2.0 freeze (or Trish picks a quick-scan / early start).
+**H2 quick-scan done** (2026-08-12, Trish **(b)**): preview checklist landed; **no upgrades**. Full H2 batches + Wave R checklist still wait for V2.0 freeze/tag (or unlock).
 
 | Item | Source | Notes |
 | --- | --- | --- |
@@ -406,7 +406,8 @@ Do not expand V1.5 scope — only avoid painting corners:
 | [V2_WAVE_6P_CHECKLIST.md](V2_WAVE_6P_CHECKLIST.md) | Wave 6P / Performance UX (Sync Honesty) exit criteria |
 | [V2_WAVE_6_CHECKLIST.md](V2_WAVE_6_CHECKLIST.md) | Wave 6 / cross-account DnD copy — complete (E10+E11 GO) |
 | [WAVE_H_DEPENDENCY_HYGIENE.md](WAVE_H_DEPENDENCY_HYGIENE.md) | Wave H checklist (batches H1–H5, exit gate) — **complete**; residuals → Wave H2 |
-| *(pending)* Wave H2 / Wave R checklists | Open after V2.0 freeze/tag (or Trish early-start) |
+| [WAVE_H2_DEPENDENCY_HYGIENE.md](WAVE_H2_DEPENDENCY_HYGIENE.md) | Wave H2 quick-scan preview (2026-08-12) — **no upgrades this pass**; full H2 not opened |
+| *(pending)* Wave R checklist | Open after full Wave H2 |
 | [TIER_D_PLAN.md](TIER_D_PLAN.md) §4 TD-A | Horizon detail; dispositions updated to point here |
 | [V1_5_PLAN.md](V1_5_PLAN.md) | Immediate post-V1 ship before this plan executes |
 | [ROADMAP.md](ROADMAP.md) | Living index |

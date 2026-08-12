@@ -103,7 +103,7 @@ V2.0a / V2.0b / V2.0c remain **release buckets**; operator execution follows thi
 | **Wave 6b** | CalDAV/CardDAV create-only write for copy targets | **Complete** (2026-08-12) — E8 **GO** (**668 tests**) | [V2_WAVE_6B_CHECKLIST.md](V2_WAVE_6B_CHECKLIST.md) · [V2_WAVE_6B_QA.md](V2_WAVE_6B_QA.md) |
 | **Wave 6c** | Calendar series / recurring event copy semantics | **Parked** — not next; Android Pri-2 / Wave 7 candidates | Calendar RRULE/series only — not Tasks |
 | **Wave 7** | **Final polish / Trish extras** — UI niceties if time permits ([DEF-054](DEFECTS.md), [DEF-050](DEFECTS.md), [DEF-055](DEFECTS.md), [DEF-056](DEFECTS.md), [DEF-046](DEFECTS.md), overflow sweep; **Trish calendar:** [DEF-075](DEFECTS.md) Week/Weekdays, [DEF-076](DEFECTS.md) DOY/WOY; optional pull-forward [DEF-071](DEFECTS.md) Calendar→Today). **Widgets:** [DEF-044](DEFECTS.md) moved to **V-Next**. | Planned — **last within V2.0** | Not V2.0 critical path |
-| **Wave H2** | **Dependency hygiene (post–V2.0)** — toolchain + pub majors + native/plugin debt + docs pins; revisit Wave H residuals | **TBD** — after V2.0 freeze/tag | Pre–V2.1 gate (required unless Trish overrides) |
+| **Wave H2** | **Dependency hygiene (post–V2.0)** — toolchain + pub majors + native/plugin debt + docs pins; revisit Wave H residuals · [WAVE_H2_DEPENDENCY_HYGIENE.md](WAVE_H2_DEPENDENCY_HYGIENE.md) quick-scan preview (2026-08-12) | **TBD** — after V2.0 freeze/tag; full H2 not opened | Pre–V2.1 gate (required unless Trish overrides) |
 | **Wave R** | **Refactoring pass** — dead code / API tighten / AGENTS.md pattern debt; **no new product features** | **TBD** — after Wave H2 | Pre–V2.1 feature gate |
 
 **Post–V2.0 sequence (locked as schedule placeholders 2026-08-12):**
