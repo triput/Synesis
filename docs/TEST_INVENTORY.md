@@ -6,7 +6,7 @@ Synesis tracks **automated** unit, widget, and BLoC tests in a versionable inven
 
 | Artifact | Role |
 | --- | --- |
-| [`V1_AUTOMATED_TEST_INVENTORY.csv`](V1_AUTOMATED_TEST_INVENTORY.csv) | **Canonical** git-tracked source (**668 cases** / 99 files as of Wave 6b E7 2026-08-04). Diff-friendly; edit or regenerate. |
+| [`V1_AUTOMATED_TEST_INVENTORY.csv`](V1_AUTOMATED_TEST_INVENTORY.csv) | **Canonical** git-tracked source (**685 cases** / 101 files as of DEF-085 close 2026-08-12). Diff-friendly; edit or regenerate. |
 | [`V1_AUTOMATED_TEST_INVENTORY.xlsx`](V1_AUTOMATED_TEST_INVENTORY.xlsx) | Operator workbook (Automated, By_File, Wave_Summary, Coverage_Gaps, Readme sheets). Regenerated from CSV. |
 | [`../tool/generate_test_inventory.py`](../tool/generate_test_inventory.py) | Scanner/regenerator for both artifacts. |
 

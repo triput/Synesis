@@ -12,7 +12,7 @@
 
 > Android dogfood folder/drawer polish (2026-07-27): account chips, folder-picker sheet, title-bar **Show folders** → sheet.
 >
-> **V2 Wave 7 / Trish extras parking lot** (2026-07-27): operator enhancement backlog (Pri-2 / Pri-2.5 / Pri-3) parked for **Wave 7 — Final polish / Trish extras** — last if time permits; not V2.0 critical path. See [V2_PLAN.md](V2_PLAN.md) § Wave 7. **Trish calendar asks (2026-08-03):** [DEF-075](#def-075--calendar-week--weekdays-views) week/weekdays views; [DEF-076](#def-076--calendar-show-day-of-year--week-of-year) day-of-year + week-of-year. **Trish V-Next (2026-08-03):** [DEF-078](#def-078--phone-quick-reply-density--settings-toggle) phone Quick Reply; [DEF-044](#def-044--home-screen-list-widget-per-account-mail--open-in-app-aquamail-bar) per-account list widgets (AquaMail bar) — **Pri-2**. **Trish Pri-3 (2026-08-04):** [DEF-079](#def-079--contact-postal-addresses--open-in-map-apps) contact postal addresses + Maps/Waze; [DEF-081](#def-081--calendar-pills-temporary-view-toggle) calendar pill temp toggle. **Wave 6 E11 dogfood (2026-08-04):** [DEF-080](#def-080--gmail-imap-too-many-simultaneous-connections-on-body-fetch). **Android week dogfood (2026-08-12):** [DEF-083](#def-083--graph-sync-token-expired-400-does-not-clear-cursor--jobs-pile-up) Graph expired token; [DEF-084](#def-084--sync-recovery-controls--clear-cursors-stop-all-force-refresh) sync recovery; [DEF-085](#def-085--reading-pane-wide-images-clipped--no-horizontal-pan) wide images. **Closed:** [DEF-082](#def-082--phone-drawer-move-account-admin-to-settings-vertical-accounts-only) drawer IA (2026-08-12).
+> **V2 Wave 7 / Trish extras parking lot** (2026-07-27): operator enhancement backlog (Pri-2 / Pri-2.5 / Pri-3) parked for **Wave 7 — Final polish / Trish extras** — last if time permits; not V2.0 critical path. See [V2_PLAN.md](V2_PLAN.md) § Wave 7. **Trish calendar asks (2026-08-03):** [DEF-075](#def-075--calendar-week--weekdays-views) week/weekdays views; [DEF-076](#def-076--calendar-show-day-of-year--week-of-year) day-of-year + week-of-year. **Trish V-Next (2026-08-03):** [DEF-078](#def-078--phone-quick-reply-density--settings-toggle) phone Quick Reply; [DEF-044](#def-044--home-screen-list-widget-per-account-mail--open-in-app-aquamail-bar) per-account list widgets (AquaMail bar) — **Pri-2**. **Trish Pri-3 (2026-08-04):** [DEF-079](#def-079--contact-postal-addresses--open-in-map-apps) contact postal addresses + Maps/Waze; [DEF-081](#def-081--calendar-pills-temporary-view-toggle) calendar pill temp toggle. **Wave 6 E11 dogfood (2026-08-04):** [DEF-080](#def-080--gmail-imap-too-many-simultaneous-connections-on-body-fetch). **Android week dogfood (2026-08-12):** [DEF-083](#def-083--graph-sync-token-expired-400-does-not-clear-cursor--jobs-pile-up) Graph expired token; [DEF-084](#def-084--sync-recovery-controls--clear-cursors-stop-all-force-refresh) sync recovery (Fixed, awaiting verify). **Fixed (awaiting dogfood):** [DEF-085](#def-085--reading-pane-wide-images-clipped--no-horizontal-pan) wide images (2026-08-12). **Closed:** [DEF-082](#def-082--phone-drawer-move-account-admin-to-settings-vertical-accounts-only) drawer IA (2026-08-12).
 
 
 ### DEF-085 — Reading pane: wide images clipped; no horizontal pan
@@ -20,25 +20,26 @@
 | Field | Value |
 | --- | --- |
 | Priority | **Pri-2** |
-| Status | Open |
+| Status | **Fixed** (Andi, 2026-08-12) — awaiting Android dogfood |
 | Target | Reading-pane HTML (Jules / Andi) |
 | Area | `html_email_document.dart`, `html_email_body.dart`, `message_body_view.dart` |
 | Platforms | Android (repro); Windows likely same wrapper CSS |
 | Logged | 2026-08-12 |
 | Found by | **Trish** (Android week dogfood) |
-| Related | WebView nested scroll; remote-image policy |
+| Related | WebView nested scroll; remote-image policy; `html_email_fallback_test.dart` |
+| Closed | 2026-08-12 (code); dogfood verify open |
 
 **Summary**  
 **Trish:** In-app email view clips wide images; there is no way to scroll horizontally to see the rest of the image.
 
-**Expected**  
-Wide content is reachable: horizontal pan/scroll inside the body (and/or pinch-zoom), without trapping the parent list/drawer gestures badly.
+**Root cause**  
+[`wrapHtmlEmailDocument`](../lib/ui/shell/html_email_document.dart) CSS set `overflow-x: hidden` on `html, body`, clipping non-conforming wide images/tables despite `img, table { max-width: 100% }`.
 
-**Actual**  
-[`wrapHtmlEmailDocument`](../lib/ui/shell/html_email_document.dart) sets `overflow-x: hidden` on `html, body` and `img, table { max-width: 100% }`. Oversized / non-conforming images are clipped with no pan affordance.
+**Fix**  
+`overflow-x: auto` on `html, body` (keep `overflow-y: auto` + scale-to-fit max-width). HtmlWidget fallback left vertical-only (finite width) after Renee note that nested H-scroll unbounded width broke text wrap. WebView gesture recognizers unchanged.
 
-**Notes**  
-Prefer `overflow-x: auto` (or a dedicated pan container) + keep vertical scroll; verify WebView vs HtmlWidget fallback both behave. Avoid breaking nested vertical gesture competition on Android.
+**Verification**  
+Renee GO: `flutter test test/html_email_document_test.dart test/html_email_fallback_test.dart` — **7/7 passed** (2026-08-12). New CSS contract tests in `test/html_email_document_test.dart` (3 cases).
 
 ---
 

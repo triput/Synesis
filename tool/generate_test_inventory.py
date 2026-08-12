@@ -105,6 +105,13 @@ FILE_META: dict[str, dict[str, str]] = {
         "component": "UI / HTML",
         "platform": "Windows",
     },
+    "html_email_document_test.dart": {
+        "wave": "W5",
+        "tier_refs": "DEF-085",
+        "kind": "unit",
+        "component": "UI / HTML",
+        "platform": "All",
+    },
     "imap_autoconfig_test.dart": {
         "wave": "W0",
         "tier_refs": "TC-8",
@@ -790,6 +797,7 @@ def manual_companion(wave: str, file_name: str) -> str:
         "message_body_view_find_test.dart",
         "eml_codec_test.dart",
         "html_email_fallback_test.dart",
+        "html_email_document_test.dart",
     }:
         return "W5_WINDOWS_CHECKLIST"
     if wave == "W2" or file_name in {
