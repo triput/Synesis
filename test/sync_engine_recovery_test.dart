@@ -210,6 +210,9 @@ class _RecoveryRepo implements MailRepository {
   }
 
   @override
+  Future<int> clearFailedSyncJobs({String? accountId}) async => 0;
+
+  @override
   Future<void> enqueueSyncJob({
     required String accountId,
     required String type,

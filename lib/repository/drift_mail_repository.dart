@@ -368,6 +368,10 @@ class DriftMailRepository implements MailRepository {
       _jobs.clearSyncCursors(accountId: accountId, folderId: folderId);
 
   @override
+  Future<int> clearFailedSyncJobs({String? accountId}) =>
+      _jobs.clearFailedSyncJobs(accountId: accountId);
+
+  @override
   Future<List<AccountSyncHealth>> listAccountSyncHealth() =>
       _jobs.listAccountSyncHealth();
 

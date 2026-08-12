@@ -343,6 +343,26 @@ class DriftSyncJobStore {
     return changed;
   }
 
+  /// Deletes all `failed` jobs; optional [accountId] filter.
+  ///
+  /// Clears stale Account Sync health errors after recovery succeeds.
+  Future<int> clearFailedSyncJobs({String? accountId}) async {
+    final int removed = await (_database.delete(_database.jobs)..where(
+          (Jobs table) {
+            Expression<bool> clause = table.status.equals('failed');
+            if (accountId != null && accountId.isNotEmpty) {
+              clause = clause & table.accountId.equals(accountId);
+            }
+            return clause;
+          },
+        ))
+        .go();
+    if (removed > 0) {
+      _notify();
+    }
+    return removed;
+  }
+
   /// Removes rows from [sync_cursors]; optional account/folder scope (DEF-084).
   Future<int> clearSyncCursors({
     String? accountId,
@@ -436,12 +456,17 @@ class DriftSyncJobStore {
         }
       }
 
+      // Suppress stale errors once a newer success exists (post-recovery noise).
+      String? lastError;
+      if (latestFailed != null &&
+          (latestDone == null ||
+              latestFailed.updatedAt > latestDone.updatedAt)) {
+        lastError = syncJobFromRow(latestFailed).errorSnippet;
+      }
       return AccountSyncHealth(
         accountId: account.id,
         lastSuccessAt: lastSuccessAt,
-        lastError: latestFailed == null
-            ? null
-            : syncJobFromRow(latestFailed).errorSnippet,
+        lastError: lastError,
         pendingCount: pendingCount,
         failedCount: failedCount,
         syncing: syncing,

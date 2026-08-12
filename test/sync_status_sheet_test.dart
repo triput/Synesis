@@ -47,6 +47,8 @@ class _SheetRepo implements MailRepository {
   String? lastRetryId;
   String? lastStopAccountId;
   int clearCursorsCalls = 0;
+  int clearFailedCalls = 0;
+  String? lastClearFailedAccountId;
 
   @override
   Stream<void> watchChanges() => _changes.stream;
@@ -81,16 +83,33 @@ class _SheetRepo implements MailRepository {
   }
 
   @override
-  Future<List<AccountSyncHealth>> listAccountSyncHealth() async =>
-      const <AccountSyncHealth>[
-        AccountSyncHealth(
-          accountId: 'work',
-          pendingCount: 1,
-          failedCount: 1,
-          syncing: false,
-          lastError: 'timeout',
-        ),
-      ];
+  Future<List<AccountSyncHealth>> listAccountSyncHealth() async {
+    int pendingCount = 0;
+    int failedCount = 0;
+    SyncJob? latestFailed;
+    for (final SyncJob job in jobs) {
+      if (job.accountId != 'work') {
+        continue;
+      }
+      if (job.status == 'pending') {
+        pendingCount += 1;
+      } else if (job.status == 'failed') {
+        failedCount += 1;
+        if (latestFailed == null || job.updatedAt > latestFailed.updatedAt) {
+          latestFailed = job;
+        }
+      }
+    }
+    return <AccountSyncHealth>[
+      AccountSyncHealth(
+        accountId: 'work',
+        pendingCount: pendingCount,
+        failedCount: failedCount,
+        syncing: false,
+        lastError: latestFailed?.errorSnippet,
+      ),
+    ];
+  }
 
   @override
   Future<void> enqueueSyncJob({
@@ -216,6 +235,27 @@ class _SheetRepo implements MailRepository {
   Future<int> clearSyncCursors({String? accountId, String? folderId}) async {
     clearCursorsCalls += 1;
     return 2;
+  }
+
+  @override
+  Future<int> clearFailedSyncJobs({String? accountId}) async {
+    clearFailedCalls += 1;
+    lastClearFailedAccountId = accountId;
+    final int before = jobs.length;
+    jobs.removeWhere((SyncJob job) {
+      if (job.status != 'failed') {
+        return false;
+      }
+      if (accountId != null && job.accountId != accountId) {
+        return false;
+      }
+      return true;
+    });
+    final int removed = before - jobs.length;
+    if (removed > 0) {
+      _changes.add(null);
+    }
+    return removed;
   }
 
   @override
@@ -665,8 +705,101 @@ void main() {
     await tester.pump(const Duration(milliseconds: 20));
 
     expect(repo.clearCursorsCalls, 1);
+    expect(repo.clearFailedCalls, 1);
+    expect(repo.lastClearFailedAccountId, 'work');
     expect(
       find.textContaining('Downloaded mail was not deleted'),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('Clear all failed removes failed jobs and banner source', (
+    WidgetTester tester,
+  ) async {
+    final _SheetRepo repo = _SheetRepo();
+    final SyncActivity syncActivity = SyncActivity(repository: repo);
+    syncActivity.start();
+    addTearDown(() async {
+      await syncActivity.dispose();
+    });
+    final SyncEngine syncEngine = SyncEngine(
+      repository: repo,
+      resolveProvider: (_) async => null,
+    );
+    final ThemeTokens tokens = ThemeTokens.forId(ThemeId.dark);
+
+    await tester.pumpWidget(
+      _wrapSheet(
+        repo: repo,
+        syncActivity: syncActivity,
+        syncEngine: syncEngine,
+        tokens: tokens,
+      ),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 20));
+
+    expect(find.text('Clear all failed'), findsOneWidget);
+    expect(find.text('timeout'), findsWidgets);
+
+    await tester.tap(find.text('Clear all failed'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 20));
+
+    expect(repo.clearFailedCalls, 1);
+    expect(repo.lastClearFailedAccountId, isNull);
+    expect(
+      repo.jobs.where((SyncJob j) => j.status == 'failed'),
+      isEmpty,
+    );
+    expect(
+      find.textContaining('Cleared 1 failed sync job'),
+      findsOneWidget,
+    );
+    expect(find.text('Clear all failed'), findsNothing);
+  });
+
+  testWidgets('Accounts Clear failed scopes to account', (
+    WidgetTester tester,
+  ) async {
+    final _SheetRepo repo = _SheetRepo();
+    final SyncActivity syncActivity = SyncActivity(repository: repo);
+    syncActivity.start();
+    addTearDown(() async {
+      await syncActivity.dispose();
+    });
+    final SyncEngine syncEngine = SyncEngine(
+      repository: repo,
+      resolveProvider: (_) async => null,
+    );
+    final ThemeTokens tokens = ThemeTokens.forId(ThemeId.dark);
+
+    await tester.pumpWidget(
+      _wrapSheet(
+        repo: repo,
+        syncActivity: syncActivity,
+        syncEngine: syncEngine,
+        tokens: tokens,
+      ),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 20));
+
+    await tester.tap(find.text('Accounts'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 20));
+
+    final Finder clearFailed = find.text('Clear failed');
+    await tester.ensureVisible(clearFailed);
+    await tester.pump();
+    await tester.tap(clearFailed);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 20));
+
+    expect(repo.clearFailedCalls, 1);
+    expect(repo.lastClearFailedAccountId, 'work');
+    expect(
+      find.textContaining('Cleared 1 failed job(s) for work'),
       findsOneWidget,
     );
   });

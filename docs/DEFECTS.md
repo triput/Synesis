@@ -71,7 +71,7 @@ Sync Status (Accounts tab) exposes: Stop all · Clear cursors for account · Syn
 Per-account "Sync now" and job retry only. No stop-all, no clear-cursors, no force token refresh. Queue can grow unbounded on hard failures.
 
 **Notes**  
-Landed: Sync Status — Stop all · per-account Stop · Clear cursors (confirm; mail kept) · Refresh token (OAuth) · Sync now. APIs: [SYNC_RECOVERY_APIS.md](SYNC_RECOVERY_APIS.md). Operator Android verify still needed.
+Landed: Sync Status — Stop all · per-account Stop · Clear cursors (confirm; mail kept) · **Clear all failed** / per-account **Clear failed** (deletes `failed` job rows; Clear cursors also clears failed for that account) · Refresh token (OAuth) · Sync now. Health suppresses stale `lastError` when a newer `done` job exists. APIs: [SYNC_RECOVERY_APIS.md](SYNC_RECOVERY_APIS.md). Operator Android verify still needed (rebuild required for Clear failed buttons).
 
 ---
 

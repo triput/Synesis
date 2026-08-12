@@ -301,6 +301,11 @@ abstract class MailRepository {
   }) async =>
       0;
 
+  /// Deletes `failed` sync jobs (clears stale last-error / failed counts).
+  ///
+  /// Optional [accountId] scopes to one account. Does not touch mail or cursors.
+  Future<int> clearFailedSyncJobs({String? accountId}) async => 0;
+
   /// Per-account pending/failed/running counts plus last success/error.
   Future<List<AccountSyncHealth>> listAccountSyncHealth() async {
     return const <AccountSyncHealth>[];

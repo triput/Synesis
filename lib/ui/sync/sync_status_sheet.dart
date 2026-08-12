@@ -304,12 +304,45 @@ class _SyncStatusSheetBodyState extends State<SyncStatusSheetBody>
     }
     await _withBusy(() async {
       final int removed = await sync.clearSyncCursors(accountId: accountId);
+      final int failedCleared =
+          await sync.clearFailedSyncJobs(accountId: accountId);
       if (mounted) {
         setState(() {
-          _banner = removed == 0
+          final String cursorPart = removed == 0
               ? 'No sync cursors stored for $label.'
-              : 'Cleared $removed sync cursor(s) for $label. '
-                    'Downloaded mail was not deleted.';
+              : 'Cleared $removed sync cursor(s) for $label.';
+          final String failedPart = failedCleared == 0
+              ? ''
+              : ' Cleared $failedCleared failed job(s).';
+          _banner =
+              '$cursorPart$failedPart Downloaded mail was not deleted.';
+          _bannerIsError = false;
+        });
+      }
+    });
+  }
+
+  Future<void> _clearFailedJobs({String? accountId}) async {
+    final SyncEngine? sync = _syncEngineOrNull();
+    if (sync == null) {
+      return;
+    }
+    await _withBusy(() async {
+      final int removed = await sync.clearFailedSyncJobs(accountId: accountId);
+      if (mounted) {
+        setState(() {
+          if (accountId == null) {
+            _banner = removed == 0
+                ? 'No failed sync jobs to clear.'
+                : 'Cleared $removed failed sync job(s). '
+                      'Downloaded mail was not deleted.';
+          } else {
+            final String label = _accountLabel(accountId);
+            _banner = removed == 0
+                ? 'No failed jobs for $label.'
+                : 'Cleared $removed failed job(s) for $label. '
+                      'Downloaded mail was not deleted.';
+          }
           _bannerIsError = false;
         });
       }
@@ -478,6 +511,18 @@ class _SyncStatusSheetBodyState extends State<SyncStatusSheetBody>
               ),
             ),
           ],
+          if (_health.any(
+            (AccountSyncHealth row) => row.failedCount > 0,
+          )) ...<Widget>[
+            const SizedBox(height: 8),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: OutlinedButton(
+                onPressed: _busy ? null : () => _clearFailedJobs(),
+                child: const Text('Clear all failed'),
+              ),
+            ),
+          ],
           const SizedBox(height: 12),
           TabBar(
             controller: _tabs,
@@ -596,6 +641,11 @@ class _SyncStatusSheetBodyState extends State<SyncStatusSheetBody>
                                     onClearCursors: () => _clearAccountCursors(
                                       row.accountId,
                                     ),
+                                    onClearFailed: row.failedCount > 0
+                                        ? () => _clearFailedJobs(
+                                              accountId: row.accountId,
+                                            )
+                                        : null,
                                     onRefreshToken: () => _forceRefreshToken(
                                       row.accountId,
                                       syncAfter: true,
@@ -702,6 +752,7 @@ class _AccountHealthTile extends StatelessWidget {
     required this.onStop,
     required this.onClearCursors,
     required this.onRefreshToken,
+    this.onClearFailed,
   });
 
   final AccountSyncHealth health;
@@ -714,6 +765,7 @@ class _AccountHealthTile extends StatelessWidget {
   final VoidCallback onStop;
   final VoidCallback onClearCursors;
   final VoidCallback onRefreshToken;
+  final VoidCallback? onClearFailed;
 
   @override
   Widget build(BuildContext context) {
@@ -773,6 +825,11 @@ class _AccountHealthTile extends StatelessWidget {
                 onPressed: busy ? null : onClearCursors,
                 child: const Text('Clear cursors'),
               ),
+              if (onClearFailed != null)
+                TextButton(
+                  onPressed: busy ? null : onClearFailed,
+                  child: const Text('Clear failed'),
+                ),
             ],
           ),
         ],

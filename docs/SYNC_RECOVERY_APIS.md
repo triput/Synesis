@@ -8,12 +8,15 @@ Operator recovery hooks exposed on `SyncEngine` for Jules to wire from the Sync 
 | --- | --- | --- |
 | Stop all sync | `syncEngine.stopAllSync()` | All accounts. Returns `(abortedRunning, cancelledPending)`. |
 | Stop one account | `syncEngine.stopAllSync(accountId: id)` | Scoped stop. |
-| Clear cursors | `syncEngine.clearSyncCursors(accountId: id)` | Per-account Graph/IMAP/PIM cursors. |
+| Clear cursors | `syncEngine.clearSyncCursors(accountId: id)` | Per-account Graph/IMAP/PIM cursors. Sync Status also clears failed jobs for that account. |
+| Clear failed jobs | `syncEngine.clearFailedSyncJobs(accountId: id)` | Deletes `failed` job rows so stale last-error banners go away. |
 | Clear one folder | `syncEngine.clearSyncCursors(accountId: id, folderId: folderId)` | Includes PIM collection ids. |
 | Force token refresh | `await syncEngine.forceRefreshAuthToken(accountId)` | Graph + Google XOAUTH only. |
 | Sync now (after recovery) | `await syncEngine.enqueueIncremental(id); syncEngine.kickNonBlocking();` | Existing path. |
 
-`MailRepository` also exposes `cancelPendingSyncJobs`, `abortRunningSyncJobs`, and `clearSyncCursors` for direct Drift access if needed.
+`MailRepository` also exposes `cancelPendingSyncJobs`, `abortRunningSyncJobs`, `clearSyncCursors`, and `clearFailedSyncJobs` for direct Drift access if needed.
+
+`listAccountSyncHealth` suppresses `lastError` when a newer `done` job exists for the account (failed rows may still remain until cleared).
 
 ## DEF-083 — expired Graph delta token
 

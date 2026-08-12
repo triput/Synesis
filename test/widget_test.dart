@@ -74,6 +74,19 @@ class _FakeRepo implements MailRepository {
   Future<int> reclaimSendingOutbox() async => 0;
 
   @override
+  Future<int> cancelPendingSyncJobs({String? accountId}) async => 0;
+
+  @override
+  Future<int> abortRunningSyncJobs({String? accountId}) async => 0;
+
+  @override
+  Future<int> clearSyncCursors({String? accountId, String? folderId}) async =>
+      0;
+
+  @override
+  Future<int> clearFailedSyncJobs({String? accountId}) async => 0;
+
+  @override
   Future<void> completeJob(
     String id, {
     required bool success,

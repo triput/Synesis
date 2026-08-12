@@ -543,5 +543,46 @@ void main() {
       expect(health.single.lastError, 'net');
       expect(health.single.lastSuccessAt, isNotNull);
     });
+
+    test('listAccountSyncHealth suppresses lastError after newer done', () async {
+      final DriftMailRepository repo = await _openTestRepo();
+      await repo.enqueueSyncJob(accountId: 'work', type: 'incremental');
+      final SyncJob failed = (await repo.claimPendingJobs(limit: 1)).single;
+      await repo.completeJob(failed.id, success: false, error: 'stale');
+
+      await repo.enqueueSyncJob(accountId: 'work', type: 'incremental');
+      final SyncJob succeeded = (await repo.claimPendingJobs(limit: 1)).single;
+      await repo.completeJob(succeeded.id, success: true);
+
+      final List<AccountSyncHealth> health = await repo.listAccountSyncHealth();
+      expect(health.single.failedCount, 1);
+      expect(health.single.lastError, isNull);
+      expect(health.single.lastSuccessAt, isNotNull);
+    });
+
+    test('clearFailedSyncJobs deletes failed rows only', () async {
+      final DriftMailRepository repo = await _openTestRepo();
+      await repo.enqueueSyncJob(accountId: 'work', type: 'incremental');
+      await repo.enqueueSyncJob(accountId: 'work', type: 'full_folder');
+      final SyncJob failed = (await repo.claimPendingJobs(limit: 1)).single;
+      await repo.completeJob(failed.id, success: false, error: 'boom');
+
+      final int removed = await repo.clearFailedSyncJobs(accountId: 'work');
+      expect(removed, 1);
+
+      final List<SyncJob> remaining = await repo.listSyncJobs();
+      expect(
+        remaining.where((SyncJob j) => j.status == 'failed'),
+        isEmpty,
+      );
+      expect(
+        remaining.where((SyncJob j) => j.status == 'pending'),
+        isNotEmpty,
+      );
+
+      final List<AccountSyncHealth> health = await repo.listAccountSyncHealth();
+      expect(health.single.failedCount, 0);
+      expect(health.single.lastError, isNull);
+    });
   });
 }

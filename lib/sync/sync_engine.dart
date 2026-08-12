@@ -9,6 +9,7 @@
 // Recovery APIs (DEF-084 — Jules wires Sync Status sheet):
 //   [stopAllSync]           cancel pending + abort running jobs; interrupt kick
 //   [clearSyncCursors]      per-account / per-folder cursor wipe (no mail delete)
+//   [clearFailedSyncJobs]   delete failed job rows (stale last-error banners)
 //   [forceRefreshAuthToken] OAuth refresh for Graph / Google XOAUTH accounts
 // See docs/SYNC_RECOVERY_APIS.md
 // ==============================================================================
@@ -288,6 +289,11 @@ class SyncEngine {
     String? folderId,
   }) =>
       _repository.clearSyncCursors(accountId: accountId, folderId: folderId);
+
+  /// Deletes failed sync job rows (stale last-error banners). Optional
+  /// [accountId] scopes to one account. Does not delete mail or cursors.
+  Future<int> clearFailedSyncJobs({String? accountId}) =>
+      _repository.clearFailedSyncJobs(accountId: accountId);
 
   /// Forces OAuth token refresh for Graph / Google XOAUTH accounts (DEF-084).
   ///
