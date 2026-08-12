@@ -98,7 +98,7 @@ Treat Graph **expired sync token** (400 with that message, and/or 410 Gone) as c
 `_tryGraphDelta` clears cursor only on `statusCode == 410`. A **400 Sync token is expired** is rethrown → job failed → operator "Sync now" stacks more work. Queue stays "busy."
 
 **Notes**  
-Also audit `@odata.etag` in `$select` (silverhelmet error) — may be a separate Graph select bug on that tenant/path.
+Also fixed `@odata.etag` in Graph PIM event `$select` (not valid in `$select`; etag still returned in response body). Follow-up if silverhelmet tenant still errors on another field.
 
 ---
 

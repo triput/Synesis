@@ -11,6 +11,7 @@ import 'dart:convert';
 
 import 'package:synesis/protocol/graph_mail_provider.dart';
 import 'package:synesis/protocol/mail_provider.dart';
+import 'package:synesis/sync/graph_sync_recovery.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
@@ -152,6 +153,42 @@ void main() {
           (ProtocolException e) => e.statusCode,
           'statusCode',
           410,
+        ),
+      ),
+    );
+  });
+
+  test('listDelta surfaces 400 expired sync token', () async {
+    final http.Client client = MockClient((http.Request request) async {
+      return http.Response(
+        jsonEncode(<String, Object>{
+          'error': <String, String>{
+            'code': 'InvalidRequest',
+            'message':
+                'Sync token is expired. Clear local cache and retry call without the sync token.',
+          },
+        }),
+        400,
+        headers: const <String, String>{'content-type': 'application/json'},
+      );
+    });
+
+    final GraphMailProvider provider = GraphMailProvider(
+      () async => 'token',
+      client: client,
+    );
+    addTearDown(provider.dispose);
+
+    expect(
+      () => provider.listDelta(
+        'inbox',
+        deltaLink: 'https://graph.microsoft.com/v1.0/delta?token=old',
+      ),
+      throwsA(
+        isA<ProtocolException>().having(
+          (ProtocolException e) => isGraphExpiredSyncToken(e),
+          'expired',
+          isTrue,
         ),
       ),
     );

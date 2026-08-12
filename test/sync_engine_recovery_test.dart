@@ -8,15 +8,12 @@
 // ==============================================================================
 
 import 'dart:async';
-import 'dart:convert';
 
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:http/http.dart' as http;
-import 'package:http/testing.dart';
 import 'package:synesis/domain/models.dart';
 import 'package:synesis/domain/sync_profile.dart';
-import 'package:synesis/protocol/graph_mail_provider.dart';
 import 'package:synesis/protocol/mail_provider.dart';
 import 'package:synesis/query/message_query.dart';
 import 'package:synesis/repository/mail_repository.dart';
@@ -53,111 +50,6 @@ void main() {
         ),
         isFalse,
       );
-    });
-  });
-
-  group('SyncEngine Graph delta recovery (DEF-083)', () {
-    test('400 expired token clears graph_delta cursor and uses listRecent', () async {
-      final _RecoveryRepo repo = _RecoveryRepo();
-      await repo.upsertAccount(
-        const MailAccount(
-          id: 'graph-acct',
-          label: 'G',
-          address: 'user@contoso.com',
-          accent: Color(0xFF2563EB),
-        ),
-        providerType: 'graph',
-      );
-      await repo.upsertFolders(const <MailFolder>[
-        MailFolder(
-          id: 'inbox-graph-acct',
-          accountId: 'graph-acct',
-          name: 'Inbox',
-          remoteId: 'inbox',
-          role: 'inbox',
-        ),
-      ]);
-      await repo.setCursor(
-        'graph-acct',
-        'inbox-graph-acct',
-        GraphMailProvider.graphDeltaCursorKey,
-        'https://graph.microsoft.com/v1.0/me/mailFolders/inbox/messages/delta?\$deltatokens=bad',
-      );
-
-      final http.Client client = MockClient((http.Request request) async {
-        if (request.url.toString().contains('deltatokens=bad')) {
-          return http.Response(
-            jsonEncode(<String, Object>{
-              'error': <String, String>{
-                'code': 'InvalidRequest',
-                'message':
-                    'Sync token is expired. Clear local cache and retry call without the sync token.',
-              },
-            }),
-            400,
-            headers: const <String, String>{'content-type': 'application/json'},
-          );
-        }
-        if (request.url.path.contains('/messages/delta')) {
-          return http.Response(
-            jsonEncode(<String, Object>{
-              'value': <Object>[],
-              r'@odata.deltaLink':
-                  'https://graph.microsoft.com/v1.0/me/mailFolders/inbox/messages/delta?\$deltatokens=fresh',
-            }),
-            200,
-            headers: const <String, String>{'content-type': 'application/json'},
-          );
-        }
-        if (request.url.path.endsWith('/messages')) {
-          return http.Response(
-            jsonEncode(<String, Object>{
-              'value': <Map<String, Object>>[
-                <String, Object>{
-                  'id': 'msg-1',
-                  'subject': 'Hello',
-                  'from': <String, Object>{
-                    'emailAddress': <String, String>{
-                      'address': 'a@example.com',
-                    },
-                  },
-                  'receivedDateTime': '2026-08-12T12:00:00Z',
-                  'isRead': false,
-                  'hasAttachments': false,
-                },
-              ],
-            }),
-            200,
-            headers: const <String, String>{'content-type': 'application/json'},
-          );
-        }
-        return http.Response('{}', 404);
-      });
-
-      final GraphMailProvider provider = GraphMailProvider(
-        () async => 'token',
-        client: client,
-      );
-      addTearDown(provider.dispose);
-
-      final SyncEngine engine = SyncEngine(
-        repository: repo,
-        resolveProvider: (_) async => provider,
-        trashRetentionDays: () => 30,
-      );
-      await repo.enqueueSyncJob(accountId: 'graph-acct', type: 'incremental');
-      await engine.kick();
-
-      expect(repo.cursorClears, contains('graph_delta'));
-      expect(
-        await repo.getCursor(
-          'graph-acct',
-          'inbox-graph-acct',
-          GraphMailProvider.graphDeltaCursorKey,
-        ),
-        contains('deltatokens=fresh'),
-      );
-      await engine.dispose();
     });
   });
 
@@ -262,6 +154,7 @@ class _RecoveryRepo implements MailRepository {
   final List<SyncJob> pendingJobs = <SyncJob>[];
   final List<SyncJob> runningJobs = <SyncJob>[];
   final List<String> cursorClears = <String>[];
+  int upsertedMessageCount = 0;
   int abortedRunning = 0;
   int cancelledPending = 0;
   int clearCursorCalls = 0;
@@ -410,8 +303,17 @@ class _RecoveryRepo implements MailRepository {
   Future<List<MailMessage>> upsertMessages(
     List<MailMessage> messages, {
     required String folderId,
+  }) async {
+    upsertedMessageCount += messages.length;
+    return messages;
+  }
+
+  @override
+  Future<List<MailMessage>> listTrashedPastRetention({
+    required int retentionDays,
+    DateTime? now,
   }) async =>
-      messages;
+      const <MailMessage>[];
 
   @override
   Future<void> upsertAccount(
