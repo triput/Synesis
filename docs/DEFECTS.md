@@ -47,13 +47,14 @@ Prefer `overflow-x: auto` (or a dedicated pan container) + keep vertical scroll;
 | Field | Value |
 | --- | --- |
 | Priority | **Pri-1** |
-| Status | Open |
+| Status | **Fixed** (Jules UI + Tesla APIs, `08ff12a`) — awaiting Android dogfood |
 | Target | Immediate / sync hardening (Tesla + Jules) |
 | Area | `sync_status_sheet.dart`, `DriftSyncJobStore`, `sync_cursors`, SyncEngine, OAuth refresh |
 | Platforms | Android (repro), Windows |
 | Logged | 2026-08-12 |
 | Found by | **Trish** (Android week dogfood) |
 | Related | [DEF-083](#def-083--graph-sync-token-expired-400-does-not-clear-cursor--jobs-pile-up), Wave 6P SyncActivity |
+| Closed | 2026-08-12 (code); dogfood verify open |
 
 **Summary**  
 **Trish:** Sync status shows Syncing (171 jobs) with many failed; no operator recovery. Needs:
@@ -70,7 +71,7 @@ Sync Status (Accounts tab) exposes: Stop all · Clear cursors for account · Syn
 Per-account "Sync now" and job retry only. No stop-all, no clear-cursors, no force token refresh. Queue can grow unbounded on hard failures.
 
 **Notes**  
-Pairs with DEF-083 automatic 400→clear. UI can live in Sync status sheet.
+Landed: Sync Status — Stop all · per-account Stop · Clear cursors (confirm; mail kept) · Refresh token (OAuth) · Sync now. APIs: [SYNC_RECOVERY_APIS.md](SYNC_RECOVERY_APIS.md). Operator Android verify still needed.
 
 ---
 
