@@ -1,7 +1,8 @@
 # Mail hygiene digest (desktop CLI probe)
 
 **Date:** 2026-08-19  
-**Status:** design — awaiting operator review before implementation plan  
+**Status:** **locked** (operator approved 2026-08-19). Implementation plan next session — do not start code until that plan exists.  
+**Roadmap:** **Wave MH** — parallel to Android Pri-2 / Wave 7; not V2.0 critical path; does not skip Wave H2 before V2.1 product features.  
 **Repo:** Synesis (`v2.0` at time of writing)  
 **Intent:** Exploratory, read-only, multi-account digest so Trish can manage busy Gmail + Microsoft inboxes without staring at them. Same engine is a candidate public **desktop** differentiator later. Not on phone.
 

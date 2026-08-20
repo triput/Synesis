@@ -8,7 +8,7 @@
 | Watch | **P3 → V2.1** (not V2.0 critical path) |
 | Enterprise crypto / shared mail / AI draft·summarize | **Maybe/Someday** — not V2.0 critical path unless demand appears |
 | Owners | Steve (orchestrate) · Tesla (Graph + **Google PIM** / sync) · Jules (CardDAV spike + UI modules) · Renee (QA) · Page (docs) |
-| Last updated | 2026-08-12 (scheduled **Wave H2** + **Wave R** post–V2.0 freeze; Wave 6b complete — **668 tests**; Wave 6c parked; next = Android Pri-2 / Wave 7) |
+| Last updated | 2026-08-19 (**Wave MH** mail-hygiene digest spec locked — parallel probe, not V2.0 freeze-blocking) |
 
 ## 1. Locked product decisions (2026-07-22)
 
@@ -91,6 +91,7 @@ Per-version hygiene after V1.5 freeze: toolchain + pub debt + native/plugin skew
 | **Wave 7** | **Final polish / Trish extras** — UI niceties & enhancement backlog if time permits (resizable panes, list context menus, mobile nav polish, overflow sweeps, widget wishlist). **Not V2.0 critical path.** | Jules / Andi | Scope-creep parking lot — **last within V2.0** |
 | **Wave H2** | **Dependency hygiene (post–V2.0)** — toolchain + `pub outdated` majors + native/plugin debt + docs SDK pins; revisit Wave H residuals | Steve + team | **TBD** — after **V2.0 freeze/tag**; before V2.1 features |
 | **Wave R** | **Refactoring pass** — dead code, API tighten, AGENTS.md pattern debt; **no new product features** | Jules / Andi (+ Tesla if sync surfaces) | **TBD** — after Wave H2; before V2.1 features |
+| **Wave MH** | **Mail hygiene digest** — desktop CLI probe (read-only multi-account digest + subscription Sheet). Spec locked. Phone out. Later public desktop report on the same library. | Tesla + Jules (plan next) | **Spec locked** — [design](superpowers/specs/2026-08-19-mail-hygiene-digest-design.md). Interleave OK; **not** freeze-blocking; **not** a substitute for Wave H2 |
 
 Checklists: [V2_0A_P0_CHECKLIST.md](V2_0A_P0_CHECKLIST.md) (Wave 1 exit); [V2_WAVE2_CHECKLIST.md](V2_WAVE2_CHECKLIST.md) (Wave 2 exit ✅); [V2_WAVE3_CHECKLIST.md](V2_WAVE3_CHECKLIST.md) (Wave 3 exit ✅); [V2_WAVE4_CHECKLIST.md](V2_WAVE4_CHECKLIST.md) (Wave 4 exit ✅, `f2bd29b`, 556 tests); [V2_WAVE5_CHECKLIST.md](V2_WAVE5_CHECKLIST.md) (Wave 5 exit ✅, `73c181d`, 585 tests); [V2_WAVE_G_CHECKLIST.md](V2_WAVE_G_CHECKLIST.md) (Wave G exit ✅, `f4c21b0`, **597 tests**); [V2_WAVE_6P_CHECKLIST.md](V2_WAVE_6P_CHECKLIST.md) (Wave 6P exit ✅, **645 tests**); [V2_WAVE_6_CHECKLIST.md](V2_WAVE_6_CHECKLIST.md) (Wave 6 exit ✅, **659 tests**). Wave 4 QA: [V2_WAVE4_QA.md](V2_WAVE4_QA.md) (**GO**). Wave 5 QA: [V2_WAVE5_QA.md](V2_WAVE5_QA.md) (**GO**). Wave G QA: [V2_WAVE_G_QA.md](V2_WAVE_G_QA.md) (**GO**). Wave 6 QA: [V2_WAVE_6_QA.md](V2_WAVE_6_QA.md) (**GO**).
 
@@ -151,6 +152,7 @@ V2.0 exit (Wave 7 optional) → V2.0 freeze/tag
 | --- | --- | --- |
 | **Wave H2** | Toolchain + pub soft/majors + native/KGP/plugin debt + docs SDK pins; reopen Wave H deferred majors (`xml`/`pdf`/`printing`/`file_picker` 12 / `drift_dev`) and residuals | **Quick scan** (2026-08-12) — [WAVE_H2_DEPENDENCY_HYGIENE.md](WAVE_H2_DEPENDENCY_HYGIENE.md); full H2 **TBD**; **no upgrades until Trish unlocks** |
 | **Wave R** | Structural cleanup after V2.0 feature landings — rename/dead code, tighten public APIs, align patterns with AGENTS.md; fix debt found in pass only | **TBD** — plan stub only; **no refactor implementation until Trish unlocks** |
+| **Wave MH** | Mail hygiene digest (desktop CLI + Sheet) | **Spec locked** 2026-08-19 — [design](superpowers/specs/2026-08-19-mail-hygiene-digest-design.md); implementation plan next session |
 
 **H2 quick-scan done** (2026-08-12, Trish **(b)**): preview checklist landed; **no upgrades**. Full H2 batches + Wave R checklist still wait for V2.0 freeze/tag (or unlock).
 
