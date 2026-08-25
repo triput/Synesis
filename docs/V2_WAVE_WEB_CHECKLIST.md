@@ -3,54 +3,65 @@
 | Field | Value |
 | --- | --- |
 | Status | **W0 complete** (design locked 2026-08-25) — **W1 next** |
-| Owner | Jules (UI/shell) + Tesla (API/auth boundaries) |
+| Owner | Jules (UI/shell) + Tesla (API/outbox boundaries) |
 | Design | [superpowers/specs/2026-08-25-wave-web-design.md](superpowers/specs/2026-08-25-wave-web-design.md) |
 | Release gate | **None** — personal operator track; not V2.0 freeze-blocking |
+| Operator scope | **Read + compose/send**; calendar **V.MaybeNext** |
 
 ## W0 — Design & kickoff
 
 - [x] Operator intent captured (*personal, not release*)
-- [x] Architecture: local read-only API + tunnel (not full Flutter web port)
+- [x] Architecture: local API + tunnel (not full Flutter web port)
+- [x] Read + **write** (compose/outbox) in scope; calendar out
+- [x] Single-user SQLite concurrency model documented
 - [x] MVP API sketch + threat model
 - [x] Phased delivery table
-- [ ] Steve operator sign-off on open questions (in-process server, Cloudflare Access vs bearer)
+- [ ] Steve operator sign-off on open questions (in-process server, Cloudflare Access vs bearer, web HTML compose depth)
 
-## W1 — Read-only API (`WebBridgeServer`)
+## W1 — Read API (`WebBridgeServer`)
 
 - [ ] Add `shelf` + `shelf_router` dependencies
 - [ ] `lib/web/web_bridge_server.dart` — loopback bind, graceful shutdown
 - [ ] Settings: `webBridgeEnabled`, `webBridgePort` (default TBD), `webBridgeToken` (generated)
 - [ ] Settings UI toggle + “copy token” + port display (desktop only)
-- [ ] Endpoints: `/health`, `/accounts`, `/folders`, `/messages`, `/messages/{id}`
+- [ ] Read endpoints: `/health`, `/accounts`, `/folders`, `/messages`, `/messages/{id}`
 - [ ] Bearer auth middleware (401 without token)
 - [ ] Wire start/stop from desktop app lifecycle (enable toggle → start server)
 - [ ] Unit tests: auth rejection, list messages, get message body
-- [ ] Renee: concurrent read during sync (no DB lock regressions)
+- [ ] Renee: concurrent **read** during sync (no DB lock regressions)
 
-## W2 — Browser shell (read-only UI)
+## W2 — Browser shell (read UI)
 
 - [ ] Static web assets under `web/` **or** `tool/web_reader/` consuming `/api/v1/*`
 - [ ] Account/folder/message list + reading pane layout
 - [ ] HTML body rendering with sanitizer / remote-image policy parity (document gaps)
 - [ ] Manual dogfood: browser on same machine via `localhost`
 
-## W3 — Cloudflare tunnel + runbook
+## W3 — Write API + compose UI
+
+- [ ] Write routes: `POST /compose`, `POST /outbox`, `GET /outbox` (status); optional mark-read
+- [ ] Route writes through existing repository / `MessageActionService` / outbox — **no parallel send pipeline**
+- [ ] Browser compose panel (reply/forward/new); send → outbox feedback
+- [ ] Unit tests: enqueue outbox, auth on write routes
+- [ ] Renee: concurrent web write + desktop UI + sync (single-user stress)
+
+## W4 — Cloudflare tunnel + runbook
 
 - [ ] `docs/WAVE_WEB_RUNBOOK.md` — enable, tunnel, rotate token, disable
 - [ ] `tool/start_web_tunnel.ps1` (or documented `cloudflared` one-liner)
-- [ ] Operator smoke: read mail from non-host device via tunnel URL
+- [ ] Operator smoke: **read + compose/send** from non-host device via tunnel URL
 - [ ] DEFECTS note if any tunnel/auth friction
 
-## W4 — Optional polish (post-MVP)
+## Explicitly out of Wave WEB
 
-- [ ] Mark read/unread from web
-- [ ] Compose / reply (likely never on web — product call)
-- [ ] Calendar / People read surfaces
+- [ ] Calendar module — **V.MaybeNext**
+- [ ] People / contacts module — **V.MaybeNext**
+- [ ] Full Flutter web app port
 
-## Exit (Wave WEB MVP)
+## Exit (Wave WEB done)
 
-Operator can enable web bridge on desktop Synesis, open a Cloudflare tunnel URL on another device, authenticate, and **read** mail from local SQLite — without shipping a public SaaS or blocking V2.0 tag.
+Operator can enable web bridge on desktop Synesis, open a Cloudflare tunnel URL on another device, authenticate, **read and compose/send mail** from local SQLite/outbox — without shipping a public SaaS or blocking V2.0 tag.
 
 ---
 
-*Page — checklist created 2026-08-25. Update as W1–W3 land.*
+*Page — checklist created 2026-08-25; updated for compose/write scope.*

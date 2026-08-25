@@ -147,7 +147,7 @@ Checklists: [V2_0A_P0_CHECKLIST.md](V2_0A_P0_CHECKLIST.md) (Wave 1 exit); [V2_WA
 | Distinct from | LiveBytes public site ([POST_V1_WEB_AND_LEGAL.md](POST_V1_WEB_AND_LEGAL.md)); Wave MH digest CLI |
 | Ship gate | **None** for V2.0 freeze/tag — dogfood / personal utility only |
 
-**Phases (proposed):** (1) design doc + threat model — ✅ [2026-08-25-wave-web-design.md](superpowers/specs/2026-08-25-wave-web-design.md); (2) read-only local API (`WebBridgeServer`); (3) minimal browser shell; (4) Cloudflare tunnel runbook — [V2_WAVE_WEB_CHECKLIST.md](V2_WAVE_WEB_CHECKLIST.md).
+**Phases:** (1) design — ✅ [2026-08-25-wave-web-design.md](superpowers/specs/2026-08-25-wave-web-design.md); (2) read API; (3) read UI; (4) **write API + compose UI**; (5) tunnel runbook — [V2_WAVE_WEB_CHECKLIST.md](V2_WAVE_WEB_CHECKLIST.md). Calendar **V.MaybeNext**.
 
 **Owners:** Jules (UI/web shell) + Tesla (local API / sync boundaries if split stack).
 
