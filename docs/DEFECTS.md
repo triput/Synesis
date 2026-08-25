@@ -14,7 +14,7 @@
 >
 > **V2 Wave 7 / Trish extras parking lot** (2026-07-27): operator enhancement backlog (Pri-2 / Pri-2.5 / Pri-3) parked for **Wave 7 — Final polish / Trish extras** — last if time permits; not V2.0 critical path. See [V2_PLAN.md](V2_PLAN.md) § Wave 7. **Trish calendar asks (2026-08-03):** [DEF-075](#def-075--calendar-week--weekdays-views) week/weekdays views; [DEF-076](#def-076--calendar-show-day-of-year--week-of-year) day-of-year + week-of-year. **Trish V-Next (2026-08-03):** [DEF-078](#def-078--phone-quick-reply-density--settings-toggle) phone Quick Reply; [DEF-044](#def-044--home-screen-list-widget-per-account-mail--open-in-app-aquamail-bar) per-account list widgets (AquaMail bar) — **Pri-2**. **Trish Pri-3 (2026-08-04):** [DEF-079](#def-079--contact-postal-addresses--open-in-map-apps) contact postal addresses + Maps/Waze; [DEF-081](#def-081--calendar-pills-temporary-view-toggle) calendar pill temp toggle. **Wave 6 E11 dogfood (2026-08-04):** [DEF-080](#def-080--gmail-imap-too-many-simultaneous-connections-on-body-fetch). **Android week dogfood (2026-08-12):** [DEF-083](#def-083--graph-sync-token-expired-400-does-not-clear-cursor--jobs-pile-up) Graph expired token; [DEF-084](#def-084--sync-recovery-controls--clear-cursors-stop-all-force-refresh) sync recovery (Fixed, awaiting verify). **Fixed (awaiting dogfood):** [DEF-085](#def-085--reading-pane-wide-images-clipped--no-horizontal-pan) wide images (2026-08-12). **Closed:** [DEF-082](#def-082--phone-drawer-move-account-admin-to-settings-vertical-accounts-only) drawer IA (2026-08-12).
 >
-> **Trish 2026-08-23:** [DEF-086](#def-086--android-sync-modes-manual--interval--push) Android sync modes; [DEF-078](#def-078--phone-quick-reply-reclaim-reading-space--settings-toggle) / [DEF-087](#def-087--phone-read-preview-vs-full-reply-are-different-documents) phone read chrome — **very soon, not tonight**. **Wave WEB** personal web client (Cloudflare tunnel) promoted — [ROADMAP](ROADMAP.md).
+> **Trish 2026-08-23:** ~~[DEF-086](#def-086--android-sync-modes-manual--interval--push)~~ ~~[DEF-078](#def-078--phone-quick-reply-reclaim-reading-space--settings-toggle)~~ ~~[DEF-087](#def-087--phone-read-preview-vs-full-reply-are-different-documents)~~ — **Fixed** Operation Flat Zero 2026-08-25. **Trish Pri-3 (2026-08-25):** [DEF-088](#def-088--reading-pane-zoom-inout-for-html-and-embedded-images) reading-pane zoom. **Wave WEB** personal web client — **very soon**, personal operator track — [ROADMAP](ROADMAP.md) · [V2_PLAN](V2_PLAN.md).
 
 
 ### DEF-087 — Phone: read preview vs full Reply are different documents
@@ -40,6 +40,37 @@ Expanding / fully opening a message on phone does **not** enlarge the HTML readi
 **2026-08-25 (Wave 2 / Operation Flat Zero):** Phone **Expand message** (`open_in_full` in header + Quick Reply row) collapses chrome and fills the pane with the same `MessageBodyView` / HTML renderer — no compose jump. **Collapse** restores header + Quick Reply. Pager 36px strip hides while expanded. Remaining gap: full Reply/Forward compose still quotes plaintext (`>`) instead of HTML-matched original (`bf196dc`).
 
 **Wave 2b (2026-08-25):** Full Reply/Forward opens compose with **Your reply** editor + read-only **Quoted original** panel rendering the same HTML as the reading pane (`HtmlWidget`). Outbox packs user text + HTML blockquote via `OutgoingMessageBuilder.packComposeWithQuote` — no plaintext `>` dump in the editor.
+
+---
+
+### DEF-088 — Reading pane: zoom in/out for HTML and embedded images
+
+| Field | Value |
+| --- | --- |
+| Priority | **Pri-3** |
+| Status | Open (enhancement) |
+| Target | **Wave 7 / Trish extras** (non-urgent) |
+| Area | `message_body_view.dart`, `html_email_body.dart`, `reading_pane.dart`; phone + desktop |
+| Platforms | Android phone (primary ask); Windows when WebView path active |
+| Logged | 2026-08-25 |
+| Found by | **Trish** (post widget deep-link dogfood) |
+| Related | [DEF-085](#def-085--reading-pane-wide-images-clipped--no-horizontal-pan) horizontal pan; [DEF-078](#def-078--phone-quick-reply-reclaim-reading-space--settings-toggle) pane layout |
+
+**Summary**  
+**Trish:** Reading **pain** needs pinch (phone) and keyboard/mouse zoom (desktop) so HTML mail and embedded images can be inspected at detail or seen “big picture” without endless scroll — especially as more inbound mail is HTML-heavy.
+
+**Expected**  
+- **Phone:** Pinch-to-zoom (and/or +/- affordance in overflow) on the message body region; double-tap reset optional.
+- **Desktop:** Ctrl+scroll wheel and/or toolbar step zoom on HTML bodies; plain-text bodies may use text-scale only (product call at implement).
+- Zoom applies to the **body viewport**, not list chrome / Quick Reply / module nav.
+- Sensible min/max scale (e.g. 0.75×–3×); reset to 100% per message or on back-to-list.
+- Must not regress DEF-085 horizontal pan for wide tables/images at 100% zoom (gesture disambiguation or zoom wrapper outside inner scroll).
+
+**Actual**  
+No zoom control — only scroll + DEF-085 bidirectional pan on phone HtmlWidget path.
+
+**Notes**  
+Pri-3, non-urgent. Likely `InteractiveViewer` around phone HtmlWidget body + WebView `zoomEnabled` / CSS scale on desktop; watch nested-scroll and find-in-message overlays. Persist last zoom per session only unless Settings asks for sticky default.
 
 ---
 

@@ -122,7 +122,7 @@ Ship later as a **desktop** report (then actions) on this library. Do not put it
 
 ## Parked: Synesis on the web → **Wave WEB** (promoted 2026-08-23)
 
-Still **out of scope for this digest probe**. Operator promoted a **personal** web client (local Flutter web + **Cloudflare tunnel**, anywhere access) to **very soon** — see [ROADMAP](../../ROADMAP.md) Wave WEB. Not a hosted product; APIs should stay clean so a future self-hoster could copy the pattern. Distinct from LiveBytes marketing/legal site (`docs/POST_V1_WEB_AND_LEGAL.md`). Classifier-as-library still helps that later.
+Still **out of scope for this digest probe**. Operator promoted a **personal** web client (local Flutter web + **Cloudflare tunnel**, anywhere access) to **very soon** (2026-08-25) — **next operator track**, personal dogfood, **not** V2.0 release-blocking. See [ROADMAP](../../ROADMAP.md) · [V2_PLAN](../../V2_PLAN.md) § Wave WEB. Not a hosted product; APIs should stay clean so a future self-hoster could copy the pattern. Distinct from LiveBytes marketing/legal site (`docs/POST_V1_WEB_AND_LEGAL.md`). Classifier-as-library still helps that later.
 
 ## Success
 

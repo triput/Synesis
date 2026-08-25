@@ -2,14 +2,13 @@
 
 | Field | Value |
 | --- | --- |
-| Status | **In progress** — **Wave 6 complete** (2026-08-04, E10+E11 **GO**, **659 tests** — [V2_WAVE_6_CHECKLIST.md](V2_WAVE_6_CHECKLIST.md) · [V2_WAVE_6_QA.md](V2_WAVE_6_QA.md)); **Wave 6b complete** (2026-08-12, E8 **GO**, **668 tests** — [V2_WAVE_6B_CHECKLIST.md](V2_WAVE_6B_CHECKLIST.md) · [V2_WAVE_6B_QA.md](V2_WAVE_6B_QA.md)). **Wave 6c parked** — hard-stop after 6b; next = Android Pri-2 (DEF-085, DEF-082) / Wave 7 candidates. **Wave 6P complete** (2026-08-04, E1–E11 ✅, **645 tests** — [V2_WAVE_6P_CHECKLIST.md](V2_WAVE_6P_CHECKLIST.md)). **Wave G / V2.0d complete** (2026-07-27, `f4c21b0`, **597 tests**). **Wave 5 / V2.0c complete** (2026-07-27, `73c181d`, **585 tests**). **Wave 4 / V2.0b complete** (2026-07-27, `f2bd29b`, 556 tests). Wave 0 ✅; Wave H ✅; **Wave 1 / P0 ✅** (2026-07-27, `00ebdef`); **Wave 2 / P1 ✅** (2026-07-27, `b526e70`, 530 tests); **Wave 3 / P2 ✅** (2026-07-27, `7cbfdaa`, 551 tests, [V2_WAVE3_QA.md](V2_WAVE3_QA.md)). Wave 4 checklist: [V2_WAVE4_CHECKLIST.md](V2_WAVE4_CHECKLIST.md); Renee QA: [V2_WAVE4_QA.md](V2_WAVE4_QA.md) (**GO**). Wave 5 checklist: [V2_WAVE5_CHECKLIST.md](V2_WAVE5_CHECKLIST.md) ✅; Renee QA: [V2_WAVE5_QA.md](V2_WAVE5_QA.md) (**GO**, 585 tests). Wave G checklist: [V2_WAVE_G_CHECKLIST.md](V2_WAVE_G_CHECKLIST.md) ✅; Renee QA: [V2_WAVE_G_QA.md](V2_WAVE_G_QA.md) (**GO**, 597 tests). Wave 6 checklist: [V2_WAVE_6_CHECKLIST.md](V2_WAVE_6_CHECKLIST.md) ✅. **Graph re-consent:** `Contacts.Read` + **`Calendars.ReadWrite`**; **Google Wave G re-consent:** `contacts.readonly` + **`calendar`** on existing XOAUTH accounts via Edit account → re-auth |
+| Status | **In progress** — **Waves 0–6b + G complete** (**729+ tests** after Operation Flat Zero 2026-08-25). **Wave 6c parked.** V2.0 feature spine done; exit = PIM docs/E2E + optional Wave 7 polish. **Next operator track:** **Wave WEB** (personal, not release-blocking). See [V2_WAVE_6B_CHECKLIST.md](V2_WAVE_6B_CHECKLIST.md) · [V2_WAVE_6_CHECKLIST.md](V2_WAVE_6_CHECKLIST.md). |
 | Headline | Contacts & calendar (TD-A) — not a new phone OS |
 | Prerequisite | V1 exit signed off; **V1.5 complete** ([V1_5_PLAN.md](V1_5_PLAN.md)) |
 | Watch | **P3 → V2.1** (not V2.0 critical path) |
 | Enterprise crypto / shared mail / AI draft·summarize | **Maybe/Someday** — not V2.0 critical path unless demand appears |
 | Owners | Steve (orchestrate) · Tesla (Graph + **Google PIM** / sync) · Jules (CardDAV spike + UI modules) · Renee (QA) · Page (docs) |
-| Last updated | 2026-08-23 (**Wave WEB** personal client promoted; DEF-078/086/087 very soon; Wave MH still parked) |
-
+| Last updated | 2026-08-25 (Operation Flat Zero complete; **Wave WEB** next — personal operator track, not release-blocking) |
 ## 1. Locked product decisions (2026-07-22)
 
 | # | Decision |
@@ -58,7 +57,7 @@ Local store is provider-agnostic (`contacts` / `events` + sync cursors), same ph
 
 Per-version hygiene after V1.5 freeze: toolchain + pub debt + native/plugin skew + docs SDK pins. Checklist: [WAVE_H_DEPENDENCY_HYGIENE.md](WAVE_H_DEPENDENCY_HYGIENE.md).
 
-**Sequence:** Wave 0 → **Wave H ✅** → **Wave 1 (P0) ✅** → **Wave 2 (P1) ✅** → **Wave 3 (P2) ✅** → **Wave 4 (P3–P4) ✅** → **Wave 5 (P5–P6) ✅** → **Wave G ✅** → **Wave 6P ✅** → **Wave 6 ✅** → **Wave 6b ✅** (DAV write, 2026-08-12) → **Wave 6c parked** (calendar series copy — not next) → Android Pri-2 (DEF-085, DEF-082) / Wave 7 candidates → **V2.0 freeze/tag** → **Wave H2 (TBD)** → **Wave R (TBD)** → V2.1.
+**Sequence:** Wave 0 → **Wave H ✅** → **Waves 1–G ✅** → **Wave 6P ✅** → **Wave 6 ✅** → **Wave 6b ✅** → **Operation Flat Zero ✅** (2026-08-25) → **Wave 6c parked** → **Wave WEB** (personal, very soon) ∥ optional **Wave 7** ∥ **Wave MH** slices → **V2.0 freeze/tag** → **Wave H2** → **Wave R** → V2.1.
 
 | Batch | Scope | Notes |
 | --- | --- | --- |
@@ -92,7 +91,7 @@ Per-version hygiene after V1.5 freeze: toolchain + pub debt + native/plugin skew
 | **Wave H2** | **Dependency hygiene (post–V2.0)** — toolchain + `pub outdated` majors + native/plugin debt + docs SDK pins; revisit Wave H residuals | Steve + team | **TBD** — after **V2.0 freeze/tag**; before V2.1 features |
 | **Wave R** | **Refactoring pass** — dead code, API tighten, AGENTS.md pattern debt; **no new product features** | Jules / Andi (+ Tesla if sync surfaces) | **TBD** — after Wave H2; before V2.1 features |
 | **Wave MH** | **Mail hygiene digest** — desktop CLI probe (read-only multi-account digest + subscription Sheet). Spec locked. Phone out. Later public desktop report on the same library. | Tesla + Jules (plan next) | **Spec locked** — [design](superpowers/specs/2026-08-19-mail-hygiene-digest-design.md). Interleave OK; **not** freeze-blocking; **not** a substitute for Wave H2 |
-| **Wave WEB** | **Personal web client** — local Flutter web + Cloudflare tunnel for Trish; not multi-tenant SaaS; keep APIs self-hostable later | Jules + Tesla (plan before code) | **Promoted** 2026-08-23; interleave with MH OK; **not** tonight; **not** freeze-blocking |
+| **Wave WEB** | **Personal web client** — local Flutter web + Cloudflare tunnel for Trish; not multi-tenant SaaS; keep APIs self-hostable later | Jules + Tesla | **Very soon** (2026-08-25) — **operator personal track**; design → MVP → tunnel; **not** V2.0 release-blocking |
 
 Checklists: [V2_0A_P0_CHECKLIST.md](V2_0A_P0_CHECKLIST.md) (Wave 1 exit); [V2_WAVE2_CHECKLIST.md](V2_WAVE2_CHECKLIST.md) (Wave 2 exit ✅); [V2_WAVE3_CHECKLIST.md](V2_WAVE3_CHECKLIST.md) (Wave 3 exit ✅); [V2_WAVE4_CHECKLIST.md](V2_WAVE4_CHECKLIST.md) (Wave 4 exit ✅, `f2bd29b`, 556 tests); [V2_WAVE5_CHECKLIST.md](V2_WAVE5_CHECKLIST.md) (Wave 5 exit ✅, `73c181d`, 585 tests); [V2_WAVE_G_CHECKLIST.md](V2_WAVE_G_CHECKLIST.md) (Wave G exit ✅, `f4c21b0`, **597 tests**); [V2_WAVE_6P_CHECKLIST.md](V2_WAVE_6P_CHECKLIST.md) (Wave 6P exit ✅, **645 tests**); [V2_WAVE_6_CHECKLIST.md](V2_WAVE_6_CHECKLIST.md) (Wave 6 exit ✅, **659 tests**). Wave 4 QA: [V2_WAVE4_QA.md](V2_WAVE4_QA.md) (**GO**). Wave 5 QA: [V2_WAVE5_QA.md](V2_WAVE5_QA.md) (**GO**). Wave G QA: [V2_WAVE_G_QA.md](V2_WAVE_G_QA.md) (**GO**). Wave 6 QA: [V2_WAVE_6_QA.md](V2_WAVE_6_QA.md) (**GO**).
 
@@ -119,23 +118,59 @@ Checklists: [V2_0A_P0_CHECKLIST.md](V2_0A_P0_CHECKLIST.md) (Wave 1 exit); [V2_WA
 | **6c** | Calendar **series** / recurring event copy UX (RRULE, series-master vs instance) | Prefer separate wave — non-trivial cross-provider LOE; **not** a Tasks module |
 | **Post–6** | Corporate Graph research (`microsoft.com` / Entra org tenants) | Incremental version — admin consent, CA, publisher verification; not 6/6b/6c |
 
+### Operation Flat Zero — Android mail dogfood (2026-08-25)
+
+**Status:** **Complete** — parallel burn before V2.0 tag; **729+ tests** on `v2.0`. Not a release bucket; operator dogfood closure.
+
+| Wave | Item | Commit(s) | Notes |
+| --- | --- | --- | --- |
+| W0 | [DEF-078](DEFECTS.md) phone reading chrome + Show Quick Reply toggle | `be05245` | Settings toggle; ModuleShell expand |
+| W1 | [DEF-086](DEFECTS.md) Android sync modes | `6ca4c3b` | Manual / Interval / Push |
+| W2 | [DEF-087](DEFECTS.md) in-pane expanded HTML read | `bf196dc` | No compose jump |
+| W2b | [DEF-087](DEFECTS.md) compose HTML quoted original | `ab14a77` | Reply/Forward quote parity |
+| W3 | [DEF-085](DEFECTS.md) wide HTML horizontal pan (phone) | `f03f321` | HtmlWidget nested scroll |
+| W4 | [DEF-056](DEFECTS.md) oldest/newest sort | `a4c397f` | Settings + projector |
+| W5 | [DEF-055](DEFECTS.md) sent-in-threads | `843918b` | Settings toggle |
+| W6 | [DEF-044](DEFECTS.md) list widget + deep links | `a44c7df`–`886a00d` | Widget + sticky body + portrait pager fixes |
+| W7 | Wave MH digest slice 1 | `18697c2` | `lib/digest/` + `--demo` CLI |
+
+### Wave WEB — Personal operator client (Trish-only)
+
+**Status:** **Next** (2026-08-25) — **very soon**, **not V2.0 release-blocking**. Motivation: *“Because I want it”* — personal anywhere-access mail/PIM in a browser via Cloudflare tunnel, not a hosted product or LiveBytes marketing site.
+
+| Principle | Choice |
+| --- | --- |
+| Audience | **Trish-only** first; APIs/layout kept clean for a hypothetical future self-hoster |
+| Store | **Local-first** — same machine remains SQLite source of truth; web is a viewport |
+| Stack | Flutter web **or** thin local HTTP + existing repository seam (TBD in design) |
+| Access | **Cloudflare tunnel** to operator machine; no multi-tenant SaaS |
+| Distinct from | LiveBytes public site ([POST_V1_WEB_AND_LEGAL.md](POST_V1_WEB_AND_LEGAL.md)); Wave MH digest CLI |
+| Ship gate | **None** for V2.0 freeze/tag — dogfood / personal utility only |
+
+**Phases (proposed):** (1) design doc + threat model (tunnel, auth, read-only MVP scope); (2) read-only mail list + reading pane in browser; (3) tunnel + operator runbook; (4) optional compose/sync parity if useful.
+
+**Owners:** Jules (UI/web shell) + Tesla (local API / sync boundaries if split stack).
+
 ### Wave 7 — Final polish / Trish extras (parking lot)
 
 **Status:** **Planned** — last **V2.0** operator wave; honest scope-creep bucket. Ship only if Waves 1–6 exit cleanly and operator bandwidth allows. Does **not** block V2.0 release narrative. Post–V2.0 gates (**Wave H2**, **Wave R**) are below — not Wave 7 scope.
+
+**Flat Zero landed (2026-08-25)** — remove from active Wave 7 queue: [DEF-055](DEFECTS.md) sent-in-threads, [DEF-056](DEFECTS.md) sort direction, [DEF-044](DEFECTS.md) list widget, [DEF-078](DEFECTS.md)/[DEF-086](DEFECTS.md)/[DEF-087](DEFECTS.md)/[DEF-085](DEFECTS.md) Android mail dogfood.
 
 | Item | Source | Notes |
 | --- | --- | --- |
 | Resizable Windows mail panes (drag splitters) | [DEF-054](DEFECTS.md) | Outlook-style rail / sidebar / list / reading widths |
 | Right-click **Mark read** on list rows (solo vs thread) | [DEF-050](DEFECTS.md) | Pri-2.5 enhancement; context menu + thread disambiguation |
-| Include Sent items in conversation threads | [DEF-055](DEFECTS.md) | Pri-2; operator reply context / “did I respond?” triage |
-| Thread/list sort: oldest first vs newest first | [DEF-056](DEFECTS.md) | Pri-2; user-selectable list sort direction |
+| ~~Include Sent items in conversation threads~~ | [DEF-055](DEFECTS.md) | ✅ **Fixed** Flat Zero W5 (`843918b`) |
+| ~~Thread/list sort: oldest first vs newest first~~ | [DEF-056](DEFECTS.md) | ✅ **Fixed** Flat Zero W4 (`a4c397f`) |
 | Hamburger → folders-only sheet (swipe keeps full drawer) | [DEF-046](DEFECTS.md) | Android phone nav polish |
 | Account dialog overflow sweep | [DEF-039](DEFECTS.md), [DEF-040](DEFECTS.md), [DEF-063](DEFECTS.md) | Remove / Edit / Manage Account yellow-black stripes on narrow widths |
 | Preserve accounts/data across reinstall | [DEF-067](DEFECTS.md) | Backup/restore or clear-data-safe reinstall so dogfood doesn’t force full re-auth |
-| Configurable home-screen list widget | [DEF-044](DEFECTS.md) | **Moved to V-Next Pri-2** — see deferred table |
+| ~~Configurable home-screen list widget~~ | [DEF-044](DEFECTS.md) | ✅ **Fixed** Flat Zero W6 (`a44c7df` + widget deep-link polish) |
 | Calendar defaults to **Today** (Agenda / day-first) | [DEF-071](DEFECTS.md) | Prefer **V-Soon / V-Next**; pull into Wave 7 only if bandwidth |
 | **Trish:** Calendar **Week** + **Weekdays** views | [DEF-075](DEFECTS.md) | Pri-3; beyond Month/Agenda |
 | **Trish:** Day-of-year + week-of-year in chrome | [DEF-076](DEFECTS.md) | Pri-3; operator uses these numbers |
+| **Trish:** Reading-pane zoom for HTML / embedded images | [DEF-088](DEFECTS.md) | Pri-3; pinch (phone) + step zoom (desktop); non-urgent |
 
 Real Pri-1/2 defects and PIM gates stay on their owning waves — this bucket is **enhancement-shaped** backlog only.
 
@@ -154,7 +189,7 @@ V2.0 exit (Wave 7 optional) → V2.0 freeze/tag
 | **Wave H2** | Toolchain + pub soft/majors + native/KGP/plugin debt + docs SDK pins; reopen Wave H deferred majors (`xml`/`pdf`/`printing`/`file_picker` 12 / `drift_dev`) and residuals | **Quick scan** (2026-08-12) — [WAVE_H2_DEPENDENCY_HYGIENE.md](WAVE_H2_DEPENDENCY_HYGIENE.md); full H2 **TBD**; **no upgrades until Trish unlocks** |
 | **Wave R** | Structural cleanup after V2.0 feature landings — rename/dead code, tighten public APIs, align patterns with AGENTS.md; fix debt found in pass only | **TBD** — plan stub only; **no refactor implementation until Trish unlocks** |
 | **Wave MH** | Mail hygiene digest (desktop CLI + Sheet) | **Spec locked** 2026-08-19 — [design](superpowers/specs/2026-08-19-mail-hygiene-digest-design.md); implementation plan next session |
-| **Wave WEB** | Personal web client (local + Cloudflare tunnel) | **Promoted** 2026-08-23 — Trish-only first; design/plan before code |
+| **Wave WEB** | Personal web client (local + Cloudflare tunnel) | **Very soon** (2026-08-25) — operator personal; design → MVP; **not** release-blocking |
 
 **H2 quick-scan done** (2026-08-12, Trish **(b)**): preview checklist landed; **no upgrades**. Full H2 batches + Wave R checklist still wait for V2.0 freeze/tag (or unlock).
 
@@ -162,15 +197,16 @@ V2.0 exit (Wave 7 optional) → V2.0 freeze/tag
 | --- | --- | --- |
 | Resizable Windows mail panes (drag splitters) | [DEF-054](DEFECTS.md) | Outlook-style rail / sidebar / list / reading widths |
 | Right-click **Mark read** on list rows (solo vs thread) | [DEF-050](DEFECTS.md) | Pri-2.5 enhancement; context menu + thread disambiguation |
-| Include Sent items in conversation threads | [DEF-055](DEFECTS.md) | Pri-2; operator reply context / “did I respond?” triage |
-| Thread/list sort: oldest first vs newest first | [DEF-056](DEFECTS.md) | Pri-2; user-selectable list sort direction |
+| ~~Include Sent items in conversation threads~~ | [DEF-055](DEFECTS.md) | ✅ Flat Zero W5 |
+| ~~Thread/list sort: oldest first vs newest first~~ | [DEF-056](DEFECTS.md) | ✅ Flat Zero W4 |
 | Hamburger → folders-only sheet (swipe keeps full drawer) | [DEF-046](DEFECTS.md) | Android phone nav polish |
 | Account dialog overflow sweep | [DEF-039](DEFECTS.md), [DEF-040](DEFECTS.md), [DEF-063](DEFECTS.md) | Remove / Edit / Manage Account yellow-black stripes on narrow widths |
 | Preserve accounts/data across reinstall | [DEF-067](DEFECTS.md) | Backup/restore or clear-data-safe reinstall so dogfood doesn’t force full re-auth |
-| Configurable home-screen list widget | [DEF-044](DEFECTS.md) | **Moved to V-Next Pri-2** — see deferred table |
+| ~~Configurable home-screen list widget~~ | [DEF-044](DEFECTS.md) | ✅ Flat Zero W6 |
 | Calendar defaults to **Today** (Agenda / day-first) | [DEF-071](DEFECTS.md) | Prefer **V-Soon / V-Next**; pull into Wave 7 only if bandwidth |
 | **Trish:** Calendar **Week** + **Weekdays** views | [DEF-075](DEFECTS.md) | Pri-3; beyond Month/Agenda |
 | **Trish:** Day-of-year + week-of-year in chrome | [DEF-076](DEFECTS.md) | Pri-3; operator uses these numbers |
+| **Trish:** Reading-pane zoom for HTML / embedded images | [DEF-088](DEFECTS.md) | Pri-3; pinch (phone) + step zoom (desktop); non-urgent |
 
 Real Pri-1/2 defects and PIM gates stay on their owning waves — this bucket is **enhancement-shaped** backlog only.
 
@@ -371,12 +407,12 @@ Operator waves 1–7 + **G** map into these buckets for release narrative:
 | Rooms/resources, shared calendar ACLs, Teams deep links | Later calendar depth |
 | Avatar / monogram hover cards (Option C) | V-Next / late polish |
 | Calendar module defaults to **Today** | **V-Soon / V-Next** — [DEF-071](DEFECTS.md); Wave 7 only if pulled forward |
-| **Trish:** Phone Quick Reply density + collapsible chrome | **Very soon** Pri-2 — [DEF-078](DEFECTS.md); keep desktop QR |
-| **Trish:** Phone read vs full Reply same document | **Very soon** Pri-2 — [DEF-087](DEFECTS.md) |
-| **Trish:** Android sync modes (manual / timer / push) | **Very soon** Pri-2 — [DEF-086](DEFECTS.md); Tesla; not tonight |
-| **Trish:** Personal web client (Cloudflare tunnel) | **Very soon** (promoted) — **Wave WEB**; Trish-only first; local-first + APIs for a later self-host path. Not LiveBytes site. |
-| **Trish:** Per-account home-screen list widgets (AquaMail bar) | **V-Next** Pri-2 — [DEF-044](DEFECTS.md); tap opens message in app |
-| Cross-account DnD copy (events + contacts) | **Wave 6** — Graph + Google; DAV write → **6b**; calendar series copy → **6c** |
+| ~~**Trish:** Phone Quick Reply density + collapsible chrome~~ | ✅ Flat Zero — [DEF-078](DEFECTS.md) |
+| ~~**Trish:** Phone read vs full Reply same document~~ | ✅ Flat Zero — [DEF-087](DEFECTS.md) |
+| ~~**Trish:** Android sync modes (manual / timer / push)~~ | ✅ Flat Zero — [DEF-086](DEFECTS.md) |
+| **Trish:** Personal web client (Cloudflare tunnel) | **Very soon** — **Wave WEB**; Trish-only; **not** V2.0 release item |
+| ~~**Trish:** Per-account home-screen list widgets (AquaMail bar)~~ | ✅ Flat Zero — [DEF-044](DEFECTS.md) |
+| ~~Cross-account DnD copy (events + contacts)~~ | ✅ Wave **6** / **6b**; calendar series copy → **6c** (parked) |
 | Corporate Graph / Entra org work accounts | **Post–Wave 6** research → incremental version |
 | Synesis **Tasks** (basic to-do + agenda with calendar items) | **Maybe/Someday / V-Next** — grocery-list class only; not V2.0. Full productivity / planning stays **Phronesis** |
 | **Voice / assistant capture** (add·modify to-dos or calendar-adjacent items) | **V-SometimeSoonish / V-Next** — in-car voice; phone assistants (**Gemini**, **Siri**, etc.). Not V2.0; pairs with basic Tasks if that lands |
@@ -423,4 +459,4 @@ Do not expand V1.5 scope — only avoid painting corners:
 
 ---
 
-*Wave 0 complete 2026-07-27. Wave H complete 2026-07-27. **Wave 1 / V2.0a P0 complete** 2026-07-27 (`00ebdef`). **Wave 2 / V2.0a P1 complete** 2026-07-27 (`b526e70`, 530 tests). **Wave 3 / V2.0a P2 complete** 2026-07-27 (`7cbfdaa`, 551 tests) — Renee GO [V2_WAVE3_QA.md](V2_WAVE3_QA.md); `Calendars.ReadWrite` re-consent; meeting-mail bridge. **Wave 4 / V2.0b complete** 2026-07-27 (`f2bd29b`, 556 tests; [V2_WAVE4_CHECKLIST.md](V2_WAVE4_CHECKLIST.md); Renee GO [V2_WAVE4_QA.md](V2_WAVE4_QA.md)). **Wave 5 / V2.0c complete** 2026-07-27 (`73c181d`, 585 tests; [V2_WAVE5_CHECKLIST.md](V2_WAVE5_CHECKLIST.md); Renee GO [V2_WAVE5_QA.md](V2_WAVE5_QA.md)). **Wave G / V2.0d complete** 2026-07-27 (`f4c21b0`, **597 tests**; [V2_WAVE_G_CHECKLIST.md](V2_WAVE_G_CHECKLIST.md); Renee GO [V2_WAVE_G_QA.md](V2_WAVE_G_QA.md)). **Wave 6P complete** 2026-08-04 (**645 tests**; [V2_WAVE_6P_CHECKLIST.md](V2_WAVE_6P_CHECKLIST.md)). **Wave 6 complete** 2026-08-04 (**659 tests**; E10+E11 GO [V2_WAVE_6_QA.md](V2_WAVE_6_QA.md)) — [V2_WAVE_6_CHECKLIST.md](V2_WAVE_6_CHECKLIST.md). **Wave 6b complete** 2026-08-12 (**668 tests**; E8 Trish **GO** [V2_WAVE_6B_QA.md](V2_WAVE_6B_QA.md)) — [V2_WAVE_6B_CHECKLIST.md](V2_WAVE_6B_CHECKLIST.md). **Wave 6c parked** — hard-stop after 6b; next = Android Pri-2 (DEF-085, DEF-082) / Wave 7 candidates. Corporate Graph research post–Wave 6. **Wave 7 / Trish extras** last within V2.0. **Post–V2.0 (2026-08-12):** **Wave H2** (hygiene) → **Wave R** (refactor) before V2.1 features.*
+*Wave 0–6b + G complete. **Operation Flat Zero complete** 2026-08-25 (**729+ tests**). **Wave 6c parked.** **Next operator track: Wave WEB** (personal, not release-blocking). **Wave 7** optional polish. V2.0 exit = PIM docs/E2E. **Post–V2.0:** Wave H2 → Wave R before V2.1.*
