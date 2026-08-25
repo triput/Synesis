@@ -714,7 +714,8 @@ class _MailWorkspaceState extends State<MailWorkspace> {
                                   ),
                                   navigationIds:
                                       mailbox.projectedNavigationIds,
-                                  navigationMessages: mailbox.messages,
+                                  navigationMessages:
+                                      mailbox.readingNavigationMessages,
                                   onNavigateToMessage: (String id) {
                                     unawaited(cubit.selectMessage(id));
                                   },

@@ -124,6 +124,21 @@ class MailboxState extends Equatable {
     return MessageListProjector.navigationMessageIds(listSections);
   }
 
+  /// Messages the portrait reading pager can resolve — includes [selectedMessage]
+  /// when it is sticky/off-list (widget deep links, focus filter drops, etc.).
+  List<MailMessage> get readingNavigationMessages {
+    final MailMessage? selected = selectedMessage;
+    if (selected == null) {
+      return messages;
+    }
+    for (final MailMessage message in messages) {
+      if (message.id == selected.id) {
+        return messages;
+      }
+    }
+    return <MailMessage>[...messages, selected];
+  }
+
   MailFolder? get selectedFolder {
     final String? id = folderId;
     if (id == null) {

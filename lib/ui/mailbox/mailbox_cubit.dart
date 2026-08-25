@@ -242,18 +242,17 @@ class MailboxCubit extends Cubit<MailboxState> {
     String? folderId,
   }) async {
     await _openWidgetInbox(accountId: accountId, folderId: folderId);
-    await selectMessage(messageId);
-    if (state.selectedMessage != null) {
+    final MailMessage? resolved = await _repository.getMessage(messageId);
+    if (resolved == null || isClosed) {
       return;
     }
-    final MailMessage? message = await _repository.getMessage(messageId);
-    if (message == null || isClosed) {
-      return;
-    }
+    final bool inList = state.messages.any(
+      (MailMessage message) => message.id == messageId,
+    );
     emit(
       state.copyWith(
         selectedMessageId: messageId,
-        stickySelectedMessage: message,
+        stickySelectedMessage: inList ? null : resolved,
         clearSelectedMessageIds: true,
         clearError: true,
         clearBodyError: true,

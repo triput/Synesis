@@ -419,6 +419,7 @@ class _ReadingPaneState extends State<ReadingPane> {
     if (_usePortraitPaging(context)) {
       return _PortraitReadingPager(
         selectedId: widget.message!.id,
+        fallbackMessage: widget.message,
         navigationIds: widget.navigationIds,
         navigationMessages: widget.navigationMessages,
         accounts: widget.accounts,
@@ -553,6 +554,7 @@ class _ReadingPaneOptions extends InheritedWidget {
 class _PortraitReadingPager extends StatefulWidget {
   const _PortraitReadingPager({
     required this.selectedId,
+    required this.fallbackMessage,
     required this.navigationIds,
     required this.navigationMessages,
     required this.accounts,
@@ -607,6 +609,7 @@ class _PortraitReadingPager extends StatefulWidget {
   });
 
   final String selectedId;
+  final MailMessage? fallbackMessage;
   final List<String> navigationIds;
   final List<MailMessage> navigationMessages;
   final List<MailAccount> accounts;
@@ -682,6 +685,10 @@ class _PortraitReadingPagerState extends State<_PortraitReadingPager> {
       if (message.id == id) {
         return message;
       }
+    }
+    final MailMessage? fallback = widget.fallbackMessage;
+    if (fallback != null && fallback.id == id) {
+      return fallback;
     }
     return null;
   }

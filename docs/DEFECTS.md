@@ -1253,6 +1253,8 @@ Dialog `content` wrapped in `SingleChildScrollView` (DEF-063 overflow sweep, 202
 
 **2026-08-25 (dogfood follow-up 2):** Widget row open showed blank reading pane — `MessageBodyCache._messageById` ignored `stickySelectedMessage`, so body fetch no-op'd for focus-filtered-out rows; body patches also updated `messages` only. Fixed: lookup + mutation path now patches sticky; test in `sync_profile_test.dart`.
 
+**2026-08-25 (dogfood follow-up 3):** Blank pane persisted on phone — `_PortraitReadingPager._messageFor` only searched `mailbox.messages`, not sticky/off-list selection; returned `SizedBox.shrink()` while pager chrome still showed. Fixed: `readingNavigationMessages` + pager `fallbackMessage`; widget open sets sticky when focus filter drops row; test in `reading_pane_actions_test.dart`.
+
 ---
 
 ### DEF-046 — Hamburger opens full drawer; prefer folders-only sheet (enhancement)

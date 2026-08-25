@@ -47,6 +47,10 @@ Widget _harness({
   VoidCallback? onSnooze,
   ValueChanged<AddressMatchScope>? onMarkFocused,
   MeetingInviteService? meetingInviteService,
+  List<String> navigationIds = const <String>[],
+  List<MailMessage> navigationMessages = const <MailMessage>[],
+  ValueChanged<String>? onNavigateToMessage,
+  VoidCallback? onBackToList,
 }) {
   final ThemeTokens tokens = ThemeTokens.forId(ThemeId.dark);
   Widget app = MaterialApp(
@@ -87,6 +91,10 @@ Widget _harness({
               onShowHeaders: onShowHeaders,
               onMove: onMove,
               onMarkFocused: onMarkFocused,
+              navigationIds: navigationIds,
+              navigationMessages: navigationMessages,
+              onNavigateToMessage: onNavigateToMessage,
+              onBackToList: onBackToList,
             ),
           ),
         ),
@@ -434,5 +442,37 @@ END:VCALENDAR
     await tester.pumpAndSettle();
 
     expect(find.byKey(const Key('reading_pane_quick_reply')), findsOneWidget);
+  });
+
+  testWidgets('portrait pager renders off-list selected message body', (
+    WidgetTester tester,
+  ) async {
+    final MailMessage offList = _message();
+    final MailMessage inListOnly = MailMessage(
+      id: 'm0',
+      accountId: 'acc',
+      fromName: 'Other',
+      fromAddress: 'other@byte.io',
+      subject: 'Other',
+      snippet: 'Other preview',
+      body: 'Other body',
+      whenLabel: '09:00',
+      bucket: FocusBucket.focused,
+    );
+
+    await tester.pumpWidget(
+      _harness(
+        width: 400,
+        message: offList,
+        navigationIds: const <String>['m0', 'm1'],
+        navigationMessages: <MailMessage>[inListOnly],
+        onNavigateToMessage: (_) {},
+        onBackToList: () {},
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Full body'), findsOneWidget);
+    expect(find.text('Other body'), findsNothing);
   });
 }
