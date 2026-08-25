@@ -35,6 +35,15 @@ enum ThreadDisplayMode {
   flat,
 }
 
+/// Sort direction for flat and threaded message lists (DEF-056).
+enum MessageListSortDirection {
+  /// Newest messages and threads at the top (default).
+  newestFirst,
+
+  /// Oldest messages and threads at the top.
+  oldestFirst,
+}
+
 /// How multi-selected calendars are laid out (Wave 1 P0; UI in Wave 5+).
 enum CalendarViewMode {
   /// Events from selected calendars drawn on one shared timeline.
@@ -92,6 +101,7 @@ class AppSettingsState extends Equatable {
     this.minimizeToTray = true,
     this.keyboardShortcutsEnabled = true,
     this.threadDisplayMode = ThreadDisplayMode.threaded,
+    this.messageListSortDirection = MessageListSortDirection.newestFirst,
     this.swipeRightAction = SwipeListAction.archive,
     this.swipeLeftAction = SwipeListAction.delete,
     this.blockRemoteImages = true,
@@ -128,6 +138,9 @@ class AppSettingsState extends Equatable {
   final bool minimizeToTray;
   final bool keyboardShortcutsEnabled;
   final ThreadDisplayMode threadDisplayMode;
+
+  /// Flat and threaded list row order (DEF-056).
+  final MessageListSortDirection messageListSortDirection;
 
   /// Swipe right (LTR [DismissDirection.startToEnd]). Default: archive.
   final SwipeListAction swipeRightAction;
@@ -255,6 +268,7 @@ class AppSettingsState extends Equatable {
     bool? minimizeToTray,
     bool? keyboardShortcutsEnabled,
     ThreadDisplayMode? threadDisplayMode,
+    MessageListSortDirection? messageListSortDirection,
     SwipeListAction? swipeRightAction,
     SwipeListAction? swipeLeftAction,
     bool? blockRemoteImages,
@@ -295,6 +309,8 @@ class AppSettingsState extends Equatable {
       keyboardShortcutsEnabled:
           keyboardShortcutsEnabled ?? this.keyboardShortcutsEnabled,
       threadDisplayMode: threadDisplayMode ?? this.threadDisplayMode,
+      messageListSortDirection:
+          messageListSortDirection ?? this.messageListSortDirection,
       swipeRightAction: swipeRightAction ?? this.swipeRightAction,
       swipeLeftAction: swipeLeftAction ?? this.swipeLeftAction,
       blockRemoteImages: blockRemoteImages ?? this.blockRemoteImages,
@@ -351,6 +367,7 @@ class AppSettingsState extends Equatable {
         minimizeToTray,
         keyboardShortcutsEnabled,
         threadDisplayMode,
+        messageListSortDirection,
         swipeRightAction,
         swipeLeftAction,
         blockRemoteImages,

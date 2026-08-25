@@ -114,6 +114,11 @@ class AppSettingsCubit extends Cubit<AppSettingsState> {
             (ThreadDisplayMode e) => e.name == map['threadDisplayMode'],
             orElse: () => ThreadDisplayMode.threaded,
           ),
+          messageListSortDirection: MessageListSortDirection.values.firstWhere(
+            (MessageListSortDirection e) =>
+                e.name == map['messageListSortDirection'],
+            orElse: () => MessageListSortDirection.newestFirst,
+          ),
           swipeRightAction: SwipeListAction.values.firstWhere(
             (SwipeListAction e) => e.name == map['swipeRightAction'],
             orElse: () => SwipeListAction.archive,
@@ -181,6 +186,7 @@ class AppSettingsCubit extends Cubit<AppSettingsState> {
         'minimizeToTray': state.minimizeToTray,
         'keyboardShortcutsEnabled': state.keyboardShortcutsEnabled,
         'threadDisplayMode': state.threadDisplayMode.name,
+        'messageListSortDirection': state.messageListSortDirection.name,
         'swipeRightAction': state.swipeRightAction.name,
         'swipeLeftAction': state.swipeLeftAction.name,
         'blockRemoteImages': state.blockRemoteImages,
@@ -332,6 +338,12 @@ class AppSettingsCubit extends Cubit<AppSettingsState> {
   Future<void> setThreadDisplayMode(ThreadDisplayMode mode) async {
     if (state.threadDisplayMode == mode) return;
     emit(state.copyWith(threadDisplayMode: mode));
+    await _persist();
+  }
+
+  Future<void> setMessageListSortDirection(MessageListSortDirection direction) async {
+    if (state.messageListSortDirection == direction) return;
+    emit(state.copyWith(messageListSortDirection: direction));
     await _persist();
   }
 

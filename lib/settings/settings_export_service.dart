@@ -175,6 +175,7 @@ class SettingsExportService {
       'minimizeToTray': s.minimizeToTray,
       'keyboardShortcutsEnabled': s.keyboardShortcutsEnabled,
       'threadDisplayMode': s.threadDisplayMode.name,
+      'messageListSortDirection': s.messageListSortDirection.name,
       'swipeRightAction': s.swipeRightAction.name,
       'swipeLeftAction': s.swipeLeftAction.name,
       'blockRemoteImages': s.blockRemoteImages,
@@ -263,6 +264,11 @@ class SettingsExportService {
       threadDisplayMode: ThreadDisplayMode.values.firstWhere(
         (ThreadDisplayMode e) => e.name == map['threadDisplayMode'],
         orElse: () => ThreadDisplayMode.threaded,
+      ),
+      messageListSortDirection: MessageListSortDirection.values.firstWhere(
+        (MessageListSortDirection e) =>
+            e.name == map['messageListSortDirection'],
+        orElse: () => MessageListSortDirection.newestFirst,
       ),
       swipeRightAction: SwipeListAction.values.firstWhere(
         (SwipeListAction e) => e.name == map['swipeRightAction'],

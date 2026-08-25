@@ -883,9 +883,9 @@ Enhancement backlog — important for daily mail triage but not blocking Wave 2 
 | Field | Value |
 | --- | --- |
 | Priority | **Pri-2** |
-| Status | Open (enhancement) |
-| Target wave | **Wave 7 / Trish extras** |
-| Area | `lib/mailbox/message_list_projector.dart` (`_compareNewestFirst`), `lib/query/message_query.dart`, `lib/ui/settings/` (list sort preference), `lib/ui/shell/message_list_pane.dart` |
+| Status | **Fixed** (2026-08-25, Operation Flat Zero Wave 4) |
+| Target wave | **Wave 7 / Trish extras** → landed early |
+| Area | `lib/mailbox/message_list_projector.dart`, `lib/settings/app_settings_state.dart`, `lib/ui/settings/settings_sections.dart` |
 | Platforms | All |
 | Logged | 2026-07-27 |
 
@@ -895,11 +895,7 @@ Operator wants a **sort direction control** for message lists and threaded conve
 **Expected**  
 Setting or per-view toggle persists preference; flat and threaded list sections honor the chosen order (including within expanded thread children); date section headers remain coherent for both directions.
 
-**Actual**  
-List projection and query paths sort **newest-first** only (`_compareNewestFirst` in `MessageListProjector`; `message_query.dart` newest-first sort). No user-facing oldest-first option.
-
-**Notes**  
-Enhancement backlog — improves triage workflows (bottom-up vs top-down reading) but not urgent. **Target wave: Wave 7 / Trish extras.** Related: [DEF-055](#def-055--show-sent-items-in-conversation-threads) (thread view completeness).
+**2026-08-25 (Wave 4):** Settings → Reading & message list → **Oldest messages first** (`MessageListSortDirection`). Projector reverses flat/thread row order, expanded thread members, and Outlook bucket section order when oldest-first. Thread header [latest] stays the newest message for collapsed display.
 
 ---
 

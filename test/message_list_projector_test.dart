@@ -360,4 +360,97 @@ void main() {
       expect(ids, <String>['a', 'b', 'c']);
     });
   });
+
+  group('MessageListProjector sort direction', () {
+    test('flat oldestFirst reverses row order', () {
+      final List<MailMessage> messages = <MailMessage>[
+        _msg(id: 'a', accountId: 'work', whenEpochMs: 3000),
+        _msg(id: 'b', accountId: 'work', whenEpochMs: 2000),
+        _msg(id: 'c', accountId: 'work', whenEpochMs: 1000),
+      ];
+
+      final List<MessageListSection> sections = MessageListProjector.project(
+        messages: messages,
+        threadMode: ThreadDisplayMode.flat,
+        sortDirection: MessageListSortDirection.oldestFirst,
+        dateGrouping: DateGroupingMode.none,
+        expandedThreadIds: const <String>{},
+        now: now,
+      );
+
+      expect(
+        sections.single.items.map((MessageListItem item) {
+          return (item as FlatMessageItem).message.id;
+        }).toList(),
+        <String>['c', 'b', 'a'],
+      );
+    });
+
+    test('expanded thread oldestFirst lists members oldest to newest', () {
+      final List<MailMessage> messages = <MailMessage>[
+        _msg(
+          id: 'root',
+          accountId: 'work',
+          threadId: 't1',
+          whenEpochMs: 1000,
+        ),
+        _msg(
+          id: 'reply',
+          accountId: 'work',
+          threadId: 't1',
+          whenEpochMs: 2000,
+        ),
+      ];
+      final String key = ThreadItem.expansionKeyFor('work', 't1');
+
+      final List<MessageListSection> sections = MessageListProjector.project(
+        messages: messages,
+        threadMode: ThreadDisplayMode.threaded,
+        sortDirection: MessageListSortDirection.oldestFirst,
+        dateGrouping: DateGroupingMode.none,
+        expandedThreadIds: <String>{key},
+        now: now,
+      );
+
+      expect(
+        (sections.single.items[1] as FlatMessageItem).message.id,
+        'root',
+      );
+      expect(
+        (sections.single.items[2] as FlatMessageItem).message.id,
+        'reply',
+      );
+      final ThreadItem header = sections.single.items[0] as ThreadItem;
+      expect(header.latest.id, 'reply');
+    });
+
+    test('outlookBuckets oldestFirst reverses section order', () {
+      final List<MailMessage> messages = <MailMessage>[
+        _msg(
+          id: 'today',
+          accountId: 'work',
+          whenEpochMs: epoch(DateTime(2026, 7, 17, 9)),
+        ),
+        _msg(
+          id: 'older',
+          accountId: 'work',
+          whenEpochMs: epoch(DateTime(2026, 3, 1, 10)),
+        ),
+      ];
+
+      final List<MessageListSection> sections = MessageListProjector.project(
+        messages: messages,
+        threadMode: ThreadDisplayMode.flat,
+        sortDirection: MessageListSortDirection.oldestFirst,
+        dateGrouping: DateGroupingMode.outlookBuckets,
+        expandedThreadIds: const <String>{},
+        now: now,
+      );
+
+      expect(
+        sections.map((MessageListSection s) => s.title).toList(),
+        <String>['Older', 'Today'],
+      );
+    });
+  });
 }

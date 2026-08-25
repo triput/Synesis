@@ -283,6 +283,25 @@ class ReadingMessageListSettingsSection extends StatelessWidget {
                 enabled ? ThreadDisplayMode.threaded : ThreadDisplayMode.flat,
               ),
             ),
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              title: const Text('Oldest messages first'),
+              subtitle: Text(
+                settings.messageListSortDirection ==
+                        MessageListSortDirection.oldestFirst
+                    ? 'Lists and expanded threads start at the oldest message.'
+                    : 'Default: newest messages at the top.',
+                style: TextStyle(color: t.muted, fontSize: 12),
+              ),
+              value: settings.messageListSortDirection ==
+                  MessageListSortDirection.oldestFirst,
+              onChanged: (bool oldestFirst) =>
+                  cubit.setMessageListSortDirection(
+                oldestFirst
+                    ? MessageListSortDirection.oldestFirst
+                    : MessageListSortDirection.newestFirst,
+              ),
+            ),
             const SizedBox(height: 8),
             Text(
               'Android swipe actions',

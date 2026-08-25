@@ -93,6 +93,41 @@ void main() {
     });
   });
 
+  group('AppSettingsCubit messageListSortDirection', () {
+    test('defaults to newestFirst', () async {
+      SharedPreferences.setMockInitialValues(<String, Object>{});
+      final SharedPreferences prefs = await SharedPreferences.getInstance();
+      final AppSettingsCubit cubit = AppSettingsCubit(prefs);
+      expect(
+        cubit.state.messageListSortDirection,
+        MessageListSortDirection.newestFirst,
+      );
+      await cubit.close();
+    });
+
+    test('persists and rehydrates messageListSortDirection', () async {
+      SharedPreferences.setMockInitialValues(<String, Object>{});
+      final SharedPreferences prefs = await SharedPreferences.getInstance();
+      final AppSettingsCubit cubit = AppSettingsCubit(prefs);
+
+      await cubit.setMessageListSortDirection(
+        MessageListSortDirection.oldestFirst,
+      );
+      expect(
+        cubit.state.messageListSortDirection,
+        MessageListSortDirection.oldestFirst,
+      );
+      await cubit.close();
+
+      final AppSettingsCubit reloaded = AppSettingsCubit(prefs);
+      expect(
+        reloaded.state.messageListSortDirection,
+        MessageListSortDirection.oldestFirst,
+      );
+      await reloaded.close();
+    });
+  });
+
   group('AppSettingsCubit swipe actions', () {
     test('defaults to swipe right archive and left delete', () async {
       SharedPreferences.setMockInitialValues(<String, Object>{});

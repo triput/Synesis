@@ -49,6 +49,7 @@ class MailboxState extends Equatable {
     this.dateGroupingMode = DateGroupingMode.outlookBuckets,
     this.expandedThreadIds = const {},
     this.threadDisplayMode = ThreadDisplayMode.threaded,
+    this.messageListSortDirection = MessageListSortDirection.newestFirst,
     this.stickySelectedMessage,
   });
 
@@ -93,6 +94,9 @@ class MailboxState extends Equatable {
   /// Mirrored from [AppSettingsState.threadDisplayMode] on refresh.
   final ThreadDisplayMode threadDisplayMode;
 
+  /// Mirrored from [AppSettingsState.messageListSortDirection] on refresh.
+  final MessageListSortDirection messageListSortDirection;
+
   /// Last known copy of the selected message (UI-P30), retained after it
   /// drops out of a restrictive filter (e.g. Unread following auto-mark) so
   /// the reading pane keeps showing it instead of clearing or jumping to
@@ -108,6 +112,7 @@ class MailboxState extends Equatable {
     return MessageListProjector.project(
       messages: messages,
       threadMode: threadDisplayMode,
+      sortDirection: messageListSortDirection,
       dateGrouping: dateGroupingMode,
       expandedThreadIds: expandedThreadIds,
     );
@@ -208,6 +213,7 @@ class MailboxState extends Equatable {
     DateGroupingMode? dateGroupingMode,
     Set<String>? expandedThreadIds,
     ThreadDisplayMode? threadDisplayMode,
+    MessageListSortDirection? messageListSortDirection,
     MailMessage? stickySelectedMessage,
     bool clearStickySelectedMessage = false,
   }) {
@@ -281,6 +287,8 @@ class MailboxState extends Equatable {
       dateGroupingMode: dateGroupingMode ?? this.dateGroupingMode,
       expandedThreadIds: expandedThreadIds ?? this.expandedThreadIds,
       threadDisplayMode: threadDisplayMode ?? this.threadDisplayMode,
+      messageListSortDirection:
+          messageListSortDirection ?? this.messageListSortDirection,
       stickySelectedMessage: nextSticky,
     );
   }
@@ -313,6 +321,7 @@ class MailboxState extends Equatable {
     dateGroupingMode,
     expandedThreadIds,
     threadDisplayMode,
+    messageListSortDirection,
     stickySelectedMessage,
   ];
 }

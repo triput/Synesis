@@ -109,6 +109,7 @@ class MailboxCubit extends Cubit<MailboxState> {
           failedOutboxCount: failed,
           syncStatusLabel: await _repository.syncStatusLabel(),
           threadDisplayMode: _settingsCubit.state.threadDisplayMode,
+          messageListSortDirection: _settingsCubit.state.messageListSortDirection,
         ),
       );
       _initialLoadPending = false;

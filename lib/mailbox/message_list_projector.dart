@@ -102,14 +102,15 @@ class MessageListProjector {
   static List<MessageListSection> project({
     required List<MailMessage> messages,
     required ThreadDisplayMode threadMode,
+    MessageListSortDirection sortDirection = MessageListSortDirection.newestFirst,
     required DateGroupingMode dateGrouping,
     required Set<String> expandedThreadIds,
     DateTime? now,
   }) {
     final DateTime clock = now ?? DateTime.now();
     final List<_ProjectedRow> rows = threadMode == ThreadDisplayMode.threaded
-        ? _projectThreaded(messages, expandedThreadIds)
-        : _projectFlat(messages);
+        ? _projectThreaded(messages, expandedThreadIds, sortDirection)
+        : _projectFlat(messages, sortDirection);
 
     if (dateGrouping == DateGroupingMode.none) {
       return <MessageListSection>[
@@ -125,13 +126,22 @@ class MessageListProjector {
     }
 
     final List<MessageListSection> sections = <MessageListSection>[];
-    for (final String label in _outlookBucketOrder) {
+    final Iterable<String> bucketOrder =
+        sortDirection == MessageListSortDirection.oldestFirst
+            ? _outlookBucketOrder.reversed
+            : _outlookBucketOrder;
+    for (final String label in bucketOrder) {
       final List<_ProjectedRow>? bucket = buckets[label];
       if (bucket == null || bucket.isEmpty) {
         continue;
       }
+      final List<_ProjectedRow> sortedBucket = List<_ProjectedRow>.from(bucket)
+        ..sort(
+          (_ProjectedRow a, _ProjectedRow b) =>
+              _compareRowEpoch(a, b, sortDirection),
+        );
       sections.add(
-        MessageListSection(title: label, items: _itemsOf(bucket)),
+        MessageListSection(title: label, items: _itemsOf(sortedBucket)),
       );
     }
     return sections;
@@ -156,9 +166,13 @@ class MessageListProjector {
     return ids;
   }
 
-  static List<_ProjectedRow> _projectFlat(List<MailMessage> messages) {
+  static List<_ProjectedRow> _projectFlat(
+    List<MailMessage> messages,
+    MessageListSortDirection sortDirection,
+  ) {
     final List<MailMessage> sorted = List<MailMessage>.from(messages)
-      ..sort(_compareNewestFirst);
+      ..sort((MailMessage a, MailMessage b) =>
+          _compareMessages(a, b, sortDirection));
     return <_ProjectedRow>[
       for (final MailMessage message in sorted)
         _ProjectedRow(
@@ -171,6 +185,7 @@ class MessageListProjector {
   static List<_ProjectedRow> _projectThreaded(
     List<MailMessage> messages,
     Set<String> expandedThreadIds,
+    MessageListSortDirection sortDirection,
   ) {
     final Map<String, List<MailMessage>> groups =
         <String, List<MailMessage>>{};
@@ -184,7 +199,13 @@ class MessageListProjector {
     final List<_ProjectedRow> rows = <_ProjectedRow>[];
     for (final MapEntry<String, List<MailMessage>> entry in groups.entries) {
       final List<MailMessage> members = List<MailMessage>.from(entry.value)
-        ..sort(_compareNewestFirst);
+        ..sort(
+          (MailMessage a, MailMessage b) => _compareMessages(
+            a,
+            b,
+            MessageListSortDirection.newestFirst,
+          ),
+        );
       final MailMessage latest = members.first;
       final String effectiveThreadId = latest.threadId ?? latest.id;
       final ThreadItem thread = ThreadItem(
@@ -199,7 +220,11 @@ class MessageListProjector {
       );
       final List<MessageListItem> items = <MessageListItem>[thread];
       if (expandedThreadIds.contains(thread.expansionKey)) {
-        for (final MailMessage member in members) {
+        final Iterable<MailMessage> expandedMembers =
+            sortDirection == MessageListSortDirection.oldestFirst
+                ? members.reversed
+                : members;
+        for (final MailMessage member in expandedMembers) {
           items.add(FlatMessageItem(member));
         }
       }
@@ -212,7 +237,7 @@ class MessageListProjector {
     }
     rows.sort(
       (_ProjectedRow a, _ProjectedRow b) =>
-          b.sortEpochMs.compareTo(a.sortEpochMs),
+          _compareRowEpoch(a, b, sortDirection),
     );
     return rows;
   }
@@ -223,14 +248,33 @@ class MessageListProjector {
     ];
   }
 
-  static int _compareNewestFirst(MailMessage a, MailMessage b) {
+  static int _compareRowEpoch(
+    _ProjectedRow a,
+    _ProjectedRow b,
+    MessageListSortDirection sortDirection,
+  ) {
+    if (sortDirection == MessageListSortDirection.newestFirst) {
+      return b.sortEpochMs.compareTo(a.sortEpochMs);
+    }
+    return a.sortEpochMs.compareTo(b.sortEpochMs);
+  }
+
+  static int _compareMessages(
+    MailMessage a,
+    MailMessage b,
+    MessageListSortDirection sortDirection,
+  ) {
     final int aEpoch = a.whenEpochMs ?? 0;
     final int bEpoch = b.whenEpochMs ?? 0;
-    final int byEpoch = bEpoch.compareTo(aEpoch);
+    final int byEpoch = sortDirection == MessageListSortDirection.newestFirst
+        ? bEpoch.compareTo(aEpoch)
+        : aEpoch.compareTo(bEpoch);
     if (byEpoch != 0) {
       return byEpoch;
     }
-    return b.id.compareTo(a.id);
+    return sortDirection == MessageListSortDirection.newestFirst
+        ? b.id.compareTo(a.id)
+        : a.id.compareTo(b.id);
   }
 
   static String _participantSummary(List<MailMessage> members) {
