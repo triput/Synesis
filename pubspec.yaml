@@ -29,6 +29,7 @@ dependencies:
   home_widget: ^0.9.3
   url_launcher: ^6.3.2
   webview_flutter: ^4.14.1
+  webview_flutter_android: ^4.13.0
   webview_flutter_windows: ^1.0.0
   oauth2: ^2.0.3
   app_links: ^7.0.0

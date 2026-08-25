@@ -98,6 +98,7 @@ class AppSettingsState extends Equatable {
     this.blockTrackers = true,
     this.pushOnCellular = false,
     this.readingPanePosition = ReadingPanePosition.right,
+    this.showQuickReplyEnabled = true,
     this.visualFocusEnabled = false,
     this.notificationsEnabled = true,
     this.notifyStarredOnly = false,
@@ -156,6 +157,10 @@ class AppSettingsState extends Equatable {
   /// Where the reading pane sits relative to the message list on wide layouts.
   /// Portrait mobile ignores this and keeps the horizontal list|reading split.
   final ReadingPanePosition readingPanePosition;
+
+  /// When false, hides the reading-pane Quick Reply strip so body height is
+  /// maximized (DEF-078). Applies on phone and desktop.
+  final bool showQuickReplyEnabled;
 
   /// When true, collapses folder sidebar and list chrome so reading is maximized
   /// (while a message is selected). Distinct from Focused/Other mail filter.
@@ -248,6 +253,7 @@ class AppSettingsState extends Equatable {
     bool? blockTrackers,
     bool? pushOnCellular,
     ReadingPanePosition? readingPanePosition,
+    bool? showQuickReplyEnabled,
     bool? visualFocusEnabled,
     bool? notificationsEnabled,
     bool? notifyStarredOnly,
@@ -287,6 +293,8 @@ class AppSettingsState extends Equatable {
       blockTrackers: blockTrackers ?? this.blockTrackers,
       pushOnCellular: pushOnCellular ?? this.pushOnCellular,
       readingPanePosition: readingPanePosition ?? this.readingPanePosition,
+      showQuickReplyEnabled:
+          showQuickReplyEnabled ?? this.showQuickReplyEnabled,
       visualFocusEnabled: visualFocusEnabled ?? this.visualFocusEnabled,
       notificationsEnabled: notificationsEnabled ?? this.notificationsEnabled,
       notifyStarredOnly: notifyStarredOnly ?? this.notifyStarredOnly,
@@ -335,6 +343,7 @@ class AppSettingsState extends Equatable {
         blockTrackers,
         pushOnCellular,
         readingPanePosition,
+        showQuickReplyEnabled,
         visualFocusEnabled,
         notificationsEnabled,
         notifyStarredOnly,

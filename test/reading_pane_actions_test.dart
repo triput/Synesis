@@ -38,6 +38,7 @@ MailMessage _message({
 Widget _harness({
   required double width,
   required MailMessage message,
+  bool showQuickReplyEnabled = true,
   VoidCallback? onReply,
   VoidCallback? onDelete,
   VoidCallback? onShowHeaders,
@@ -74,6 +75,7 @@ Widget _harness({
                 ),
               ],
               density: ViewDensity.compact,
+              showQuickReplyEnabled: showQuickReplyEnabled,
               onReply: onReply,
               onReplyAll: () {},
               onForward: () {},
@@ -336,5 +338,35 @@ END:VCALENDAR
     await tester.tap(find.widgetWithText(OutlinedButton, 'Accept'));
     await tester.pumpAndSettle();
     expect(find.textContaining('Meeting response failed:'), findsOneWidget);
+  });
+
+  testWidgets('showQuickReplyEnabled hides Quick Reply strip', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(
+      _harness(
+        width: 400,
+        message: _message(),
+        showQuickReplyEnabled: false,
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('reading_pane_quick_reply')), findsNothing);
+  });
+
+  testWidgets('showQuickReplyEnabled shows Quick Reply on phone', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(
+      _harness(
+        width: 400,
+        message: _message(),
+        showQuickReplyEnabled: true,
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('reading_pane_quick_reply')), findsOneWidget);
   });
 }

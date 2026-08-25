@@ -4,7 +4,7 @@
 // Component: UI
 // Version: 1.0 (Gold Master)
 // Created: 2026-07-27
-// Last Update: 2026-07-27
+// Last Update: 2026-08-25
 // ==============================================================================
 
 import 'package:flutter/material.dart';
@@ -85,8 +85,12 @@ class _ModuleShellState extends State<ModuleShell> {
     // to Mail without state loss" Wave 5 dogfood expectation.
     final Widget body = IndexedStack(
       index: _module.index,
+      // DEF-078: loose (default) lets module bodies shrink-wrap; Mail reading
+      // left a teal void above the bottom nav on Android dogfood.
+      sizing: StackFit.expand,
       children: <Widget>[
-        for (final AppModule module in AppModule.values) _bodyFor(module),
+        for (final AppModule module in AppModule.values)
+          SizedBox.expand(child: _bodyFor(module)),
       ],
     );
     if (portraitMobile) {

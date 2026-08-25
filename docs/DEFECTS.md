@@ -275,6 +275,20 @@ Pri-2 **very soon**. Keep desktop QR as-is unless the same setting hides it.
 
 **2026-08-25:** Header used `max(88, 22% of pane)` which *grew* chrome on tall phones. Capped to `min(96, 18%)`; actions move to a `⋯` sheet; pager 36px; QR one line. Tests must set `MediaQuery` width or they never hit phone layout.
 
+**2026-08-25 (dogfood):** Body still shrink-wrapped — tiny WebView card, QR hugged the card, teal void to module nav. Fix: `SizedBox.expand` on PageView pages + HTML WebView; flatten body/QR column so QR pins above nav; force pane height from `LayoutBuilder` constraints.
+
+**2026-08-25 (dogfood 2):** Still broken — root cause Android platform WebView inside `PageView` (swipe disabled but viewport kept). Phone dogfood now skips PageView when `onBackToList` set; hybrid-composition Android WebView; hide mail `_TitleBar` while reading full-bleed.
+
+**2026-08-25 (dogfood 3):** Still porthole + teal. **`ModuleShell` `IndexedStack` used default `StackFit.loose`** (module bodies shrink-wrap). Fixed with `sizing: StackFit.expand` + `SizedBox.expand` children. Android phone reading now uses in-app **`HtmlWidget`** (not platform WebView) so body height follows normal flex layout.
+
+**2026-08-25 (dogfood 4–5):** White body fill + scroll OK; teal band persisted **below** Quick Reply (Column ended above viewport floor). Phone QR now **stack-pinned** to pane bottom with body scroll reserve (`kPhoneQuickReplyOverlayHeight`).
+
+**2026-08-25 (dogfood 6–7):** Stack-pinned QR moved teal **above** QR (Column shrink-wrap in Stack). Reverted to single Column: white `Expanded` body, QR last child.
+
+**2026-08-25 (dogfood 8):** ~1.5″ teal band above QR on S26 Ultra — **`Flexible` header + `Expanded` body both used flex:1**; `FlexFit.loose` header left ~half the gap as unused flex space (teal `Container` background). Phone header is intrinsic height only (no `Flexible`). **Dogfood GO** on S26 Ultra.
+
+**2026-08-25 (Wave 0 / Operation Flat Zero):** Settings → Reading & message list → **Show Quick Reply** (`showQuickReplyEnabled`, default on). Off reclaims QR strip for body height on phone and desktop.
+
 ---
 
 ### DEF-077 — New event Calendar dropdown overflows long account labels (~286px)

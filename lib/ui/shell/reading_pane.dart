@@ -4,7 +4,7 @@
 // Component: UI
 // Version: 1.7 (Gold Master)
 // Created: 2026-07-14
-// Last Update: 2026-08-23
+// Last Update: 2026-08-25
 // ==============================================================================
 
 import 'dart:async';
@@ -54,6 +54,7 @@ class ReadingPane extends StatefulWidget {
     this.findInMessageRequested = false,
     this.onFindRequestHandled,
     this.allowOpenInNewWindow = true,
+    this.showQuickReplyEnabled = true,
     this.onBackToList,
     this.onMarkRead,
     this.onMarkUnread,
@@ -116,6 +117,9 @@ class ReadingPane extends StatefulWidget {
 
   /// When false, hides overflow "Open in new window" (detached reader).
   final bool allowOpenInNewWindow;
+
+  /// When false, hides the Quick Reply strip (DEF-078 settings toggle).
+  final bool showQuickReplyEnabled;
 
   /// Phone full-bleed: return to the message list (clears selection).
   final VoidCallback? onBackToList;
@@ -424,6 +428,7 @@ class _ReadingPaneState extends State<ReadingPane> {
         onAllowRemoteImages: _allowRemoteImagesForMessage,
         onNavigateToMessage: widget.onNavigateToMessage!,
         onBackToList: widget.onBackToList,
+        showQuickReplyEnabled: widget.showQuickReplyEnabled,
         findOpen: _findOpen,
         findQuery: _findQuery,
         findActiveIndex: _findActiveIndex,
@@ -487,6 +492,7 @@ class _ReadingPaneState extends State<ReadingPane> {
       onFindPrevious: _findPrevious,
       onFindMatchCountChanged: _onFindMatchCountChanged,
       onBackToList: widget.onBackToList,
+      showQuickReplyEnabled: widget.showQuickReplyEnabled,
       onMarkRead: widget.onMarkRead,
       onMarkUnread: widget.onMarkUnread,
       onShowHeaders: widget.onShowHeaders,
@@ -543,6 +549,7 @@ class _PortraitReadingPager extends StatefulWidget {
     required this.density,
     required this.onNavigateToMessage,
     this.onBackToList,
+    this.showQuickReplyEnabled = true,
     required this.sessionAllowedRemoteImages,
     required this.onAllowRemoteImages,
     required this.findOpen,
@@ -603,6 +610,7 @@ class _PortraitReadingPager extends StatefulWidget {
   final ValueChanged<String> onAllowRemoteImages;
   final ValueChanged<String> onNavigateToMessage;
   final VoidCallback? onBackToList;
+  final bool showQuickReplyEnabled;
   final bool findOpen;
   final String findQuery;
   final int findActiveIndex;
@@ -647,7 +655,7 @@ class _PortraitReadingPager extends StatefulWidget {
 }
 
 class _PortraitReadingPagerState extends State<_PortraitReadingPager> {
-  late PageController _controller;
+  PageController? _controller;
   bool _syncingFromParent = false;
 
   int _indexOf(String id) {
@@ -761,7 +769,12 @@ class _PortraitReadingPagerState extends State<_PortraitReadingPager> {
   @override
   void initState() {
     super.initState();
-    _controller = PageController(initialPage: _indexOf(widget.selectedId));
+    // Phone dogfood disables PageView swipe (onBackToList set). Keeping a
+    // PageView around an Android platform WebView shrinks it to HTML height
+    // (DEF-078 teal void); render the selected message directly instead.
+    if (widget.onBackToList == null) {
+      _controller = PageController(initialPage: _indexOf(widget.selectedId));
+    }
   }
 
   @override
@@ -770,10 +783,12 @@ class _PortraitReadingPagerState extends State<_PortraitReadingPager> {
     if (widget.selectedId != oldWidget.selectedId ||
         widget.navigationIds != oldWidget.navigationIds) {
       final int target = _indexOf(widget.selectedId);
-      if (_controller.hasClients &&
-          (_controller.page?.round() ?? target) != target) {
+      final PageController? controller = _controller;
+      if (controller != null &&
+          controller.hasClients &&
+          (controller.page?.round() ?? target) != target) {
         _syncingFromParent = true;
-        _controller.jumpToPage(target);
+        controller.jumpToPage(target);
         _syncingFromParent = false;
       }
     }
@@ -781,8 +796,66 @@ class _PortraitReadingPagerState extends State<_PortraitReadingPager> {
 
   @override
   void dispose() {
-    _controller.dispose();
+    _controller?.dispose();
     super.dispose();
+  }
+
+  Widget _buildReadingContent(String id) {
+    final MailMessage? pageMessage = _messageFor(id);
+    if (pageMessage == null) {
+      return const SizedBox.shrink();
+    }
+    final bool isSelected = id == widget.selectedId;
+    return _ReadingPaneContent(
+      message: pageMessage,
+      accounts: widget.accounts,
+      density: widget.density,
+      folderRole: widget.folderRole,
+      isLoadingBody: isSelected && widget.isLoadingBody,
+      bodyErrorMessage: isSelected ? widget.bodyErrorMessage : null,
+      blockRemoteImages: widget.blockRemoteImages,
+      accountBlockRemoteImages: widget.accountBlockRemoteImages,
+      accountImageAllowlistDomains: widget.accountImageAllowlistDomains,
+      blockTrackers: widget.blockTrackers,
+      allowRemoteImages: widget.sessionAllowedRemoteImages.contains(id),
+      onLoadRemoteImages: () => widget.onAllowRemoteImages(id),
+      findOpen: isSelected && widget.findOpen,
+      findQuery: isSelected ? widget.findQuery : '',
+      findActiveIndex: isSelected ? widget.findActiveIndex : 0,
+      findMatchCount: isSelected ? widget.findMatchCount : 0,
+      findNavigateEpoch: isSelected ? widget.findNavigateEpoch : 0,
+      findNavigateReverse: isSelected && widget.findNavigateReverse,
+      onOpenFind: isSelected ? widget.onOpenFind : null,
+      onCloseFind: isSelected ? widget.onCloseFind : null,
+      onFindQueryChanged: isSelected ? widget.onFindQueryChanged : null,
+      onFindNext: isSelected ? widget.onFindNext : null,
+      onFindPrevious: isSelected ? widget.onFindPrevious : null,
+      onFindMatchCountChanged:
+          isSelected ? widget.onFindMatchCountChanged : null,
+      onMarkRead: isSelected ? widget.onMarkRead : null,
+      onMarkUnread: isSelected ? widget.onMarkUnread : null,
+      onShowHeaders: isSelected ? widget.onShowHeaders : null,
+      onReply: isSelected ? widget.onReply : null,
+      onReplyAll: isSelected ? widget.onReplyAll : null,
+      onForward: isSelected ? widget.onForward : null,
+      onArchive: isSelected ? widget.onArchive : null,
+      onDelete: isSelected ? widget.onDelete : null,
+      onPermanentDelete: isSelected ? widget.onPermanentDelete : null,
+      onToggleStar: isSelected ? widget.onToggleStar : null,
+      onPin: isSelected ? widget.onPin : null,
+      onSnooze: isSelected ? widget.onSnooze : null,
+      onMove: isSelected ? widget.onMove : null,
+      onReportJunk: isSelected ? widget.onReportJunk : null,
+      onRecover: isSelected ? widget.onRecover : null,
+      onNotJunk: isSelected ? widget.onNotJunk : null,
+      onMarkFocused: isSelected ? widget.onMarkFocused : null,
+      onMarkOther: isSelected ? widget.onMarkOther : null,
+      autoMarkHeld: isSelected && widget.autoMarkHeld,
+      showAutoMarkHoldOption: isSelected && widget.showAutoMarkHoldOption,
+      onToggleAutoMarkHold: isSelected ? widget.onToggleAutoMarkHold : null,
+      onBackToList: widget.onBackToList,
+      showQuickReplyEnabled: widget.showQuickReplyEnabled,
+    );
   }
 
   @override
@@ -792,9 +865,10 @@ class _PortraitReadingPagerState extends State<_PortraitReadingPager> {
     final bool canPrev = current > 0;
     final bool canNext = current < widget.navigationIds.length - 1;
 
-    return Column(
-      children: <Widget>[
-        Material(
+    return SizedBox.expand(
+      child: Column(
+        children: <Widget>[
+          Material(
           color: t.content,
           child: SizedBox(
             height: 36,
@@ -858,89 +932,33 @@ class _PortraitReadingPagerState extends State<_PortraitReadingPager> {
           ),
         ),
         Expanded(
-          child: PageView.builder(
-            controller: _controller,
-            // On phone, disable swipe-between-messages so the body WebView can
-            // receive vertical scroll. Use chrome next/prev / picker instead.
-            physics: widget.onBackToList != null
-                ? const NeverScrollableScrollPhysics()
-                : null,
-            itemCount: widget.navigationIds.length,
-            onPageChanged: (int index) {
-              if (_syncingFromParent) {
-                return;
-              }
-              final String id = widget.navigationIds[index];
-              if (id != widget.selectedId) {
-                widget.onNavigateToMessage(id);
-              }
-            },
-            itemBuilder: (BuildContext context, int index) {
-              final String id = widget.navigationIds[index];
-              final MailMessage? pageMessage = _messageFor(id);
-              if (pageMessage == null) {
-                return const SizedBox.shrink();
-              }
-              final bool isSelected = id == widget.selectedId;
-              return _ReadingPaneContent(
-                message: pageMessage,
-                accounts: widget.accounts,
-                density: widget.density,
-                folderRole: widget.folderRole,
-                isLoadingBody: isSelected && widget.isLoadingBody,
-                bodyErrorMessage: isSelected ? widget.bodyErrorMessage : null,
-                blockRemoteImages: widget.blockRemoteImages,
-                accountBlockRemoteImages: widget.accountBlockRemoteImages,
-                accountImageAllowlistDomains:
-                    widget.accountImageAllowlistDomains,
-                blockTrackers: widget.blockTrackers,
-                allowRemoteImages:
-                    widget.sessionAllowedRemoteImages.contains(id),
-                onLoadRemoteImages: () => widget.onAllowRemoteImages(id),
-                findOpen: isSelected && widget.findOpen,
-                findQuery: isSelected ? widget.findQuery : '',
-                findActiveIndex: isSelected ? widget.findActiveIndex : 0,
-                findMatchCount: isSelected ? widget.findMatchCount : 0,
-                findNavigateEpoch: isSelected ? widget.findNavigateEpoch : 0,
-                findNavigateReverse:
-                    isSelected && widget.findNavigateReverse,
-                onOpenFind: isSelected ? widget.onOpenFind : null,
-                onCloseFind: isSelected ? widget.onCloseFind : null,
-                onFindQueryChanged:
-                    isSelected ? widget.onFindQueryChanged : null,
-                onFindNext: isSelected ? widget.onFindNext : null,
-                onFindPrevious: isSelected ? widget.onFindPrevious : null,
-                onFindMatchCountChanged:
-                    isSelected ? widget.onFindMatchCountChanged : null,
-                onMarkRead: isSelected ? widget.onMarkRead : null,
-                onMarkUnread: isSelected ? widget.onMarkUnread : null,
-                onShowHeaders: isSelected ? widget.onShowHeaders : null,
-                onReply: isSelected ? widget.onReply : null,
-                onReplyAll: isSelected ? widget.onReplyAll : null,
-                onForward: isSelected ? widget.onForward : null,
-                onArchive: isSelected ? widget.onArchive : null,
-                onDelete: isSelected ? widget.onDelete : null,
-                onPermanentDelete:
-                    isSelected ? widget.onPermanentDelete : null,
-                onToggleStar: isSelected ? widget.onToggleStar : null,
-                onPin: isSelected ? widget.onPin : null,
-                onSnooze: isSelected ? widget.onSnooze : null,
-                onMove: isSelected ? widget.onMove : null,
-                onReportJunk: isSelected ? widget.onReportJunk : null,
-                onRecover: isSelected ? widget.onRecover : null,
-                onNotJunk: isSelected ? widget.onNotJunk : null,
-                onMarkFocused: isSelected ? widget.onMarkFocused : null,
-                onMarkOther: isSelected ? widget.onMarkOther : null,
-                autoMarkHeld: isSelected && widget.autoMarkHeld,
-                showAutoMarkHoldOption:
-                    isSelected && widget.showAutoMarkHoldOption,
-                onToggleAutoMarkHold:
-                    isSelected ? widget.onToggleAutoMarkHold : null,
-              );
-            },
-          ),
+          child: widget.onBackToList != null
+              ? SizedBox.expand(
+                  child: _buildReadingContent(widget.selectedId),
+                )
+              : PageView.builder(
+                  controller: _controller,
+                  itemCount: widget.navigationIds.length,
+                  onPageChanged: (int index) {
+                    if (_syncingFromParent) {
+                      return;
+                    }
+                    final String id = widget.navigationIds[index];
+                    if (id != widget.selectedId) {
+                      widget.onNavigateToMessage(id);
+                    }
+                  },
+                  itemBuilder: (BuildContext context, int index) {
+                    return SizedBox.expand(
+                      child: _buildReadingContent(
+                        widget.navigationIds[index],
+                      ),
+                    );
+                  },
+                ),
         ),
       ],
+      ),
     );
   }
 }
@@ -993,6 +1011,7 @@ class _ReadingPaneContent extends StatelessWidget {
     this.autoMarkHeld = false,
     this.showAutoMarkHoldOption = false,
     this.onToggleAutoMarkHold,
+    this.showQuickReplyEnabled = true,
   });
 
   final MailMessage message;
@@ -1045,6 +1064,7 @@ class _ReadingPaneContent extends StatelessWidget {
   /// UI-P30: true when the hold toggle should be offered (unread + enabled).
   final bool showAutoMarkHoldOption;
   final VoidCallback? onToggleAutoMarkHold;
+  final bool showQuickReplyEnabled;
 
   @override
   Widget build(BuildContext context) {
@@ -1092,7 +1112,8 @@ class _ReadingPaneContent extends StatelessWidget {
           final bool cramped = constraints.hasBoundedHeight &&
               constraints.maxHeight.isFinite &&
               constraints.maxHeight < 320;
-          final bool showQuickReply = !inTrash &&
+          final bool showQuickReply = showQuickReplyEnabled &&
+              !inTrash &&
               constraints.hasBoundedHeight &&
               constraints.maxHeight >= 160;
           // Phone: cap chrome. `max(88, 22% of pane)` *floored* the header
@@ -1104,16 +1125,44 @@ class _ReadingPaneContent extends StatelessWidget {
                   ? math.min(96, constraints.maxHeight * 0.18)
                   : math.max(88, constraints.maxHeight * 0.45);
 
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: <Widget>[
-              Flexible(
-                fit: FlexFit.loose,
-                child: ConstrainedBox(
-                  constraints: BoxConstraints(
-                    maxHeight: headerMaxHeight,
-                  ),
-                  child: SingleChildScrollView(
+          final double? paneHeight =
+              constraints.hasBoundedHeight && constraints.maxHeight.isFinite
+                  ? constraints.maxHeight
+                  : null;
+          final bool phoneQuickReplyColumn =
+              phoneLayout && showQuickReply && paneHeight != null;
+
+          Widget buildMessageBody() {
+            return MessageBodyView(
+              body: msg.body,
+              isLoadingBody: isLoadingBody,
+              bodyErrorMessage: bodyErrorMessage,
+              bodySize: density.bodySize,
+              muted: secondaryText,
+              blockRemoteImages:
+                  accountBlockRemoteImages[msg.accountId] ?? blockRemoteImages,
+              allowRemoteImages: allowRemoteImages,
+              onLoadRemoteImages: onLoadRemoteImages,
+              imageAllowlistDomains:
+                  accountImageAllowlistDomains[msg.accountId] ??
+                      const <String>[],
+              blockTrackers: blockTrackers,
+              findQuery: findOpen ? findQuery : '',
+              findActiveIndex: findActiveIndex,
+              findNavigateEpoch: findNavigateEpoch,
+              findNavigateReverse: findNavigateReverse,
+              onFindMatchCountChanged: onFindMatchCountChanged,
+            );
+          }
+
+          // Phone: header must not be [Flexible] beside [Expanded] — both
+          // default flex:1; loose header keeps unused flex space as teal void
+          // above Quick Reply on tall phones (DEF-078 dogfood round 8).
+          final Widget readingHeader = ConstrainedBox(
+            constraints: BoxConstraints(
+              maxHeight: headerMaxHeight,
+            ),
+            child: SingleChildScrollView(
                     child: Padding(
                       padding: pad,
                       child: Column(
@@ -1316,8 +1365,18 @@ class _ReadingPaneContent extends StatelessWidget {
                       ),
                     ),
                   ),
+                );
+
+          final Widget pane = Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: <Widget>[
+              if (phoneLayout)
+                readingHeader
+              else
+                Flexible(
+                  fit: FlexFit.loose,
+                  child: readingHeader,
                 ),
-              ),
               if (findOpen &&
                   onCloseFind != null &&
                   onFindQueryChanged != null)
@@ -1331,55 +1390,58 @@ class _ReadingPaneContent extends StatelessWidget {
                   onClose: onCloseFind!,
                 ),
               Divider(height: 1, color: t.line),
-              Expanded(
-                child: Padding(
-                  padding: EdgeInsets.fromLTRB(
-                    pad.left,
-                    8,
-                    pad.right,
-                    showQuickReply ? 0 : pad.bottom,
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: <Widget>[
-                      if (!cramped && !phoneLayout)
-                        ConstrainedBox(
-                          constraints: const BoxConstraints(maxHeight: 88),
-                          child: SingleChildScrollView(
-                            child: MessageAttachmentsPanel(message: msg),
-                          ),
-                        ),
-                      Expanded(
-                        child: MessageBodyView(
-                          body: msg.body,
-                          isLoadingBody: isLoadingBody,
-                          bodyErrorMessage: bodyErrorMessage,
-                          bodySize: density.bodySize,
-                          muted: secondaryText,
-                          blockRemoteImages: accountBlockRemoteImages[
-                                  msg.accountId] ??
-                              blockRemoteImages,
-                          allowRemoteImages: allowRemoteImages,
-                          onLoadRemoteImages: onLoadRemoteImages,
-                          imageAllowlistDomains:
-                              accountImageAllowlistDomains[msg.accountId] ??
-                                  const <String>[],
-                          blockTrackers: blockTrackers,
-                          findQuery: findOpen ? findQuery : '',
-                          findActiveIndex: findActiveIndex,
-                          findNavigateEpoch: findNavigateEpoch,
-                          findNavigateReverse: findNavigateReverse,
-                          onFindMatchCountChanged: onFindMatchCountChanged,
-                        ),
-                      ),
-                      if (showQuickReply)
-                        QuickReplyBar(message: msg),
-                    ],
+              if (!cramped && !phoneLayout)
+                ConstrainedBox(
+                  constraints: const BoxConstraints(maxHeight: 88),
+                  child: SingleChildScrollView(
+                    padding: EdgeInsets.fromLTRB(pad.left, 0, pad.right, 0),
+                    child: MessageAttachmentsPanel(message: msg),
                   ),
                 ),
+              Expanded(
+                child: phoneQuickReplyColumn
+                    ? ColoredBox(
+                        color: Colors.white,
+                        child: SizedBox.expand(
+                          child: buildMessageBody(),
+                        ),
+                      )
+                    : Padding(
+                        padding: EdgeInsets.fromLTRB(
+                          pad.left,
+                          8,
+                          pad.right,
+                          0,
+                        ),
+                        child: buildMessageBody(),
+                      ),
               ),
+              if (showQuickReply)
+                ColoredBox(
+                  color: t.content,
+                  child: Padding(
+                    padding: EdgeInsets.fromLTRB(
+                      pad.left,
+                      4,
+                      pad.right,
+                      pad.bottom,
+                    ),
+                    child: QuickReplyBar(
+                      key: const Key('reading_pane_quick_reply'),
+                      message: msg,
+                    ),
+                  ),
+                ),
             ],
           );
+          if (paneHeight != null) {
+            return SizedBox(
+              height: paneHeight,
+              width: constraints.maxWidth,
+              child: pane,
+            );
+          }
+          return pane;
         },
       ),
     );

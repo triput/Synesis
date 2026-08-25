@@ -448,7 +448,8 @@ class _MailWorkspaceState extends State<MailWorkspace> {
                         : null,
                     body: Column(
                       children: [
-                      _TitleBar(
+                      if (!portraitMobile || !readingFullBleed)
+                        _TitleBar(
                         contextLabel: contextLabel,
                         syncLabel: SyncStatusPresentation.composeLabel(
                           activity: _syncActivity,
@@ -699,6 +700,8 @@ class _MailWorkspaceState extends State<MailWorkspace> {
                                   accountImageAllowlistDomains:
                                       settings.accountImageAllowlistDomains,
                                   blockTrackers: settings.blockTrackers,
+                                  showQuickReplyEnabled:
+                                      settings.showQuickReplyEnabled,
                                   autoMarkAsReadEnabled:
                                       settings.autoMarkAsReadEnabled,
                                   autoMarkAsReadDwell: Duration(

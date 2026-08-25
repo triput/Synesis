@@ -4,7 +4,7 @@
 // Component: UI
 // Version: 1.4 (Gold Master)
 // Created: 2026-07-14
-// Last Update: 2026-08-03
+// Last Update: 2026-08-25
 // ==============================================================================
 
 import 'package:flutter/material.dart';
@@ -12,6 +12,7 @@ import 'package:synesis/theme/app_theme.dart';
 import 'package:synesis/theme/theme_tokens.dart';
 import 'package:synesis/ui/mailbox/message_body_normalizer.dart';
 import 'package:synesis/ui/shell/html_email_body.dart';
+import 'package:synesis/ui/shell/mail_split_layout.dart';
 import 'package:synesis/ui/shell/message_body_find.dart';
 import 'package:synesis/ui/shell/remote_image_policy.dart';
 import 'package:synesis/ui/shell/tracker_blocking_policy.dart';
@@ -225,29 +226,36 @@ class _MessageBodyViewState extends State<MessageBodyView> {
               showImagesBlockedBanner && hasBannerRoom;
           final bool canShowTrackersBanner =
               showTrackersBlockedBanner && hasBannerRoom;
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: <Widget>[
-              if (canShowImagesBanner)
-                _RemoteImagesBlockedBanner(
-                  muted: widget.muted,
-                  onLoadImages: widget.onLoadRemoteImages,
+          return SizedBox.expand(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: <Widget>[
+                if (canShowImagesBanner)
+                  _RemoteImagesBlockedBanner(
+                    muted: widget.muted,
+                    onLoadImages: widget.onLoadRemoteImages,
+                  ),
+                if (canShowTrackersBanner)
+                  _TrackersBlockedBanner(muted: widget.muted),
+                Expanded(
+                  child: HtmlEmailBody(
+                    html: trackerPolicy.html,
+                    muted: widget.muted,
+                    findQuery: widget.findQuery,
+                    findNavigateEpoch: widget.findNavigateEpoch,
+                    findNavigateReverse: widget.findNavigateReverse,
+                  ),
                 ),
-              if (canShowTrackersBanner)
-                _TrackersBlockedBanner(muted: widget.muted),
-              Expanded(
-                child: HtmlEmailBody(
-                  html: trackerPolicy.html,
-                  muted: widget.muted,
-                  findQuery: widget.findQuery,
-                  findNavigateEpoch: widget.findNavigateEpoch,
-                  findNavigateReverse: widget.findNavigateReverse,
-                ),
-              ),
-            ],
+              ],
+            ),
           );
         },
       );
+    }
+
+    final bool phoneLayout = isPortraitMobileLayout(context);
+    if (phoneLayout) {
+      return _phonePlainBodyScroll();
     }
 
     return SingleChildScrollView(
@@ -261,6 +269,21 @@ class _MessageBodyViewState extends State<MessageBodyView> {
       ),
     );
   }
+
+  Widget _phonePlainBodyScroll() {
+    return SingleChildScrollView(
+      controller: _plainScrollController,
+      padding: const EdgeInsets.all(12),
+      child: _PlainBodyWithFind(
+        body: widget.body,
+        bodySize: widget.bodySize,
+        findQuery: widget.findQuery,
+        findActiveIndex: widget.findActiveIndex,
+        matchKeys: _matchKeys,
+        lightBackground: true,
+      ),
+    );
+  }
 }
 
 class _PlainBodyWithFind extends StatelessWidget {
@@ -270,6 +293,7 @@ class _PlainBodyWithFind extends StatelessWidget {
     required this.findQuery,
     required this.findActiveIndex,
     required this.matchKeys,
+    this.lightBackground = false,
   });
 
   final String body;
@@ -277,12 +301,15 @@ class _PlainBodyWithFind extends StatelessWidget {
   final String findQuery;
   final int findActiveIndex;
   final List<GlobalKey> matchKeys;
+  final bool lightBackground;
 
   @override
   Widget build(BuildContext context) {
     final ThemeTokens t = tokensOf(context);
     final TextStyle baseStyle = TextStyle(
-      color: const Color(0xFFD7DDF5),
+      color: lightBackground
+          ? const Color(0xFF1A1A1A)
+          : const Color(0xFFD7DDF5),
       fontSize: bodySize,
       height: 1.65,
     );

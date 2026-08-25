@@ -129,6 +129,8 @@ class AppSettingsCubit extends Cubit<AppSettingsState> {
             (ReadingPanePosition e) => e.name == map['readingPanePosition'],
             orElse: () => ReadingPanePosition.right,
           ),
+          showQuickReplyEnabled:
+              map['showQuickReplyEnabled'] as bool? ?? true,
           visualFocusEnabled: map['visualFocusEnabled'] as bool? ?? false,
           notificationsEnabled: map['notificationsEnabled'] as bool? ?? true,
           notifyStarredOnly: map['notifyStarredOnly'] as bool? ?? false,
@@ -179,6 +181,7 @@ class AppSettingsCubit extends Cubit<AppSettingsState> {
         'blockTrackers': state.blockTrackers,
         'pushOnCellular': state.pushOnCellular,
         'readingPanePosition': state.readingPanePosition.name,
+        'showQuickReplyEnabled': state.showQuickReplyEnabled,
         'visualFocusEnabled': state.visualFocusEnabled,
         'notificationsEnabled': state.notificationsEnabled,
         'notifyStarredOnly': state.notifyStarredOnly,
@@ -410,6 +413,12 @@ class AppSettingsCubit extends Cubit<AppSettingsState> {
   Future<void> setReadingPanePosition(ReadingPanePosition position) async {
     if (state.readingPanePosition == position) return;
     emit(state.copyWith(readingPanePosition: position));
+    await _persist();
+  }
+
+  Future<void> setShowQuickReplyEnabled(bool enabled) async {
+    if (state.showQuickReplyEnabled == enabled) return;
+    emit(state.copyWith(showQuickReplyEnabled: enabled));
     await _persist();
   }
 

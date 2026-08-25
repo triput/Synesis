@@ -219,6 +219,17 @@ class ReadingMessageListSettingsSection extends StatelessWidget {
             ),
             SwitchListTile(
               contentPadding: EdgeInsets.zero,
+              title: const Text('Show Quick Reply'),
+              subtitle: Text(
+                'Reply strip at the bottom of the reading pane. Turn off '
+                'on phone to maximize body height.',
+                style: TextStyle(color: t.muted, fontSize: 12),
+              ),
+              value: settings.showQuickReplyEnabled,
+              onChanged: cubit.setShowQuickReplyEnabled,
+            ),
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
               title: const Text('Visual Focus'),
               subtitle: Text(
                 'Collapse sidebar and list to maximize reading '

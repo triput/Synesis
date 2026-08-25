@@ -4,7 +4,7 @@
 // Component: UI
 // Version: 1.2 (Gold Master)
 // Created: 2026-07-14
-// Last Update: 2026-07-23
+// Last Update: 2026-08-25
 // ==============================================================================
 
 import 'dart:async';
@@ -17,8 +17,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:webview_flutter/webview_flutter.dart';
+import 'package:webview_flutter_android/webview_flutter_android.dart';
 import 'package:webview_flutter_windows/webview_flutter_windows.dart' as win;
+import 'package:webview_flutter_platform_interface/webview_flutter_platform_interface.dart';
 import 'package:synesis/ui/shell/html_email_document.dart';
+import 'package:synesis/ui/shell/mail_split_layout.dart';
 import 'package:flutter_widget_from_html/flutter_widget_from_html.dart';
 
 /// Gesture factories so a platform WebView can win vertical drags when nested
@@ -160,11 +163,18 @@ class _HtmlEmailBodyState extends State<HtmlEmailBody> {
   @override
   Widget build(BuildContext context) {
     final bool preferWidgetHtml = PreferWidgetHtmlScope.of(context);
-    if (preferWidgetHtml || _useWidgetHtmlFallback) {
+    // Android phone: platform WebView ignores Expanded height inside module
+    // shells (DEF-078 porthole + teal void). Widget HTML participates in the
+    // flex layout and scrolls like normal Flutter content.
+    final bool phoneAndroidHtml = !kIsWeb &&
+        Platform.isAndroid &&
+        isPortraitMobileLayout(context);
+    if (preferWidgetHtml || _useWidgetHtmlFallback || phoneAndroidHtml) {
       return _WidgetHtmlEmailBody(
         html: widget.html,
         muted: widget.muted,
-        showFallbackNotice: !preferWidgetHtml,
+        showFallbackNotice: _useWidgetHtmlFallback,
+        phoneLayout: phoneAndroidHtml,
       );
     }
 
@@ -233,14 +243,28 @@ class _WidgetHtmlEmailBody extends StatelessWidget {
     required this.html,
     required this.muted,
     this.showFallbackNotice = true,
+    this.phoneLayout = false,
   });
 
   final String html;
   final Color muted;
   final bool showFallbackNotice;
+  final bool phoneLayout;
 
   @override
   Widget build(BuildContext context) {
+    final Widget htmlContent = HtmlWidget(
+      html,
+      textStyle: TextStyle(
+        color: phoneLayout ? const Color(0xFF1A1A1A) : const Color(0xFFD7DDF5),
+        fontSize: 14,
+        height: 1.5,
+      ),
+      onTapUrl: (String url) async {
+        await _openExternalUrl(url);
+        return true;
+      },
+    );
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
@@ -253,20 +277,14 @@ class _WidgetHtmlEmailBody extends StatelessWidget {
             ),
           ),
         Expanded(
-          child: SingleChildScrollView(
-            child: HtmlWidget(
-              html,
-              textStyle: const TextStyle(
-                color: Color(0xFFD7DDF5),
-                fontSize: 14,
-                height: 1.5,
-              ),
-              onTapUrl: (String url) async {
-                await _openExternalUrl(url);
-                return true;
-              },
-            ),
-          ),
+          child: phoneLayout
+              ? SingleChildScrollView(
+                  padding: const EdgeInsets.all(12),
+                  child: htmlContent,
+                )
+              : SingleChildScrollView(
+                  child: htmlContent,
+                ),
         ),
       ],
     );
@@ -387,17 +405,24 @@ class _WindowsHtmlEmailBodyState extends State<_WindowsHtmlEmailBody> {
   @override
   Widget build(BuildContext context) {
     if (!_ready) {
-      return Center(
-        child: SizedBox(
-          width: 18,
-          height: 18,
-          child: CircularProgressIndicator(strokeWidth: 2, color: widget.muted),
+      return SizedBox.expand(
+        child: Center(
+          child: SizedBox(
+            width: 18,
+            height: 18,
+            child: CircularProgressIndicator(
+              strokeWidth: 2,
+              color: widget.muted,
+            ),
+          ),
         ),
       );
     }
     return ClipRRect(
       borderRadius: BorderRadius.circular(8),
-      child: win.Webview(_controller),
+      child: SizedBox.expand(
+        child: win.Webview(_controller),
+      ),
     );
   }
 }
@@ -435,7 +460,11 @@ class _MobileHtmlEmailBodyState extends State<_MobileHtmlEmailBody> {
 
   Future<void> _init() async {
     try {
-      final WebViewController controller = WebViewController()
+      final PlatformWebViewControllerCreationParams params = Platform.isAndroid
+          ? AndroidWebViewControllerCreationParams()
+          : const PlatformWebViewControllerCreationParams();
+      final WebViewController controller =
+          WebViewController.fromPlatformCreationParams(params)
         ..setJavaScriptMode(JavaScriptMode.unrestricted)
         ..setBackgroundColor(Colors.white)
         ..addJavaScriptChannel(
@@ -514,24 +543,52 @@ class _MobileHtmlEmailBodyState extends State<_MobileHtmlEmailBody> {
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    if (!_ready || _controller == null) {
-      return Center(
-        child: SizedBox(
-          width: 18,
-          height: 18,
-          child: CircularProgressIndicator(strokeWidth: 2, color: widget.muted),
+  Widget _platformWebView(BuildContext context) {
+    final WebViewController controller = _controller!;
+    if (Platform.isAndroid) {
+      return WebViewWidget.fromPlatformCreationParams(
+        params: AndroidWebViewWidgetCreationParams(
+          controller: controller.platform,
+          layoutDirection: Directionality.of(context),
+          gestureRecognizers: _htmlBodyGestureRecognizers,
+          // Hybrid composition sizes correctly outside scrollables (PageView).
+          displayWithHybridComposition: true,
         ),
       );
     }
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(8),
-      child: WebViewWidget(
-        controller: _controller!,
-        // Compete with parent PageView so the message body can scroll.
-        gestureRecognizers: _htmlBodyGestureRecognizers,
-      ),
+    return WebViewWidget(
+      controller: controller,
+      gestureRecognizers: _htmlBodyGestureRecognizers,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!_ready || _controller == null) {
+      return SizedBox.expand(
+        child: Center(
+          child: SizedBox(
+            width: 18,
+            height: 18,
+            child: CircularProgressIndicator(
+              strokeWidth: 2,
+              color: widget.muted,
+            ),
+          ),
+        ),
+      );
+    }
+    return LayoutBuilder(
+      builder: (BuildContext context, BoxConstraints constraints) {
+        return ClipRRect(
+          borderRadius: BorderRadius.circular(8),
+          child: SizedBox(
+            height: constraints.maxHeight.isFinite ? constraints.maxHeight : null,
+            width: constraints.maxWidth.isFinite ? constraints.maxWidth : null,
+            child: _platformWebView(context),
+          ),
+        );
+      },
     );
   }
 }

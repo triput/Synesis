@@ -424,6 +424,30 @@ void main() {
     });
   });
 
+  group('AppSettingsCubit showQuickReplyEnabled', () {
+    test('defaults to true', () async {
+      SharedPreferences.setMockInitialValues(<String, Object>{});
+      final SharedPreferences prefs = await SharedPreferences.getInstance();
+      final AppSettingsCubit cubit = AppSettingsCubit(prefs);
+      expect(cubit.state.showQuickReplyEnabled, isTrue);
+      await cubit.close();
+    });
+
+    test('persists and rehydrates showQuickReplyEnabled', () async {
+      SharedPreferences.setMockInitialValues(<String, Object>{});
+      final SharedPreferences prefs = await SharedPreferences.getInstance();
+      final AppSettingsCubit cubit = AppSettingsCubit(prefs);
+
+      await cubit.setShowQuickReplyEnabled(false);
+      expect(cubit.state.showQuickReplyEnabled, isFalse);
+      await cubit.close();
+
+      final AppSettingsCubit reloaded = AppSettingsCubit(prefs);
+      expect(reloaded.state.showQuickReplyEnabled, isFalse);
+      await reloaded.close();
+    });
+  });
+
   group('AppSettingsCubit notifications', () {
     test('defaults: global on, quiet hours off, starred-only off', () async {
       SharedPreferences.setMockInitialValues(<String, Object>{});
