@@ -278,9 +278,28 @@ class _WidgetHtmlEmailBody extends StatelessWidget {
           ),
         Expanded(
           child: phoneLayout
-              ? SingleChildScrollView(
-                  padding: const EdgeInsets.all(12),
-                  child: htmlContent,
+              ? LayoutBuilder(
+                  builder: (BuildContext context, BoxConstraints constraints) {
+                    final double viewportWidth = constraints.maxWidth.isFinite
+                        ? constraints.maxWidth
+                        : MediaQuery.sizeOf(context).width;
+                    const EdgeInsets padding = EdgeInsets.all(12);
+                    final double contentMinWidth =
+                        (viewportWidth - padding.horizontal)
+                            .clamp(0.0, double.infinity);
+                    return SingleChildScrollView(
+                      padding: padding,
+                      child: SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: ConstrainedBox(
+                          constraints: BoxConstraints(
+                            minWidth: contentMinWidth,
+                          ),
+                          child: htmlContent,
+                        ),
+                      ),
+                    );
+                  },
                 )
               : SingleChildScrollView(
                   child: htmlContent,

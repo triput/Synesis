@@ -90,6 +90,8 @@ Settings: per-account or global. Timer must not melt battery. Push is opportunis
 **Fix**  
 `overflow-x: auto` on `html, body` (keep `overflow-y: auto` + scale-to-fit max-width). HtmlWidget fallback left vertical-only (finite width) after Renee note that nested H-scroll unbounded width broke text wrap. WebView gesture recognizers unchanged.
 
+**2026-08-25 (Wave 3 / Operation Flat Zero):** Android phone dogfood uses `_WidgetHtmlEmailBody` (HtmlWidget), not WebView — restored horizontal pan via vertical outer + horizontal inner scroll with `ConstrainedBox(minWidth: viewport)` so text wrap is preserved (DEF-085 gap after DEF-078).
+
 **Verification**  
 Renee GO: `flutter test test/html_email_document_test.dart test/html_email_fallback_test.dart` — **7/7 passed** (2026-08-12). New CSS contract tests in `test/html_email_document_test.dart` (3 cases).
 
