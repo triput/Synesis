@@ -38,6 +38,10 @@ import 'package:synesis/ui/mailbox/mailbox_cubit.dart';
 import 'package:synesis/ui/people/people_cubit.dart';
 import 'package:synesis/ui/shell/eml_preview_sheet.dart';
 import 'package:synesis/ui/shell/module_shell.dart';
+import 'package:synesis/ui/compose/compose_sheet.dart';
+import 'package:synesis/ui/mailbox/mailbox_cubit.dart';
+import 'package:synesis/widgets/widget_launch_bridge.dart';
+import 'package:synesis/widgets/widget_launch_request.dart';
 
 class SynesisApp extends StatelessWidget {
   const SynesisApp({
@@ -326,32 +330,60 @@ class _LaunchHome extends StatefulWidget {
 }
 
 class _LaunchHomeState extends State<_LaunchHome> {
+  final WidgetLaunchBridge _widgetLaunchBridge = WidgetLaunchBridge();
+
   @override
   void initState() {
     super.initState();
     final String? path = widget.launchEmlPath;
-    if (path == null || path.isEmpty) {
+    if (path != null && path.isNotEmpty) {
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        await _openLaunchEml(path);
+      });
       return;
     }
     WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await _consumeWidgetLaunch();
+    });
+  }
+
+  Future<void> _openLaunchEml(String path) async {
+    if (!mounted) {
+      return;
+    }
+    try {
+      final EmlPreview preview = await openEmlPreviewFromPath(path);
       if (!mounted) {
         return;
       }
-      try {
-        final EmlPreview preview = await openEmlPreviewFromPath(path);
-        if (!mounted) {
-          return;
-        }
-        await showEmlPreviewSheet(context, preview: preview);
-      } catch (error) {
-        if (!mounted) {
-          return;
-        }
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Unable to open EML: $error')));
+      await showEmlPreviewSheet(context, preview: preview);
+    } catch (error) {
+      if (!mounted) {
+        return;
       }
-    });
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Unable to open EML: $error')));
+    }
+  }
+
+  Future<void> _consumeWidgetLaunch() async {
+    if (!mounted) {
+      return;
+    }
+    final WidgetLaunchRequest? launch =
+        await _widgetLaunchBridge.consumePending();
+    if (!mounted || launch == null) {
+      return;
+    }
+    final MailboxCubit cubit = context.read<MailboxCubit>();
+    await cubit.handleWidgetLaunch(launch);
+    if (!mounted) {
+      return;
+    }
+    if (launch.action == WidgetLaunchAction.compose) {
+      await showComposeSheet(context);
+    }
   }
 
   @override

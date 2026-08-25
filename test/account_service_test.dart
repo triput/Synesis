@@ -161,6 +161,10 @@ class _FakeRepository implements MailRepository {
   }
 
   @override
+  Future<List<MailFolder>> listFolders({String? accountId}) async =>
+      const <MailFolder>[];
+
+  @override
   Future<List<MailMessage>> listMessages(MessageQuery query) async {
     listMessagesCalls += 1;
     return const <MailMessage>[];

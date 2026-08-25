@@ -1,11 +1,8 @@
 package net.livebytes.synesis
 
-import android.app.PendingIntent
 import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider
 import android.content.Context
-import android.content.Intent
-import android.graphics.Color
 import android.widget.RemoteViews
 import org.json.JSONObject
 
@@ -14,9 +11,6 @@ import org.json.JSONObject
  *
  * The provider reads SharedPreferences directly, so normal widget refreshes do
  * not create a Flutter engine or wake the Synesis UI isolate.
- *
- * TC-11 (W7): applies theme token colors and Focused/Other unread split from
- * the counter snapshot when present; falls back to the Dark pack defaults.
  */
 class SynesisWidgetProvider : AppWidgetProvider() {
     override fun onUpdate(
@@ -24,12 +18,12 @@ class SynesisWidgetProvider : AppWidgetProvider() {
         appWidgetManager: AppWidgetManager,
         appWidgetIds: IntArray,
     ) {
-        val counterJson = readSnapshot(context, COUNTER_KEY)
+        val counterJson = WidgetSnapshotReader.readCounterJson(context)
         val counter = readCounter(counterJson)
         val focused = readFocusedUnread(counterJson)
         val other = readOtherUnread(counterJson)
         val subject = readLatestSubject(context)
-        val theme = readTheme(counterJson)
+        val theme = WidgetSnapshotReader.readTheme(counterJson)
         for (appWidgetId in appWidgetIds) {
             val views = RemoteViews(context.packageName, R.layout.synesis_widget)
             views.setInt(R.id.widget_root, "setBackgroundColor", theme.ink)
@@ -49,11 +43,19 @@ class SynesisWidgetProvider : AppWidgetProvider() {
             views.setTextColor(R.id.widget_compose_action, theme.onAccent)
             views.setOnClickPendingIntent(
                 R.id.widget_compose_action,
-                appIntent(context, "compose"),
+                MainActivity.widgetIntent(
+                    context = context,
+                    action = "compose",
+                    requestCode = "compose".hashCode(),
+                ),
             )
             views.setOnClickPendingIntent(
                 R.id.widget_open_inbox_action,
-                appIntent(context, "open_inbox"),
+                MainActivity.widgetIntent(
+                    context = context,
+                    action = "open_inbox",
+                    requestCode = "open_inbox".hashCode(),
+                ),
             )
             appWidgetManager.updateAppWidget(appWidgetId, views)
         }
@@ -80,75 +82,13 @@ class SynesisWidgetProvider : AppWidgetProvider() {
         }.getOrDefault(0)
     }
 
-    private fun readTheme(snapshot: String?): WidgetTheme {
-        val defaults = WidgetTheme(
-            ink = Color.parseColor("#10182D"),
-            panel2 = Color.parseColor("#26354D"),
-            text = Color.parseColor("#E5E7EB"),
-            teal = Color.parseColor("#82E9D5"),
-            indigo = Color.parseColor("#2D4FB3"),
-            onAccent = Color.WHITE,
-        )
-        if (snapshot == null) return defaults
-        return runCatching {
-            val theme = JSONObject(snapshot).optJSONObject("theme") ?: return defaults
-            WidgetTheme(
-                ink = theme.optInt("ink", defaults.ink),
-                panel2 = theme.optInt("panel2", defaults.panel2),
-                text = theme.optInt("text", defaults.text),
-                teal = theme.optInt("teal", defaults.teal),
-                indigo = theme.optInt("indigo", defaults.indigo),
-                onAccent = theme.optInt("onAccent", defaults.onAccent),
-            )
-        }.getOrDefault(defaults)
-    }
-
     private fun readLatestSubject(context: Context): String {
-        val snapshot = readSnapshot(context, LIST_KEY) ?: return "No recent mail"
+        val snapshot = WidgetSnapshotReader.readListJson(context) ?: return "No recent mail"
         return runCatching {
             val messages = JSONObject(snapshot).optJSONArray("messages")
             messages?.optJSONObject(0)?.optString("subject")
                 ?.takeIf { it.isNotBlank() }
                 ?: "No recent mail"
         }.getOrDefault("No recent mail")
-    }
-
-    private fun readSnapshot(context: Context, key: String): String? {
-        val homeWidgetPreferences = context.getSharedPreferences(
-            "HomeWidgetPreferences",
-            Context.MODE_PRIVATE,
-        )
-        return homeWidgetPreferences.getString(key, null)
-            ?: context.getSharedPreferences(
-                "FlutterSharedPreferences",
-                Context.MODE_PRIVATE,
-            ).getString("flutter.$key", null)
-    }
-
-    private fun appIntent(context: Context, action: String): PendingIntent {
-        val intent = Intent(context, MainActivity::class.java).apply {
-            putExtra("synesis_widget_action", action)
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-        }
-        return PendingIntent.getActivity(
-            context,
-            action.hashCode(),
-            intent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
-        )
-    }
-
-    private data class WidgetTheme(
-        val ink: Int,
-        val panel2: Int,
-        val text: Int,
-        val teal: Int,
-        val indigo: Int,
-        val onAccent: Int,
-    )
-
-    private companion object {
-        const val LIST_KEY = "synesis_widget.list"
-        const val COUNTER_KEY = "synesis_widget.counter"
     }
 }

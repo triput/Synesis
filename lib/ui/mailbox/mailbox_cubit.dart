@@ -23,6 +23,7 @@ import 'package:synesis/settings/app_settings_cubit.dart';
 import 'package:synesis/settings/app_settings_state.dart';
 import 'package:synesis/sync/sync_engine.dart';
 import 'package:synesis/ui/mailbox/mailbox_state.dart';
+import 'package:synesis/widgets/widget_launch_request.dart';
 
 export 'package:synesis/mailbox/message_action_service.dart'
     show SystemFolderConfirm;
@@ -188,6 +189,44 @@ class MailboxCubit extends Cubit<MailboxState> {
     );
     await refresh();
     unawaited(_syncSelectedFolder());
+  }
+
+  /// Applies navigation from an Android home-screen widget tap.
+  Future<void> handleWidgetLaunch(WidgetLaunchRequest request) async {
+    switch (request.action) {
+      case WidgetLaunchAction.openInbox:
+        final String? accountId = request.accountId;
+        if (accountId != null && accountId.isNotEmpty) {
+          final String? folderId = request.folderId;
+          if (folderId != null && folderId.isNotEmpty) {
+            await selectFolder(accountId, folderId);
+          } else {
+            await selectAccount(accountId);
+          }
+        } else {
+          await selectUnified();
+        }
+      case WidgetLaunchAction.openMessage:
+        final String? messageId = request.messageId;
+        if (messageId == null || messageId.isEmpty) {
+          return;
+        }
+        final String? accountId = request.accountId;
+        if (accountId != null && accountId.isNotEmpty) {
+          final String? folderId = request.folderId;
+          if (folderId != null && folderId.isNotEmpty) {
+            await selectFolder(accountId, folderId);
+          } else {
+            await selectAccount(accountId);
+          }
+        }
+        await selectMessage(messageId);
+      case WidgetLaunchAction.compose:
+        final String? accountId = request.accountId;
+        if (accountId != null && accountId.isNotEmpty) {
+          await selectAccount(accountId);
+        }
+    }
   }
 
   Future<void> selectFolder(String accountId, String folderId) async {

@@ -1234,31 +1234,20 @@ Dialog `content` wrapped in `SingleChildScrollView` (DEF-063 overflow sweep, 202
 | Field | Value |
 | --- | --- |
 | Priority | **Pri-2** |
-| Status | Open (enhancement) |
+| Status | **Fixed** (2026-08-25, Wave 6 / Operation Flat Zero) |
 | Target | **V-Next** |
-| Area | Android widgets (`SynesisWidgetProvider`, `WidgetSnapshotService`); enhancement |
+| Area | Android widgets (`SynesisListWidgetProvider`, `WidgetSnapshotService`); enhancement |
 | Platforms | Android |
 | Logged | 2026-07-24 |
 | Updated | 2026-08-03 — **Trish:** per-account widget; quality bar = **AquaMail**; bumped **Pri-2 / V-Next** (operator uses widgets daily) |
 | Found by | Trish (dogfood; refreshed ask 2026-08-03) |
 
-**Summary**  
+**Summary**
 **Trish:** Need real home-screen widgets — especially **one widget instance pinned to a specific account** that shows actual mail (subjects/senders/snippets as appropriate) and **tapping a row opens that message in Synesis**. Quality bar: **AquaMail’s widgets** (usable list, account-scoped, deep-link into the app). Operator uses these heavily when available.
 
-Existing ask (2026-07-24): configurable account/folder list widget; current Synesis widget is counter + latest subject + Inbox/Compose only (`synesis_widget.xml`); list snapshot data exists (`synesis_widget.list`) but is not rendered as a clickable list UI.
+**2026-08-25 (Wave 6 / Operation Flat Zero):** New **Synesis Mail** list widget with per-instance account config (`SynesisListWidgetConfigureActivity`). Rows render sender/subject/snippet/time from scoped `synesis_widget.list.{accountId}.{folderId}` snapshots (10 rows, unread styling). Row tap → `open_message` deep link via `MainActivity` + `WidgetLaunchBridge` → `MailboxCubit.handleWidgetLaunch`. Compose shortcut on widget header. Snapshots refresh on sync/boot via extended `WidgetSnapshotService.refreshAccountLists()`. Summary counter widget retained; Inbox/Compose actions now route through shared intent bridge. Unit tests: `widget_snapshot_service_test.dart`.
 
-**Expected**  
-- Configurable list widget scoped to an **account** (and optionally folder).  
-- Multiple widget instances (different accounts) supported.  
-- Rows show real local mail from snapshots; tap → deep-link / open message in app.  
-- Refresh from local DB after sync (no full Flutter UI wake for routine updates — SPEC widget path).  
-- UX/polish aiming at AquaMail-class usefulness, not a decorative unread badge.
-
-**Actual**  
-Only the summary widget ships; no configurable account-scoped clickable list widget.
-
-**Notes**  
-**V-Next Pri-2** (bumped from Wave 7 Pri-3 on 2026-08-03). Related SPEC § Android widgets (`home_widget` + snapshot table). Pairs with phone reading UX ([DEF-078](#def-078--phone-quick-reply-density--settings-toggle)) as operator daily-driver polish.
+**Deferred:** Folder picker in widget config (defaults to inbox); warm-resume widget launch event stream; non-inbox folder snapshots only when unread > 0.
 
 ---
 
