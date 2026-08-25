@@ -21,7 +21,7 @@ The **V2.0 ship spine** is feature-complete (Waves 0–6b + G + Flat Zero). Rema
 
 | # | When | Work | Who | Notes |
 | --- | --- | --- | --- | --- |
-| **1** | **Very soon** | **Wave WEB** — design → read-only MVP → Cloudflare tunnel | Jules + Tesla | Trish-only; local-first; **not** V2.0 release-blocking; not LiveBytes site |
+| 1 | **Very soon** | **Wave WEB** W1 — read-only local API (`WebBridgeServer`) | Jules + Tesla | [Design](superpowers/specs/2026-08-25-wave-web-design.md) · [Checklist](V2_WAVE_WEB_CHECKLIST.md) |
 | 2 | Interleaved | Wave MH slices 2+ (live fetch, Sheet upsert) | Tesla + Jules | Slice 1 landed Flat Zero W7 (`18697c2`); not freeze-blocking |
 | 3 | Optional | Wave 7 leftovers (DEF-054, DEF-050, DEF-046, calendar views, DEF-088 zoom, …) | Andi / Jules | Last *inside* V2.0 if bandwidth |
 | 4 | Before tag | PIM docs + manual E2E matrix rows | Page + Renee | V2.0 §14 exit checkbox |
@@ -135,7 +135,7 @@ V2.0a / V2.0b / V2.0c remain **release buckets**; operator execution follows thi
 | **Wave H2** | **Dependency hygiene (post–V2.0)** — toolchain + pub majors + native/plugin debt + docs pins; revisit Wave H residuals · [WAVE_H2_DEPENDENCY_HYGIENE.md](WAVE_H2_DEPENDENCY_HYGIENE.md) quick-scan preview (2026-08-12) | **TBD** — after V2.0 freeze/tag; full H2 not opened | Pre–V2.1 gate (required unless Trish overrides) |
 | **Wave R** | **Refactoring pass** — dead code / API tighten / AGENTS.md pattern debt; **no new product features** | **TBD** — after Wave H2 | Pre–V2.1 feature gate |
 | **Wave MH** | **Mail hygiene digest** — desktop CLI + Sheet. Slice 1 **done** Flat Zero W7 (`18697c2`). | **In progress** — [design](superpowers/specs/2026-08-19-mail-hygiene-digest-design.md); slices 2+ TBD | Not V2.0 freeze-blocking |
-| **Wave WEB** | **Personal web client** — Flutter web (or thin local HTTP) + **Cloudflare tunnel**. Trish-only; local-first; not SaaS. | **Very soon** (2026-08-25) — **next operator track**; design → MVP | *Because I want it* — not V2.0 release item |
+| **Wave WEB** | **Personal web client** — local read-only API + browser shell + **Cloudflare tunnel**. Trish-only; local-first; not SaaS. | **W0 locked** (2026-08-25) — [design](superpowers/specs/2026-08-25-wave-web-design.md) · [checklist](V2_WAVE_WEB_CHECKLIST.md); **W1 next** | *Because I want it* — not V2.0 release item |
 
 **Post–V2.0 sequence (locked as schedule placeholders 2026-08-12):**
 

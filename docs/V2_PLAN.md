@@ -147,7 +147,7 @@ Checklists: [V2_0A_P0_CHECKLIST.md](V2_0A_P0_CHECKLIST.md) (Wave 1 exit); [V2_WA
 | Distinct from | LiveBytes public site ([POST_V1_WEB_AND_LEGAL.md](POST_V1_WEB_AND_LEGAL.md)); Wave MH digest CLI |
 | Ship gate | **None** for V2.0 freeze/tag — dogfood / personal utility only |
 
-**Phases (proposed):** (1) design doc + threat model (tunnel, auth, read-only MVP scope); (2) read-only mail list + reading pane in browser; (3) tunnel + operator runbook; (4) optional compose/sync parity if useful.
+**Phases (proposed):** (1) design doc + threat model — ✅ [2026-08-25-wave-web-design.md](superpowers/specs/2026-08-25-wave-web-design.md); (2) read-only local API (`WebBridgeServer`); (3) minimal browser shell; (4) Cloudflare tunnel runbook — [V2_WAVE_WEB_CHECKLIST.md](V2_WAVE_WEB_CHECKLIST.md).
 
 **Owners:** Jules (UI/web shell) + Tesla (local API / sync boundaries if split stack).
 
@@ -189,7 +189,7 @@ V2.0 exit (Wave 7 optional) → V2.0 freeze/tag
 | **Wave H2** | Toolchain + pub soft/majors + native/KGP/plugin debt + docs SDK pins; reopen Wave H deferred majors (`xml`/`pdf`/`printing`/`file_picker` 12 / `drift_dev`) and residuals | **Quick scan** (2026-08-12) — [WAVE_H2_DEPENDENCY_HYGIENE.md](WAVE_H2_DEPENDENCY_HYGIENE.md); full H2 **TBD**; **no upgrades until Trish unlocks** |
 | **Wave R** | Structural cleanup after V2.0 feature landings — rename/dead code, tighten public APIs, align patterns with AGENTS.md; fix debt found in pass only | **TBD** — plan stub only; **no refactor implementation until Trish unlocks** |
 | **Wave MH** | Mail hygiene digest (desktop CLI + Sheet) | **Spec locked** 2026-08-19 — [design](superpowers/specs/2026-08-19-mail-hygiene-digest-design.md); implementation plan next session |
-| **Wave WEB** | Personal web client (local + Cloudflare tunnel) | **Very soon** (2026-08-25) — operator personal; design → MVP; **not** release-blocking |
+| **Wave WEB** | Personal web client (local + Cloudflare tunnel) | **W0 locked** (2026-08-25) — [design](superpowers/specs/2026-08-25-wave-web-design.md) · [checklist](V2_WAVE_WEB_CHECKLIST.md); **W1 API next** |
 
 **H2 quick-scan done** (2026-08-12, Trish **(b)**): preview checklist landed; **no upgrades**. Full H2 batches + Wave R checklist still wait for V2.0 freeze/tag (or unlock).
 
@@ -448,6 +448,8 @@ Do not expand V1.5 scope — only avoid painting corners:
 | [V2_WAVE_G_QA.md](V2_WAVE_G_QA.md) | Wave G Renee QA — GO + Wave 6P handoff |
 | [V2_WAVE_6P_CHECKLIST.md](V2_WAVE_6P_CHECKLIST.md) | Wave 6P / Performance UX (Sync Honesty) exit criteria |
 | [V2_WAVE_6_CHECKLIST.md](V2_WAVE_6_CHECKLIST.md) | Wave 6 / cross-account DnD copy — complete (E10+E11 GO) |
+| [V2_WAVE_WEB_CHECKLIST.md](V2_WAVE_WEB_CHECKLIST.md) | Wave WEB / personal operator web client — W0 locked |
+| [superpowers/specs/2026-08-25-wave-web-design.md](superpowers/specs/2026-08-25-wave-web-design.md) | Wave WEB architecture + threat model |
 | [WAVE_H_DEPENDENCY_HYGIENE.md](WAVE_H_DEPENDENCY_HYGIENE.md) | Wave H checklist (batches H1–H5, exit gate) — **complete**; residuals → Wave H2 |
 | [WAVE_H2_DEPENDENCY_HYGIENE.md](WAVE_H2_DEPENDENCY_HYGIENE.md) | Wave H2 quick-scan preview (2026-08-12) — **no upgrades this pass**; full H2 not opened |
 | *(pending)* Wave R checklist | Open after full Wave H2 |
