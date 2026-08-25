@@ -273,7 +273,7 @@ Still ~6 lines on phone. Chrome hog: 2-of-N pager, account chip, subject, sender
 **Notes**  
 Pri-2 **very soon**. Keep desktop QR as-is unless the same setting hides it.
 
-**2026-08-23 tonight slice:** Phone hides the 9-icon action row behind a collapsed **Actions** tile; tighter header fraction; skip attachment strip; Quick Reply stays one row on phone (`<360` stack only when not phone-width). Full-read vs compose HTML is still [DEF-087](#def-087--phone-read-preview-vs-full-reply-are-different-documents).
+**2026-08-25:** Header used `max(88, 22% of pane)` which *grew* chrome on tall phones. Capped to `min(96, 18%)`; actions move to a `⋯` sheet; pager 36px; QR one line. Tests must set `MediaQuery` width or they never hit phone layout.
 
 ---
 

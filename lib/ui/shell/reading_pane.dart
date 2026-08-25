@@ -797,7 +797,7 @@ class _PortraitReadingPagerState extends State<_PortraitReadingPager> {
         Material(
           color: t.content,
           child: SizedBox(
-            height: 44,
+            height: 36,
             child: Row(
               children: <Widget>[
                 if (widget.onBackToList != null)
@@ -1060,12 +1060,15 @@ class _ReadingPaneContent extends StatelessWidget {
         accent: t.indigo,
       ),
     );
-    final EdgeInsets pad = MediaQuery.sizeOf(context).width <
-            kReadingPaneWideBreakpoint
-        ? const EdgeInsets.symmetric(horizontal: 14, vertical: 10)
-        : density == ViewDensity.calm
-            ? const EdgeInsets.symmetric(horizontal: 32, vertical: 28)
-            : const EdgeInsets.symmetric(horizontal: 20, vertical: 18);
+    final bool phonePad = isPortraitMobileLayout(context);
+    final EdgeInsets pad = phonePad
+        ? const EdgeInsets.fromLTRB(12, 4, 12, 2)
+        : MediaQuery.sizeOf(context).width <
+                kReadingPaneWideBreakpoint
+            ? const EdgeInsets.symmetric(horizontal: 14, vertical: 10)
+            : density == ViewDensity.calm
+                ? const EdgeInsets.symmetric(horizontal: 32, vertical: 28)
+                : const EdgeInsets.symmetric(horizontal: 20, vertical: 18);
 
     final bool inTrash = msg.trashedAt != null || ReadingPane.isTrashRole(folderRole);
     final bool inJunk = ReadingPane.isJunkRole(folderRole);
@@ -1092,11 +1095,14 @@ class _ReadingPaneContent extends StatelessWidget {
           final bool showQuickReply = !inTrash &&
               constraints.hasBoundedHeight &&
               constraints.maxHeight >= 160;
-          // Keep chrome compact so the body owns most of the viewport and can
-          // scroll the full message (header used to claim up to 55%).
-          final double headerFraction = cramped
-              ? 0.22
-              : (phoneLayout ? 0.22 : 0.45);
+          // Phone: cap chrome. `max(88, 22% of pane)` *floored* the header
+          // (DEF-078 dogfood still ~6 lines). Desktop keeps the older share.
+          final double headerMaxHeight = !constraints.hasBoundedHeight ||
+                  !constraints.maxHeight.isFinite
+              ? double.infinity
+              : phoneLayout
+                  ? math.min(96, constraints.maxHeight * 0.18)
+                  : math.max(88, constraints.maxHeight * 0.45);
 
           return Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1105,13 +1111,7 @@ class _ReadingPaneContent extends StatelessWidget {
                 fit: FlexFit.loose,
                 child: ConstrainedBox(
                   constraints: BoxConstraints(
-                    maxHeight: constraints.hasBoundedHeight &&
-                            constraints.maxHeight.isFinite
-                        ? math.max(
-                            cramped ? 64 : 88,
-                            constraints.maxHeight * headerFraction,
-                          )
-                        : double.infinity,
+                    maxHeight: headerMaxHeight,
                   ),
                   child: SingleChildScrollView(
                     child: Padding(
@@ -1185,84 +1185,103 @@ class _ReadingPaneContent extends StatelessWidget {
                             const SizedBox(height: 6),
                             _AutoMarkHeldChip(),
                           ],
-                          const SizedBox(height: 8),
-                          Text(
-                            msg.subject.trim().isEmpty
-                                ? '(no subject)'
-                                : msg.subject,
-                            maxLines: 3,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              color: t.text,
-                              fontSize: density.bodySize + 1,
-                              fontWeight: FontWeight.w600,
-                              height: 1.25,
-                            ),
-                          ),
                           const SizedBox(height: 4),
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: <Widget>[
+                              Expanded(
+                                child: Text(
+                                  msg.subject.trim().isEmpty
+                                      ? '(no subject)'
+                                      : msg.subject,
+                                  maxLines: phoneLayout ? 2 : 3,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    color: t.text,
+                                    fontSize: density.bodySize + 1,
+                                    fontWeight: FontWeight.w600,
+                                    height: 1.2,
+                                  ),
+                                ),
+                              ),
+                              if (phoneLayout)
+                                IconButton(
+                                  key: const Key('reading_pane_phone_actions'),
+                                  tooltip: 'Message actions',
+                                  visualDensity: VisualDensity.compact,
+                                  padding: EdgeInsets.zero,
+                                  constraints: const BoxConstraints(
+                                    minWidth: 36,
+                                    minHeight: 36,
+                                  ),
+                                  onPressed: () {
+                                    unawaited(
+                                      showModalBottomSheet<void>(
+                                        context: context,
+                                        showDragHandle: true,
+                                        builder: (BuildContext sheetContext) {
+                                          return SafeArea(
+                                            child: SingleChildScrollView(
+                                              padding: const EdgeInsets.fromLTRB(
+                                                12,
+                                                0,
+                                                12,
+                                                16,
+                                              ),
+                                              child: _ReadingActionBar(
+                                                message: msg,
+                                                inTrash: inTrash,
+                                                inJunk: inJunk,
+                                                onMarkRead: onMarkRead,
+                                                onMarkUnread: onMarkUnread,
+                                                onShowHeaders: onShowHeaders,
+                                                onReply: onReply,
+                                                onReplyAll: onReplyAll,
+                                                onForward: onForward,
+                                                onArchive: onArchive,
+                                                onDelete: onDelete,
+                                                onPermanentDelete:
+                                                    onPermanentDelete,
+                                                onToggleStar: onToggleStar,
+                                                onPin: onPin,
+                                                onSnooze: onSnooze,
+                                                onMove: onMove,
+                                                onReportJunk: onReportJunk,
+                                                onRecover: onRecover,
+                                                onNotJunk: onNotJunk,
+                                                onMarkFocused: onMarkFocused,
+                                                onMarkOther: onMarkOther,
+                                                onOpenFind: onOpenFind,
+                                                autoMarkHeld: autoMarkHeld,
+                                                showAutoMarkHoldOption:
+                                                    showAutoMarkHoldOption,
+                                                onToggleAutoMarkHold:
+                                                    onToggleAutoMarkHold,
+                                              ),
+                                            ),
+                                          );
+                                        },
+                                      ),
+                                    );
+                                  },
+                                  icon: Icon(
+                                    Icons.more_horiz_rounded,
+                                    color: t.text,
+                                  ),
+                                ),
+                            ],
+                          ),
+                          const SizedBox(height: 2),
                           Text(
                             '${msg.fromName} <${msg.fromAddress}> · ${msg.whenLabel}',
-                            maxLines: 2,
+                            maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(
                               color: secondaryText,
                               fontSize: 12,
                             ),
                           ),
-                          if (phoneLayout)
-                            Theme(
-                              data: Theme.of(context).copyWith(
-                                dividerColor: Colors.transparent,
-                              ),
-                              child: ExpansionTile(
-                                initiallyExpanded: false,
-                                dense: true,
-                                tilePadding: EdgeInsets.zero,
-                                visualDensity: VisualDensity.compact,
-                                iconColor: t.muted,
-                                collapsedIconColor: t.muted,
-                                title: Text(
-                                  'Actions',
-                                  style: TextStyle(
-                                    color: t.muted,
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                                children: <Widget>[
-                                  _ReadingActionBar(
-                                    message: msg,
-                                    inTrash: inTrash,
-                                    inJunk: inJunk,
-                                    onMarkRead: onMarkRead,
-                                    onMarkUnread: onMarkUnread,
-                                    onShowHeaders: onShowHeaders,
-                                    onReply: onReply,
-                                    onReplyAll: onReplyAll,
-                                    onForward: onForward,
-                                    onArchive: onArchive,
-                                    onDelete: onDelete,
-                                    onPermanentDelete: onPermanentDelete,
-                                    onToggleStar: onToggleStar,
-                                    onPin: onPin,
-                                    onSnooze: onSnooze,
-                                    onMove: onMove,
-                                    onReportJunk: onReportJunk,
-                                    onRecover: onRecover,
-                                    onNotJunk: onNotJunk,
-                                    onMarkFocused: onMarkFocused,
-                                    onMarkOther: onMarkOther,
-                                    onOpenFind: onOpenFind,
-                                    autoMarkHeld: autoMarkHeld,
-                                    showAutoMarkHoldOption:
-                                        showAutoMarkHoldOption,
-                                    onToggleAutoMarkHold:
-                                        onToggleAutoMarkHold,
-                                  ),
-                                ],
-                              ),
-                            )
-                          else ...<Widget>[
+                          if (!phoneLayout) ...<Widget>[
                             const SizedBox(height: 8),
                             _ReadingActionBar(
                               message: msg,

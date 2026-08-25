@@ -54,7 +54,9 @@ Widget _harness({
       brightness: tokens.brightness,
       extensions: <ThemeExtension<dynamic>>[tokens],
     ),
-    home: RepositoryProvider<DetachedMessageWindowController>(
+    home: MediaQuery(
+      data: MediaQueryData(size: Size(width, 640)),
+      child: RepositoryProvider<DetachedMessageWindowController>(
       create: (_) => const NoopDetachedMessageWindowController(),
       child: Scaffold(
         body: Center(
@@ -86,6 +88,7 @@ Widget _harness({
             ),
           ),
         ),
+      ),
       ),
     ),
   );
@@ -146,9 +149,14 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.widgetWithText(OutlinedButton, 'Reply'), findsNothing);
-      expect(find.byTooltip('Reply'), findsOneWidget);
-      expect(find.byTooltip('Delete'), findsOneWidget);
+      await tester.tap(find.byKey(const Key('reading_pane_phone_actions')));
+      await tester.pumpAndSettle();
+
+      // Actions live in a bottom sheet; the sheet is wide enough for labels.
+      expect(find.text('Reply'), findsWidgets);
+      expect(find.byTooltip('Delete').evaluate().isNotEmpty ||
+              find.widgetWithText(OutlinedButton, 'Delete').evaluate().isNotEmpty,
+          isTrue);
       expect(find.byTooltip('More actions'), findsOneWidget);
     });
 
@@ -167,6 +175,9 @@ void main() {
           onMove: () => moved = true,
         ),
       );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const Key('reading_pane_phone_actions')));
       await tester.pumpAndSettle();
 
       await tester.tap(find.byTooltip('More actions'));
@@ -259,6 +270,9 @@ void main() {
           onDelete: () {},
         ),
       );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const Key('reading_pane_phone_actions')));
       await tester.pumpAndSettle();
 
       await tester.tap(find.byTooltip('More actions'));

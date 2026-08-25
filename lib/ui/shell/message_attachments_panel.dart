@@ -371,7 +371,7 @@ class _QuickReplyBarState extends State<QuickReplyBar> {
       icon: const Icon(Icons.open_in_full_rounded, size: 22),
     );
     return Padding(
-      padding: EdgeInsets.only(top: 8, bottom: bottomInset),
+      padding: EdgeInsets.only(top: 4, bottom: bottomInset),
       child: LayoutBuilder(
         builder: (BuildContext context, BoxConstraints constraints) {
           // Phone already has a narrow column; stacking the field + Send
@@ -385,7 +385,7 @@ class _QuickReplyBarState extends State<QuickReplyBar> {
                 TextField(
                   controller: _controller,
                   minLines: 1,
-                  maxLines: 3,
+                  maxLines: isPortraitMobileLayout(context) ? 1 : 3,
                   style: TextStyle(color: t.text),
                   textInputAction: TextInputAction.send,
                   onSubmitted: (_) => unawaited(_send()),
@@ -409,7 +409,7 @@ class _QuickReplyBarState extends State<QuickReplyBar> {
                 child: TextField(
                   controller: _controller,
                   minLines: 1,
-                  maxLines: 3,
+                  maxLines: isPortraitMobileLayout(context) ? 1 : 3,
                   style: TextStyle(color: t.text),
                   textInputAction: TextInputAction.send,
                   onSubmitted: (_) => unawaited(_send()),
