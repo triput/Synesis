@@ -16,7 +16,8 @@
 - [x] Single-user SQLite concurrency model documented
 - [x] MVP API sketch + threat model
 - [x] Phased delivery table
-- [ ] Steve operator sign-off on open questions (in-process server, Cloudflare Access vs bearer, web HTML compose depth)
+- [ ] Steve operator sign-off on open questions (in-process server, Cloudflare Access vs bearer)
+- [x] Web compose: **plain-text MVP** in W3; DEF-087 HTML quote panel W3 (parity target, not MVP blocker)
 
 ## W1 — Read API (`WebBridgeServer`)
 
@@ -41,7 +42,8 @@
 
 - [ ] Write routes: `POST /compose`, `POST /outbox`, `GET /outbox` (status); optional mark-read
 - [ ] Route writes through existing repository / `MessageActionService` / outbox — **no parallel send pipeline**
-- [ ] Browser compose panel (reply/forward/new); send → outbox feedback
+- [ ] Browser compose panel — **plain-text MVP** (reply/forward/new); send → outbox feedback
+- [ ] DEF-087 HTML quoted-original panel on web (W3 parity; after plain-text MVP lands)
 - [ ] Unit tests: enqueue outbox, auth on write routes
 - [ ] Renee: concurrent web write + desktop UI + sync (single-user stress)
 

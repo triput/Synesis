@@ -108,7 +108,7 @@ CORS: same-origin via tunnel path routing preferred.
 | Phase | Scope |
 | --- | --- |
 | **W2** | Account/folder/list + reading pane; HTML/plain body render |
-| **W3** | Compose panel (plain + HTML quote parity TBD); send → outbox; send status toast |
+| **W3** | Compose panel — **plain-text MVP**; reply/forward prefill; send → outbox; DEF-087 HTML quote panel when ready | Send mail from browser on LAN |
 
 Reuse sanitizer / remote-image policy from desktop where practical; document gaps.
 
@@ -166,7 +166,7 @@ Document in `docs/WAVE_WEB_RUNBOOK.md` (create at implement):
 
 1. **In-process server** vs sidecar — *lean in-process* for shared repository/actions.
 2. **Cloudflare Access vs bearer-only** — operator choice at tunnel setup.
-3. **HTML compose on web** — match DEF-087 quoted-original panel or plain-text MVP first?
+3. **HTML compose on web** — **Locked (2026-08-25):** W3 MVP = **plain-text** compose/reply/forward; DEF-087 HTML quoted-original panel is **W3 target** (same parity as desktop) but plain-text ships first if HTML slips.
 
 ---
 
