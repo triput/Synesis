@@ -78,7 +78,9 @@ class MainActivity : FlutterActivity() {
                 if (!messageId.isNullOrBlank()) {
                     putExtra(EXTRA_MESSAGE_ID, messageId)
                 }
-                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or
+                    Intent.FLAG_ACTIVITY_CLEAR_TOP or
+                    Intent.FLAG_ACTIVITY_SINGLE_TOP
             }
             return android.app.PendingIntent.getActivity(
                 context,

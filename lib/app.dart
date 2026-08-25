@@ -329,12 +329,13 @@ class _LaunchHome extends StatefulWidget {
   State<_LaunchHome> createState() => _LaunchHomeState();
 }
 
-class _LaunchHomeState extends State<_LaunchHome> {
+class _LaunchHomeState extends State<_LaunchHome> with WidgetsBindingObserver {
   final WidgetLaunchBridge _widgetLaunchBridge = WidgetLaunchBridge();
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     final String? path = widget.launchEmlPath;
     if (path != null && path.isNotEmpty) {
       WidgetsBinding.instance.addPostFrameCallback((_) async {
@@ -345,6 +346,19 @@ class _LaunchHomeState extends State<_LaunchHome> {
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       await _consumeWidgetLaunch();
     });
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      unawaited(_consumeWidgetLaunch());
+    }
   }
 
   Future<void> _openLaunchEml(String path) async {

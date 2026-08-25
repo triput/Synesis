@@ -71,6 +71,17 @@ class SynesisListWidgetProvider : AppWidgetProvider() {
             views.setPendingIntentTemplate(R.id.list_widget_list, clickPendingIntent)
 
             views.setOnClickPendingIntent(
+                R.id.list_widget_header,
+                MainActivity.widgetIntent(
+                    context = context,
+                    action = "open_inbox",
+                    accountId = accountId,
+                    folderId = folderId,
+                    requestCode = appWidgetId * 10 + 2,
+                ),
+            )
+
+            views.setOnClickPendingIntent(
                 R.id.list_widget_compose,
                 MainActivity.widgetIntent(
                     context = context,

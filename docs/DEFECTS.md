@@ -1247,7 +1247,9 @@ Dialog `content` wrapped in `SingleChildScrollView` (DEF-063 overflow sweep, 202
 
 **2026-08-25 (Wave 6 / Operation Flat Zero):** New **Synesis Mail** list widget with per-instance account config (`SynesisListWidgetConfigureActivity`). Rows render sender/subject/snippet/time from scoped `synesis_widget.list.{accountId}.{folderId}` snapshots (10 rows, unread styling). Row tap → `open_message` deep link via `MainActivity` + `WidgetLaunchBridge` → `MailboxCubit.handleWidgetLaunch`. Compose shortcut on widget header. Snapshots refresh on sync/boot via extended `WidgetSnapshotService.refreshAccountLists()`. Summary counter widget retained; Inbox/Compose actions now route through shared intent bridge. Unit tests: `widget_snapshot_service_test.dart`.
 
-**Deferred:** Folder picker in widget config (defaults to inbox); warm-resume widget launch event stream; non-inbox folder snapshots only when unread > 0.
+**Deferred:** Folder picker in widget config (defaults to inbox); non-inbox folder snapshots only when unread > 0.
+
+**2026-08-25 (dogfood follow-up):** Row tap delivers `open_message` on warm resume (`AppLifecycleState.resumed` consumes pending launch). Header tap opens configured account/folder without selecting a message. Message open falls back to repository lookup + sticky preview when not yet in list projection.
 
 ---
 

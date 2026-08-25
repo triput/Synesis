@@ -195,38 +195,71 @@ class MailboxCubit extends Cubit<MailboxState> {
   Future<void> handleWidgetLaunch(WidgetLaunchRequest request) async {
     switch (request.action) {
       case WidgetLaunchAction.openInbox:
-        final String? accountId = request.accountId;
-        if (accountId != null && accountId.isNotEmpty) {
-          final String? folderId = request.folderId;
-          if (folderId != null && folderId.isNotEmpty) {
-            await selectFolder(accountId, folderId);
-          } else {
-            await selectAccount(accountId);
-          }
-        } else {
-          await selectUnified();
-        }
+        await _openWidgetInbox(
+          accountId: request.accountId,
+          folderId: request.folderId,
+        );
       case WidgetLaunchAction.openMessage:
-        final String? messageId = request.messageId;
+        final String? messageId = request.messageId?.trim();
         if (messageId == null || messageId.isEmpty) {
+          await _openWidgetInbox(
+            accountId: request.accountId,
+            folderId: request.folderId,
+          );
           return;
         }
-        final String? accountId = request.accountId;
-        if (accountId != null && accountId.isNotEmpty) {
-          final String? folderId = request.folderId;
-          if (folderId != null && folderId.isNotEmpty) {
-            await selectFolder(accountId, folderId);
-          } else {
-            await selectAccount(accountId);
-          }
-        }
-        await selectMessage(messageId);
+        await _openWidgetMessage(
+          messageId: messageId,
+          accountId: request.accountId,
+          folderId: request.folderId,
+        );
       case WidgetLaunchAction.compose:
         final String? accountId = request.accountId;
         if (accountId != null && accountId.isNotEmpty) {
           await selectAccount(accountId);
         }
     }
+  }
+
+  Future<void> _openWidgetInbox({
+    String? accountId,
+    String? folderId,
+  }) async {
+    if (accountId != null && accountId.isNotEmpty) {
+      if (folderId != null && folderId.isNotEmpty) {
+        await selectFolder(accountId, folderId);
+      } else {
+        await selectAccount(accountId);
+      }
+    } else {
+      await selectUnified();
+    }
+  }
+
+  Future<void> _openWidgetMessage({
+    required String messageId,
+    String? accountId,
+    String? folderId,
+  }) async {
+    await _openWidgetInbox(accountId: accountId, folderId: folderId);
+    await selectMessage(messageId);
+    if (state.selectedMessage != null) {
+      return;
+    }
+    final MailMessage? message = await _repository.getMessage(messageId);
+    if (message == null || isClosed) {
+      return;
+    }
+    emit(
+      state.copyWith(
+        selectedMessageId: messageId,
+        stickySelectedMessage: message,
+        clearSelectedMessageIds: true,
+        clearError: true,
+        clearBodyError: true,
+      ),
+    );
+    await _ensureBodyCached(messageId);
   }
 
   Future<void> selectFolder(String accountId, String folderId) async {
