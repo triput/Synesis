@@ -37,7 +37,9 @@ Expanding / fully opening a message on phone does **not** enlarge the HTML readi
 - Reply/Forward stay compose, but the quoted original should not look like a different email. Prefer HTML quote or a labeled quoted original that matches the reader.  
 - The Quick Reply expand control must not be the only path to “see more of this message.”
 
-**2026-08-25 (Wave 2 / Operation Flat Zero):** Phone **Expand message** (`open_in_full` in header + Quick Reply row) collapses chrome and fills the pane with the same `MessageBodyView` / HTML renderer — no compose jump. **Collapse** restores header + Quick Reply. Pager 36px strip hides while expanded. Remaining gap: full Reply/Forward compose still quotes plaintext (`>`) instead of HTML-matched original.
+**2026-08-25 (Wave 2 / Operation Flat Zero):** Phone **Expand message** (`open_in_full` in header + Quick Reply row) collapses chrome and fills the pane with the same `MessageBodyView` / HTML renderer — no compose jump. **Collapse** restores header + Quick Reply. Pager 36px strip hides while expanded. Remaining gap: full Reply/Forward compose still quotes plaintext (`>`) instead of HTML-matched original (`bf196dc`).
+
+**Wave 2b (planned):** Close compose quote parity — full Reply/Forward must embed an HTML-matched quoted original (or labeled honest equivalent), not a plaintext `>` dump. In-pane expanded read is Wave 2 only; Wave 2b finishes [DEF-087](#def-087--phone-read-preview-vs-full-reply-are-different-documents).
 
 ---
 

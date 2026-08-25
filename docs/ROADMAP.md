@@ -11,7 +11,7 @@
 | Exit checklist | [V1_EXIT_CHECKLIST.md](V1_EXIT_CHECKLIST.md) — **signed off** |
 | Product | Synesis |
 | Platforms (v1) | Windows, Android |
-| Last updated | 2026-08-23 (operator queue rebuilt; DEF-078 phone chrome tonight slice) |
+| Last updated | 2026-08-25 (Operation Flat Zero Wave 2b planned; DEF-087 compose quotes) |
 
 This roadmap tracks implementation milestones. Requirements live in the SPEC; this file tracks status and exit criteria.
 
@@ -33,6 +33,18 @@ The old “Android Pri-2 → Wave 7 → freeze → H2 → R” line is still the
 | — | Parked | Wave 6c series copy | — | Still not next |
 
 Do **not** start WEB or MH code tonight. Do **not** skip H2 for V2.1 features.
+
+### Operation Flat Zero (phone chrome + sync dogfood, 2026-08-25)
+
+Parallel track — reclaim reading body on phone; Android sync modes; HTML read/quote parity. See [DEF-078](DEFECTS.md), [DEF-086](DEFECTS.md), [DEF-087](DEFECTS.md), [DEF-085](DEFECTS.md).
+
+| Wave | Status | Work | Who | Notes |
+| --- | --- | --- | --- | --- |
+| **0** | **Done** (`be05245`) | [DEF-078](DEFECTS.md) Show Quick Reply + phone reading chrome | Jules | Settings toggle; collapse chrome / single-row QR |
+| **1** | **Done** (`6ca4c3b`) | [DEF-086](DEFECTS.md) Android sync modes (manual / interval / push) | Tesla | Settings → Sync & storage |
+| **2** | **Done** (`bf196dc`) | [DEF-087](DEFECTS.md) in-pane expanded HTML read (no compose jump) | Jules | Same `MessageBodyView`; pager strip hides while expanded |
+| **2b** | **Next** | [DEF-087](DEFECTS.md) compose HTML-matched quoted original | Jules | Reply/Forward still plaintext `>`; closes quote parity |
+| **3** | Planned | [DEF-085](DEFECTS.md) horizontal pan for wide HTML (HtmlWidget path) | Andi / Jules | Phone dogfood; nested scroll after DEF-078 |
 
 ## Locked decisions
 
