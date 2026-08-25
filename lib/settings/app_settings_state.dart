@@ -9,6 +9,8 @@
 
 import 'package:equatable/equatable.dart';
 import 'package:synesis/domain/saved_message_filter.dart';
+import 'package:synesis/sync/android_sync_mode.dart';
+import 'package:synesis/sync/sync_auto_sync_policy.dart';
 import 'package:synesis/theme/density.dart';
 import 'package:synesis/theme/theme_id.dart';
 
@@ -97,6 +99,8 @@ class AppSettingsState extends Equatable {
     this.accountImageAllowlistDomains = const <String, List<String>>{},
     this.blockTrackers = true,
     this.pushOnCellular = false,
+    this.androidSyncMode = AndroidSyncMode.manual,
+    this.syncIntervalMinutes = kSyncIntervalMinutesDefault,
     this.readingPanePosition = ReadingPanePosition.right,
     this.showQuickReplyEnabled = true,
     this.visualFocusEnabled = false,
@@ -153,6 +157,12 @@ class AppSettingsState extends Equatable {
   /// When true, Android may run IMAP IDLE / near-push on cellular data.
   /// Default false (opt-in). Desktop ignores this and always allows push online.
   final bool pushOnCellular;
+
+  /// Android mail auto-sync mode (DEF-086). Desktop ignores and stays push-like.
+  final AndroidSyncMode androidSyncMode;
+
+  /// Poll interval when [androidSyncMode] is [AndroidSyncMode.interval].
+  final int syncIntervalMinutes;
 
   /// Where the reading pane sits relative to the message list on wide layouts.
   /// Portrait mobile ignores this and keeps the horizontal list|reading split.
@@ -252,6 +262,8 @@ class AppSettingsState extends Equatable {
     Map<String, List<String>>? accountImageAllowlistDomains,
     bool? blockTrackers,
     bool? pushOnCellular,
+    AndroidSyncMode? androidSyncMode,
+    int? syncIntervalMinutes,
     ReadingPanePosition? readingPanePosition,
     bool? showQuickReplyEnabled,
     bool? visualFocusEnabled,
@@ -292,6 +304,10 @@ class AppSettingsState extends Equatable {
           accountImageAllowlistDomains ?? this.accountImageAllowlistDomains,
       blockTrackers: blockTrackers ?? this.blockTrackers,
       pushOnCellular: pushOnCellular ?? this.pushOnCellular,
+      androidSyncMode: androidSyncMode ?? this.androidSyncMode,
+      syncIntervalMinutes: SyncAutoSyncPolicy.clampIntervalMinutes(
+        syncIntervalMinutes ?? this.syncIntervalMinutes,
+      ),
       readingPanePosition: readingPanePosition ?? this.readingPanePosition,
       showQuickReplyEnabled:
           showQuickReplyEnabled ?? this.showQuickReplyEnabled,
@@ -342,6 +358,8 @@ class AppSettingsState extends Equatable {
         accountImageAllowlistDomains,
         blockTrackers,
         pushOnCellular,
+        androidSyncMode,
+        syncIntervalMinutes,
         readingPanePosition,
         showQuickReplyEnabled,
         visualFocusEnabled,

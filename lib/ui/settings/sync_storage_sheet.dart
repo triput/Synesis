@@ -8,12 +8,15 @@
 // Last Update: 2026-07-23
 // ==============================================================================
 
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:synesis/domain/sync_profile.dart';
 import 'package:synesis/repository/mail_repository.dart';
 import 'package:synesis/settings/app_settings_cubit.dart';
 import 'package:synesis/settings/app_settings_state.dart';
+import 'package:synesis/sync/android_sync_mode.dart';
 import 'package:synesis/sync/retention_service.dart';
 import 'package:synesis/sync/sync_engine.dart';
 import 'package:synesis/theme/app_theme.dart';
@@ -234,6 +237,86 @@ class _SyncStorageSheetBodyState extends State<SyncStorageSheetBody> {
                               _persist(profile.copyWith(bodyPolicy: next));
                             },
                     ),
+                  ),
+                  const SizedBox(height: 8),
+                  BlocBuilder<AppSettingsCubit, AppSettingsState>(
+                    buildWhen: (AppSettingsState prev, AppSettingsState next) =>
+                        prev.androidSyncMode != next.androidSyncMode ||
+                        prev.syncIntervalMinutes != next.syncIntervalMinutes,
+                    builder: (BuildContext context, AppSettingsState settings) {
+                      final AppSettingsCubit cubit =
+                          context.read<AppSettingsCubit>();
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: <Widget>[
+                          Text(
+                            'Mail sync (Android)',
+                            style: TextStyle(
+                              color: t.text,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            settings.androidSyncMode.settingsSubtitle,
+                            style: TextStyle(color: t.muted, fontSize: 12),
+                          ),
+                          const SizedBox(height: 8),
+                          SegmentedButton<AndroidSyncMode>(
+                            segments: <ButtonSegment<AndroidSyncMode>>[
+                              for (final AndroidSyncMode mode
+                                  in AndroidSyncMode.values)
+                                ButtonSegment<AndroidSyncMode>(
+                                  value: mode,
+                                  label: Text(mode.label),
+                                ),
+                            ],
+                            selected: <AndroidSyncMode>{
+                              settings.androidSyncMode,
+                            },
+                            onSelectionChanged: _saving
+                                ? null
+                                : (Set<AndroidSyncMode> value) {
+                                    unawaited(
+                                      cubit.setAndroidSyncMode(value.first),
+                                    );
+                                  },
+                          ),
+                          if (settings.androidSyncMode ==
+                              AndroidSyncMode.interval) ...<Widget>[
+                            const SizedBox(height: 8),
+                            Text(
+                              'Poll every ${settings.syncIntervalMinutes} '
+                              'minutes while Synesis is open',
+                              style: TextStyle(color: t.muted, fontSize: 12),
+                            ),
+                            Slider(
+                              value: settings.syncIntervalMinutes
+                                  .clamp(
+                                    kSyncIntervalMinutesMin,
+                                    kSyncIntervalMinutesMax,
+                                  )
+                                  .toDouble(),
+                              min: kSyncIntervalMinutesMin.toDouble(),
+                              max: kSyncIntervalMinutesMax.toDouble(),
+                              divisions: (kSyncIntervalMinutesMax -
+                                      kSyncIntervalMinutesMin) ~/
+                                  5,
+                              label: '${settings.syncIntervalMinutes}m',
+                              onChanged: _saving
+                                  ? null
+                                  : (double value) {
+                                      unawaited(
+                                        cubit.setSyncIntervalMinutes(
+                                          value.round(),
+                                        ),
+                                      );
+                                    },
+                            ),
+                          ],
+                        ],
+                      );
+                    },
                   ),
                   const SizedBox(height: 8),
                   BlocBuilder<AppSettingsCubit, AppSettingsState>(

@@ -10,6 +10,7 @@
 import 'dart:convert';
 
 import 'package:synesis/settings/app_settings_state.dart';
+import 'package:synesis/sync/android_sync_mode.dart';
 import 'package:synesis/theme/custom_theme.dart';
 import 'package:synesis/theme/density.dart';
 import 'package:synesis/theme/theme_id.dart';
@@ -181,6 +182,8 @@ class SettingsExportService {
       'accountImageAllowlistDomains': s.accountImageAllowlistDomains,
       'blockTrackers': s.blockTrackers,
       'pushOnCellular': s.pushOnCellular,
+      'androidSyncMode': s.androidSyncMode.name,
+      'syncIntervalMinutes': s.syncIntervalMinutes,
       'readingPanePosition': s.readingPanePosition.name,
       'showQuickReplyEnabled': s.showQuickReplyEnabled,
       'visualFocusEnabled': s.visualFocusEnabled,
@@ -274,6 +277,12 @@ class SettingsExportService {
       accountImageAllowlistDomains: accountImageAllowlistDomainsMap,
       blockTrackers: map['blockTrackers'] as bool? ?? true,
       pushOnCellular: map['pushOnCellular'] as bool? ?? false,
+      androidSyncMode: AndroidSyncMode.values.firstWhere(
+        (AndroidSyncMode e) => e.name == map['androidSyncMode'],
+        orElse: () => AndroidSyncMode.manual,
+      ),
+      syncIntervalMinutes:
+          map['syncIntervalMinutes'] as int? ?? kSyncIntervalMinutesDefault,
       readingPanePosition: ReadingPanePosition.values.firstWhere(
         (ReadingPanePosition e) => e.name == map['readingPanePosition'],
         orElse: () => ReadingPanePosition.right,

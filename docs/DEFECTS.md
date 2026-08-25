@@ -61,6 +61,8 @@ Phone mail feels stale because fetch is effectively **manual**. Three operator-v
 **Expected**  
 Settings: per-account or global. Timer must not melt battery. Push is opportunistic. Failures use existing sync chrome ([DEF-084](#def-084--sync-recovery-controls--clear-cursors-stop-all-force-refresh)). No FCM/WorkManager in tree today — plan before sneaking subscriptions into an unrelated wave.
 
+**2026-08-25 (Operation Flat Zero W1):** Settings → Sync & storage → **Mail sync (Android)**: Manual / Interval / Push. Interval polls on a foreground timer (`syncIntervalMinutes`, default 15m). Push enables IMAP IDLE + reconnect kicks; Graph/Google delta-on-kick unchanged. Desktop stays push-like. `SyncAutoSyncPolicy` + `SyncEngine.startAutoSync()`.
+
 ---
 
 ### DEF-085 — Reading pane: wide images clipped; no horizontal pan

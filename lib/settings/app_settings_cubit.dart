@@ -14,6 +14,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:synesis/domain/saved_message_filter.dart';
 import 'package:synesis/query/message_query.dart';
 import 'package:synesis/settings/app_settings_state.dart';
+import 'package:synesis/sync/android_sync_mode.dart';
+import 'package:synesis/sync/sync_auto_sync_policy.dart';
 import 'package:synesis/theme/density.dart';
 import 'package:synesis/theme/theme_id.dart';
 import 'package:uuid/uuid.dart';
@@ -125,6 +127,12 @@ class AppSettingsCubit extends Cubit<AppSettingsState> {
           accountImageAllowlistDomains: accountImageAllowlistDomainsMap,
           blockTrackers: map['blockTrackers'] as bool? ?? true,
           pushOnCellular: map['pushOnCellular'] as bool? ?? false,
+          androidSyncMode: AndroidSyncMode.values.firstWhere(
+            (AndroidSyncMode e) => e.name == map['androidSyncMode'],
+            orElse: () => AndroidSyncMode.manual,
+          ),
+          syncIntervalMinutes:
+              map['syncIntervalMinutes'] as int? ?? kSyncIntervalMinutesDefault,
           readingPanePosition: ReadingPanePosition.values.firstWhere(
             (ReadingPanePosition e) => e.name == map['readingPanePosition'],
             orElse: () => ReadingPanePosition.right,
@@ -180,6 +188,8 @@ class AppSettingsCubit extends Cubit<AppSettingsState> {
         'accountImageAllowlistDomains': state.accountImageAllowlistDomains,
         'blockTrackers': state.blockTrackers,
         'pushOnCellular': state.pushOnCellular,
+        'androidSyncMode': state.androidSyncMode.name,
+        'syncIntervalMinutes': state.syncIntervalMinutes,
         'readingPanePosition': state.readingPanePosition.name,
         'showQuickReplyEnabled': state.showQuickReplyEnabled,
         'visualFocusEnabled': state.visualFocusEnabled,
@@ -401,6 +411,19 @@ class AppSettingsCubit extends Cubit<AppSettingsState> {
   Future<void> setBlockTrackers(bool enabled) async {
     if (state.blockTrackers == enabled) return;
     emit(state.copyWith(blockTrackers: enabled));
+    await _persist();
+  }
+
+  Future<void> setAndroidSyncMode(AndroidSyncMode mode) async {
+    if (state.androidSyncMode == mode) return;
+    emit(state.copyWith(androidSyncMode: mode));
+    await _persist();
+  }
+
+  Future<void> setSyncIntervalMinutes(int minutes) async {
+    final int clamped = SyncAutoSyncPolicy.clampIntervalMinutes(minutes);
+    if (state.syncIntervalMinutes == clamped) return;
+    emit(state.copyWith(syncIntervalMinutes: clamped));
     await _persist();
   }
 

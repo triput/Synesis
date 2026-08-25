@@ -33,11 +33,13 @@ import 'package:synesis/protocol/thread_id.dart';
 import 'package:synesis/repository/drift/drift_pim_store.dart';
 import 'package:synesis/repository/mail_repository.dart';
 import 'package:synesis/outbox/send_error_messages.dart';
+import 'package:synesis/sync/android_sync_mode.dart';
 import 'package:synesis/sync/graph_sync_recovery.dart';
 import 'package:synesis/sync/imap_idle_service.dart';
 import 'package:synesis/sync/network_sync_policy.dart';
 import 'package:synesis/sync/pim_sync_jobs.dart';
 import 'package:synesis/sync/sync_activity.dart';
+import 'package:synesis/sync/sync_auto_sync_policy.dart';
 import 'package:synesis/widgets/widget_snapshot_service.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/foundation.dart'
@@ -58,8 +60,20 @@ typedef TrashRetentionDaysReader = int Function();
 /// Reads device-wide retention dial days (fallback when no profile).
 typedef DeviceRetentionDaysReader = int Function();
 
-/// Reads whether Android cellular push/IDLE is opted in.
+/// Reads whether push/IDLE is opted in on cellular.
 typedef PushOnCellularReader = bool Function();
+
+/// Reads configured Android sync mode (desktop ignores via [IsMobileReader]).
+typedef AndroidSyncModeReader = AndroidSyncMode Function();
+
+/// Reads interval minutes when mode is [AndroidSyncMode.interval].
+typedef SyncIntervalMinutesReader = int Function();
+
+/// True on phone-class hosts where [AndroidSyncModeReader] applies.
+typedef IsMobileReader = bool Function();
+
+/// True while the app is foreground/resumed (interval timer guard).
+typedef ForegroundReader = bool Function();
 
 /// Injectable connectivity probe (defaults to [Connectivity.checkConnectivity]).
 typedef ConnectivityReader = Future<List<ConnectivityResult>> Function();
@@ -76,6 +90,10 @@ class SyncEngine {
     TrashRetentionDaysReader? trashRetentionDays,
     DeviceRetentionDaysReader? deviceRetentionDays,
     PushOnCellularReader? pushOnCellular,
+    AndroidSyncModeReader? androidSyncMode,
+    SyncIntervalMinutesReader? syncIntervalMinutes,
+    IsMobileReader? isMobile,
+    ForegroundReader? readForeground,
     ConnectivityReader? readConnectivity,
     NetworkSyncPolicy? networkPolicy,
     Connectivity? connectivity,
@@ -88,6 +106,11 @@ class SyncEngine {
        _trashRetentionDays = trashRetentionDays ?? (() => 30),
        _deviceRetentionDays = deviceRetentionDays ?? (() => 180),
        _pushOnCellular = pushOnCellular ?? (() => false),
+       _androidSyncMode = androidSyncMode ?? (() => AndroidSyncMode.manual),
+       _syncIntervalMinutes =
+           syncIntervalMinutes ?? (() => kSyncIntervalMinutesDefault),
+       _isMobile = isMobile ?? (() => false),
+       _readForeground = readForeground ?? (() => true),
        _readConnectivity =
            readConnectivity ??
            (() => (connectivity ?? Connectivity()).checkConnectivity()),
@@ -114,6 +137,10 @@ class SyncEngine {
   final TrashRetentionDaysReader _trashRetentionDays;
   final DeviceRetentionDaysReader _deviceRetentionDays;
   final PushOnCellularReader _pushOnCellular;
+  final AndroidSyncModeReader _androidSyncMode;
+  final SyncIntervalMinutesReader _syncIntervalMinutes;
+  final IsMobileReader _isMobile;
+  final ForegroundReader _readForeground;
   final ConnectivityReader _readConnectivity;
   final NetworkSyncPolicy _networkPolicy;
   final Connectivity? _connectivity;
@@ -127,6 +154,8 @@ class SyncEngine {
   String? _folderListSoftError;
   FocusOverrideRegistry? _focusOverrides;
   bool _networkWatcherStarted = false;
+  bool _autoSyncStarted = false;
+  Timer? _intervalSyncTimer;
   SyncActivity? _syncActivity;
 
   static bool _detectDesktop() {
@@ -185,15 +214,108 @@ class SyncEngine {
     ) {
       unawaited(_onConnectivityChanged(results));
     });
-    unawaited(_bootstrapIdleWatches());
+    unawaited(_applyAutoSyncPolicy(kickIfAllowed: true));
+  }
+
+  /// Starts interval polling and applies the current Android sync mode.
+  void startAutoSync() {
+    if (_autoSyncStarted) {
+      return;
+    }
+    _autoSyncStarted = true;
+    unawaited(_applyAutoSyncPolicy(kickIfAllowed: false));
+  }
+
+  /// Re-read settings after the operator changes sync mode or interval.
+  void notifyAutoSyncSettingsChanged() {
+    unawaited(_applyAutoSyncPolicy(kickIfAllowed: false));
+  }
+
+  /// Re-evaluate interval / IDLE when the app resumes or pauses.
+  void notifyForegroundChanged({required bool isForeground}) {
+    unawaited(
+      _applyAutoSyncPolicy(
+        kickIfAllowed: isForeground &&
+            SyncAutoSyncPolicy.shouldKickOnForegroundResume(_effectiveSyncMode()),
+      ),
+    );
+  }
+
+  AndroidSyncMode _effectiveSyncMode() {
+    return SyncAutoSyncPolicy.effectiveMode(
+      configured: _androidSyncMode(),
+      isMobile: _isMobile(),
+    );
+  }
+
+  Future<void> _applyAutoSyncPolicy({required bool kickIfAllowed}) async {
+    final AndroidSyncMode mode = _effectiveSyncMode();
+    _restartIntervalTimer(mode);
+    if (SyncAutoSyncPolicy.shouldRunIdle(mode)) {
+      if (await _mayPush()) {
+        await _bootstrapIdleWatches();
+      }
+    } else {
+      await _idleService.stopAll();
+    }
+    if (kickIfAllowed &&
+        SyncAutoSyncPolicy.shouldKickOnForegroundResume(mode) &&
+        await _mayPoll()) {
+      await _kickAllAccountsNonBlocking();
+    }
+  }
+
+  void _restartIntervalTimer(AndroidSyncMode mode) {
+    _intervalSyncTimer?.cancel();
+    _intervalSyncTimer = null;
+    if (!SyncAutoSyncPolicy.shouldRunIntervalTimer(
+      mode: mode,
+      isForeground: _readForeground(),
+    )) {
+      return;
+    }
+    final Duration period = Duration(
+      minutes: SyncAutoSyncPolicy.clampIntervalMinutes(
+        _syncIntervalMinutes(),
+      ),
+    );
+    _intervalSyncTimer = Timer.periodic(period, (_) {
+      if (!SyncAutoSyncPolicy.shouldRunIntervalTimer(
+        mode: _effectiveSyncMode(),
+        isForeground: _readForeground(),
+      )) {
+        return;
+      }
+      unawaited(_kickAllAccountsNonBlocking());
+    });
+  }
+
+  Future<void> _kickAllAccountsNonBlocking() async {
+    if (!await _mayPoll()) {
+      return;
+    }
+    final List<MailAccount> accounts = await _repository.listAccounts();
+    for (final MailAccount account in accounts) {
+      await enqueueIncremental(account.id);
+    }
+    if (accounts.isNotEmpty) {
+      kickNonBlocking();
+    }
   }
 
   Future<void> _onConnectivityChanged(List<ConnectivityResult> results) async {
     await _idleService.refreshPolicy();
+    final AndroidSyncMode mode = _effectiveSyncMode();
+    if (!SyncAutoSyncPolicy.shouldKickOnConnectivity(mode)) {
+      await _idleService.stopAll();
+      return;
+    }
     if (_networkPolicy.allowPoll(results)) {
       await kick();
-      if (await _mayPush()) {
+      if (SyncAutoSyncPolicy.shouldRunIdle(mode) && await _mayPush()) {
         await _bootstrapIdleWatches();
+      } else {
+        await _idleService.stopAll();
       }
     } else {
       await _idleService.stopAll();
@@ -366,6 +488,8 @@ class SyncEngine {
   }
 
   Future<void> dispose() async {
+    _intervalSyncTimer?.cancel();
+    _intervalSyncTimer = null;
     await _connectivitySub?.cancel();
     _connectivitySub = null;
     await _idleService.dispose();

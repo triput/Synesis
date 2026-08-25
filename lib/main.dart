@@ -160,11 +160,21 @@ Future<void> main(List<String> args) async {
     trashRetentionDays: () => settingsCubit.state.trashRetentionDays,
     deviceRetentionDays: () => settingsCubit.state.retentionDays,
     pushOnCellular: () => settingsCubit.state.pushOnCellular,
+    androidSyncMode: () => settingsCubit.state.androidSyncMode,
+    syncIntervalMinutes: () => settingsCubit.state.syncIntervalMinutes,
+    isMobile: () => !kIsWeb && (Platform.isAndroid || Platform.isIOS),
+    readForeground: () => foregroundTracker.isForeground,
     onNewUnread: (List<MailMessage> messages) =>
         notificationService.onNewMail(messages),
     refreshAuthToken: providerRegistry.forceRefreshAuth,
   );
   syncEngine.attachSyncActivity(syncActivity);
+  foregroundTracker.onForegroundChanged = (bool isForeground) {
+    syncEngine.notifyForegroundChanged(isForeground: isForeground);
+  };
+  settingsCubit.stream.listen((_) {
+    syncEngine.notifyAutoSyncSettingsChanged();
+  });
   final MeetingInviteService meetingInviteService = MeetingInviteService(
     pimStore: pimStore,
     repository: repository,
@@ -177,6 +187,7 @@ Future<void> main(List<String> args) async {
     resolvePim: providerRegistry.resolvePim,
   );
   syncEngine.startNetworkWatcher();
+  syncEngine.startAutoSync();
 
   // D6-8: dedicated service for Windows toast Archive/Delete actions. These
   // fire outside the widget tree, so they cannot reach the live

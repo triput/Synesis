@@ -10,6 +10,7 @@
 
 import 'package:synesis/settings/app_settings_cubit.dart';
 import 'package:synesis/settings/app_settings_state.dart';
+import 'package:synesis/sync/android_sync_mode.dart';
 import 'package:synesis/theme/theme_id.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -444,6 +445,32 @@ void main() {
 
       final AppSettingsCubit reloaded = AppSettingsCubit(prefs);
       expect(reloaded.state.showQuickReplyEnabled, isFalse);
+      await reloaded.close();
+    });
+  });
+
+  group('AppSettingsCubit androidSyncMode', () {
+    test('defaults to manual with 15 minute interval', () async {
+      SharedPreferences.setMockInitialValues(<String, Object>{});
+      final SharedPreferences prefs = await SharedPreferences.getInstance();
+      final AppSettingsCubit cubit = AppSettingsCubit(prefs);
+      expect(cubit.state.androidSyncMode, AndroidSyncMode.manual);
+      expect(cubit.state.syncIntervalMinutes, kSyncIntervalMinutesDefault);
+      await cubit.close();
+    });
+
+    test('persists sync mode and interval', () async {
+      SharedPreferences.setMockInitialValues(<String, Object>{});
+      final SharedPreferences prefs = await SharedPreferences.getInstance();
+      final AppSettingsCubit cubit = AppSettingsCubit(prefs);
+
+      await cubit.setAndroidSyncMode(AndroidSyncMode.interval);
+      await cubit.setSyncIntervalMinutes(30);
+      await cubit.close();
+
+      final AppSettingsCubit reloaded = AppSettingsCubit(prefs);
+      expect(reloaded.state.androidSyncMode, AndroidSyncMode.interval);
+      expect(reloaded.state.syncIntervalMinutes, 30);
       await reloaded.close();
     });
   });

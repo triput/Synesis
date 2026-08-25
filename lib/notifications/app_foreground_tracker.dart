@@ -17,6 +17,9 @@ class AppForegroundTracker with WidgetsBindingObserver {
   bool _isForeground;
   bool _observing = false;
 
+  /// Optional hook for [SyncEngine] interval / resume kicks (DEF-086).
+  void Function(bool isForeground)? onForegroundChanged;
+
   bool get isForeground => _isForeground;
 
   void attach() {
@@ -37,6 +40,7 @@ class AppForegroundTracker with WidgetsBindingObserver {
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
+    final bool before = _isForeground;
     switch (state) {
       case AppLifecycleState.resumed:
         _isForeground = true;
@@ -45,6 +49,9 @@ class AppForegroundTracker with WidgetsBindingObserver {
       case AppLifecycleState.paused:
       case AppLifecycleState.detached:
         _isForeground = false;
+    }
+    if (_isForeground != before) {
+      onForegroundChanged?.call(_isForeground);
     }
   }
 }
