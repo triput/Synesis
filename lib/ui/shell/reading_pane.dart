@@ -4,7 +4,7 @@
 // Component: UI
 // Version: 1.7 (Gold Master)
 // Created: 2026-07-14
-// Last Update: 2026-07-27
+// Last Update: 2026-08-23
 // ==============================================================================
 
 import 'dart:async';
@@ -1095,8 +1095,8 @@ class _ReadingPaneContent extends StatelessWidget {
           // Keep chrome compact so the body owns most of the viewport and can
           // scroll the full message (header used to claim up to 55%).
           final double headerFraction = cramped
-              ? 0.28
-              : (phoneLayout ? 0.34 : 0.45);
+              ? 0.22
+              : (phoneLayout ? 0.22 : 0.45);
 
           return Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1209,34 +1209,90 @@ class _ReadingPaneContent extends StatelessWidget {
                               fontSize: 12,
                             ),
                           ),
-                          const SizedBox(height: 8),
-                          _ReadingActionBar(
-                            message: msg,
-                            inTrash: inTrash,
-                            inJunk: inJunk,
-                            onMarkRead: onMarkRead,
-                            onMarkUnread: onMarkUnread,
-                            onShowHeaders: onShowHeaders,
-                            onReply: onReply,
-                            onReplyAll: onReplyAll,
-                            onForward: onForward,
-                            onArchive: onArchive,
-                            onDelete: onDelete,
-                            onPermanentDelete: onPermanentDelete,
-                            onToggleStar: onToggleStar,
-                            onPin: onPin,
-                            onSnooze: onSnooze,
-                            onMove: onMove,
-                            onReportJunk: onReportJunk,
-                            onRecover: onRecover,
-                            onNotJunk: onNotJunk,
-                            onMarkFocused: onMarkFocused,
-                            onMarkOther: onMarkOther,
-                            onOpenFind: onOpenFind,
-                            autoMarkHeld: autoMarkHeld,
-                            showAutoMarkHoldOption: showAutoMarkHoldOption,
-                            onToggleAutoMarkHold: onToggleAutoMarkHold,
-                          ),
+                          if (phoneLayout)
+                            Theme(
+                              data: Theme.of(context).copyWith(
+                                dividerColor: Colors.transparent,
+                              ),
+                              child: ExpansionTile(
+                                initiallyExpanded: false,
+                                dense: true,
+                                tilePadding: EdgeInsets.zero,
+                                visualDensity: VisualDensity.compact,
+                                iconColor: t.muted,
+                                collapsedIconColor: t.muted,
+                                title: Text(
+                                  'Actions',
+                                  style: TextStyle(
+                                    color: t.muted,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                children: <Widget>[
+                                  _ReadingActionBar(
+                                    message: msg,
+                                    inTrash: inTrash,
+                                    inJunk: inJunk,
+                                    onMarkRead: onMarkRead,
+                                    onMarkUnread: onMarkUnread,
+                                    onShowHeaders: onShowHeaders,
+                                    onReply: onReply,
+                                    onReplyAll: onReplyAll,
+                                    onForward: onForward,
+                                    onArchive: onArchive,
+                                    onDelete: onDelete,
+                                    onPermanentDelete: onPermanentDelete,
+                                    onToggleStar: onToggleStar,
+                                    onPin: onPin,
+                                    onSnooze: onSnooze,
+                                    onMove: onMove,
+                                    onReportJunk: onReportJunk,
+                                    onRecover: onRecover,
+                                    onNotJunk: onNotJunk,
+                                    onMarkFocused: onMarkFocused,
+                                    onMarkOther: onMarkOther,
+                                    onOpenFind: onOpenFind,
+                                    autoMarkHeld: autoMarkHeld,
+                                    showAutoMarkHoldOption:
+                                        showAutoMarkHoldOption,
+                                    onToggleAutoMarkHold:
+                                        onToggleAutoMarkHold,
+                                  ),
+                                ],
+                              ),
+                            )
+                          else ...<Widget>[
+                            const SizedBox(height: 8),
+                            _ReadingActionBar(
+                              message: msg,
+                              inTrash: inTrash,
+                              inJunk: inJunk,
+                              onMarkRead: onMarkRead,
+                              onMarkUnread: onMarkUnread,
+                              onShowHeaders: onShowHeaders,
+                              onReply: onReply,
+                              onReplyAll: onReplyAll,
+                              onForward: onForward,
+                              onArchive: onArchive,
+                              onDelete: onDelete,
+                              onPermanentDelete: onPermanentDelete,
+                              onToggleStar: onToggleStar,
+                              onPin: onPin,
+                              onSnooze: onSnooze,
+                              onMove: onMove,
+                              onReportJunk: onReportJunk,
+                              onRecover: onRecover,
+                              onNotJunk: onNotJunk,
+                              onMarkFocused: onMarkFocused,
+                              onMarkOther: onMarkOther,
+                              onOpenFind: onOpenFind,
+                              autoMarkHeld: autoMarkHeld,
+                              showAutoMarkHoldOption:
+                                  showAutoMarkHoldOption,
+                              onToggleAutoMarkHold: onToggleAutoMarkHold,
+                            ),
+                          ],
                         ],
                       ),
                     ),
@@ -1267,7 +1323,7 @@ class _ReadingPaneContent extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: <Widget>[
-                      if (!cramped)
+                      if (!cramped && !phoneLayout)
                         ConstrainedBox(
                           constraints: const BoxConstraints(maxHeight: 88),
                           child: SingleChildScrollView(

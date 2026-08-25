@@ -4,7 +4,7 @@
 // Component: UI
 // Version: 1.0 (Gold Master)
 // Created: 2026-07-17
-// Last Update: 2026-08-03
+// Last Update: 2026-08-23
 // ==============================================================================
 
 import 'dart:async';
@@ -21,6 +21,7 @@ import 'package:synesis/theme/app_theme.dart';
 import 'package:synesis/theme/theme_tokens.dart';
 import 'package:synesis/ui/compose/compose_prefill.dart';
 import 'package:synesis/ui/compose/compose_sheet.dart';
+import 'package:synesis/ui/shell/mail_split_layout.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:path/path.dart' as p;
@@ -373,7 +374,10 @@ class _QuickReplyBarState extends State<QuickReplyBar> {
       padding: EdgeInsets.only(top: 8, bottom: bottomInset),
       child: LayoutBuilder(
         builder: (BuildContext context, BoxConstraints constraints) {
-          final bool stackActions = constraints.maxWidth < 360;
+          // Phone already has a narrow column; stacking the field + Send
+          // steals the body (DEF-078). Stack only on truly tiny non-phone widths.
+          final bool stackActions = constraints.maxWidth < 360 &&
+              !isPortraitMobileLayout(context);
           if (stackActions) {
             return Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,

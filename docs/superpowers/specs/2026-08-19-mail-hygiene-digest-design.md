@@ -120,9 +120,9 @@ Local multi-account client + read-only hygiene + To/Cc urgency + subscription sh
 
 Ship later as a **desktop** report (then actions) on this library. Do not put it on the phone app.
 
-## Parked: Synesis on the web
+## Parked: Synesis on the web → **Wave WEB** (promoted 2026-08-23)
 
-Operator is starting to want a **web version of the Synesis client**, without dropping local-first preferences. Out of scope here. Keeping the classifier as a library (no Flutter UI dependency) is the only accommodation in this design. Distinct from LiveBytes marketing/legal site (`docs/POST_V1_WEB_AND_LEGAL.md`).
+Still **out of scope for this digest probe**. Operator promoted a **personal** web client (local Flutter web + **Cloudflare tunnel**, anywhere access) to **very soon** — see [ROADMAP](../../ROADMAP.md) Wave WEB. Not a hosted product; APIs should stay clean so a future self-hoster could copy the pattern. Distinct from LiveBytes marketing/legal site (`docs/POST_V1_WEB_AND_LEGAL.md`). Classifier-as-library still helps that later.
 
 ## Success
 

@@ -13,7 +13,55 @@
 > Android dogfood folder/drawer polish (2026-07-27): account chips, folder-picker sheet, title-bar **Show folders** → sheet.
 >
 > **V2 Wave 7 / Trish extras parking lot** (2026-07-27): operator enhancement backlog (Pri-2 / Pri-2.5 / Pri-3) parked for **Wave 7 — Final polish / Trish extras** — last if time permits; not V2.0 critical path. See [V2_PLAN.md](V2_PLAN.md) § Wave 7. **Trish calendar asks (2026-08-03):** [DEF-075](#def-075--calendar-week--weekdays-views) week/weekdays views; [DEF-076](#def-076--calendar-show-day-of-year--week-of-year) day-of-year + week-of-year. **Trish V-Next (2026-08-03):** [DEF-078](#def-078--phone-quick-reply-density--settings-toggle) phone Quick Reply; [DEF-044](#def-044--home-screen-list-widget-per-account-mail--open-in-app-aquamail-bar) per-account list widgets (AquaMail bar) — **Pri-2**. **Trish Pri-3 (2026-08-04):** [DEF-079](#def-079--contact-postal-addresses--open-in-map-apps) contact postal addresses + Maps/Waze; [DEF-081](#def-081--calendar-pills-temporary-view-toggle) calendar pill temp toggle. **Wave 6 E11 dogfood (2026-08-04):** [DEF-080](#def-080--gmail-imap-too-many-simultaneous-connections-on-body-fetch). **Android week dogfood (2026-08-12):** [DEF-083](#def-083--graph-sync-token-expired-400-does-not-clear-cursor--jobs-pile-up) Graph expired token; [DEF-084](#def-084--sync-recovery-controls--clear-cursors-stop-all-force-refresh) sync recovery (Fixed, awaiting verify). **Fixed (awaiting dogfood):** [DEF-085](#def-085--reading-pane-wide-images-clipped--no-horizontal-pan) wide images (2026-08-12). **Closed:** [DEF-082](#def-082--phone-drawer-move-account-admin-to-settings-vertical-accounts-only) drawer IA (2026-08-12).
+>
+> **Trish 2026-08-23:** [DEF-086](#def-086--android-sync-modes-manual--interval--push) Android sync modes; [DEF-078](#def-078--phone-quick-reply-reclaim-reading-space--settings-toggle) / [DEF-087](#def-087--phone-read-preview-vs-full-reply-are-different-documents) phone read chrome — **very soon, not tonight**. **Wave WEB** personal web client (Cloudflare tunnel) promoted — [ROADMAP](ROADMAP.md).
 
+
+### DEF-087 — Phone: read preview vs full Reply are different documents
+
+| Field | Value |
+| --- | --- |
+| Priority | **Pri-2** |
+| Status | Open (enhancement) |
+| Target | **Very soon** (with [DEF-078](#def-078--phone-quick-reply-reclaim-reading-space--settings-toggle); not tonight) |
+| Area | Reading pane HTML body vs compose quoted body |
+| Platforms | Phone (desktop less painful) |
+| Logged | 2026-08-23 |
+| Found by | **Trish** (same Apple receipt: scan view vs expand/Reply) |
+
+**Summary**  
+Expanding / fully opening a message on phone does **not** enlarge the HTML reading surface. It jumps to **Reply compose**: From/To/Subject, formatting toolbar, and a **quoted plaintext** (`>`) dump. The in-pane view is the HTML receipt (tiny card). Same mail, two layouts, two renderers.
+
+**Expected**  
+- Scan and full-read share one HTML (or honest plain) renderer; full-read is more chrome-collapsed space for the **same** body.  
+- Reply/Forward stay compose, but the quoted original should not look like a different email. Prefer HTML quote or a labeled quoted original that matches the reader.  
+- The Quick Reply expand control must not be the only path to “see more of this message.”
+
+---
+
+### DEF-086 — Android sync modes: manual, interval, push
+
+| Field | Value |
+| --- | --- |
+| Priority | **Pri-2** |
+| Status | Open (enhancement) |
+| Target | **Very soon** — not tonight; Tesla + settings |
+| Area | Sync engine, Android foreground/background, Graph + Gmail |
+| Platforms | Android first |
+| Logged | 2026-08-23 |
+| Found by | **Trish** (phone only downloads when she kicks sync) |
+
+**Summary**  
+Phone mail feels stale because fetch is effectively **manual**. Three operator-visible modes:
+
+1. **Pull (current)** — sync when opened / pulled / kicked.  
+2. **Pull on a timer** — periodic while the app can run (interval in settings).  
+3. **Push** — stay current while **connected** (Graph change notifications / Gmail push as each provider allows). Offline = no magic; reconnect catches up.
+
+**Expected**  
+Settings: per-account or global. Timer must not melt battery. Push is opportunistic. Failures use existing sync chrome ([DEF-084](#def-084--sync-recovery-controls--clear-cursors-stop-all-force-refresh)). No FCM/WorkManager in tree today — plan before sneaking subscriptions into an unrelated wave.
+
+---
 
 ### DEF-085 — Reading pane: wide images clipped; no horizontal pan
 
@@ -198,7 +246,7 @@ Non-urgent Pri-3 — not Wave 6 / 6b / 6c.
 | --- | --- |
 | Priority | **Pri-2** |
 | Status | Open (enhancement) |
-| Target | **V-Next** |
+| Target | **Very soon** (promoted 2026-08-23; not tonight) |
 | Area | `lib/ui/shell/reading_pane.dart`, `QuickReplyBar` (`message_attachments_panel.dart`), `AppSettingsCubit` / settings UI |
 | Platforms | Phone / narrow (desktop Quick Reply stays valuable) |
 | Logged | 2026-08-03 |
@@ -219,8 +267,13 @@ Non-urgent Pri-3 — not Wave 6 / 6b / 6c.
 **Actual**  
 `showQuickReply` is layout/policy only (not trash, etc.) — no settings flag; QR bar is a persistent bottom chunk on phone reading.
 
+**2026-08-23 (same pain, more shape)**  
+Still ~6 lines on phone. Chrome hog: 2-of-N pager, account chip, subject, sender, 9-icon action row, then a short HTML card, then Quick Reply + Send + module nav. Trish does **not** always want full-open; she wants **scan more body**. Phone has no hover — interpret as: **scroll/tap to tuck header + action row**, peek on demand; **QR + Send sit on the bottom inset** and must not steal a third of the body. Layout must use **available height** (short phones vs Ultra). Expand-to-compose is **[DEF-087](#def-087--phone-read-preview-vs-full-reply-are-different-documents)**, not a substitute for a taller reader.
+
 **Notes**  
-Pri-2 **V-Next** — not Wave 6P/6 critical path. Keep desktop love; fix phone pain.
+Pri-2 **very soon**. Keep desktop QR as-is unless the same setting hides it.
+
+**2026-08-23 tonight slice:** Phone hides the 9-icon action row behind a collapsed **Actions** tile; tighter header fraction; skip attachment strip; Quick Reply stays one row on phone (`<360` stack only when not phone-width). Full-read vs compose HTML is still [DEF-087](#def-087--phone-read-preview-vs-full-reply-are-different-documents).
 
 ---
 
