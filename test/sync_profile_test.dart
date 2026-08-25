@@ -4,7 +4,7 @@
 // Component: Test
 // Version: 1.0 (Gold Master)
 // Created: 2026-07-17
-// Last Update: 2026-07-17
+// Last Update: 2026-08-25
 // ==============================================================================
 
 import 'dart:convert';
@@ -488,6 +488,77 @@ void main() {
       );
       expect(result, isNull);
       expect(provider.fetchBodyCalls, 0);
+    });
+
+    test('sticky-only selection still fetches and patches sticky body', () async {
+      final DriftMailRepository repo = await _openRepo();
+      await repo.upsertAccount(
+        const MailAccount(
+          id: 'acct',
+          label: 'A',
+          address: 'a@byte.io',
+          accent: Color(0xFF2563EB),
+        ),
+        providerType: 'imap',
+      );
+      await repo.upsertFolders(const <MailFolder>[
+        MailFolder(
+          id: 'inbox-acct',
+          accountId: 'acct',
+          name: 'Inbox',
+          remoteId: 'INBOX',
+          role: 'inbox',
+        ),
+      ]);
+      final MailMessage message = _msg(
+        id: 'msg-sticky',
+        accountId: 'acct',
+        whenEpochMs: DateTime.now().millisecondsSinceEpoch,
+        folderId: 'inbox-acct',
+        body: 'snippet',
+        snippet: 'snippet',
+        providerId: 'p-sticky',
+      );
+      await repo.upsertMessages(
+        <MailMessage>[message],
+        folderId: 'inbox-acct',
+      );
+
+      final _RecordingBodyProvider provider = _RecordingBodyProvider();
+      final MessageBodyCache cache = MessageBodyCache(
+        repository: repo,
+        resolveProvider: (String id) async => provider,
+      );
+
+      // Widget / focus-filter path: selected via sticky, absent from list.
+      MailboxState state = MailboxState(
+        messages: const <MailMessage>[],
+        selectedMessageId: message.id,
+        stickySelectedMessage: message,
+      );
+
+      final result = await cache.ensureBodyCached(
+        state,
+        message.id,
+        apply: (mutation) async {
+          state = state.copyWith(
+            messages: mutation.messages,
+            stickySelectedMessage: mutation.stickySelectedMessage,
+            isLoadingBody: mutation.isLoadingBody,
+            clearBodyError: mutation.clearBodyError,
+            bodyErrorMessage: mutation.bodyErrorMessage,
+          );
+        },
+        isClosed: () => false,
+        currentState: () => state,
+      );
+
+      expect(provider.fetchBodyCalls, 1);
+      expect(result, isNotNull);
+      expect(result!.stickySelectedMessage, isNotNull);
+      expect(result.stickySelectedMessage!.body.contains('full body'), isTrue);
+      expect(state.stickySelectedMessage?.body.contains('full body'), isTrue);
+      expect(state.selectedMessage?.body.contains('full body'), isTrue);
     });
   });
 }

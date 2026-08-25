@@ -1251,6 +1251,8 @@ Dialog `content` wrapped in `SingleChildScrollView` (DEF-063 overflow sweep, 202
 
 **2026-08-25 (dogfood follow-up):** Row tap delivers `open_message` on warm resume (`AppLifecycleState.resumed` consumes pending launch). Header tap opens configured account/folder without selecting a message. Message open falls back to repository lookup + sticky preview when not yet in list projection.
 
+**2026-08-25 (dogfood follow-up 2):** Widget row open showed blank reading pane — `MessageBodyCache._messageById` ignored `stickySelectedMessage`, so body fetch no-op'd for focus-filtered-out rows; body patches also updated `messages` only. Fixed: lookup + mutation path now patches sticky; test in `sync_profile_test.dart`.
+
 ---
 
 ### DEF-046 — Hamburger opens full drawer; prefer folders-only sheet (enhancement)

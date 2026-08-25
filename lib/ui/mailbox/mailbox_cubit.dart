@@ -739,6 +739,7 @@ class MailboxCubit extends Cubit<MailboxState> {
           clearSelectedMessageId: result.clearSelectedMessageId,
           selectedMessageIds: result.selectedMessageIds,
           clearSelectedMessageIds: result.clearSelectedMessageIds,
+          stickySelectedMessage: result.stickySelectedMessage,
           errorMessage: result.errorMessage,
           clearError: result.clearError,
           isLoadingBody: result.isLoadingBody,

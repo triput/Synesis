@@ -4,7 +4,7 @@
 // Component: Data / Sync
 // Version: 1.0 (Gold Master)
 // Created: 2026-07-17
-// Last Update: 2026-07-18
+// Last Update: 2026-08-25
 // ==============================================================================
 
 import 'dart:async';
@@ -139,8 +139,14 @@ class MessageBodyCache {
         final List<MailMessage> updated = latest.messages
             .map((MailMessage m) => m.id == id ? m.copyWith(body: prepared) : m)
             .toList(growable: false);
+        final MailMessage? sticky = latest.stickySelectedMessage;
+        final MailMessage? updatedSticky =
+            sticky != null && sticky.id == id
+            ? sticky.copyWith(body: prepared)
+            : null;
         final MailboxMutationResult done = MailboxMutationResult(
           messages: updated,
+          stickySelectedMessage: updatedSticky,
           isLoadingBody: false,
           clearBodyError: true,
         );
@@ -275,20 +281,29 @@ class MessageBodyCache {
           return null;
         }
         final MailboxState latest = currentState?.call() ?? state;
+        MailMessage patchHeaders(MailMessage m) {
+          return m.copyWith(
+            rawHeaders: rawHeaders,
+            toRecipients: parsed.to,
+            ccRecipients: parsed.cc,
+            bucket: scored,
+          );
+        }
+
         final List<MailMessage> updated = latest.messages
             .map(
-              (MailMessage m) => m.id == messageId
-                  ? m.copyWith(
-                      rawHeaders: rawHeaders,
-                      toRecipients: parsed.to,
-                      ccRecipients: parsed.cc,
-                      bucket: scored,
-                    )
-                  : m,
+              (MailMessage m) =>
+                  m.id == messageId ? patchHeaders(m) : m,
             )
             .toList(growable: false);
+        final MailMessage? sticky = latest.stickySelectedMessage;
+        final MailMessage? updatedSticky =
+            sticky != null && sticky.id == messageId
+            ? patchHeaders(sticky)
+            : null;
         final MailboxMutationResult done = MailboxMutationResult(
           messages: updated,
+          stickySelectedMessage: updatedSticky,
           clearHeadersLoading: true,
           clearHeadersError: true,
           clearHeadersErrorMessageId: true,
@@ -350,6 +365,10 @@ class MessageBodyCache {
       if (message.id == id) {
         return message;
       }
+    }
+    final MailMessage? sticky = state.stickySelectedMessage;
+    if (sticky != null && sticky.id == id) {
+      return sticky;
     }
     return null;
   }

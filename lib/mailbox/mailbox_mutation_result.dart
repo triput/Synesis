@@ -4,7 +4,7 @@
 // Component: Data / Bloc
 // Version: 1.0 (Gold Master)
 // Created: 2026-07-17
-// Last Update: 2026-07-17
+// Last Update: 2026-08-25
 // ==============================================================================
 
 import 'package:synesis/domain/models.dart';
@@ -18,6 +18,7 @@ class MailboxMutationResult {
     this.clearSelectedMessageId = false,
     this.selectedMessageIds,
     this.clearSelectedMessageIds = false,
+    this.stickySelectedMessage,
     this.errorMessage,
     this.clearError = false,
     this.shouldRefresh = false,
@@ -39,6 +40,10 @@ class MailboxMutationResult {
   final bool clearSelectedMessageId;
   final Set<String>? selectedMessageIds;
   final bool clearSelectedMessageIds;
+
+  /// Updated sticky selection (e.g. body/headers fetched for a filtered-out row).
+  final MailMessage? stickySelectedMessage;
+
   final String? errorMessage;
   final bool clearError;
   final bool shouldRefresh;
