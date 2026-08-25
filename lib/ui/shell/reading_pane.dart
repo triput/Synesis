@@ -184,6 +184,11 @@ class _ReadingPaneState extends State<ReadingPane> {
   int _findMatchCount = 0;
   int _findNavigateEpoch = 0;
   bool _findNavigateReverse = false;
+  bool _phoneBodyExpanded = false;
+
+  void _togglePhoneBodyExpanded() {
+    setState(() => _phoneBodyExpanded = !_phoneBodyExpanded);
+  }
 
   @override
   void initState() {
@@ -215,6 +220,7 @@ class _ReadingPaneState extends State<ReadingPane> {
     final String? newId = widget.message?.id;
     if (oldId != newId) {
       _resetFindForMessageChange();
+      _phoneBodyExpanded = false;
     }
     _syncAutoMarkAsRead();
   }
@@ -462,6 +468,8 @@ class _ReadingPaneState extends State<ReadingPane> {
         autoMarkHeld: _autoMarkHeldForCurrentMessage,
         showAutoMarkHoldOption: _showAutoMarkHoldOption,
         onToggleAutoMarkHold: _toggleAutoMarkHold,
+        phoneBodyExpanded: _phoneBodyExpanded,
+        onTogglePhoneBodyExpanded: _togglePhoneBodyExpanded,
       );
     }
 
@@ -514,6 +522,8 @@ class _ReadingPaneState extends State<ReadingPane> {
       autoMarkHeld: _autoMarkHeldForCurrentMessage,
       showAutoMarkHoldOption: _showAutoMarkHoldOption,
       onToggleAutoMarkHold: _toggleAutoMarkHold,
+      phoneBodyExpanded: _phoneBodyExpanded,
+      onTogglePhoneBodyExpanded: _togglePhoneBodyExpanded,
     );
   }
 }
@@ -592,6 +602,8 @@ class _PortraitReadingPager extends StatefulWidget {
     this.autoMarkHeld = false,
     this.showAutoMarkHoldOption = false,
     this.onToggleAutoMarkHold,
+    this.phoneBodyExpanded = false,
+    this.onTogglePhoneBodyExpanded,
   });
 
   final String selectedId;
@@ -649,6 +661,8 @@ class _PortraitReadingPager extends StatefulWidget {
   /// page (unread + auto-mark enabled).
   final bool showAutoMarkHoldOption;
   final VoidCallback? onToggleAutoMarkHold;
+  final bool phoneBodyExpanded;
+  final VoidCallback? onTogglePhoneBodyExpanded;
 
   @override
   State<_PortraitReadingPager> createState() => _PortraitReadingPagerState();
@@ -855,6 +869,8 @@ class _PortraitReadingPagerState extends State<_PortraitReadingPager> {
       onToggleAutoMarkHold: isSelected ? widget.onToggleAutoMarkHold : null,
       onBackToList: widget.onBackToList,
       showQuickReplyEnabled: widget.showQuickReplyEnabled,
+      phoneBodyExpanded: widget.phoneBodyExpanded,
+      onTogglePhoneBodyExpanded: widget.onTogglePhoneBodyExpanded,
     );
   }
 
@@ -868,7 +884,8 @@ class _PortraitReadingPagerState extends State<_PortraitReadingPager> {
     return SizedBox.expand(
       child: Column(
         children: <Widget>[
-          Material(
+          if (!widget.phoneBodyExpanded)
+            Material(
           color: t.content,
           child: SizedBox(
             height: 36,
@@ -931,7 +948,7 @@ class _PortraitReadingPagerState extends State<_PortraitReadingPager> {
             ),
           ),
         ),
-        Expanded(
+          Expanded(
           child: widget.onBackToList != null
               ? SizedBox.expand(
                   child: _buildReadingContent(widget.selectedId),
@@ -1012,6 +1029,8 @@ class _ReadingPaneContent extends StatelessWidget {
     this.showAutoMarkHoldOption = false,
     this.onToggleAutoMarkHold,
     this.showQuickReplyEnabled = true,
+    this.phoneBodyExpanded = false,
+    this.onTogglePhoneBodyExpanded,
   });
 
   final MailMessage message;
@@ -1065,6 +1084,8 @@ class _ReadingPaneContent extends StatelessWidget {
   final bool showAutoMarkHoldOption;
   final VoidCallback? onToggleAutoMarkHold;
   final bool showQuickReplyEnabled;
+  final bool phoneBodyExpanded;
+  final VoidCallback? onTogglePhoneBodyExpanded;
 
   @override
   Widget build(BuildContext context) {
@@ -1113,6 +1134,7 @@ class _ReadingPaneContent extends StatelessWidget {
               constraints.maxHeight.isFinite &&
               constraints.maxHeight < 320;
           final bool showQuickReply = showQuickReplyEnabled &&
+              !phoneBodyExpanded &&
               !inTrash &&
               constraints.hasBoundedHeight &&
               constraints.maxHeight >= 160;
@@ -1253,6 +1275,22 @@ class _ReadingPaneContent extends StatelessWidget {
                                   ),
                                 ),
                               ),
+                              if (phoneLayout && onTogglePhoneBodyExpanded != null)
+                                IconButton(
+                                  key: const Key('reading_pane_expand_body'),
+                                  tooltip: 'Expand message',
+                                  visualDensity: VisualDensity.compact,
+                                  padding: EdgeInsets.zero,
+                                  constraints: const BoxConstraints(
+                                    minWidth: 36,
+                                    minHeight: 36,
+                                  ),
+                                  onPressed: onTogglePhoneBodyExpanded,
+                                  icon: Icon(
+                                    Icons.open_in_full_rounded,
+                                    color: t.text,
+                                  ),
+                                ),
                               if (phoneLayout)
                                 IconButton(
                                   key: const Key('reading_pane_phone_actions'),
@@ -1367,6 +1405,84 @@ class _ReadingPaneContent extends StatelessWidget {
                   ),
                 );
 
+          if (phoneLayout && phoneBodyExpanded) {
+            final Widget expandedPane = Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: <Widget>[
+                Material(
+                  color: t.content,
+                  child: SizedBox(
+                    height: 40,
+                    child: Row(
+                      children: <Widget>[
+                        if (onBackToList != null)
+                          IconButton(
+                            tooltip: 'Back to list',
+                            onPressed: onBackToList,
+                            visualDensity: VisualDensity.compact,
+                            icon: Icon(Icons.arrow_back_rounded, color: t.text),
+                          ),
+                        Expanded(
+                          child: Text(
+                            msg.subject.trim().isEmpty
+                                ? '(no subject)'
+                                : msg.subject,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color: t.text,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                        IconButton(
+                          key: const Key('reading_pane_collapse_body'),
+                          tooltip: 'Collapse message',
+                          visualDensity: VisualDensity.compact,
+                          onPressed: onTogglePhoneBodyExpanded,
+                          icon: Icon(
+                            Icons.close_fullscreen_rounded,
+                            color: t.text,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                if (findOpen &&
+                    onCloseFind != null &&
+                    onFindQueryChanged != null)
+                  _MessageFindBar(
+                    query: findQuery,
+                    activeIndex: findActiveIndex,
+                    matchCount: findMatchCount,
+                    onQueryChanged: onFindQueryChanged!,
+                    onNext: onFindNext ?? () {},
+                    onPrevious: onFindPrevious ?? () {},
+                    onClose: onCloseFind!,
+                  ),
+                Divider(height: 1, color: t.line),
+                Expanded(
+                  child: ColoredBox(
+                    color: Colors.white,
+                    child: SizedBox.expand(
+                      child: buildMessageBody(),
+                    ),
+                  ),
+                ),
+              ],
+            );
+            if (paneHeight != null) {
+              return SizedBox(
+                height: paneHeight,
+                width: constraints.maxWidth,
+                child: expandedPane,
+              );
+            }
+            return expandedPane;
+          }
+
           final Widget pane = Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
@@ -1429,6 +1545,9 @@ class _ReadingPaneContent extends StatelessWidget {
                     child: QuickReplyBar(
                       key: const Key('reading_pane_quick_reply'),
                       message: msg,
+                      onExpandReading: phoneLayout
+                          ? onTogglePhoneBodyExpanded
+                          : null,
                     ),
                   ),
                 ),

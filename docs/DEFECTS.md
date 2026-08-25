@@ -22,7 +22,7 @@
 | Field | Value |
 | --- | --- |
 | Priority | **Pri-2** |
-| Status | Open (enhancement) |
+| Status | **Partially fixed** — in-pane expanded read (2026-08-25); compose quoted-body parity still open |
 | Target | **Very soon** (with [DEF-078](#def-078--phone-quick-reply-reclaim-reading-space--settings-toggle); not tonight) |
 | Area | Reading pane HTML body vs compose quoted body |
 | Platforms | Phone (desktop less painful) |
@@ -36,6 +36,8 @@ Expanding / fully opening a message on phone does **not** enlarge the HTML readi
 - Scan and full-read share one HTML (or honest plain) renderer; full-read is more chrome-collapsed space for the **same** body.  
 - Reply/Forward stay compose, but the quoted original should not look like a different email. Prefer HTML quote or a labeled quoted original that matches the reader.  
 - The Quick Reply expand control must not be the only path to “see more of this message.”
+
+**2026-08-25 (Wave 2 / Operation Flat Zero):** Phone **Expand message** (`open_in_full` in header + Quick Reply row) collapses chrome and fills the pane with the same `MessageBodyView` / HTML renderer — no compose jump. **Collapse** restores header + Quick Reply. Pager 36px strip hides while expanded. Remaining gap: full Reply/Forward compose still quotes plaintext (`>`) instead of HTML-matched original.
 
 ---
 

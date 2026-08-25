@@ -261,6 +261,72 @@ void main() {
       expect(find.text('Reply'), findsOneWidget);
     });
 
+    testWidgets('phone expand reading hides chrome and quick reply', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(
+        _harness(
+          width: 400,
+          message: _message(),
+          onReply: () {},
+          onDelete: () {},
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const Key('reading_pane_expand_body')), findsOneWidget);
+      expect(find.byKey(const Key('reading_pane_quick_reply')), findsOneWidget);
+
+      await tester.tap(find.byKey(const Key('reading_pane_expand_body')));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const Key('reading_pane_collapse_body')), findsOneWidget);
+      expect(find.byKey(const Key('reading_pane_quick_reply')), findsNothing);
+      expect(find.byKey(const Key('reading_pane_phone_actions')), findsNothing);
+
+      await tester.tap(find.byKey(const Key('reading_pane_collapse_body')));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const Key('reading_pane_quick_reply')), findsOneWidget);
+    });
+
+    testWidgets('phone quick reply expand opens reader not compose', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(
+        _harness(
+          width: 400,
+          message: _message(),
+          onReply: () {},
+          onDelete: () {},
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const Key('quick_reply_expand_reading')));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const Key('reading_pane_collapse_body')), findsOneWidget);
+      expect(find.byTooltip('Full reply'), findsNothing);
+    });
+
+    testWidgets('wide layout quick reply still offers full compose', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(
+        _harness(
+          width: 640,
+          message: _message(),
+          onReply: () {},
+          onDelete: () {},
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.byTooltip('Expand message'), findsNothing);
+      expect(find.byTooltip('Full reply'), findsOneWidget);
+    });
+
     testWidgets('overflow menu always exposes desktop message actions', (
       WidgetTester tester,
     ) async {

@@ -269,9 +269,17 @@ class _MessageAttachmentsPanelState extends State<MessageAttachmentsPanel> {
 
 /// Minimal quick-reply strip that queues a plain reply via outbox.
 class QuickReplyBar extends StatefulWidget {
-  const QuickReplyBar({super.key, required this.message});
+  const QuickReplyBar({
+    super.key,
+    required this.message,
+    this.onExpandReading,
+  });
 
   final MailMessage message;
+
+  /// Phone-only: expand the in-pane HTML reader instead of opening compose
+  /// (DEF-087).
+  final VoidCallback? onExpandReading;
 
   @override
   State<QuickReplyBar> createState() => _QuickReplyBarState();
@@ -370,6 +378,20 @@ class _QuickReplyBarState extends State<QuickReplyBar> {
       ),
       icon: const Icon(Icons.open_in_full_rounded, size: 22),
     );
+    final bool phoneLayout = isPortraitMobileLayout(context);
+    final Widget expandOrFullReplyButton =
+        phoneLayout && widget.onExpandReading != null
+            ? IconButton(
+                key: const Key('quick_reply_expand_reading'),
+                tooltip: 'Expand message',
+                onPressed: widget.onExpandReading,
+                style: IconButton.styleFrom(
+                  foregroundColor: t.teal,
+                  backgroundColor: t.teal.withValues(alpha: 0.12),
+                ),
+                icon: const Icon(Icons.open_in_full_rounded, size: 22),
+              )
+            : fullReplyButton;
     return Padding(
       padding: EdgeInsets.only(top: 4, bottom: bottomInset),
       child: LayoutBuilder(
@@ -395,7 +417,7 @@ class _QuickReplyBarState extends State<QuickReplyBar> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: <Widget>[
-                    fullReplyButton,
+                    expandOrFullReplyButton,
                     const SizedBox(width: 8),
                     sendButton,
                   ],
@@ -417,7 +439,7 @@ class _QuickReplyBarState extends State<QuickReplyBar> {
                 ),
               ),
               const SizedBox(width: 8),
-              fullReplyButton,
+              expandOrFullReplyButton,
               sendButton,
             ],
           );
