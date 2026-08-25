@@ -108,7 +108,9 @@ CORS: same-origin via tunnel path routing preferred.
 | Phase | Scope |
 | --- | --- |
 | **W2** | Account/folder/list + reading pane; HTML/plain body render |
-| **W3** | Compose panel — **plain-text MVP**; reply/forward prefill; send → outbox; DEF-087 HTML quote panel when ready | Send mail from browser on LAN |
+| **W3** | Plain-text compose/reply/forward + send → outbox; **[DEF-087](DEFECTS.md) parity** — “Your reply” editor + read-only HTML “Quoted original” panel (same model as desktop) |
+
+Implement plain-text compose first within W3; **W3 exit requires DEF-087 parity** — not a post-W3 fast-follow.
 
 Reuse sanitizer / remote-image policy from desktop where practical; document gaps.
 
@@ -140,7 +142,7 @@ Document in `docs/WAVE_WEB_RUNBOOK.md` (create at implement):
 | **W0 — Design** | This doc + checklist | ✅ Locked |
 | **W1 — Read API** | `WebBridgeServer`, bearer auth, read endpoints, tests | `curl` list + open message |
 | **W2 — Read UI** | Browser shell: list + reading pane | localhost dogfood read |
-| **W3 — Write API + compose UI** | Outbox enqueue/send, compose/reply; mark read if cheap | Send mail from browser on LAN |
+| **W3 — Write API + compose UI** | Outbox enqueue/send; plain-text compose; **[DEF-087](DEFECTS.md) parity** (separate editor + HTML quoted-original panel) | Send from browser on LAN with quote parity |
 | **W4 — Tunnel + runbook** | `cloudflared` docs/script; travel-device smoke | Trish reads **and writes** via tunnel URL |
 
 ## Dependencies
@@ -162,11 +164,14 @@ Document in `docs/WAVE_WEB_RUNBOOK.md` (create at implement):
 | **Wave MH** | Orthogonal CLI |
 | **V2.0 tag** | WEB does **not** block freeze |
 
+## Locked decisions (W0)
+
+1. **Web compose (W3):** Plain-text editor ships first in implementation order; **W3 exit includes [DEF-087](DEFECTS.md) parity** — separate “Your reply” + read-only HTML “Quoted original” panel, `packComposeWithQuote` on send (same as desktop).
+
 ## Open questions (W1)
 
 1. **In-process server** vs sidecar — *lean in-process* for shared repository/actions.
 2. **Cloudflare Access vs bearer-only** — operator choice at tunnel setup.
-3. **HTML compose on web** — **Locked (2026-08-25):** W3 MVP = **plain-text** compose/reply/forward; DEF-087 HTML quoted-original panel is **W3 target** (same parity as desktop) but plain-text ships first if HTML slips.
 
 ---
 

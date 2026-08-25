@@ -17,7 +17,7 @@
 - [x] MVP API sketch + threat model
 - [x] Phased delivery table
 - [ ] Steve operator sign-off on open questions (in-process server, Cloudflare Access vs bearer)
-- [x] Web compose: **plain-text MVP** in W3; DEF-087 HTML quote panel W3 (parity target, not MVP blocker)
+- [x] Web compose W3: plain-text first in build order; **[DEF-087](DEFECTS.md) parity required for W3 exit**
 
 ## W1 — Read API (`WebBridgeServer`)
 
@@ -38,13 +38,13 @@
 - [ ] HTML body rendering with sanitizer / remote-image policy parity (document gaps)
 - [ ] Manual dogfood: browser on same machine via `localhost`
 
-## W3 — Write API + compose UI
+## W3 — Write API + compose UI (+ DEF-087 parity)
 
 - [ ] Write routes: `POST /compose`, `POST /outbox`, `GET /outbox` (status); optional mark-read
 - [ ] Route writes through existing repository / `MessageActionService` / outbox — **no parallel send pipeline**
-- [ ] Browser compose panel — **plain-text MVP** (reply/forward/new); send → outbox feedback
-- [ ] DEF-087 HTML quoted-original panel on web (W3 parity; after plain-text MVP lands)
-- [ ] Unit tests: enqueue outbox, auth on write routes
+- [ ] Browser compose — plain-text “Your reply” editor (reply/forward/new); send → outbox feedback
+- [ ] **[DEF-087](DEFECTS.md) parity:** read-only HTML “Quoted original” panel + `packComposeWithQuote` on send (required for W3 exit)
+- [ ] Unit tests: enqueue outbox, auth on write routes, quote pack on reply/forward
 - [ ] Renee: concurrent web write + desktop UI + sync (single-user stress)
 
 ## W4 — Cloudflare tunnel + runbook
@@ -62,7 +62,7 @@
 
 ## Exit (Wave WEB done)
 
-Operator can enable web bridge on desktop Synesis, open a Cloudflare tunnel URL on another device, authenticate, **read and compose/send mail** from local SQLite/outbox — without shipping a public SaaS or blocking V2.0 tag.
+Operator can enable web bridge on desktop Synesis, open a Cloudflare tunnel URL on another device, authenticate, **read and compose/send mail** (including **DEF-087 quote parity** on reply/forward) from local SQLite/outbox — without shipping a public SaaS or blocking V2.0 tag.
 
 ---
 
