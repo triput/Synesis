@@ -27,6 +27,7 @@ import 'package:synesis/ui/mailbox/mailbox_cubit.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_widget_from_html/flutter_widget_from_html.dart';
 
 Future<void> showComposeSheet(
   BuildContext context, {
@@ -178,6 +179,8 @@ class _ComposeSheetBodyState extends State<_ComposeSheetBody> {
   List<MailSignature> _signatures = const <MailSignature>[];
   List<MailTemplate> _templates = const <MailTemplate>[];
   Timer? _autosaveTimer;
+  String? _quotedBodyHtml;
+  String? _quotedBodyPlain;
 
   @override
   void initState() {
@@ -193,12 +196,22 @@ class _ComposeSheetBodyState extends State<_ComposeSheetBody> {
     _ccController = TextEditingController(text: initial.cc.join(', '));
     _bccController = TextEditingController(text: initial.bcc.join(', '));
     _subjectController = TextEditingController(text: initial.subject);
-    final String packedHtml = initial.bodyHtml ?? '';
-    _bodyController = TextEditingController(
-      text: initial.bodyPlain.isNotEmpty
+    if (initial.separateQuotedOriginal &&
+        initial.bodyHtml != null &&
+        initial.bodyHtml!.trim().isNotEmpty) {
+      _quotedBodyHtml = initial.bodyHtml!.trim();
+      _quotedBodyPlain = initial.bodyPlain.trim().isNotEmpty
           ? initial.bodyPlain
-          : (packedHtml.isNotEmpty ? _stripHtmlLite(packedHtml) : ''),
-    );
+          : null;
+      _bodyController = TextEditingController(text: '');
+    } else {
+      final String packedHtml = initial.bodyHtml ?? '';
+      _bodyController = TextEditingController(
+        text: initial.bodyPlain.isNotEmpty
+            ? initial.bodyPlain
+            : (packedHtml.isNotEmpty ? _stripHtmlLite(packedHtml) : ''),
+      );
+    }
     _attachments = List<LocalAttachmentRef>.from(initial.attachments);
     _signatureId = initial.signatureId;
     _outboxDraftId = initial.outboxDraftId;
@@ -250,15 +263,29 @@ class _ComposeSheetBodyState extends State<_ComposeSheetBody> {
     });
   }
 
+  String _packedBody() {
+    final String userPlain = _bodyController.text;
+    final String userHtml = _bodyHtmlFromPlain(userPlain);
+    if (_quotedBodyHtml != null && _quotedBodyHtml!.trim().isNotEmpty) {
+      return OutgoingMessageBuilder.packComposeWithQuote(
+        userPlain: userPlain,
+        userHtml: userHtml,
+        quotedHtml: _quotedBodyHtml,
+        quotedPlain: _quotedBodyPlain,
+      );
+    }
+    return OutgoingMessageBuilder.packBody(
+      plain: userPlain,
+      html: userHtml,
+    );
+  }
+
   Future<void> _autosaveDraft() async {
     if (!mounted || _busy) {
       return;
     }
     final MailRepository repo = context.read<MailRepository>();
-    final String body = OutgoingMessageBuilder.packBody(
-      plain: _bodyController.text,
-      html: _bodyHtmlFromPlain(_bodyController.text),
-    );
+    final String body = _packedBody();
         final String? attachJson = _attachments.isEmpty
         ? null
         : jsonEncode(
@@ -431,10 +458,7 @@ class _ComposeSheetBodyState extends State<_ComposeSheetBody> {
       return;
     }
 
-    final String body = OutgoingMessageBuilder.packBody(
-      plain: _bodyController.text,
-      html: _bodyHtmlFromPlain(_bodyController.text),
-    );
+    final String body = _packedBody();
         final String? attachJson = _attachments.isEmpty
         ? null
         : jsonEncode(
@@ -889,8 +913,45 @@ class _ComposeSheetBodyState extends State<_ComposeSheetBody> {
                   maxLines: 14,
                   style: TextStyle(color: t.text),
                   cursorColor: t.teal,
-                  decoration: _bodyDecoration(t),
+                  decoration: _bodyDecoration(
+                    t,
+                    labelText: _quotedBodyHtml != null
+                        ? 'Your reply'
+                        : 'Message',
+                  ),
                 ),
+                if (_quotedBodyHtml != null) ...<Widget>[
+                  const SizedBox(height: 12),
+                  Text(
+                    'Quoted original',
+                    style: TextStyle(
+                      color: Color.lerp(t.muted, t.text, 0.35),
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Container(
+                    width: double.infinity,
+                    constraints: const BoxConstraints(maxHeight: 220),
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: t.panel2.withValues(alpha: 0.55),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: t.line),
+                    ),
+                    child: SingleChildScrollView(
+                      child: HtmlWidget(
+                        _quotedBodyHtml!,
+                        textStyle: TextStyle(
+                          color: t.text,
+                          fontSize: 13,
+                          height: 1.45,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ],
             ),
           ),
@@ -992,10 +1053,10 @@ InputDecoration _fieldDecoration(
   );
 }
 
-InputDecoration _bodyDecoration(ThemeTokens t) {
+InputDecoration _bodyDecoration(ThemeTokens t, {String labelText = 'Message'}) {
   final Color secondaryText = Color.lerp(t.muted, t.text, 0.28)!;
   return InputDecoration(
-    labelText: 'Message',
+    labelText: labelText,
     labelStyle: TextStyle(color: secondaryText),
     floatingLabelStyle: TextStyle(color: t.teal),
     hintText: 'Write your message…',

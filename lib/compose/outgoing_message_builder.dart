@@ -159,6 +159,31 @@ class OutgoingMessageBuilder {
     return '$plain\n---synesis-html---\n$html';
   }
 
+  /// Merges editable user text with a fixed HTML quote block (reply/forward).
+  static String packComposeWithQuote({
+    required String userPlain,
+    required String userHtml,
+    String? quotedHtml,
+    String? quotedPlain,
+  }) {
+    final String quoteHtml = quotedHtml?.trim() ?? '';
+    if (quoteHtml.isEmpty) {
+      return packBody(plain: userPlain, html: userHtml);
+    }
+    final String qPlain = (quotedPlain?.trim().isNotEmpty ?? false)
+        ? quotedPlain!.trim()
+        : _stripTags(quoteHtml);
+    final String trimmedUser = userPlain.trim();
+    final String plain = trimmedUser.isEmpty
+        ? qPlain
+        : '$trimmedUser\n\n$qPlain';
+    final String trimmedUserHtml = userHtml.trim();
+    final String html = trimmedUser.isEmpty
+        ? quoteHtml
+        : '$trimmedUserHtml$quoteHtml';
+    return packBody(plain: plain, html: html);
+  }
+
   static String unpackPlain(String packed) {
     const String marker = '\n---synesis-html---\n';
     final int idx = packed.indexOf(marker);

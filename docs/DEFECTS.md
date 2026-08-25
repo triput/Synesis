@@ -22,7 +22,7 @@
 | Field | Value |
 | --- | --- |
 | Priority | **Pri-2** |
-| Status | **Partially fixed** — in-pane expanded read (2026-08-25); compose quoted-body parity still open |
+| Status | **Fixed** (2026-08-25) — Wave 2 in-pane expanded read; Wave 2b compose HTML quote parity |
 | Target | **Very soon** (with [DEF-078](#def-078--phone-quick-reply-reclaim-reading-space--settings-toggle); not tonight) |
 | Area | Reading pane HTML body vs compose quoted body |
 | Platforms | Phone (desktop less painful) |
@@ -39,7 +39,7 @@ Expanding / fully opening a message on phone does **not** enlarge the HTML readi
 
 **2026-08-25 (Wave 2 / Operation Flat Zero):** Phone **Expand message** (`open_in_full` in header + Quick Reply row) collapses chrome and fills the pane with the same `MessageBodyView` / HTML renderer — no compose jump. **Collapse** restores header + Quick Reply. Pager 36px strip hides while expanded. Remaining gap: full Reply/Forward compose still quotes plaintext (`>`) instead of HTML-matched original (`bf196dc`).
 
-**Wave 2b (planned):** Close compose quote parity — full Reply/Forward must embed an HTML-matched quoted original (or labeled honest equivalent), not a plaintext `>` dump. In-pane expanded read is Wave 2 only; Wave 2b finishes [DEF-087](#def-087--phone-read-preview-vs-full-reply-are-different-documents).
+**Wave 2b (2026-08-25):** Full Reply/Forward opens compose with **Your reply** editor + read-only **Quoted original** panel rendering the same HTML as the reading pane (`HtmlWidget`). Outbox packs user text + HTML blockquote via `OutgoingMessageBuilder.packComposeWithQuote` — no plaintext `>` dump in the editor.
 
 ---
 

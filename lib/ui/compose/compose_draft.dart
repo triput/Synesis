@@ -63,6 +63,7 @@ class ComposeDraft {
     this.sourceMessage,
     this.outboxDraftId,
     this.sendAfterMs,
+    this.separateQuotedOriginal = false,
   });
 
   final ComposeMode mode;
@@ -80,6 +81,10 @@ class ComposeDraft {
   final MailMessage? sourceMessage;
   final String? outboxDraftId;
   final int? sendAfterMs;
+
+  /// When true, [bodyHtml] is shown as a read-only quoted block below the
+  /// editor (reply/forward from [ComposePrefill]).
+  final bool separateQuotedOriginal;
 
   String get composeModeValue {
     switch (mode) {
@@ -127,6 +132,7 @@ class ComposeDraft {
         refs = <String>[rawRefs.trim()];
       }
     }
+    final String? quoteHtml = prefill.bodyHtml?.trim();
     return ComposeDraft(
       mode: prefill.mode,
       accountId: prefill.accountId,
@@ -137,6 +143,8 @@ class ComposeDraft {
       bodyHtml: prefill.bodyHtml,
       inReplyTo: prefill.inReplyTo,
       references: refs,
+      separateQuotedOriginal:
+          quoteHtml != null && quoteHtml.isNotEmpty,
     );
   }
 

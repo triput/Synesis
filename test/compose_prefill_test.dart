@@ -86,6 +86,19 @@ void main() {
       );
       expect(prefill.subject, 'Re: Status');
     });
+
+    test('includes HTML quote block for HTML original body', () {
+      const String htmlBody =
+          '<div><h1>Receipt</h1><p>Total: \$99</p></div>';
+      final ComposePrefill prefill = ComposePrefill.reply(
+        _message(body: htmlBody, snippet: ''),
+      );
+      expect(prefill.bodyHtml, isNotNull);
+      expect(prefill.bodyHtml, contains('Receipt'));
+      expect(prefill.bodyHtml, contains('<h1>'));
+      expect(prefill.body, contains('>'));
+      expect(prefill.body, isNot(contains('<h1>')));
+    });
   });
 
   group('ComposePrefill.replyAll', () {
