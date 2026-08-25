@@ -175,6 +175,7 @@ class SettingsExportService {
       'minimizeToTray': s.minimizeToTray,
       'keyboardShortcutsEnabled': s.keyboardShortcutsEnabled,
       'threadDisplayMode': s.threadDisplayMode.name,
+      'includeSentInThreads': s.includeSentInThreads,
       'messageListSortDirection': s.messageListSortDirection.name,
       'swipeRightAction': s.swipeRightAction.name,
       'swipeLeftAction': s.swipeLeftAction.name,
@@ -265,6 +266,7 @@ class SettingsExportService {
         (ThreadDisplayMode e) => e.name == map['threadDisplayMode'],
         orElse: () => ThreadDisplayMode.threaded,
       ),
+      includeSentInThreads: map['includeSentInThreads'] as bool? ?? true,
       messageListSortDirection: MessageListSortDirection.values.firstWhere(
         (MessageListSortDirection e) =>
             e.name == map['messageListSortDirection'],

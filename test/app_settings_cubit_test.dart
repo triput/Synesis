@@ -128,6 +128,30 @@ void main() {
     });
   });
 
+  group('AppSettingsCubit includeSentInThreads', () {
+    test('defaults to true', () async {
+      SharedPreferences.setMockInitialValues(<String, Object>{});
+      final SharedPreferences prefs = await SharedPreferences.getInstance();
+      final AppSettingsCubit cubit = AppSettingsCubit(prefs);
+      expect(cubit.state.includeSentInThreads, isTrue);
+      await cubit.close();
+    });
+
+    test('persists and rehydrates includeSentInThreads', () async {
+      SharedPreferences.setMockInitialValues(<String, Object>{});
+      final SharedPreferences prefs = await SharedPreferences.getInstance();
+      final AppSettingsCubit cubit = AppSettingsCubit(prefs);
+
+      await cubit.setIncludeSentInThreads(false);
+      expect(cubit.state.includeSentInThreads, isFalse);
+      await cubit.close();
+
+      final AppSettingsCubit reloaded = AppSettingsCubit(prefs);
+      expect(reloaded.state.includeSentInThreads, isFalse);
+      await reloaded.close();
+    });
+  });
+
   group('AppSettingsCubit swipe actions', () {
     test('defaults to swipe right archive and left delete', () async {
       SharedPreferences.setMockInitialValues(<String, Object>{});

@@ -285,6 +285,20 @@ class ReadingMessageListSettingsSection extends StatelessWidget {
             ),
             SwitchListTile(
               contentPadding: EdgeInsets.zero,
+              title: const Text('Include sent replies in threads'),
+              subtitle: Text(
+                settings.includeSentInThreads
+                    ? 'Your Sent replies appear inside conversation threads in Inbox and other folders.'
+                    : 'Sent replies stay in Sent only; thread counts exclude outbound mail.',
+                style: TextStyle(color: t.muted, fontSize: 12),
+              ),
+              value: settings.includeSentInThreads,
+              onChanged: settings.threadDisplayMode == ThreadDisplayMode.threaded
+                  ? cubit.setIncludeSentInThreads
+                  : null,
+            ),
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
               title: const Text('Oldest messages first'),
               subtitle: Text(
                 settings.messageListSortDirection ==

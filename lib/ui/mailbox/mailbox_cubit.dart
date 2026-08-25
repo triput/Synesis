@@ -4,7 +4,7 @@
 // Component: Bloc / UI
 // Version: 1.6 (Gold Master)
 // Created: 2026-07-14
-// Last Update: 2026-07-23
+// Last Update: 2026-08-25
 // ==============================================================================
 
 import 'dart:async';
@@ -16,6 +16,7 @@ import 'package:synesis/mailbox/mailbox_mutation_result.dart';
 import 'package:synesis/mailbox/message_action_service.dart';
 import 'package:synesis/mailbox/message_body_cache.dart';
 import 'package:synesis/mailbox/message_list_projector.dart';
+import 'package:synesis/mailbox/thread_sent_enrichment.dart';
 import 'package:synesis/query/message_query.dart';
 import 'package:synesis/repository/mail_repository.dart';
 import 'package:synesis/settings/app_settings_cubit.dart';
@@ -93,7 +94,10 @@ class MailboxCubit extends Cubit<MailboxState> {
         focusEnabled: focusEnabled,
         includeTrashed: includeTrashed,
       );
-      final messages = await _repository.listMessages(messageQuery);
+      final messages = await _enrichWithSentThreadMembers(
+        primary: await _repository.listMessages(messageQuery),
+        folders: folders,
+      );
       final queued = await _repository.countQueuedOutbox();
       final failed = await _repository.countFailedOutbox();
       if (isClosed) {
@@ -746,6 +750,64 @@ class MailboxCubit extends Cubit<MailboxState> {
   Future<void> _syncSelectedFolder() async {
     await _enqueueSelectedFolderSync();
     _syncEngine?.kickNonBlocking();
+  }
+
+  /// Merges Sent-folder replies into [primary] for threaded views (DEF-055).
+  Future<List<MailMessage>> _enrichWithSentThreadMembers({
+    required List<MailMessage> primary,
+    required List<MailFolder> folders,
+  }) async {
+    final AppSettingsState settings = _settingsCubit.state;
+    if (!ThreadSentEnrichment.shouldEnrich(
+      includeSentInThreads: settings.includeSentInThreads,
+      threadDisplayMode: settings.threadDisplayMode,
+      selectedFolder: state.selectedFolder,
+    )) {
+      return primary;
+    }
+
+    final Map<String, Set<String>> threadKeysByAccount =
+        ThreadSentEnrichment.collectThreadKeysByAccount(primary);
+    if (threadKeysByAccount.isEmpty) {
+      return primary;
+    }
+
+    final Set<String> existingIds =
+        primary.map((MailMessage m) => m.id).toSet();
+    final List<MailMessage> sentMembers = <MailMessage>[];
+
+    for (final MapEntry<String, Set<String>> entry
+        in threadKeysByAccount.entries) {
+      final String accountId = entry.key;
+      final Set<String> threadIds = entry.value;
+      final MailFolder? sentFolder = ThreadSentEnrichment.sentFolderForAccount(
+        folders,
+        accountId,
+      );
+      if (sentFolder == null || threadIds.isEmpty) {
+        continue;
+      }
+      final List<MailMessage> sentInFolder = await _repository.listMessages(
+        MessageQuery(
+          accountId: accountId,
+          folderId: sentFolder.id,
+          includeDrafts: false,
+          includeTrashed: false,
+        ),
+      );
+      sentMembers.addAll(
+        ThreadSentEnrichment.filterSentThreadMembers(
+          sentCandidates: sentInFolder,
+          threadIds: threadIds,
+          existingMessageIds: existingIds,
+        ),
+      );
+    }
+
+    return ThreadSentEnrichment.mergeSentThreadMembers(
+      primary: primary,
+      sentMembers: sentMembers,
+    );
   }
 
   bool _isJunkFolderName(String? name) {

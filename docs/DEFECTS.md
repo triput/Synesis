@@ -858,8 +858,8 @@ Enhancement backlog — not urgent, not blocking daily use or Wave 2 PIM. **Targ
 | Field | Value |
 | --- | --- |
 | Priority | **Pri-2** |
-| Status | Open (enhancement) |
-| Target wave | **Wave 7 / Trish extras** |
+| Status | **Fixed** (2026-08-25, Operation Flat Zero Wave 5) |
+| Target wave | **Wave 7 / Trish extras** → landed early |
 | Area | `lib/mailbox/message_list_projector.dart`, `lib/ui/mailbox/mailbox_cubit.dart`, `lib/ui/mailbox/mailbox_state.dart`, folder/message query paths |
 | Platforms | All |
 | Logged | 2026-07-27 |
@@ -872,6 +872,8 @@ User-toggle (e.g. settings or folder/view option) merges Sent-folder messages in
 
 **Actual**  
 Thread projection groups messages from the active folder/query only. Sent replies typically live under Sent and are not surfaced inside Inbox/other-folder thread rows, so conversation context is incomplete for “did I reply?” triage.
+
+**2026-08-25 (Wave 5):** Settings → Reading & message list → **Include sent replies in threads** (`includeSentInThreads`, default on). [MailboxCubit] enriches folder query results with Sent-folder messages sharing the same account-scoped thread key before [MessageListProjector] runs. Sent-folder browsing skips enrichment; flat mode and toggle-off preserve prior behavior. Pure helpers in `lib/mailbox/thread_sent_enrichment.dart`.
 
 **Notes**  
 Enhancement backlog — important for daily mail triage but not blocking Wave 2 PIM. **Target wave: Wave 7 / Trish extras.** Related: [DEF-042](#def-042--expandcollapse-chevron-and-1-badge-on-single-message-threads) (thread chrome); `ThreadDisplayMode` / `MessageListProjector`.

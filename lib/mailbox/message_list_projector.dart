@@ -4,7 +4,7 @@
 // Component: Mailbox / Domain
 // Version: 1.0 (Gold Master)
 // Created: 2026-07-17
-// Last Update: 2026-07-17
+// Last Update: 2026-08-25
 // ==============================================================================
 
 import 'package:synesis/domain/models.dart';

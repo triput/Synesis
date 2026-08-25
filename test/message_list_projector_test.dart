@@ -4,11 +4,12 @@
 // Component: Test
 // Version: 1.0 (Gold Master)
 // Created: 2026-07-17
-// Last Update: 2026-07-17
+// Last Update: 2026-08-25
 // ==============================================================================
 
 import 'package:synesis/domain/models.dart';
 import 'package:synesis/mailbox/message_list_projector.dart';
+import 'package:synesis/mailbox/thread_sent_enrichment.dart';
 import 'package:synesis/settings/app_settings_state.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -22,6 +23,7 @@ MailMessage _msg({
   bool unread = false,
   bool starred = false,
   bool pinned = false,
+  String folderId = 'work-inbox',
 }) {
   return MailMessage(
     id: id,
@@ -33,7 +35,7 @@ MailMessage _msg({
     body: 'b',
     whenLabel: '10:00',
     bucket: FocusBucket.focused,
-    folderId: '$accountId-inbox',
+    folderId: folderId,
     threadId: threadId,
     whenEpochMs: whenEpochMs,
     unread: unread,
@@ -450,6 +452,212 @@ void main() {
       expect(
         sections.map((MessageListSection s) => s.title).toList(),
         <String>['Older', 'Today'],
+      );
+    });
+  });
+
+  group('MessageListProjector DEF-055 sent in threads', () {
+    test('merged sent reply increases thread count and expansion', () {
+      final List<MailMessage> inboxOnly = <MailMessage>[
+        _msg(
+          id: 'inbox-root',
+          accountId: 'work',
+          threadId: 't1',
+          whenEpochMs: 1000,
+          fromName: 'Alice',
+        ),
+      ];
+      final MailMessage sentReply = _msg(
+        id: 'sent-reply',
+        accountId: 'work',
+        threadId: 't1',
+        whenEpochMs: 2000,
+        fromName: 'Me',
+        fromAddress: 'me@byte.io',
+        folderId: 'work-sent',
+      );
+      final List<MailMessage> enriched =
+          ThreadSentEnrichment.mergeSentThreadMembers(
+        primary: inboxOnly,
+        sentMembers: <MailMessage>[sentReply],
+      );
+
+      final List<MessageListSection> sections = MessageListProjector.project(
+        messages: enriched,
+        threadMode: ThreadDisplayMode.threaded,
+        dateGrouping: DateGroupingMode.none,
+        expandedThreadIds: const <String>{},
+        now: now,
+      );
+
+      final ThreadItem thread = sections.single.items.single as ThreadItem;
+      expect(thread.count, 2);
+      expect(thread.latest.id, 'sent-reply');
+      expect(
+        thread.members.map((MailMessage m) => m.id).toList(),
+        <String>['sent-reply', 'inbox-root'],
+      );
+
+      final String key = ThreadItem.expansionKeyFor('work', 't1');
+      final List<MessageListSection> expanded = MessageListProjector.project(
+        messages: enriched,
+        threadMode: ThreadDisplayMode.threaded,
+        dateGrouping: DateGroupingMode.none,
+        expandedThreadIds: <String>{key},
+        now: now,
+      );
+      expect(expanded.single.items, hasLength(3));
+      expect(
+        (expanded.single.items[1] as FlatMessageItem).message.id,
+        'sent-reply',
+      );
+      expect(
+        (expanded.single.items[2] as FlatMessageItem).message.id,
+        'inbox-root',
+      );
+    });
+
+    test('solo sent without inbox anchor is not merged into folder view', () {
+      final List<MailMessage> inboxView = <MailMessage>[
+        _msg(
+          id: 'other',
+          accountId: 'work',
+          threadId: 'other-thread',
+          whenEpochMs: 500,
+        ),
+      ];
+      final Map<String, Set<String>> threadKeys =
+          ThreadSentEnrichment.collectThreadKeysByAccount(inboxView);
+      final Set<String> existingIds =
+          inboxView.map((MailMessage m) => m.id).toSet();
+      final List<MailMessage> sentMembers =
+          ThreadSentEnrichment.filterSentThreadMembers(
+        sentCandidates: <MailMessage>[
+          _msg(
+            id: 'sent-only',
+            accountId: 'work',
+            threadId: 'sent-only-thread',
+            whenEpochMs: 900,
+            folderId: 'work-sent',
+          ),
+        ],
+        threadIds: threadKeys['work'] ?? const <String>{},
+        existingMessageIds: existingIds,
+      );
+      final List<MailMessage> enriched =
+          ThreadSentEnrichment.mergeSentThreadMembers(
+        primary: inboxView,
+        sentMembers: sentMembers,
+      );
+
+      final List<MessageListSection> sections = MessageListProjector.project(
+        messages: enriched,
+        threadMode: ThreadDisplayMode.threaded,
+        dateGrouping: DateGroupingMode.none,
+        expandedThreadIds: const <String>{},
+        now: now,
+      );
+
+      expect(sections.single.items, hasLength(1));
+      final ThreadItem thread = sections.single.items.single as ThreadItem;
+      expect(thread.threadId, 'other-thread');
+      expect(thread.count, 1);
+    });
+
+    test('does not merge identical threadIds across accounts after enrichment', () {
+      final List<MailMessage> primary = <MailMessage>[
+        _msg(
+          id: 'w-in',
+          accountId: 'work',
+          threadId: 'shared',
+          whenEpochMs: 2000,
+        ),
+        _msg(
+          id: 'p-in',
+          accountId: 'personal',
+          threadId: 'shared',
+          whenEpochMs: 1500,
+        ),
+      ];
+      final List<MailMessage> enriched =
+          ThreadSentEnrichment.mergeSentThreadMembers(
+        primary: primary,
+        sentMembers: <MailMessage>[
+          _msg(
+            id: 'w-out',
+            accountId: 'work',
+            threadId: 'shared',
+            whenEpochMs: 2500,
+            folderId: 'work-sent',
+          ),
+          _msg(
+            id: 'p-out',
+            accountId: 'personal',
+            threadId: 'shared',
+            whenEpochMs: 1800,
+            folderId: 'personal-sent',
+          ),
+        ],
+      );
+
+      final List<MessageListSection> sections = MessageListProjector.project(
+        messages: enriched,
+        threadMode: ThreadDisplayMode.threaded,
+        dateGrouping: DateGroupingMode.none,
+        expandedThreadIds: const <String>{},
+        now: now,
+      );
+
+      expect(sections.single.items, hasLength(2));
+      final List<ThreadItem> threads = sections.single.items
+          .whereType<ThreadItem>()
+          .toList(growable: false);
+      expect(threads.every((ThreadItem t) => t.count == 2), isTrue);
+      expect(
+        threads.map((ThreadItem t) => t.expansionKey).toSet(),
+        <String>{'work::shared', 'personal::shared'},
+      );
+    });
+
+    test('oldestFirst expanded thread includes sent reply in chronological order', () {
+      final List<MailMessage> enriched =
+          ThreadSentEnrichment.mergeSentThreadMembers(
+        primary: <MailMessage>[
+          _msg(
+            id: 'inbox-root',
+            accountId: 'work',
+            threadId: 't1',
+            whenEpochMs: 1000,
+          ),
+        ],
+        sentMembers: <MailMessage>[
+          _msg(
+            id: 'sent-reply',
+            accountId: 'work',
+            threadId: 't1',
+            whenEpochMs: 2000,
+            folderId: 'work-sent',
+          ),
+        ],
+      );
+      final String key = ThreadItem.expansionKeyFor('work', 't1');
+
+      final List<MessageListSection> sections = MessageListProjector.project(
+        messages: enriched,
+        threadMode: ThreadDisplayMode.threaded,
+        sortDirection: MessageListSortDirection.oldestFirst,
+        dateGrouping: DateGroupingMode.none,
+        expandedThreadIds: <String>{key},
+        now: now,
+      );
+
+      expect(
+        (sections.single.items[1] as FlatMessageItem).message.id,
+        'inbox-root',
+      );
+      expect(
+        (sections.single.items[2] as FlatMessageItem).message.id,
+        'sent-reply',
       );
     });
   });

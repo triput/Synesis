@@ -114,6 +114,7 @@ class AppSettingsCubit extends Cubit<AppSettingsState> {
             (ThreadDisplayMode e) => e.name == map['threadDisplayMode'],
             orElse: () => ThreadDisplayMode.threaded,
           ),
+          includeSentInThreads: map['includeSentInThreads'] as bool? ?? true,
           messageListSortDirection: MessageListSortDirection.values.firstWhere(
             (MessageListSortDirection e) =>
                 e.name == map['messageListSortDirection'],
@@ -186,6 +187,7 @@ class AppSettingsCubit extends Cubit<AppSettingsState> {
         'minimizeToTray': state.minimizeToTray,
         'keyboardShortcutsEnabled': state.keyboardShortcutsEnabled,
         'threadDisplayMode': state.threadDisplayMode.name,
+        'includeSentInThreads': state.includeSentInThreads,
         'messageListSortDirection': state.messageListSortDirection.name,
         'swipeRightAction': state.swipeRightAction.name,
         'swipeLeftAction': state.swipeLeftAction.name,
@@ -338,6 +340,12 @@ class AppSettingsCubit extends Cubit<AppSettingsState> {
   Future<void> setThreadDisplayMode(ThreadDisplayMode mode) async {
     if (state.threadDisplayMode == mode) return;
     emit(state.copyWith(threadDisplayMode: mode));
+    await _persist();
+  }
+
+  Future<void> setIncludeSentInThreads(bool enabled) async {
+    if (state.includeSentInThreads == enabled) return;
+    emit(state.copyWith(includeSentInThreads: enabled));
     await _persist();
   }
 

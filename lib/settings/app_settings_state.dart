@@ -4,7 +4,7 @@
 // Component: Bloc / Settings
 // Version: 1.4 (Gold Master)
 // Created: 2026-07-14
-// Last Update: 2026-07-27
+// Last Update: 2026-08-25
 // ==============================================================================
 
 import 'package:equatable/equatable.dart';
@@ -101,6 +101,7 @@ class AppSettingsState extends Equatable {
     this.minimizeToTray = true,
     this.keyboardShortcutsEnabled = true,
     this.threadDisplayMode = ThreadDisplayMode.threaded,
+    this.includeSentInThreads = true,
     this.messageListSortDirection = MessageListSortDirection.newestFirst,
     this.swipeRightAction = SwipeListAction.archive,
     this.swipeLeftAction = SwipeListAction.delete,
@@ -138,6 +139,10 @@ class AppSettingsState extends Equatable {
   final bool minimizeToTray;
   final bool keyboardShortcutsEnabled;
   final ThreadDisplayMode threadDisplayMode;
+
+  /// When true, Sent-folder replies are merged into conversation threads
+  /// while browsing other folders (DEF-055). Sent-folder browsing is unchanged.
+  final bool includeSentInThreads;
 
   /// Flat and threaded list row order (DEF-056).
   final MessageListSortDirection messageListSortDirection;
@@ -268,6 +273,7 @@ class AppSettingsState extends Equatable {
     bool? minimizeToTray,
     bool? keyboardShortcutsEnabled,
     ThreadDisplayMode? threadDisplayMode,
+    bool? includeSentInThreads,
     MessageListSortDirection? messageListSortDirection,
     SwipeListAction? swipeRightAction,
     SwipeListAction? swipeLeftAction,
@@ -309,6 +315,7 @@ class AppSettingsState extends Equatable {
       keyboardShortcutsEnabled:
           keyboardShortcutsEnabled ?? this.keyboardShortcutsEnabled,
       threadDisplayMode: threadDisplayMode ?? this.threadDisplayMode,
+      includeSentInThreads: includeSentInThreads ?? this.includeSentInThreads,
       messageListSortDirection:
           messageListSortDirection ?? this.messageListSortDirection,
       swipeRightAction: swipeRightAction ?? this.swipeRightAction,
@@ -367,6 +374,7 @@ class AppSettingsState extends Equatable {
         minimizeToTray,
         keyboardShortcutsEnabled,
         threadDisplayMode,
+        includeSentInThreads,
         messageListSortDirection,
         swipeRightAction,
         swipeLeftAction,
